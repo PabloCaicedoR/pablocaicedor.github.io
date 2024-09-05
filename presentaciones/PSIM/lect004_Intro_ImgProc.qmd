@@ -1,0 +1,602 @@
+---
+title: "Aprendizaje automático para el procesamiento de señales e imágenes médicas"
+description: "ASIM_M -- 104399"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2024-08-12"
+jupyter: python_jupyter
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: R load configuration
+
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+
+
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Python load configuration
+
+image_path = "../../recursos/imagenes/Presentaciones/PSIM/"
+
+```
+
+# Procesamiento de imágenes
+
+## What is Digital Image Processing?
+
+::: {.callout-note title="Definition" collapsible="false"}
+
+- Two-dimensional function, f(x, y)
+- Where x and y are spatial coordinates.
+- The amplitude of f at any pair of coordinates (x, y) is called the intensity.
+
+:::
+
+::: {.callout-warning title="The digital image" collapsible="false"}
+
+If the coordinates and the intensity are discrete quantities the image turns into a digital image.
+
+:::
+
+## What is Digital Image Processing?
+
+::: {.callout-tip title="Definition" collapsible="false"}
+
+A digital image is composed by a finite number of elements called PIXEL.
+
+:::
+
+::::{.columns}
+
+:::{.column width="45%"}
+
+![https://www.researchgate.net/figure/Digital-image-representation-by-pixels-vii_fig2_311806469](../../recursos/imagenes/Presentaciones/PSIM/pixels.png)
+
+:::
+
+:::{.column width="45%"}
+
+::: {.callout-tip title="Depth" collapsible="false"}
+
+:::{.small_font}
+
+A digital image is composed by a finite number of elements called PIXEL. Bpp( Bits per pixel)
+
+- 1bpp. B/W image, monochrome.
+- 2bpp. CGA Image.
+- 4bpp. Minimun for VGA standard.
+- 8bpp. Super-VGA image.
+- 24bpp. Truecolor image.
+- 48bpp. Professional-level images.
+  
+
+:::
+
+:::
+
+
+
+:::
+
+::::
+
+## What is Digital Image Processing?
+
+::::{.columns}
+
+:::{.column width="45%"}
+
+![https://www.researchgate.net/figure/Digital-image-representation-by-pixels-vii_fig2_311806469](../../recursos/imagenes/Presentaciones/PSIM/pixels.png)
+
+:::
+
+:::{.column width="45%"}
+
+::: {.callout-tip title="Color Space" collapsible="false"}
+
+How can i represent the color
+
+- RGB.
+- CMYK.
+- HSV.
+- Among others.
+
+:::
+
+
+:::
+
+::::
+
+## What is Digital Image Processing?
+
+::::{.columns}
+
+:::{.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+
+import cv2
+import matplotlib.pyplot as plt
+
+img = cv2.imread(image_path+"image01.tif")
+fig001 = plt.figure()
+plt.imshow(img)
+
+```
+
+
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+
+import cv2
+import matplotlib.pyplot as plt
+
+img = cv2.imread(image_path+"image01.tif")
+fig001 = plt.figure()
+plt.imshow(img)
+
+```
+
+
+:::
+
+:::{.column width="45%"}
+
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+
+import cv2
+import matplotlib.pyplot as plt
+
+img = cv2.imread(image_path+"lena.tif")
+RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+fig002 = plt.figure()
+plt.imshow(RGB_img)
+
+```
+
+
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+
+import cv2
+import matplotlib.pyplot as plt
+
+img = cv2.imread(image_path+"lena.tif")
+RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+fig002 = plt.figure()
+plt.imshow(RGB_img)
+
+```
+
+
+:::
+
+::::
+
+
+## Images and vision
+
+- The paradigm surrounding the conceptualization of light and perception has undergone significant evolution. 
+- Initially, the prevailing understanding within humanity posited that visual stimuli emanated from the eye itself. 
+- However, contemporary knowledge has elucidated that light originates from external sources, undergoes reflection from objects within the environment, and is subsequently captured by the eye.
+
+## Images and vision
+
+::: {.callout-note title="Important" collapsible="false"}
+
+
+We also understand that light is a type of electromagnetic radiation, and its wavelength falls within a range from 400 nanometers to 700 nanometers.
+
+:::
+
+
+![Taken from Corke 2023](../../recursos/imagenes/Presentaciones/PSIM/ligh_spectrum.png){fig-align="center"}
+
+## Images and vision
+
+::: {.callout-note title="Important" collapsible="false"}
+
+- The most common way light is made is by something getting really hot. This makes energy that comes out as light.
+
+- Some important term are: 
+  - _Absortion:_ It is the fraction of light which a body absorbs depending on the wavelength.
+  - _Reflectance:_ It is the fraction of the incoming light which a body reflects. It's a number between 0 to 1 and also depends on wavelength.
+  - _Luminance:_ It is the fraction of the incoming light which a surface reflects. It's a function of absortion and reflectance, and because of that luminance depends on wavelength.
+
+:::
+
+## Images and vision
+
+::: {.callout-tip title="The eye" collapsible="false"}
+
+- Our eye has two types of cells. _Cones_ and _Rods_.
+- Cones are the most sensitive cells but above all these are color sensitive.
+- Rods responds only two intensity and they used on night, mostly.
+- Humans, like most primates, are trichomats. This means that humans have three types of cones (Long, Medium and shorts).
+  - 65% of longs (Sense red)
+  - 33% of mediums (Sense green)
+  - 2% of shortsv(Sense blue)
+
+:::
+
+## Images and vision
+
+::: {.callout-tip title="The artificial eye" collapsible="false"}
+
+![Taken from Corke 2023](../../recursos/imagenes/Presentaciones/PSIM/CameraSensor.png){fig-align="center"}
+
+:::
+
+The currents from each sensor are function of the luminance and the spectral response filter.
+
+## Images and vision
+
+![Taken from https://web.stanford.edu/class/cs231a/course_notes/01-camera-models.pdf](../../recursos/imagenes/Presentaciones/PSIM/pinhole.png){fig-align="center"  width=1000}
+
+## Images and vision
+
+![Taken from https://web.stanford.edu/class/cs231a/course_notes/01-camera-models.pdf](../../recursos/imagenes/Presentaciones/PSIM/pinhole2.png){fig-align="center"  width=1000}
+
+## Images and vision
+
+![Taken from https://web.stanford.edu/class/cs231a/course_notes/01-camera-models.pdf](../../recursos/imagenes/Presentaciones/PSIM/pinhole3.png){fig-align="center"  width=500}
+
+## Images and vision
+
+![Taken from https://web.stanford.edu/class/cs231a/course_notes/01-camera-models.pdf](../../recursos/imagenes/Presentaciones/PSIM/CameraModel.png){fig-align="center"  width=1000}
+
+
+## Images and vision
+
+![Taken from https://web.stanford.edu/class/cs231a/course_notes/01-camera-models.pdf](../../recursos/imagenes/Presentaciones/PSIM/CameraModel2.png){fig-align="center"  width=1000}
+
+## Sampling and quantization
+
+::: {.callout-tip title="Definition" collapsible="false"}
+
+__Sampling:__ Digitalization of the spatial coordinates.
+
+:::
+
+::: {.callout-tip title="Definition" collapsible="false"}
+
+__Quantiazation:__ Digitalization of the light intensity (amplitude).
+
+:::
+
+
+## Sampling and quantization
+
+
+
+![Tomado de Gonzalez, Rafael C., y Richard E. Woods. 2018. Digital Image Processing. New York, NY: Pearson.](../../recursos/imagenes/Presentaciones/PSIM/sampling_quantization_01.png){fig-align="center"  width=600}
+
+
+
+
+## Sampling and quantization
+
+:::{layout-nrow=2}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: loading image 1
+
+img = cv2.imread(image_path+"little_image.png")
+RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+fig002 = plt.figure()
+plt.imshow(RGB_img)
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: loading image 2
+
+plt.imshow(RGB_img[:,:,0], cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: loading image 3
+
+plt.imshow(RGB_img[:,:,1], cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: loading image 4
+
+plt.imshow(RGB_img[:,:,2], cmap="gray")
+
+```
+
+:::
+
+## Sampling and quantization
+
+:::{layout-ncol=2}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Loading kirby
+
+kirby = cv2.imread(image_path+"little_kirby.png")
+RGB_kirby = cv2.cvtColor(kirby, cv2.COLOR_BGR2RGB)
+fig003 = plt.figure()
+plt.imshow(RGB_kirby)
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Gray kirby
+
+Gray_Kirby = cv2.cvtColor(RGB_kirby, cv2.COLOR_RGB2GRAY)
+plt.imshow(Gray_Kirby, cmap="gray")
+
+```
+
+:::
+
+:::{layout-ncol=4}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby1bit
+#| fig-cap: "1bit"
+
+import numpy as np
+
+Kirby_1bit = cv2.bitwise_and(Gray_Kirby, np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_1bit, cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby2bit
+#| fig-cap: "2bit"
+
+import numpy as np
+
+Kirby_2bit = cv2.bitwise_and(Gray_Kirby, 2*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_2bit, cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby3bit
+#| fig-cap: "3bit"
+
+import numpy as np
+
+Kirby_3bit = cv2.bitwise_and(Gray_Kirby, 4*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_3bit, cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby4bit
+#| fig-cap: "4bit"
+
+import numpy as np
+
+Kirby_4bit = cv2.bitwise_and(Gray_Kirby, 8*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_4bit, cmap="gray")
+
+```
+
+
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby5bit
+#| fig-cap: "5bit"
+
+import numpy as np
+
+Kirby_5bit = cv2.bitwise_and(Gray_Kirby, 16*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_5bit, cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby6bit
+#| fig-cap: "6bit"
+
+
+import numpy as np
+
+Kirby_6bit = cv2.bitwise_and(Gray_Kirby, 32*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_6bit, cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby7bit
+#| fig-cap: "7bit"
+
+import numpy as np
+
+Kirby_7bit = cv2.bitwise_and(Gray_Kirby, 64*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_7bit, cmap="gray")
+
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: kirby8bit
+#| fig-cap: "8bit"
+
+import numpy as np
+
+Kirby_8bit = cv2.bitwise_and(Gray_Kirby, 128*np.ones(Gray_Kirby.shape, dtype="uint8"))
+plt.imshow(Kirby_8bit, cmap="gray")
+
+```
+
+:::
+
+## Sampling and quantization
+
+![Tomado de Gonzalez, Rafael C., y Richard E. Woods. 2018. Digital Image Processing. New York, NY: Pearson.](../../recursos/imagenes/Presentaciones/PSIM/sampling_quantization_02.png){fig-align="center"  width=600}
+
+## Linear indexing
+
+![Tomado de Gonzalez, Rafael C., y Richard E. Woods. 2018. Digital Image Processing. New York, NY: Pearson.](../../recursos/imagenes/Presentaciones/PSIM/linear_indexing.png){fig-align="center"  width=600}
+
+::: {.columns}
+
+:::{.column width="50%"}
+
+::: {.callout-tip title="From normal to linear" collapsible="false"}
+
+$$\alpha = My+x$$
+
+:::
+
+
+
+:::
+
+:::{.column width="50%"}
+
+::: {.callout-tip title="From linear to normal" collapsible="false"}
+
+$$x = \alpha \bmod M$$
+
+$$y = \frac{\alpha - x}{M}$$
+
+:::
+
+
+
+:::
+
+:::
+
+## Spatial resolution
+
+![Tomado de Gonzalez, Rafael C., y Richard E. Woods. 2018. Digital Image Processing. New York, NY: Pearson.](../../recursos/imagenes/Presentaciones/PSIM/dpi01.png){fig-align="center"  width=600}
+
+## Intensity resolution
+
+![Tomado de Gonzalez, Rafael C., y Richard E. Woods. 2018. Digital Image Processing. New York, NY: Pearson.](../../recursos/imagenes/Presentaciones/PSIM/intensity_resolution.png){fig-align="center"  width=600}
+
+## Intensity resolution
+
+![Tomado de Gonzalez, Rafael C., y Richard E. Woods. 2018. Digital Image Processing. New York, NY: Pearson.](../../recursos/imagenes/Presentaciones/PSIM/intensity_resolution_02.png){fig-align="center"  width=600}
+
+## Relationships between pixels
+
+::: {.callout-tip title="Neighborhood" collapsible="false"}
+
+:::{#fig-neighborhoods layout-ncol=3}
+
+
+ ![N4](../../recursos/imagenes/Presentaciones/PSIM/n4.png){fig-align="center" width=250} 
+
+ ![ND](../../recursos/imagenes/Presentaciones/PSIM/nd.png){fig-align="center" width=250} 
+
+ ![N8](../../recursos/imagenes/Presentaciones/PSIM/n8.png){fig-align="center" width=250} 
+
+
+:::
+
+:::
+
+
