@@ -410,28 +410,28 @@
     "href": "codigo/PSIM/cod001_signal_conditioning.html",
     "title": "Estudio de arritmia cardíaca",
     "section": "",
-    "text": "numpy: Para manipulación numérica y funciones estadísticas básicas\nmatplotlib.pyplot: Para generación de gráficos.\nscipy.io: Para carga de datos provenientes de archivos .mat\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport scipy.io as sio"
+    "text": "from google.colab import drive\ndrive.mount('/content/drive')\n\nMounted at /content/drive"
   },
   {
     "objectID": "codigo/PSIM/cod001_signal_conditioning.html#carga-de-librerías",
     "href": "codigo/PSIM/cod001_signal_conditioning.html#carga-de-librerías",
     "title": "Estudio de arritmia cardíaca",
-    "section": "",
-    "text": "numpy: Para manipulación numérica y funciones estadísticas básicas\nmatplotlib.pyplot: Para generación de gráficos.\nscipy.io: Para carga de datos provenientes de archivos .mat\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport scipy.io as sio"
+    "section": "Carga de librerías",
+    "text": "Carga de librerías\n\nnumpy: Para manipulación numérica y funciones estadísticas básicas\nmatplotlib.pyplot: Para generación de gráficos.\nscipy.io: Para carga de datos provenientes de archivos .mat\nscipy.signal: Para análisis de señales de la librería SCIPY\nscipy.optimize: Para realizar el ajuste de curva\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport scipy.io as sio\nimport scipy.signal as signal\nfrom scipy.optimize import curve_fit"
   },
   {
     "objectID": "codigo/PSIM/cod001_signal_conditioning.html#configuración-de-carpetas",
     "href": "codigo/PSIM/cod001_signal_conditioning.html#configuración-de-carpetas",
     "title": "Estudio de arritmia cardíaca",
     "section": "Configuración de carpetas",
-    "text": "Configuración de carpetas\n\ndata_path = \"../../data/\""
+    "text": "Configuración de carpetas\n\ndata_path = \"/content/drive/MyDrive/ECG_Dataset/\""
   },
   {
     "objectID": "codigo/PSIM/cod001_signal_conditioning.html#carga-de-datos",
     "href": "codigo/PSIM/cod001_signal_conditioning.html#carga-de-datos",
     "title": "Estudio de arritmia cardíaca",
     "section": "Carga de datos",
-    "text": "Carga de datos\nArchivo de descarga\n\ndata = sio.loadmat(data_path+\"JS00001.mat\")\n\n\nprint(type(data))\n\n&lt;class 'dict'&gt;\n\n\n\nprint(data.keys())\n\ndict_keys(['val'])\n\n\n\nprint(type(data[\"val\"]))\n\n&lt;class 'numpy.ndarray'&gt;\n\n\n\nprint(data[\"val\"].shape)\n\n(12, 5000)\n\n\n\nlead_10 = data[\"val\"][9, :]\n\n\nt0 = 0\ntf = 10\nt = np.linspace(t0, tf, 5000)\n\n\nfig01 = plt.figure()\nplt.plot(t,lead_10)"
+    "text": "Carga de datos\nArchivo de descarga\n\ndata = sio.loadmat(data_path+\"JS00001.mat\")\n\n\nprint(type(data))\n\n&lt;class 'dict'&gt;\n\n\n\nprint(data.keys())\n\ndict_keys(['val'])\n\n\n\nprint(type(data[\"val\"]))\n\n&lt;class 'numpy.ndarray'&gt;\n\n\n\nprint(data[\"val\"].shape)\n\n(12, 5000)\n\n\n\nlead_10 = data[\"val\"][9, :]\n\n\nt0 = 0\ntf = 10\nt = np.linspace(t0, tf, 5000)\n\n\nfig01 = plt.figure()\nplt.plot(t,lead_10)\n\n\n\n\n\n\n\n\n\necg_fft = np.fft.fft(lead_10)\necg_fft\n\narray([ -50343.             +0.j        ,\n        -44427.87292792 -48118.33430899j,\n        -14003.60280291-331886.8477886j , ...,\n       -134619.87742102 -46991.97629606j,\n        -14003.60280291+331886.8477886j ,\n        -44427.87292792 +48118.33430899j])\n\n\n\nmag_ecg_fft = np.abs(ecg_fft)\nf_vect = np.fft.fftfreq(len(mag_ecg_fft))\n\n\nplt.plot(mag_ecg_fft)\n\n\n\n\n\n\n\n\n\nN = len(mag_ecg_fft)\nf_vect1 = 500*f_vect[:np.uint(N/2)]\nmag_ecg_fft1 = mag_ecg_fft[:np.uint(N/2)]\n\n\nplt.plot(f_vect1, mag_ecg_fft1)\nplt.grid()\nplt.xlabel(\"Frequency (Hz)\")\n\nText(0.5, 0, 'Frequency (Hz)')\n\n\n\n\n\n\n\n\n\n\nplt.plot(f_vect1, mag_ecg_fft1**2)\nplt.grid()\n\n\n\n\n\n\n\n\n\nfs = 500\nfcut = 50\norder = 4\n\nf_corte = fcut/(fs/2)\n\nb, a = signal.butter(order, f_corte, \"lowpass\")\n\n\necg_filt_1 = signal.lfilter(b, a, lead_10)\necg_filt_2 = signal.filtfilt(b, a, lead_10) # No causal.\n\n\nplt.plot(t, ecg_filt_1)\nplt.plot(t, ecg_filt_2)\n\n\n\n\n\n\n\n\n\nplt.plot(t, ecg_filt_2)\n\n\n\n\n\n\n\n\n\nmag_ecg_filt = np.abs(np.fft.fft(ecg_filt_2))[:np.uint(N/2)]\n\nplt.plot(f_vect1, mag_ecg_fft1)\nplt.plot(f_vect1, mag_ecg_filt)\nplt.grid()\nplt.xlabel(\"Frequency (Hz)\")\n\nText(0.5, 0, 'Frequency (Hz)')\n\n\n\n\n\n\n\n\n\n\ndef modelo_artefacto(time, p0, p1, p2, p3, p4):\n  return p0+p1*np.sin(p2*time)+p3*np.cos(p4*time)\n\n\npopt, pcov = curve_fit(modelo_artefacto, t, ecg_filt_2)\n\n\npopt[1]\n\n152.2437794044702\n\n\n\nplt.plot(t, modelo_artefacto(t, *popt))\n\n\n\n\n\n\n\n\n\nplt.plot(t, ecg_filt_2-modelo_artefacto(t, *popt))"
   },
   {
     "objectID": "codigo/ASIM/cod003_LinearRegression_InsuranceCosts.html",
