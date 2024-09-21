@@ -1,0 +1,178 @@
+---
+title: Procesamiento de Señales e Imágenes Médicas
+coursecode: PSIM-81
+date: 2024-09-19
+year: 2024
+period: 2
+lang: es-co
+timeallowed: Una Hora.
+openorclosed: Apuntes con caligrafía propia.
+permitted: NO se permite comunciación con compañeros ni préstamo de elementos.
+instructions: |
+   Responda cada pregunta según las instrucciones de la sección
+   
+   El examen consta de un total de **20** puntos.
+   
+studentinfo: true
+---
+
+     
+## Primera Sección (10 puntos)
+
+_Marque la(s) opción(es) correcta(s)_
+
+   #. (2puntos) ¿En el dominio de la frecuencia, Cuál es el efecto de la convolución entre una señal y un kernel?
+      #. Se convierte en una multiplicación entre el kernel y la señal
+      #. Siempre se introduce un retraso en la señal en el dominio del tiempo
+      #. Crea un efecto de periodicidad en la señal
+      #. Elimina las componentes de alta frecuencia dependiendo del kernel
+
+   #. (2puntos) ¿Cuál es la relación entre la frecuencia de muestreo y la frecuencia de Nyquist en un sistema de muestreo?
+      #. La frecuencia de muestreo debe ser igual a la frecuencia de Nyquist
+      #. La frecuencia de muestreo debe ser el doble de la frecuencia de Nyquist
+      #. La frecuencia de muestreo puede ser menor que la frecuencia de Nyquist
+      #. La frecuencia de muestreo no tiene relación con la frecuencia de Nyquist
+
+  #. (2puntos) ¿Cuál(es) es(son) (los) propósito(s) general(es) del procesamiento de una señal temporal?
+      #. Extraer la convolución de la señal
+      #. Extraer información relativa al proceso descrito por la señal
+      #. Asociar las características de la señal con las características del proceso
+      #. Determinar que kernel de convolución es necesario para eliminar la frecuencia de 60Hz
+   
+   #. (2puntos) ¿Cuáles de las siguientes afirmaciones sobre la transformada rápida de Fourier son correctas?
+      #. Genera la representación de la señal en el dominio de la frecuencia.
+      #. Genera la representación de la señal en el dominio del tiempo.
+      #. Genera la representación de la señal en el dominio de la amplitud.
+      #. Es un algoritmo computacional.
+
+   #. (2puntos) A continuación marque las afirmaciones que considere correctas:
+      #. Un filtro tipo Butterworth no puede tener respuesta pasabanda.
+      #. Los filtros FIR (finite impulse response) siempre son estables.
+      #. Los filtros Butterworth se utilizan a menudo en aplicaciones de biomedicina porque tienen un rizado en la banda pasante.
+      #. Los filtros Chebyshev no se utilizan a menudo en aplicaciones de biomedicina porque tienen un rizado en la banda pasante.
+
+## Segunda sección (20 puntos)
+
+* Marque las opciones que considere correctas
+* Las preguntas de esta sección se basan en @fig-función.
+
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: fig-función
+#| fig-cap: Posible función de densidad de probabilidad.
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.linspace(0.0, 10.0, 1000)
+x = 0.125*t-0.25
+x[t <= 2] = 0
+x[t >=6] = 0
+plot1 = plt.figure()
+plot1.set_figheight(2)
+plt.plot(t, x)
+plt.grid()
+plt.xlabel("X")
+plt.ylabel("f(X)")
+plt.show()
+
+```
+
+
+
+   #. (20 puntos) ¿Cuáles de las siguientes afirmaciones considera correcta?
+      #. La función descrita en la Figura adjunta tiene naturaleza contínua.
+      #. La función descrita en la figura representa a una función de densidad de probabilidad.
+      #. La función se definió a trozos. Entre 0 y 2 la función vale 0. Entre 2 y 6 la función vale $0.25x - 0.5$. Finalmente, entre 6 y 10 la función vale 0.
+      #. El valor esperado de la función de densidad de probabilidad es 4.6667. Sugerencia tome 4 decimales y realice el redondeo.
+
+
+
+## Tercer sección(20 puntos)
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: fig-señal
+#| fig-cap: Señal Temporal
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+t = np.linspace(0, 5, 1000)
+x = (
+    10 * np.sin(2 * np.pi * t)
+    - 5 * np.sin(2 * np.pi * 2 * t)
+    + 6 * np.sin(2 * np.pi * 3 * t)
+)
+plot3 = plt.figure()
+plot3.set_figheight(2)
+plt.plot(t, x)
+plt.plot(t,x)
+plt.grid()
+plt.xlabel("Tiempo(s)")
+plt.ylabel("f(t)")
+plt.show()
+
+```
+
+* Se tiene que la señal f(t) está descrita por la ecuación $f\left(t\right) = 10sin\left(2\pi t\right) - 5sin\left(4\pi t\right)+6sin\left(6\pi t\right)$. Ver @fig-señal.
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: fig-muestreo
+#| fig-cap: Proceso de muestreo
+
+t = np.linspace(0, 5, 1000)
+x = (
+    10 * np.sin(2 * np.pi * t)
+    - 5 * np.sin(2 * np.pi * 2 * t)
+    + 6 * np.sin(2 * np.pi * 3 * t)
+)
+t1 = np.linspace(0, 5, 25)
+x1 = (
+    10 * np.sin(2 * np.pi * t1)
+    - 5 * np.sin(2 * np.pi * 2 * t1)
+    + 6 * np.sin(2 * np.pi * 3 * t1)
+)
+plot2 = plt.figure()
+plot2.set_figheight(2)
+plt.plot(t, x)
+plt.plot(t,x, "k.")
+plt.stem(t1,x1, 'r.')
+plt.grid()
+plt.xlabel("Tiempo(s)")
+plt.ylabel("f(t)")
+plt.show()
+
+```
+
+* Marque las opciones que considere correctas
+
+   
+   #. (10 puntos) ¿Cuáles de las siguientes afirmaciones considera correcta?
+      #. La frecuencia de Nyquist es 4Hz
+      #. Muestrear a 3Hz esta bien porque la máxima frecuencia de la señal es 1.5Hz
+      #. Si se sabe que se muestrea a 10Hz, la señal resultante tiene 50 muestras.
+      #. El espectro de magnitud de Fourier presenta 3 picos en 1Hz, 2Hz, 4Hz.
+      
+   #. (10 puntos) Si se tiene el proceso de muestreo visto en @fig-muestreo, marque las afirmaciones que considere correctas.
+      #. La frecuencia de muestreo es de 5Hz.
+      #. Existe aliasing.
+      #. La frecuencia de muestreo es de 10Hz
+      #. No existe aliasing
+
+\thisistheend
+\pagebreak
+
+
+
