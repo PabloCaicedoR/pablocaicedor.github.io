@@ -923,7 +923,7 @@ Apply the intensity transformation to the source image using the established cor
 **Step 5: Verify Similarity**
 Calculate the mean absolute difference between the transformed source image and the target image to verify their similarity.
 
-## Code
+## Result
 
 ```{python}
 #| echo: false
@@ -954,6 +954,39 @@ plt.show()
 
 # Verifica la similitud
 diff = np.mean(np.abs(img_t_match - elderly_gray))
+
+print(f'Diferencia media absoluta: {diff}')
+
+```
+
+## Code
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Histogram Matching Code
+
+# Cargar la imagen fuente y objetivo
+img_s = cv2.imread('imagen_fuente.jpg')
+img_t = cv2.imread('imagen_objetivo.jpg')
+
+# Calcula los histogramas
+hist_s = cv2.calcHist([img_s], [0], None, [256], [0, 256])
+hist_t = cv2.calcHist([img_t], [0], None, [256], [0, 256])
+
+# Calcula las CDF
+cdf_s = np.cumsum(hist_s)
+cdf_t = np.cumsum(hist_t)
+
+# Establece la correspondencia
+r_t = np.interp(cdf_s, cdf_t, np.arange(256))
+
+# Aplica la transformación
+img_t_match = cv2.LUT(img_s, r_t)
+
+# Verifica la similitud
+diff = np.mean(np.abs(img_t_match - img_t))
 
 print(f'Diferencia media absoluta: {diff}')
 
