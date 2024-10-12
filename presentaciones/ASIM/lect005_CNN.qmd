@@ -1,0 +1,154 @@
+---
+title: "Aprendizaje automático para el procesamiento de señales e imágenes médicas"
+description: "ASIM_M -- 104399"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2024-08-12"
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+
+use_python("/usr/bin/python3.12")
+
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+
+data_path<-"../../data"
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import scipy.io as sio
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+data_path="../../data/"
+
+```
+
+## What is Convolution?
+- **Convolution**: A mathematical operation used to extract features from input data.
+- **Filter/Kernels**:
+  - A small matrix (e.g., 3x3) that slides over the input.
+  - Detects patterns such as edges, textures, and colors.
+- **Stride**: Number of pixels by which the filter moves at each step.
+- **Padding**: Adds extra pixels around the border of the input, preserving spatial dimensions.
+
+
+## Convolution in Action
+- **Input**: A matrix of pixel values (e.g., an image).
+- **Output (Feature Map)**: A matrix where each value represents the result of applying the filter over a region of the input.
+  
+![](../../recursos/videos/convolution-2.gif){fig-align="center"}
+
+## What are CNNs?
+- **Definition**: CNNs are deep learning models primarily used for visual recognition tasks.
+- **Key Concept**: CNNs learn and detect hierarchical patterns in image data (e.g., edges, shapes, textures).
+- **Importance**: Automatically extract features, reducing the need for manual feature engineering.
+
+## Why CNNs?
+- **Fully Connected Networks** struggle with large images due to high dimensionality.
+- **CNNs** reduce the number of parameters by using local connectivity (convolutions) and weight sharing.
+- **Efficient in Learning**: They exploit spatial hierarchies in images.
+
+## CNN Architecture Overview
+- **Input Layer**: Raw image data (e.g., 28x28 pixels for MNIST).
+- **Convolutional Layer**: Detects features from input images using filters.
+- **Activation Function**: Typically ReLU to introduce non-linearity.
+- **Pooling Layer**: Reduces the spatial dimensions (downsampling).
+- **Fully Connected Layer**: Performs classification based on extracted features.
+
+## Activation Function (ReLU)
+- **Purpose**: Introduce non-linearity into the network, allowing CNNs to learn complex patterns.
+- **ReLU Formula**: \( f(x) = \max(0, x) \)
+- **Why ReLU?**: 
+  - Faster convergence compared to sigmoid or tanh.
+  - Avoids the vanishing gradient problem.
+
+## Pooling Layers
+- **Purpose**: Reduce the spatial dimensions of feature maps, decrease computational load, and control overfitting.
+- **Types of Pooling**:
+  - **Max Pooling**: Selects the maximum value within a specified window.
+  - **Average Pooling**: Calculates the average value within a specified window.
+- **Benefits**:
+  - Retains the most important features (Max Pooling).
+  - Smooths the feature maps (Average Pooling).
+- **Common Parameters**:
+  - **Kernel Size**: Size of the window (e.g., 2x2).
+  - **Stride**: Step size for moving the window.
+
+## Fully Connected Layers
+- **Flattening**: Converts the 2D feature maps into a 1D vector for input into fully connected layers.
+- **Fully Connected (Dense) Layers**: Every neuron in the previous layer is connected to every neuron in the next layer.
+- **Role**: Performs classification based on features learned from convolution and pooling layers.
+
+## Training CNNs
+
+- **Loss Function**: Cross-entropy loss is commonly used for classification tasks.
+- **Optimization**: Backpropagation combined with optimizers like stochastic gradient descent (SGD) or Adam.
+- **Training Concepts**:
+    - Epochs: Number of complete passes over the dataset.
+    - Mini-batches: Small subsets of the dataset used in each iteration.
+
+## Challenges
+
+- **Computational Resource**s: CNNs require powerful hardware (e.g., GPUs) for training large models.
+- **Large Datasets**: CNNs often need vast amounts of labeled data to perform well.
+- **Overfitting**: Common problem in CNNs when trained on small datasets. Solutions include:
+    - **Data augmentatio**n (rotating, flipping, or zooming images).
+    - **Dropout layers** to randomly drop neurons during training.
+
+## Future of CNNs
+
+- **Advanced Architectures**:
+  - **Residual Networks (ResNet)**: 
+    - Deeper networks can be trained by using skip connections to bypass layers and avoid the vanishing gradient problem.
+  - **Inception Networks**: 
+    - Utilize multiple filters of different sizes in parallel to capture features at different scales.
+  - **EfficientNet**: 
+    - Balances network depth, width, and resolution, creating more efficient models with fewer parameters while maintaining accuracy.
