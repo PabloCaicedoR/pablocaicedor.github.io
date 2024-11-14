@@ -347,16 +347,48 @@ $$c_{j, k} = \sum_{n} x[n] \, \psi_{j, k}(n)$$
 
 where:
 
-- $\psi_{j, k}(n)= \frac{1}{\sqrt{2}}\psi\left(\frac{n-2^{j}k}{2^{j}}\rigth)$ represents the scaled and translated versions of the mother wavelet $\psi$ 
+- $\psi_{j, k}(n)= \frac{1}{\sqrt{2}}\psi\left(\frac{n-2^{j}k}{2^{j}}\right)$ represents the scaled and translated versions of the mother wavelet $\psi$ 
 - $j$ is the scale index, and $k$ is the translation index.
 
 The decomposition typically consists of approximation and detail coefficients at each scale:
 
-Approximation coefficients : capture the low-frequency components.
-Detail coefficients 
-𝑑
-𝑗
-d 
-j
-​
-  capture the high-frequency components.
+Approximation coefficients $a_j$: capture the low-frequency components.
+Detail coefficients $d_j$ capture the high-frequency components.
+
+## Mathematical Expressions
+
+The inverse discrete wavelet transform reconstructs the original signal from its approximation and detail coefficients:
+$$x[n] = \sum_{j} \sum_{k} c_{j, k} \, \psi_{j, k}(n)$$
+
+This reconstruction process involves upsampling and filtering of the approximation and detail coefficients at each scale.
+
+## Using CWT
+
+- **Purpose:** The CWT is used when you need a highly detailed, continuous analysis of a signal over all possible scales and positions.
+- **Output:** CWT gives you a "heatmap" of wavelet coefficients, showing which frequencies (or scales) are present in the signal at each point in time. This allows for a continuous representation.
+- **Applications:** CWT is useful for analyzing signals where you want to see the evolution of frequencies over time, such as:
+  - Detecting subtle changes in frequencies over time (like brainwave analysis in EEG).
+  - Signals with non-repeating, transient features (like spikes in biomedical signals, e.g., ECG).
+- **Trade-Off:** CWT is more computationally expensive because it analyzes all scales and translations continuously. It gives lots of data but is slower and requires more memory.
+
+::: {.callout-important title="Use CWT when:"}
+- You need a detailed, continuous representation.
+- You want to detect subtle or fast-changing features across time.
+- You’re okay with higher computational costs to get very fine-grained analysis.
+:::
+
+## Using DWT
+
+- **Purpose:** The DWT is used when you want a compact, efficient representation of a signal, usually for compression or feature extraction. It analyzes only specific scales (powers of two), not continuously.
+- **Output:** DWT gives you a set of coefficients at each level (or scale), capturing information at that specific scale. It’s efficient and uses fewer data points.
+- **Applications:** DWT is ideal when you want to reduce the size of data or focus on a smaller set of frequencies, such as:
+  - Image and audio compression (like JPEG 2000 or MP3 formats).
+  - Feature extraction for machine learning (e.g., identifying specific patterns).
+  - De-noising signals by discarding certain scales that contain noise.
+- **Trade-Off:** DWT is computationally cheaper but less detailed than CWT. It doesn’t give a continuous heatmap but rather a discrete set of scales.
+
+::: {.callout-important title="Use DWT when:"}
+- You need a compact and efficient representation.
+- You’re focused on data compression, de-noising, or feature extraction.
+- You want faster computations with less data storage requirements.
+:::
