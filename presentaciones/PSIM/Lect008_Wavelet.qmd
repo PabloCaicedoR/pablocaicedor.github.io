@@ -187,18 +187,176 @@ plt.show()
 - Be oscillatory to capture frequency information.
 - (Optionally) have compact support for efficient computation and localization.
 
-## Zero Mean (Admissibility Condition)
-
+## I 
+::: {.callout-important title="Zero Mean (Admissibility Condition)"}
 The function must have an average value of zero. Mathematically, this is expressed as:
 
 $$\int_{-\infty}^{\infty} \psi(t) \, dt = 0$$
 
 This condition ensures that the wavelet can detect changes or "details" in the signal rather than its average or constant components.
+:::
 
-## Square Integrability
+## II
 
+::: {.callout-important title="Square Integrability"}
 The function $\psi(t)$  must be square integrable, meaning it has finite energy:
 
 $$\int_{-\infty}^{\infty} |\psi(t)|^2 \, dt < \infty$$
 
+This requirement ensures that the wavelet’s energy is finite, making it possible to localize the function in both time and frequency domains. Functions that satisfy this belong to the $L^2(\rm I\!R)$ space, which is the space of all functions with finite energy.
 :::
+
+## III
+
+::: {.callout-important title="Admissibility Constant"}
+The wavelet's Fourier transform, $\hat{\psi}(\omega)$, should satisfy the admissibility condition:
+
+$$C_\psi = \int_{-\infty}^{\infty} \frac{|\hat{\psi}(\omega)|^2}{|\omega|} \, d\omega < \infty$$
+
+where $\hat{\psi}(\omega)$ is the Fourier transform of $\psi(t)$, and $\omega$ represents angular frequency. This condition implies that $\hat{\psi}(\omega)$ must approach zero as $\omega \rightarrow 0$ meaning the wavelet has no component at zero frequency (or DC component). This condition is crucial for ensuring that the wavelet transform is invertible.
+:::
+
+## IV
+
+::: {.callout-important title="Oscillatory Nature"}
+A mother wavelet should generally be oscillatory or "wavelike" (hence the term "wavelet"). This oscillatory behavior allows the wavelet to capture variations in the signal. For example, wavelets like the Morlet wavelet resemble decaying sinusoids. This oscillatory nature helps the wavelet capture both high-frequency and low-frequency components effectively.
+:::
+
+## V
+::: {.callout-important title="Compact Support"}
+Although not strictly necessary, compact support is often a desirable property. Compact support means that the function is non-zero only over a finite interval, making it well-localized in time. This allows for efficient computation and good localization in the time domain. For example, the Haar wavelet has compact support, while others, like the Morlet wavelet, do not have strict compact support but still decay rapidly.
+:::
+
+
+:::
+
+## A wavelet transformation
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Time Feature Detection
+
+import numpy as np
+import pywt
+import matplotlib.pyplot as plt
+
+# Generate a synthetic signal with features
+np.random.seed(0)
+t = np.linspace(0, 1, 500)
+signal = np.sin(2 * np.pi * 5 * t)  # Base signal (5 Hz)
+signal[100:120] += 2  # Add a spike (feature at t=0.2)
+signal[300:320] -= 1.5  # Add another feature (t=0.6)
+
+# Perform wavelet decomposition (using Daubechies 4 wavelet)
+wavelet = "db4"
+max_level = 5  # Maximum decomposition level
+coeffs = pywt.wavedec(signal, wavelet, level=max_level)
+
+# Plot the original signal with features
+plt.figure(figsize=(10, 6))
+plt.subplot(3, 1, 1)
+plt.plot(t, signal, label="Original Signal with Features", color="black")
+plt.title("Original Signal")
+plt.xlim(0, 1)
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.legend()
+
+# Plot the wavelet transform coefficients at different levels
+for i in range(1, max_level + 1):
+    plt.subplot(3, 2, i + 1)
+    # Plot detail coefficients for the current level
+    # Zero out other levels to highlight the current level's detail coefficients
+    coeffs_temp = [
+        coeffs[0] if j == 0 else np.zeros_like(coeff) for j, coeff in enumerate(coeffs)
+    ]
+    coeffs_temp[i] = coeffs[i]  # Keep the detail coefficients for level i
+
+    # Reconstruct the signal using only the current level's details
+    feature_detection = pywt.waverec(coeffs_temp, wavelet)
+    plt.plot(
+        t,
+        feature_detection[: len(signal)],
+        label=f"Level {i} Feature Detection",
+        color="red",
+    )
+    plt.title(f"Detected Features - Level {i}")
+    plt.xlim(0, 1)
+    plt.xlabel("Time")
+    plt.ylabel("Amplitude")
+    plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+```
+
+## A wavelet transformation
+
+![](../../recursos/videos/wavelet_transform01t.gif)
+
+## Mathematical Expressions
+
+The continuous wavelet transform of a signal $f(t)$ is defined as:
+
+$$W_f(a, b) = \int_{-\infty}^{\infty} f(t) \, \psi^*\left(\frac{t - b}{a}\right) \, dt$$
+
+where:
+
+- $f(t)$ is the input signal,
+- $\psi$ is the mother wavelet,
+- $a$ is the scale parameter (controls the width of the wavelet),
+- $b$ is the translation parameter (controls the position of the wavelet),
+- $\psi^*$  denotes the complex conjugate of the mother wavelet.
+## Mathematical Expressions
+
+The continuous wavelet transform of a signal $f(t)$ is defined as:
+
+$$W_f(a, b) = \int_{-\infty}^{\infty} f(t) \, \psi^*\left(\frac{t - b}{a}\right) \, dt$$
+
+where:
+
+- $f(t)$ is the input signal,
+- $\psi$ is the mother wavelet,
+- $a$ is the scale parameter (controls the width of the wavelet),
+- $b$ is the translation parameter (controls the position of the wavelet),
+- $\psi^*$  denotes the complex conjugate of the mother wavelet.
+
+## Mathematical Expressions
+
+The inverse continuous wavelet transform is given by:
+
+$$f(t) = \frac{1}{C_{\psi}} \int_{0}^{\infty} \int_{-\infty}^{\infty} W_f(a, b) \, \psi\left(\frac{t - b}{a}\right) \frac{db \, da}{a^2}$$
+
+where:
+
+where $C_{\psi}$ is a normalization constant, defined as:
+
+$$C_{\psi} = \int_{0}^{\infty} \frac{|\hat{\psi}(\omega)|^2}{\omega} \, d\omega$$
+
+and $\hat{\psi}(\omega)$  is the Fourier transform of the wavelet $\psi(t)$.
+
+## Mathematical Expressions
+
+The discrete wavelet transform decomposes the signal at discrete levels of scale. For a signal $x[n]$, the wavelet decomposition is defined as:
+
+$$c_{j, k} = \sum_{n} x[n] \, \psi_{j, k}(n)$$
+
+where:
+
+- $\psi_{j, k}(n)= \frac{1}{\sqrt{2}}\psi\left(\frac{n-2^{j}k}{2^{j}}\rigth)$ represents the scaled and translated versions of the mother wavelet $\psi$ 
+- $j$ is the scale index, and $k$ is the translation index.
+
+The decomposition typically consists of approximation and detail coefficients at each scale:
+
+Approximation coefficients : capture the low-frequency components.
+Detail coefficients 
+𝑑
+𝑗
+d 
+j
+​
+  capture the high-frequency components.
