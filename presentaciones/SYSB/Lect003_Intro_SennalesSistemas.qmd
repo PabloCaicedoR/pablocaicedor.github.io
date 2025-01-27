@@ -1,0 +1,570 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-01-20"
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+```
+
+# Sistemas y Señales Biomedicos - SYSB
+
+## Signal Classification
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Mapa Conceptual 01
+
+mermaid("
+graph TD
+  A[Signal Classification]
+  B[Time]
+  C[Amplitude]
+  D[Continous]
+  E[Discrete]
+  F[Continous]
+  G[Discrete]
+  A --> B
+  A --> C
+  B --> D
+  B --> E
+  C --> F
+  C --> G
+")
+
+
+```
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Graph 01
+
+# Parameters
+signal_frequency = 5  # Frequency of the signal in Hz
+sampling_frequency = (
+    100  # Sampling frequency in Hz (at least 2 * signal_frequency for Nyquist)
+)
+duration = 1  # Duration of the signal in seconds
+quantization_levels = 8  # Number of quantization levels
+
+# Generate the continuous signal
+t_continuous = np.linspace(0, duration, 1000)  # High-resolution time vector
+continuous_signal = np.sin(2 * np.pi * signal_frequency * t_continuous)
+
+# Generate the sampled signal
+t_sampled = np.arange(0, duration, 1 / sampling_frequency)  # Sampling instants
+sampled_signal = np.sin(2 * np.pi * signal_frequency * t_sampled)
+
+# Quantize the sampled signal
+quantized_signal = np.round(sampled_signal * (quantization_levels / 2 - 1)) / (
+    quantization_levels / 2 - 1
+)
+
+# Zero-order hold quantization: extend the quantized value to the next sampling time
+t_zero_hold = np.repeat(t_sampled, 2)[1:]  # Repeat and shift time vector
+quantized_zero_hold = np.repeat(quantized_signal, 2)[
+    :-1
+]  # Repeat quantized values for hold effect
+
+# Create subplots
+fig, axs = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+
+# Plot continuous signal
+axs[0].plot(
+    t_continuous,
+    continuous_signal,
+    label="Continuous Signal",
+    linewidth=2,
+    color="blue",
+)
+axs[0].set_title("Continuous Signal", fontsize=14)
+axs[0].set_ylabel("Amplitude", fontsize=12)
+axs[0].grid(True)
+axs[0].legend(fontsize=12)
+
+# Plot sampled signal
+axs[1].stem(
+    t_sampled,
+    sampled_signal,
+    linefmt="r",
+    markerfmt="ro",
+    basefmt="gray",
+    label="Sampled Signal",
+)
+axs[1].set_title("Sampled Signal", fontsize=14)
+axs[1].set_ylabel("Amplitude", fontsize=12)
+axs[1].grid(True)
+axs[1].legend(fontsize=12)
+
+# Plot zero-order hold quantized signal
+axs[2].plot(
+    t_zero_hold,
+    quantized_zero_hold,
+    label="Zero-Order Hold Quantized Signal",
+    linestyle="-",
+    color="green",
+    linewidth=2,
+)
+axs[2].set_title("Zero-Order Hold Quantized Signal", fontsize=14)
+axs[2].set_xlabel("Time (s)", fontsize=12)
+axs[2].set_ylabel("Amplitude", fontsize=12)
+axs[2].grid(True)
+axs[2].legend(fontsize=12)
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+```
+
+:::
+::::
+
+## Signal Classification -- Bounded
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Graph 02
+
+# Parameters
+duration = 2  # Duration of the signals in seconds
+t = np.linspace(0, duration, 1000)  # Time vector for continuous signals
+
+# Bounded signal
+bounded_signal = np.sin(2 * np.pi * 2 * t)  # Sinusoidal signal (bounded between -1 and 1)
+
+# Unbounded signal
+unbounded_signal = np.exp(t)  # Exponentially increasing signal (unbounded)
+
+# Create subplots
+fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+# Plot bounded signal
+axs[0].plot(t, bounded_signal, label="Bounded Signal (Sine Wave)", color="blue", linewidth=2)
+axs[0].set_title("Bounded Signal", fontsize=14)
+axs[0].set_ylabel("Amplitude", fontsize=12)
+axs[0].grid(True)
+axs[0].legend(fontsize=12)
+
+# Plot unbounded signal
+axs[1].plot(t, unbounded_signal, label="Unbounded Signal (Exponential)", color="red", linewidth=2)
+axs[1].set_title("Unbounded Signal", fontsize=14)
+axs[1].set_xlabel("Time (s)", fontsize=12)
+axs[1].set_ylabel("Amplitude", fontsize=12)
+axs[1].grid(True)
+axs[1].legend(fontsize=12)
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+
+```
+
+## Signal Classification -- Compact Support
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: GRaph 03
+
+# Parameters
+duration = 2  # Total time in seconds
+t = np.linspace(-1, 3, 1000)  # Time vector
+
+# Compact support signal: parabola within a specific range (0 to 2)
+compact_support_signal = np.where((t >= 0) & (t <= 2), 1 - (t - 1) ** 2, 0)  # Parabola only in [0, 2]
+
+# Define the support range for highlighting
+support_start, support_end = 0, 2
+
+# Plot the signal
+plt.figure(figsize=(10, 6))
+
+# Plot the compact support signal
+plt.plot(t, compact_support_signal, label="Compact Support Signal", color="blue", linewidth=2)
+
+# Highlight the support in red
+plt.axvspan(support_start, support_end, color="red", alpha=0.2, label="Support [0, 2]")
+
+# Configure the plot
+plt.title("Compact Support Signal", fontsize=14)
+plt.xlabel("Time (s)", fontsize=12)
+plt.ylabel("Amplitude", fontsize=12)
+plt.legend(fontsize=12)
+plt.grid(True)
+plt.show()
+
+```
+
+## Signal Classification -- Causal
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Graph 04
+
+# Parameters
+t = np.linspace(-3, 3, 1000)  # Time vector
+
+# Causal signal: exponential decay starting at t = 0
+causal_signal = np.where(t >= 0, np.exp(-t), 0)
+
+# Non-causal signal: exponential decay starting before t = 0
+non_causal_signal = np.where(t <= 0, np.exp(t), 0)
+
+# Bilateral signal: exponential decay symmetric around t = 0
+bilateral_signal = np.exp(-np.abs(t))
+
+# Create subplots
+fig, axs = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
+
+# Plot causal signal
+axs[0].plot(t, causal_signal, label="Causal Signal", color="blue", linewidth=2)
+axs[0].set_title("Causal Signal", fontsize=14)
+axs[0].set_ylabel("Amplitude", fontsize=12)
+axs[0].grid(True)
+axs[0].legend(fontsize=12)
+
+# Plot non-causal signal
+axs[1].plot(t, non_causal_signal, label="Non-Causal Signal", color="red", linewidth=2)
+axs[1].set_title("Non-Causal Signal", fontsize=14)
+axs[1].set_ylabel("Amplitude", fontsize=12)
+axs[1].grid(True)
+axs[1].legend(fontsize=12)
+
+# Plot bilateral signal
+axs[2].plot(t, bilateral_signal, label="Bilateral Signal", color="green", linewidth=2)
+axs[2].set_title("Bilateral Signal", fontsize=14)
+axs[2].set_xlabel("Time (s)", fontsize=12)
+axs[2].set_ylabel("Amplitude", fontsize=12)
+axs[2].grid(True)
+axs[2].legend(fontsize=12)
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+```
+
+## Signal Classification - Even/Odd
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+::: {.callout-note title="Even"}
+
+$$f\left(t\right) = f\left(-t\right)$$
+$$f\left[t\right] = f\left[-t\right]$$
+
+:::
+
+::: {.callout-note title="Odd"}
+
+$$f\left(t\right) = -f\left(-t\right)$$
+$$f\left[t\right] = -f\left[-t\right]$$
+
+:::
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Graph 05
+
+# Parameters
+t = np.linspace(-5, 5, 1000)  # Time vector
+
+# Even signal: cosine function (symmetric about the y-axis)
+even_signal = np.cos(t)
+
+# Uneven signal: sine function (anti-symmetric about the origin)
+uneven_signal = np.sin(t)
+
+# Create subplots
+fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+# Plot even signal
+axs[0].plot(t, even_signal, label="Even Signal (Cosine)", color="blue", linewidth=2)
+axs[0].set_title("Even Signal", fontsize=14)
+axs[0].set_ylabel("Amplitude", fontsize=12)
+axs[0].grid(True)
+axs[0].legend(fontsize=12)
+
+# Plot uneven signal
+axs[1].plot(t, uneven_signal, label="Uneven Signal (Sine)", color="red", linewidth=2)
+axs[1].set_title("Uneven Signal", fontsize=14)
+axs[1].set_xlabel("Time (s)", fontsize=12)
+axs[1].set_ylabel("Amplitude", fontsize=12)
+axs[1].grid(True)
+axs[1].legend(fontsize=12)
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+
+```
+
+:::
+::::
+
+## Signal Classification
+
+::: {.callout-note title="Decomposition"}
+All signal can be decomposed in two signals: one even, one odd.
+
+$$x(t) = x_{even}(t) + x_{odd}(t)$$
+:::
+
+Where:
+
+$$x_{even}(t) = \frac{x(t)+x(-t)}{2} $$
+$$x_{odd}(t) = \frac{x(t)-x(-t)}{2} $$
+
+## Example
+
+::: {.callout-tip title="Example"}
+Decompose the signal $x(t)=e^{t}$ into its even and odd parts
+:::
+
+## Example
+
+$$x_{\text{even}}(t) = \frac{x(t) + x(-t)}{2}$$
+
+$$x_{\text{odd}}(t) = \frac{x(t) - x(-t)}{2}$$
+
+$$x(-t) = e^{-t}$$
+
+$$x_{\text{even}}(t) = \frac{e^t + e^{-t}}{2} = \cosh(t)$$
+
+$$x_{\text{odd}}(t) = \frac{e^t - e^{-t}}{2} = \sinh(t)$$
+
+$$x(t) = x_{\text{even}}(t) + x_{\text{odd}}(t)$$
+
+$$e^t = \cosh(t) + \sinh(t)$$
+​
+
+
+## Example
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Graph 06
+
+# Time vector
+t = np.linspace(-3, 3, 500)
+
+# Define the original function and its components
+f_t = np.exp(t)  # Original function: e^t
+f_even = (np.exp(t) + np.exp(-t)) / 2  # Even part: cosh(t)
+f_odd = (np.exp(t) - np.exp(-t)) / 2  # Odd part: sinh(t)
+
+# Create the subplots
+fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+
+# Plot the original function
+axs[0].plot(t, f_t, label=r"$f(t) = e^t$", color="blue", linewidth=2)
+axs[0].set_title("Original Function", fontsize=14)
+axs[0].set_ylabel("Amplitude", fontsize=12)
+axs[0].legend(fontsize=12)
+axs[0].grid(True)
+
+# Plot the even part
+axs[1].plot(t, f_even, label=r"$f_{\text{even}}(t) = \cosh(t)$", color="green", linewidth=2)
+axs[1].set_title("Even Part of the Function", fontsize=14)
+axs[1].set_ylabel("Amplitude", fontsize=12)
+axs[1].legend(fontsize=12)
+axs[1].grid(True)
+
+# Plot the odd part
+axs[2].plot(t, f_odd, label=r"$f_{\text{odd}}(t) = \sinh(t)$", color="red", linewidth=2)
+axs[2].set_title("Odd Part of the Function", fontsize=14)
+axs[2].set_xlabel("Time (s)", fontsize=12)
+axs[2].set_ylabel("Amplitude", fontsize=12)
+axs[2].legend(fontsize=12)
+axs[2].grid(True)
+
+# Adjust layout
+plt.tight_layout()
+plt.show()
+
+```
+
+## Signal Transformations
+
+### Types of Transformations
+Signals can undergo two types of transformations:
+
+1. **Independent variable transformations** (affect the time or input axis).
+2. **Dependent variable transformations** (affect the amplitude or output axis).
+
+---
+
+## Independent Variable Transformations
+
+### Time Scaling
+- Definition: Changes the time scale of the signal.
+\[
+x(at), \quad a > 1 \text{ (compression)}, \quad 0 < a < 1 \text{ (expansion)}
+\]
+- Example: If \( x(t) = \sin(t) \), then \( x(2t) \) is compressed.
+
+### Time Shifting
+- Definition: Shifts the signal in time.
+\[
+x(t - t_0) \quad \text{(right shift if \( t_0 > 0 \), left shift if \( t_0 < 0 \))}
+\]
+- Example: \( x(t - 2) \) shifts the signal 2 units to the right.
+
+### Time Reversal
+- Definition: Flips the signal across the vertical axis.
+\[
+x(-t)
+\]
+- Example: If \( x(t) = t^2 \), then \( x(-t) = t^2 \) (even signal).
+
+---
+
+## Dependent Variable Transformations
+
+### Amplitude Scaling
+- Definition: Multiplies the amplitude by a scalar factor.
+\[
+a \cdot x(t), \quad a > 1 \text{ (amplification)}, \quad 0 < a < 1 \text{ (attenuation)}
+\]
+- Example: If \( x(t) = \sin(t) \), then \( 2x(t) \) doubles the amplitude.
+
+### Amplitude Shifting
+- Definition: Adds a constant value to the amplitude.
+\[
+x(t) + c
+\]
+- Example: If \( x(t) = \cos(t) \), then \( x(t) + 2 \) shifts the signal up by 2 units.
+
+---
+
+## Combined Transformations
+
+### Example
+Consider:
+\[
+y(t) = 2 \cdot x(3t - 1) + 1
+\]
+1. **Time compression**: \( x(3t) \) compresses the signal.
+2. **Time shift**: \( x(3t - 1) \) shifts it to the right by 1 unit.
+3. **Amplitude scaling**: \( 2 \cdot x(3t - 1) \) amplifies the signal.
+4. **Amplitude shift**: \( +1 \) shifts it upward.
+
+---
+
+## Visualization Example in Python
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Graph 07
+
+
+t = np.linspace(-2, 2, 500)
+x_t = np.sin(2 * np.pi * t)
+
+# Original Signal
+y1 = x_t
+
+# Transformation: 2 * sin(3t - 1) + 1
+t_new = 3 * t - 1
+y2 = 2 * np.sin(2 * np.pi * t_new) + 1
+
+plt.figure(figsize=(10, 6))
+plt.plot(t, y1, label="Original Signal: $x(t) = \sin(2\pi t)$", color="blue")
+plt.plot(t, y2, label="Transformed Signal: $2\sin(2\pi(3t-1)) + 1$", color="red")
+plt.legend(fontsize=12)
+plt.grid()
+plt.title("Signal Transformations")
+plt.xlabel("Time (t)")
+plt.ylabel("Amplitude")
+plt.show()
+```
