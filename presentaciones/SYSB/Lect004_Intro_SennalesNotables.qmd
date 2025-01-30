@@ -1,0 +1,715 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-01-20"
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+```
+
+# Sistemas y Señales Biomedicos - SYSB
+
+## Unit Step
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+::: {.callout-note title="Continous"}
+$$u(t) =
+\begin{cases} 
+0, & t < 0 \\
+1, & t \geq 0
+\end{cases}$$
+:::
+
+::: {.callout-note title="Discrete"}
+$$u[n] =
+\begin{cases} 
+0, & n < 0 \\
+1, & n \geq 0
+\end{cases}$$
+:::
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Escalón Unitario
+
+# Define the time range
+t_continuous = np.linspace(-2, 2, 400)
+t_discrete = np.arange(-2, 3, 1)
+
+# Define the unit step function
+u_continuous = np.heaviside(t_continuous, 1)
+u_discrete = np.heaviside(t_discrete, 1)
+
+# Create figure and axes
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+
+# Plot the continuous unit step function
+axes[0].plot(t_continuous, u_continuous, label="Continuous Step Function", linewidth=2)
+axes[0].set_xlabel("Time (t)")
+axes[0].set_ylabel("Amplitude")
+axes[0].set_title("Continuous Unit Step Function")
+axes[0].grid(True)
+axes[0].legend()
+
+# Plot the discrete unit step function
+axes[1].stem(
+    t_discrete,
+    u_discrete,
+    linefmt="b-",
+    markerfmt="bo",
+    basefmt="r-",
+    label="Discrete Step Function",
+)
+axes[1].set_xlabel("Time (n)")
+axes[1].set_ylabel("Amplitude")
+axes[1].set_title("Discrete Unit Step Function")
+axes[1].grid(True)
+axes[1].legend()
+
+# Show the plots
+plt.tight_layout()
+plt.show()
+```
+
+:::
+::::
+
+## Unit Ramp
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+::: {.callout-note title="Continous"}
+$$u(t) =
+\begin{cases} 
+0, & t < 0 \\
+t, & t \geq 0
+\end{cases}$$
+:::
+
+::: {.callout-note title="Discrete"}
+$$u[n] =
+\begin{cases} 
+0, & n < 0 \\
+n, & n \geq 0
+\end{cases}$$
+:::
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Rampa Unitario
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# Define the time range
+t_continuous = np.linspace(-2, 2, 400)
+t_discrete = np.arange(-2, 3, 0.2)
+
+# Define the unit step function
+u_continuous = np.maximum(0,t_continuous)
+u_discrete = np.maximum(0,t_discrete)
+
+# Create figure and axes
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+
+# Plot the continuous unit step function
+axes[0].plot(t_continuous, u_continuous, label="Continuous Step Function", linewidth=2)
+axes[0].set_xlabel("Time (t)")
+axes[0].set_ylabel("Amplitude")
+axes[0].set_title("Continuous Unit Step Function")
+axes[0].grid(True)
+axes[0].legend()
+
+# Plot the discrete unit step function
+axes[1].stem(
+    t_discrete,
+    u_discrete,
+    linefmt="b-",
+    markerfmt="bo",
+    basefmt="r-",
+    label="Discrete Step Function",
+)
+axes[1].set_xlabel("Time (n)")
+axes[1].set_ylabel("Amplitude")
+axes[1].set_title("Discrete Unit Step Function")
+axes[1].grid(True)
+axes[1].legend()
+
+# Show the plots
+plt.tight_layout()
+plt.show()
+```
+
+:::
+::::
+
+## Sync Function
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+::: {.callout-note title="Continous"}
+$$\text{sinc}(t) =
+\begin{cases} 
+\frac{\sin(\pi t)}{\pi t}, & t \neq 0 \\
+1, & t = 0
+\end{cases}$$
+:::
+
+::: {.callout-note title="Discrete"}
+$$\text{sinc}[n] =
+\begin{cases} 
+\frac{\sin(\pi n)}{\pi n}, & n \neq 0 \\
+1, & n = 0
+\end{cases}$$
+:::
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Funcion Sync
+
+# Define the time range
+t_continuous = np.linspace(-10, 10, 400)
+t_discrete = np.arange(-10, 11, 1)
+
+# Define the sinc function
+sinc_continuous = np.sinc(t_continuous / np.pi)
+sinc_discrete = np.sinc(t_discrete / np.pi)
+
+# Create figure and axes
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))
+
+# Plot the continuous sinc function
+axes[0].plot(
+    t_continuous, sinc_continuous, label="Continuous Sinc Function", linewidth=2
+)
+axes[0].set_xlabel("Time (t)")
+axes[0].set_ylabel("Amplitude")
+axes[0].set_title("Continuous Sinc Function")
+axes[0].grid(True)
+axes[0].legend()
+
+# Plot the discrete sinc function
+axes[1].stem(
+    t_discrete,
+    sinc_discrete,
+    linefmt="b-",
+    markerfmt="bo",
+    basefmt="r-",
+    label="Discrete Sinc Function",
+)
+axes[1].set_xlabel("Time (n)")
+axes[1].set_ylabel("Amplitude")
+axes[1].set_title("Discrete Sinc Function")
+axes[1].grid(True)
+axes[1].legend()
+
+# Show the plots
+plt.tight_layout()
+plt.show()
+```
+
+:::
+::::
+
+## Dirac's Delta
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+::: {.callout-note title="Continous"}
+$$\delta(t) =
+\begin{cases} 
++\infty, & t = 0 \\
+0, & t \neq 0
+\end{cases}$$
+
+$\int_{-\infty}^{\infty} \delta(t) dt = 1$
+:::
+
+::: {.callout-note title="Discrete"}
+$$\delta[n] =
+\begin{cases} 
+1, & n = 0 \\
+0, & n \neq 0
+\end{cases}$$
+:::
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Delta Dirac
+
+# Define the time range for the discrete delta function
+t_discrete = np.arange(-5, 6, 1)
+delta_discrete = np.zeros_like(t_discrete)
+delta_discrete[t_discrete == 0] = 1
+
+# Create figure and axes
+fig, ax = plt.subplots(figsize=(8, 5))
+
+# Plot the discrete Dirac delta function
+ax.stem(
+    t_discrete,
+    delta_discrete,
+    linefmt="b-",
+    markerfmt="bo",
+    basefmt="r-",
+    label="Discrete Dirac Delta Function",
+)
+ax.set_xlabel("Time (n)")
+ax.set_ylabel("Amplitude")
+ax.set_title("Discrete Dirac Delta Function")
+ax.grid(True)
+ax.legend()
+
+# Show the plot
+plt.show()
+```
+
+:::
+::::
+
+## Basic Transformations on Singular signals -- Translation in time
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Translation
+
+t0 = 2  # Translation value
+t = np.linspace(-5, 5, 400)
+
+# Unit Step Function
+u_t = np.heaviside(t - t0, 1)
+
+# Unit Ramp Function
+r_t = np.maximum(t - t0, 0)
+
+# Sinc Function
+sinc_t = np.sinc(t - t0)
+
+# Dirac Delta Function (Approximated as a narrow Gaussian)
+delta_t = np.exp(-100 * (t - t0) ** 2)
+
+# Plot all functions in a single figure
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# Unit Step Function
+axes[0, 0].plot(t, u_t, label="Shifted Unit Step Function", linewidth=2)
+axes[0, 0].set_title("Time-Shifted Unit Step Function")
+axes[0, 0].set_xlabel("Time (t)")
+axes[0, 0].set_ylabel("Amplitude")
+axes[0, 0].grid(True)
+axes[0, 0].legend()
+
+# Unit Ramp Function
+axes[0, 1].plot(t, r_t, label="Shifted Unit Ramp Function", linewidth=2)
+axes[0, 1].set_title("Time-Shifted Unit Ramp Function")
+axes[0, 1].set_xlabel("Time (t)")
+axes[0, 1].set_ylabel("Amplitude")
+axes[0, 1].grid(True)
+axes[0, 1].legend()
+
+# Sinc Function
+axes[1, 0].plot(t, sinc_t, label="Shifted Sinc Function", linewidth=2)
+axes[1, 0].set_title("Time-Shifted Sinc Function")
+axes[1, 0].set_xlabel("Time (t)")
+axes[1, 0].set_ylabel("Amplitude")
+axes[1, 0].grid(True)
+axes[1, 0].legend()
+
+# Dirac Delta Function
+axes[1, 1].plot(t, delta_t, label="Shifted Dirac Delta Function (Approx.)", linewidth=2)
+axes[1, 1].set_title("Time-Shifted Dirac Delta Function (Approx.)")
+axes[1, 1].set_xlabel("Time (t)")
+axes[1, 1].set_ylabel("Amplitude")
+axes[1, 1].grid(True)
+axes[1, 1].legend()
+
+# Adjust layout and show the plot
+plt.tight_layout()
+plt.show()
+
+```
+
+## Basic Transformations on Singular signals -- Translation in amplitude
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Translation in amplitude
+
+A = 2  # Amplitude translation value
+t = np.linspace(-5, 5, 400)
+
+# Unit Step Function (Amplitude Shifted)
+u_t = np.heaviside(t, 1) + A
+
+# Unit Ramp Function (Amplitude Shifted)
+r_t = np.maximum(t, 0) + A
+
+# Sinc Function (Amplitude Shifted)
+sinc_t = np.sinc(t) + A
+
+# Dirac Delta Function (Approximated as a narrow Gaussian, Amplitude Shifted)
+delta_t = np.exp(-100 * t**2) + A
+
+# Plot all functions in a single figure
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# Unit Step Function
+axes[0, 0].plot(t, u_t, label="Amplitude-Shifted Unit Step", linewidth=2)
+axes[0, 0].set_title("Amplitude-Shifted Unit Step Function")
+axes[0, 0].set_xlabel("Time (t)")
+axes[0, 0].set_ylabel("Amplitude")
+axes[0, 0].grid(True)
+axes[0, 0].legend()
+
+# Unit Ramp Function
+axes[0, 1].plot(t, r_t, label="Amplitude-Shifted Unit Ramp", linewidth=2)
+axes[0, 1].set_title("Amplitude-Shifted Unit Ramp Function")
+axes[0, 1].set_xlabel("Time (t)")
+axes[0, 1].set_ylabel("Amplitude")
+axes[0, 1].grid(True)
+axes[0, 1].legend()
+
+# Sinc Function
+axes[1, 0].plot(t, sinc_t, label="Amplitude-Shifted Sinc Function", linewidth=2)
+axes[1, 0].set_title("Amplitude-Shifted Sinc Function")
+axes[1, 0].set_xlabel("Time (t)")
+axes[1, 0].set_ylabel("Amplitude")
+axes[1, 0].grid(True)
+axes[1, 0].legend()
+
+# Dirac Delta Function
+axes[1, 1].plot(
+    t, delta_t, label="Amplitude-Shifted Dirac Delta (Approx.)", linewidth=2
+)
+axes[1, 1].set_title("Amplitude-Shifted Dirac Delta Function (Approx.)")
+axes[1, 1].set_xlabel("Time (t)")
+axes[1, 1].set_ylabel("Amplitude")
+axes[1, 1].grid(True)
+axes[1, 1].legend()
+
+# Adjust layout and show the plot
+plt.tight_layout()
+plt.show()
+
+```
+
+## Basic Transformations on Singular signals -- scailing in time
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: scailing in time
+
+alpha = 2  # Time scaling factor
+t = np.linspace(-5, 5, 400)
+
+# Scaled functions
+u_t = np.heaviside(alpha * t, 1)  # Scaled Unit Step
+r_t = np.maximum(alpha * t, 0)  # Scaled Unit Ramp
+sinc_t = np.sinc(alpha * t)  # Scaled Sinc
+delta_t = np.exp(-100 * (alpha * t) ** 2)  # Scaled Dirac Delta (approximated)
+
+# Plot all functions in a single figure
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# Unit Step Function
+axes[0, 0].plot(t, u_t, label="Time-Scaled Unit Step", linewidth=2)
+axes[0, 0].set_title("Time-Scaled Unit Step Function")
+axes[0, 0].set_xlabel("Time (t)")
+axes[0, 0].set_ylabel("Amplitude")
+axes[0, 0].grid(True)
+axes[0, 0].legend()
+
+# Unit Ramp Function
+axes[0, 1].plot(t, r_t, label="Time-Scaled Unit Ramp", linewidth=2)
+axes[0, 1].set_title("Time-Scaled Unit Ramp Function")
+axes[0, 1].set_xlabel("Time (t)")
+axes[0, 1].set_ylabel("Amplitude")
+axes[0, 1].grid(True)
+axes[0, 1].legend()
+
+# Sinc Function
+axes[1, 0].plot(t, sinc_t, label="Time-Scaled Sinc Function", linewidth=2)
+axes[1, 0].set_title("Time-Scaled Sinc Function")
+axes[1, 0].set_xlabel("Time (t)")
+axes[1, 0].set_ylabel("Amplitude")
+axes[1, 0].grid(True)
+axes[1, 0].legend()
+
+# Dirac Delta Function
+axes[1, 1].plot(t, delta_t, label="Time-Scaled Dirac Delta (Approx.)", linewidth=2)
+axes[1, 1].set_title("Time-Scaled Dirac Delta Function (Approx.)")
+axes[1, 1].set_xlabel("Time (t)")
+axes[1, 1].set_ylabel("Amplitude")
+axes[1, 1].grid(True)
+axes[1, 1].legend()
+
+# Adjust layout and show the plot
+plt.tight_layout()
+plt.show()
+
+```
+
+## Basic Transformations on Singular signals -- scailing in amplitude
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: scailing in amplitude
+
+beta = 2  # Amplitude scaling factor
+t = np.linspace(-5, 5, 400)
+
+# Scaled functions
+u_t = beta * np.heaviside(t, 1)  # Amplitude-Scaled Unit Step
+r_t = beta * np.maximum(t, 0)  # Amplitude-Scaled Unit Ramp
+sinc_t = beta * np.sinc(t)  # Amplitude-Scaled Sinc
+delta_t = beta * np.exp(-100 * t ** 2)  # Amplitude-Scaled Dirac Delta (approximated)
+
+# Plot all functions in a single figure
+fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+
+# Unit Step Function
+axes[0, 0].plot(t, u_t, label="Amplitude-Scaled Unit Step", linewidth=2)
+axes[0, 0].set_title("Amplitude-Scaled Unit Step Function")
+axes[0, 0].set_xlabel("Time (t)")
+axes[0, 0].set_ylabel("Amplitude")
+axes[0, 0].grid(True)
+axes[0, 0].legend()
+
+# Unit Ramp Function
+axes[0, 1].plot(t, r_t, label="Amplitude-Scaled Unit Ramp", linewidth=2)
+axes[0, 1].set_title("Amplitude-Scaled Unit Ramp Function")
+axes[0, 1].set_xlabel("Time (t)")
+axes[0, 1].set_ylabel("Amplitude")
+axes[0, 1].grid(True)
+axes[0, 1].legend()
+
+# Sinc Function
+axes[1, 0].plot(t, sinc_t, label="Amplitude-Scaled Sinc Function", linewidth=2)
+axes[1, 0].set_title("Amplitude-Scaled Sinc Function")
+axes[1, 0].set_xlabel("Time (t)")
+axes[1, 0].set_ylabel("Amplitude")
+axes[1, 0].grid(True)
+axes[1, 0].legend()
+
+# Dirac Delta Function
+axes[1, 1].plot(t, delta_t, label="Amplitude-Scaled Dirac Delta (Approx.)", linewidth=2)
+axes[1, 1].set_title("Amplitude-Scaled Dirac Delta Function (Approx.)")
+axes[1, 1].set_xlabel("Time (t)")
+axes[1, 1].set_ylabel("Amplitude")
+axes[1, 1].grid(True)
+axes[1, 1].legend()
+
+# Adjust layout and show the plot
+plt.tight_layout()
+plt.show()
+
+```
+
+## Example
+
+::: {.panel-tabset}
+
+## Question
+
+How can i create the following signal using only singular signals
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: exercise 01
+t = np.linspace(-10,10,1000)
+x = np.zeros(t.shape)
+
+x[t>=0]=5
+x[t>=3]=0
+
+plt.figure(figsize=(16,6.75))
+plt.plot(t,x)
+plt.grid()
+plt.xlabel("Time(s)")
+plt.ylabel("Amplitude")
+
+```
+
+## Solution
+
+$$x(t) = 5u(t) - 5(t-3)$$
+
+## Code for the graph 1/2
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: exercise 01 -- code 1
+t = np.linspace(-10,10,1000)
+x = np.zeros(t.shape)
+
+x[t>=0]=5
+x[t>=3]=0
+
+plt.figure(figsize=(16,6.75))
+plt.plot(t,x)
+plt.grid()
+plt.xlabel("Time(s)")
+plt.ylabel("Amplitude")
+
+```
+## Code for the graph 2/2
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: exercise 01 -- code 2
+t = np.linspace(-10,10,1000)
+x = np.zeros(t.shape)
+
+x=5*np.heaviside(t,1)-5*np.heaviside(t-3,1)
+
+plt.figure(figsize=(16,6.75))
+plt.plot(t,x)
+plt.grid()
+plt.xlabel("Time(s)")
+plt.ylabel("Amplitude")
+
+```
+
+:::
+
+## Exercisae Singular Signals
+
+::: {.panel-tabset}
+
+## Question
+
+How can i create the following signal using only singular signals
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Exercise singular signals
+
+t = np.linspace(-10,10,1000)
+x = np.zeros(t.shape)
+
+x = (
+    np.maximum(t + 5, 0)
+    - np.maximum(t + 0, 0)
+    - 3 * np.heaviside(t - 5, 1)
+    - np.maximum(t - 7.5, 0)
+    + np.maximum(t-9.5, 0)
+)
+plt.figure(figsize=(16,6.75))
+plt.plot(t,x)
+plt.grid()
+plt.xlabel("Time(s)")
+plt.ylabel("Amplitude")
+
+```
+
+:::
