@@ -1,0 +1,206 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-01-20"
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+```
+
+# Sistemas y Señales Biomedicos - SYSB
+
+## Periodic functions
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Periodic Function 01
+
+# Define time range for three periods
+T = 2 * np.pi  # Period of sine function
+t = np.linspace(-T, 2 * T, 1000)  # Three periods
+y = np.sin(t)
+
+# Define one period to highlight in blue
+t_highlight = np.linspace(0, T, 300)
+y_highlight = np.sin(t_highlight)
+
+# Plot the sine function
+plt.figure(figsize=(12, 6))
+plt.plot(t, y, label="Periodic Function", linewidth=2, color="black")
+plt.plot(
+    t_highlight, y_highlight, linewidth=3, color="blue", label="Highlighted Period"
+)
+
+# Labels and grid
+plt.xlabel("Time (t)")
+plt.ylabel("Amplitude")
+plt.title("Periodic function")
+plt.axhline(0, color="black", linewidth=0.8)
+plt.axvline(T, color="gray", linestyle="--", linewidth=1)  # Marking one period end
+plt.axvline(
+    2 * T, color="gray", linestyle="--", linewidth=1
+)  # Marking second period end
+plt.grid(True, linestyle="--", alpha=0.6)
+plt.legend()
+
+# Show the plot
+plt.show()
+
+```
+
+::: {.callout-note title="Definition"}
+Any signal that meets any of this conditions
+$$x\left(t\right)=x\left(t + kT\right)$$
+$$x\left[n\right]=x\left[t + kT\right]$$
+:::
+
+Where $k\in\mathbb{z}$ and $T\in\mathbb{R}$
+
+
+
+
+## Sum of Two Periodic Signals
+
+If $\( x_1(t) \)$ and $\( x_2(t) \)$ are periodic with periods $\( T_1 \)$ and $\( T_2 \)$:
+
+$$
+x_1(t + T_1) = x_1(t), \quad x_2(t + T_2) = x_2(t)
+$$
+
+The sum of both signals is:
+
+$$
+x(t) = x_1(t) + x_2(t)
+$$
+
+---
+
+## Condition for the Periodicity of the Sum
+
+For $\( x(t) \)$ to be periodic, there must exist a **common period** $\( T \)$ such that:
+
+$$
+T = k_1 T_1 = k_2 T_2
+$$
+
+where \( k_1, k_2 \) are positive integers.
+
+---
+
+## Common Period and Least Common Multiple
+
+The smallest common period is the **least common multiple (lcm)** of $\( T_1 \)$ and $\( T_2 \)$:
+
+$$
+T = \operatorname{lcm}(T_1, T_2)
+$$
+
+If the ratio of the periods is a rational number:
+
+$$
+\frac{T_1}{T_2} \in \mathbb{Q}
+$$
+
+Then, the sum $\( x_1(t) + x_2(t) \)$ will be periodic.
+
+If the ratio is irrational, the resulting signal **will not be periodic**.
+
+## Example
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Periodic Signal
+#| fig-align: center
+
+# Define fundamental periods
+T1 = 10  # Period of first signal
+T2 = 3  # Period of second signal
+
+# Time range covering multiple periods
+t = np.linspace(0, 20, 1000)
+
+# Define two periodic signals
+x1 = np.sin((2 * np.pi / T1) * t)  # First periodic signal
+x2 = np.cos((2 * np.pi / T2) * t)  # Second periodic signal
+
+# Sum of both signals
+x_sum = x1 + x2
+
+# Plot signals
+plt.figure(figsize=(12, 6))
+
+plt.plot(t, x1, label=f"Signal 1: Period {T1}", linestyle="dashed")
+plt.plot(t, x2, label=f"Signal 2: Period {T2}", linestyle="dotted")
+plt.plot(t, x_sum, label="Sum of Signals", linewidth=2, color="black")
+
+plt.xlabel("Time (t)")
+plt.ylabel("Amplitude")
+plt.title("Sum of Two Periodic Signals")
+plt.axhline(0, color="gray", linewidth=0.8)
+plt.grid(True, linestyle="--", alpha=0.6)
+plt.legend()
+
+plt.show()
+
+```
