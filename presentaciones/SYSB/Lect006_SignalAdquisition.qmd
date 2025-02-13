@@ -417,3 +417,133 @@ $$
 Where:
 
 $$\omega = \Omega T_s, \quad f = \frac{F}{F_s}$$
+
+## Sample and quantization of an ECG signal
+
+::: {.panel-tabset}
+
+## Task
+
+- Generate a synthetic ECG-like signal.
+- Sample it at different rates.
+- Apply quantization with different bit depths.
+
+## Graph
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: example of sampling and quantization 01
+#| fig-align: center
+
+# Generate a synthetic ECG-like signal (chirp function as approximation)
+fs_original = 10000  # High sampling rate (Hz) - "continuous" signal
+t = np.linspace(0, 1, fs_original, endpoint=False)  # 1-second signal
+signal = np.sin(2 * np.pi * 1.7 * (t**2))  # Simulated chirp (similar to ECG waves)
+
+# Downsample (Sampling Process)
+fs_sampled = 200  # Sampling frequency in Hz (e.g., ECG sampled at 200 Hz)
+t_sampled = np.arange(0, 1, 1/fs_sampled)
+signal_sampled = np.sin(2 * np.pi * 1.7 * (t_sampled**2))
+
+# Quantization (8-bit and 4-bit)
+def quantize(signal, bits):
+    levels = 2**bits
+    min_val, max_val = signal.min(), signal.max()
+    step = (max_val - min_val) / levels
+    quantized_signal = np.round((signal - min_val) / step) * step + min_val
+    return quantized_signal
+
+signal_quantized_8bit = quantize(signal_sampled, 8)
+signal_quantized_4bit = quantize(signal_sampled, 4)
+
+# Plot Results
+plt.figure(figsize=(12, 6))
+
+# Original vs Sampled Signal
+plt.subplot(2, 1, 1)
+plt.plot(t, signal, 'k', alpha=0.3, label='Original Signal (High Resolution)')
+plt.plot(t_sampled, signal_sampled, 'ro-', label=f'Sampled Signal ({fs_sampled} Hz)')
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.legend()
+plt.title("Sampling Process")
+
+# Quantized Signals
+plt.subplot(2, 1, 2)
+plt.plot(t_sampled, signal_sampled, 'bo-', alpha=0.5, label="Original Sampled")
+plt.plot(t_sampled, signal_quantized_8bit, 'go-', label="Quantized 8-bit")
+plt.plot(t_sampled, signal_quantized_4bit, 'ro-', label="Quantized 4-bit")
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.legend()
+plt.title("Quantization Effect")
+
+plt.tight_layout()
+plt.show()
+
+```
+
+## Code
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: example of sampling and quantization 02
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import chirp
+
+# Generate a synthetic ECG-like signal (chirp function as approximation)
+fs_original = 10000  # High sampling rate (Hz) - "continuous" signal
+t = np.linspace(0, 1, fs_original, endpoint=False)  # 1-second signal
+signal = np.sin(2 * np.pi * 1.7 * (t**2))  # Simulated chirp (similar to ECG waves)
+
+# Downsample (Sampling Process)
+fs_sampled = 200  # Sampling frequency in Hz (e.g., ECG sampled at 200 Hz)
+t_sampled = np.arange(0, 1, 1/fs_sampled)
+signal_sampled = np.sin(2 * np.pi * 1.7 * (t_sampled**2))
+
+# Quantization (8-bit and 4-bit)
+def quantize(signal, bits):
+    levels = 2**bits
+    min_val, max_val = signal.min(), signal.max()
+    step = (max_val - min_val) / levels
+    quantized_signal = np.round((signal - min_val) / step) * step + min_val
+    return quantized_signal
+
+signal_quantized_8bit = quantize(signal_sampled, 8)
+signal_quantized_4bit = quantize(signal_sampled, 4)
+
+# Plot Results
+plt.figure(figsize=(12, 6))
+
+# Original vs Sampled Signal
+plt.subplot(2, 1, 1)
+plt.plot(t, signal, 'k', alpha=0.3, label='Original Signal (High Resolution)')
+plt.plot(t_sampled, signal_sampled, 'ro-', label=f'Sampled Signal ({fs_sampled} Hz)')
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.legend()
+plt.title("Sampling Process")
+
+# Quantized Signals
+plt.subplot(2, 1, 2)
+plt.plot(t_sampled, signal_sampled, 'bo-', alpha=0.5, label="Original Sampled")
+plt.plot(t_sampled, signal_quantized_8bit, 'go-', label="Quantized 8-bit")
+plt.plot(t_sampled, signal_quantized_4bit, 'ro-', label="Quantized 4-bit")
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.legend()
+plt.title("Quantization Effect")
+
+plt.tight_layout()
+plt.show()
+
+
+```
+
+:::
