@@ -1,0 +1,172 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Taller Repaso 01: Introducción al procesamiento de Señales"
+lang: es
+author: 
+    - "Ph.D. Jenny Carolina Castiblanco"
+    - "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-02-20"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../imagenes/generales/Escuela_Rosario_logo.png
+    css: ../estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+
+
+## Descripción  
+A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la 
+variable independiente, clasificación de señales, ADC y DAC.  
+
+## Procedimiento  
+Explique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.  
+
+### 1. Considere la señal
+$$x(t) = \begin{cases} 
+  t + 1, & -1 \leq t \leq 0 \\ 
+  2, & 0 < t \leq 2 \\ 
+  1, & 2 < t \leq 3 \\ 
+  0, & \text{en otro caso} 
+ \end{cases}$$
+Dibuje:
+
+#### **Solución**
+Se grafican las transformaciones solicitadas en Python con Matplotlib.
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+def x_t(t):
+    return np.piecewise(t, [(-1 <= t) & (t <= 0), (0 < t) & (t <= 2), (2 < t) & (t <= 3)],
+                         [lambda t: t + 1, 2, 1, 0])
+
+t = np.linspace(-2, 4, 1000)
+plt.plot(t, x_t(t), label='x(t)')
+plt.xlabel('t')
+plt.ylabel('x(t)')
+plt.legend()
+plt.show()
+```
+
+---
+
+### 2. Determine si las siguientes señales son periódicas y encuentre su periodo  
+#### **Solución**
+Analizamos si $\frac{f_0}{f_s}$ es racional.
+
+a) $x(t) = \cos(2t) + \cos(\pi t)$
+   - Períodos: $T_1 = \frac{2\pi}{2} = \pi$, $T_2 = \frac{2\pi}{\pi} = 2$
+   - Mínimo común múltiplo: **Período = 2\pi**
+
+b) $x(t) = e^{-j(4\pi/3)t} + e^{j(2\pi/5)t}$
+   - Se buscan los períodos fundamentales.
+   - **No es periódica** porque las razones de frecuencias son irracionales.
+
+...
+
+---
+
+### 5. Para una señal análoga $x_a(t) = \sin(600\pi t) + 3\sin(480\pi t)$, encontrar:
+
+#### **Solución**
+
+a) Período de la señal:
+   - Frecuencias: $f_1 = 300Hz$, $f_2 = 240Hz$
+   - MCM de $\frac{1}{300}$ y $\frac{1}{240}$ → **T = 1/60 s**
+
+b) **Frecuencia de muestreo**
+   - Teorema de Nyquist: $f_s > 2f_{max} = 600Hz$
+
+c) **Señal muestreada:**
+   ```python
+   fs = 600  # Hz
+   n = np.arange(0, 100)
+   xa_n = np.sin(600*np.pi*n/fs) + 3*np.sin(480*np.pi*n/fs)
+   plt.stem(n, xa_n)
+   plt.show()
+   ```
+
+...
+
+### 6. Muestreo y cuantización
+
+#### **Solución**
+
+a) **Frecuencia de muestreo:**
+   - $T_m1 = 12.5ms$ → $f_s = 80Hz$
+   - No cumple Nyquist → **No se puede reconstruir**
+
+b) **Muestreo a 8 veces Nyquist:**
+   - $f_s = 5760Hz$
+   - Se evalúa si $\frac{f_0}{f_s}$ es racional → **Sí es periódica**
+
+c) **Cuantización (4 bits, rango 0-5):**
+   - Paso de cuantización: $\Delta = \frac{5}{2^4}$
+   - Se discretiza la señal según niveles de cuantización.
+   
+```python
+import numpy as np
+levels = np.linspace(0, 5, 16)
+quantized_signal = np.digitize(xa_n, levels) * (5 / 16)
+plt.stem(n, quantized_signal)
+plt.show()
+```
+
+---
+
+**Fin del taller**.
