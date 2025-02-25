@@ -1,0 +1,320 @@
+---
+title: "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde"
+description: "APSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-01-20"
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+```
+
+# Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde - APSB
+
+# Machine Learning Introduction
+
+## What is Machine Learning?
+
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+- Machine Learning (ML) is a data-driven approach to building predictive models.
+- It is used in various applications such as healthcare, finance, and automation.
+- It is based on identifying patterns in data to make predictions or decisions.
+
+:::
+
+::: {.column width="45%"}
+
+![](../../recursos/imagenes/Presentaciones/APSB/Image010.png)
+
+:::
+::::
+
+## What is Machine Learning?
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+- ML enables systems to learn from experience without being explicitly programmed.
+- Key application areas include image recognition, natural language processing, and autonomous systems.
+
+:::
+
+::: {.column width="45%"}
+
+![](../../recursos/imagenes/Presentaciones/APSB/Image010.png)
+
+:::
+::::
+
+
+
+---
+
+## Types of Machine Learning -- Supervised Learning
+
+**Supervised Learning**: 
+- Uses labeled data to train models.
+- Example: Spam detection in emails (spam vs. non-spam).
+- Common algorithms: Linear Regression, Decision Trees, Support Vector Machines (SVM), Neural Networks.
+
+## Types of Machine Learning -- Unsupervised Learnin
+
+**Unsupervised Learning**:
+- Finds patterns in unlabeled data.
+- Example: Customer segmentation in marketing.
+- Common algorithms: K-Means Clustering, Hierarchical Clustering, Principal Component Analysis (PCA).
+
+## Types of Machine Learning -- Reinforcement Learning
+
+**Reinforcement Learning**:
+- Optimizes decision-making through rewards.
+- Example: Training an AI to play a game like Chess or Go.
+- Key components: Agent, Environment, Reward Signal.
+
+---
+
+## Key Components of an ML Model
+
+- **Data**: 
+  - The quality and quantity of data are fundamental.
+  - Data preprocessing (cleaning, normalization, feature extraction) is crucial.
+
+- **Model**: 
+  - A mathematical representation of the problem.
+  - Chosen based on the problem type (classification, regression, clustering).
+
+## Key Components of an ML Model
+
+- **Error function**: 
+  - Evaluates the difference between prediction and actual value.
+  - Example: Mean Squared Error (MSE) for regression, Cross-Entropy Loss for classification.
+
+- **Optimization**:
+  - Algorithms that adjust the model parameters to minimize error.
+  - Common optimization techniques: Gradient Descent, Adam Optimizer.
+
+---
+
+## Bias and Inductivity
+
+- **Inductive Bias**: 
+  - Prior assumptions that the model uses to generalize.
+  - Example: Linear models assume data relationships are linear.
+
+- **Sample Bias**: 
+  - Differences between training data and real-world data.
+  - Example: A face recognition system trained on a specific demographic may perform poorly on others.
+
+## Bias and Inductivity
+
+- **Bias-Variance Tradeoff**:
+  - **High Bias (Underfitting)**: The model is too simple, failing to capture patterns.
+  - **High Variance (Overfitting)**: The model memorizes training data but fails on new data.
+
+---
+
+## Example of Bias and Variance
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: example001
+#| fig-align: center
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+x = np.linspace(0, 10, 100)
+y_real = np.sin(x) + np.random.normal(scale=0.3, size=x.shape)
+
+plt.figure(figsize=(6,4))
+plt.scatter(x, y_real, label='Real Data', alpha=0.6)
+plt.plot(x, np.sin(x), label='Ideal Model', color='red', linestyle='dashed')
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.legend()
+plt.title("Bias and Variance in ML")
+plt.show()
+```
+
+## Basic Machine Learning Algorithms
+
+### 1. **Linear Regression** (Supervised Learning - Regression)
+- Predicts a continuous value based on input features.
+- Equation: \( y = mx + b \)
+- Example: Predicting house prices based on square footage.
+
+```{python}
+from sklearn.linear_model import LinearRegression
+import numpy as np
+
+# Sample Data
+X = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
+y = np.array([2, 4, 5, 4, 5])
+
+# Train Model
+model = LinearRegression()
+model.fit(X, y)
+print("Slope:", model.coef_)
+print("Intercept:", model.intercept_)
+```
+
+---
+
+## Basic Machine Learning Algorithms
+
+### 2. **Decision Trees** (Supervised Learning - Classification & Regression)
+- Splits data into decision nodes to make predictions.
+- Example: Diagnosing a disease based on symptoms.
+
+```{python}
+from sklearn.tree import DecisionTreeClassifier
+
+# Sample Data
+X = [[0, 0], [1, 1]]
+y = [0, 1]
+
+# Train Model
+clf = DecisionTreeClassifier()
+clf.fit(X, y)
+print("Prediction for [1,1]:", clf.predict([[1, 1]]))
+```
+
+---
+
+## Basic Machine Learning Algorithms
+
+### 3. **K-Means Clustering** (Unsupervised Learning)
+- Groups similar data points together.
+- Example: Customer segmentation in marketing.
+
+```{python}
+from sklearn.cluster import KMeans
+import numpy as np
+
+# Sample Data
+X = np.array([[1, 2], [1, 4], [1, 0],
+              [10, 2], [10, 4], [10, 0]])
+
+# Train Model
+kmeans = KMeans(n_clusters=2, random_state=0, n_init=10).fit(X)
+print("Cluster Centers:", kmeans.cluster_centers_)
+```
+
+---
+
+## Basic Machine Learning Algorithms
+
+### 4. **Support Vector Machines (SVM)** (Supervised Learning - Classification)
+- Finds a hyperplane that best separates different classes.
+- Example: Classifying tumors as benign or malignant.
+
+```{python}
+from sklearn.svm import SVC
+
+# Sample Data
+X = [[0, 0], [1, 1]]
+y = [0, 1]
+
+# Train Model
+clf = SVC()
+clf.fit(X, y)
+print("Prediction for [1,1]:", clf.predict([[1, 1]]))
+```
+
+## Basic Machine Learning Algorithms
+
+### 5. **Reinforcement Learning Example**
+- Uses rewards and penalties to train an agent to make optimal decisions.
+- Example: A robot learning to navigate a maze.
+
+```{python}
+import numpy as np
+import random
+
+# Simple Q-learning example
+grid_size = 5
+Q_table = np.zeros((grid_size, grid_size))
+alpha = 0.1  # Learning rate
+gamma = 0.9  # Discount factor
+
+# Simulated rewards for reaching the goal
+rewards = np.zeros((grid_size, grid_size))
+rewards[4, 4] = 10  # Goal position
+
+def choose_action(state):
+    return random.choice([0, 1, 2, 3])  # Up, Down, Left, Right
+
+# Training loop
+for episode in range(1000):
+    state = (0, 0)
+    while state != (4, 4):
+        action = choose_action(state)
+        new_state = (min(max(state[0] + (action == 1) - (action == 0), 0), 4),
+                     min(max(state[1] + (action == 3) - (action == 2), 0), 4))
+        Q_table[state] += alpha * (rewards[new_state] + gamma * np.max(Q_table[new_state]) - Q_table[state])
+        state = new_state
+
+print("Trained Q-Table:\n", Q_table)
+```
