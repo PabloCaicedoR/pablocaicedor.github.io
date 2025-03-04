@@ -1,0 +1,152 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Laboratorio 003: Análisis de información base del dataset (Demografía y estadística inicial)"
+lang: es
+author: 
+    - "Ph.D. Jenny Carolina Castiblanco"
+    - "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-03-4"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+# **Actividad de Aprendizaje: Análisis de información base del dataset (Demografía y estadística inicial)**
+
+Antes de realizar el procesamiento de señales en estudios biomédicos, es fundamental llevar a cabo un análisis descriptivo de los participantes. Este paso permite contextualizar los datos y asegurar que cualquier resultado obtenido sea válido, representativo y adecuado para su interpretación clínica y científica. A continuación, se detallan las razones clave para realizar este análisis previo:
+ 
+1. Caracterización de la Población Estudiada: El análisis descriptivo permite conocer la distribución de variables clave.
+2. Identificación de Posibles Sesgos en los Datos: Un estudio bien diseñado debe asegurarse de que los datos sean representativos de la población objetivo.
+3. Evaluación de la Calidad de los Datos: El análisis descriptivo ayuda a detectar inconsistencias en los datos antes de aplicar técnicas de procesamiento de señales.
+4. Justificación del Preprocesamiento de Señales: Al conocer las características de los participantes, se pueden tomar decisiones informadas sobre qué técnicas de procesamiento aplicar.
+
+## **Duración** 
+4.5 horas
+
+## **Materiales**
+- Computador.
+- [Zheng, J., Zhang, J., Danioko, S. et al. A 12-lead electrocardiogram database for arrhythmia research covering more than 10,000 patients. Sci Data 7, 48 (2020). https://doi.org/10.1038/s41597-020-0386-x](https://www.nature.com/articles/s41597-020-0386-x)
+- [Dataset](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
+- [Zheng, J., Chu, H., Struppa, D. et al. Optimal Multi-Stage Arrhythmia Classification Approach. Sci Rep 10, 2898 (2020). https://doi.org/10.1038/s41598-020-59821-7](https://www.nature.com/articles/s41598-020-59821-7)
+
+---
+
+# **Parte 2: Análisis de información base del dataset (Demografía y estadística inicial)**
+
+## **Actividad 1: Generación de la información base**
+
+Utilizando el dataset, realice las siguiente tareas:
+
+#. Enumere todos los posibles diagnósticos que los pacientes pueden tener.
+#. Para todos los pacientes genere una tabla que debe tener la siguiente información:
+    #. ID: Identificador del paciente. 
+    #. Edad: Edad del paciente.
+    #. Sexo: Sexo del paciente.
+    #. _Diagnosticos_: A partir de aquí se genera una columna por cada diagnóstico posible de un paciente. En cada paciente se registrará un 1 si este fue diagnósticado con la dolencia respectiva. _Recomendación:_ Use los archivos _.hea_ adjuntos en el dataset.
+
+
+## **Actividad 2: Análisis de la información**
+
+A partir de la tabla generado en la actividad anterior responda de forma clara y concisa las siguientes preguntas:
+
+#. ¿Cuál es la frecuencia y el porcentaje de casos de Bradicardia Sinusal (SB) en la muestra?
+#. ¿Cuál es la edad promedio y su desviación estándar para los pacientes con Bradicardia #. Sinusal (SB)?
+#. ¿Cuál es el porcentaje de hombres en la categoría de Bradicardia Sinusal (SB)?
+#. ¿Cuántos pacientes fueron diagnosticados con Ritmo Sinusal (SR) y qué porcentaje representa del total?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Ritmo Sinusal (SR)?
+#. ¿Qué porcentaje de los pacientes con Ritmo Sinusal (SR) son hombres?
+#. ¿Cuántos casos de Fibrilación Auricular (AFIB) se reportaron y qué porcentaje representa?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Fibrilación Auricular (AFIB)?
+#. ¿Qué porcentaje de los pacientes con Fibrilación Auricular (AFIB) son hombres?
+#. ¿Cuántos pacientes presentan Taquicardia Sinusal (ST) y qué porcentaje del total representa?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Taquicardia Sinusal (ST)?
+#. ¿Qué porcentaje de los pacientes con Taquicardia Sinusal (ST) son hombres?
+#. ¿Cuál es la frecuencia y el porcentaje de casos de Flutter Auricular (AF) en la muestra?
+#. ¿Cuál es la edad promedio y su desviación estándar para los pacientes con Flutter Auricular (AF)?
+#. ¿Cuál es el porcentaje de hombres en la categoría de Flutter Auricular (AF)?
+#. ¿Cuántos pacientes presentan Irregularidad Sinusal (SI) y qué porcentaje del total representa?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Irregularidad Sinusal (SI)?
+#. ¿Qué porcentaje de los pacientes con Irregularidad Sinusal (SI) son hombres?
+#. ¿Cuál es la frecuencia y el porcentaje de casos de Taquicardia Supraventricular (SVT) en la muestra?
+#. ¿Cuál es la edad promedio y su desviación estándar para los pacientes con Taquicardia Supraventricular (SVT)?
+#. ¿Cuál es el porcentaje de hombres en la categoría de Taquicardia Supraventricular (SVT)?
+#. ¿Cuántos casos de Taquicardia Auricular (AT) se registraron y qué porcentaje del total representa?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Taquicardia Auricular (AT)?
+#. ¿Qué porcentaje de los pacientes con Taquicardia Auricular (AT) son hombres?
+#. ¿Cuántos casos de Taquicardia por Reentrada en el Nodo AV (AVNRT) se reportaron y qué porcentaje representan?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Taquicardia por Reentrada en el Nodo AV (AVNRT)?
+#. ¿Qué porcentaje de los pacientes con Taquicardia por Reentrada en el Nodo AV (AVNRT) son hombres?
+#. ¿Cuántos pacientes fueron diagnosticados con Taquicardia por Reentrada Auriculoventricular (AVRT) y qué porcentaje representan?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Taquicardia por Reentrada Auriculoventricular (AVRT)?
+#. ¿Qué porcentaje de los pacientes con Taquicardia por Reentrada Auriculoventricular (AVRT) son hombres?
+#. ¿Cuántos casos de Ritmo de deambulamiento auricular sinusal a auricular (SAAWR) se registraron y qué porcentaje representan?
+#. ¿Cuál es la edad promedio y la desviación estándar de los pacientes con Ritmo de deambulamiento auricular sinusal a auricular (SAAWR)?
+#. ¿Qué porcentaje de los pacientes con Ritmo de deambulamiento auricular sinusal a auricular (SAAWR) son hombres?
+#. ¿Cuál es el número total de pacientes en la muestra y su edad promedio?
+#. ¿Cuál es el porcentaje total de hombres en la muestra?
+
+---
+
+## **Criterios de Evaluación**
+
+Sustentación del trabajo. Cada equipo deberá responder tres preguntas: 
+
+#. Pregunta aleatoria basada en la actividad 2.
+#. Pregunta basada en estadísticas que se obtienen a partir de la tabla de la actividad 1
+#. Pregunta sobre el código utilizado para realizar el laboratorio.
