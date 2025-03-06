@@ -1,0 +1,292 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.io as sio
+import scipy.signal as sig
+
+
+path_ecg="../../data"
+
+```
+
+# Sistemas y Señales Biomedicos - SYSB
+
+# Frequency Content
+
+## Introduction
+
+- Signals can be analyzed in both **time domain** and **frequency domain**.
+- The **frequency content** of a signal describes how different frequency components contribute to the overall signal.
+- Applications in **biomedical signals, audio processing, communications, and image processing**.
+
+---
+
+## Convolution in Time Domain
+
+- Convolution is a fundamental operation in signal processing.
+- Given two signals \( x(t) \) and \( h(t) \), their convolution is defined as:
+  
+  $$ y(t) = x(t) * h(t) = \int_{-\infty}^{\infty} x(\tau) h(t - \tau) d\tau $$
+  
+- In **discrete-time**, convolution is:
+  
+  $$ y[n] = \sum_{k=-\infty}^{\infty} x[k] h[n-k] $$
+
+---
+
+## Convolution Theorem
+
+- **Convolution in time domain corresponds to multiplication in frequency domain**:
+  
+  $$ X(f) H(f) = Y(f) $$
+  
+- This property is crucial in filter design and system analysis.
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: Loading Imag01
+
+
+# Define two signals
+x = np.array([1, 2, 3, 4, 5])  # Input signal
+h = np.array([1, -1, 2])       # System response
+
+# Compute convolution
+y = sig.convolve(x, h, mode='full')
+
+# Create subplots
+fig, axs = plt.subplots(1, 3, figsize=(20, 6), sharey=True)
+
+# Plot input signal
+axs[0].stem(x, linefmt="k", markerfmt="ko", basefmt="k-", label="Input Signal")
+axs[0].set_title("Input Signal x[n]")
+axs[0].set_ylabel("Amplitude")
+axs[0].legend()
+axs[0].grid()
+
+# Plot system response
+axs[1].stem(h, linefmt="b", markerfmt="bo", basefmt="b-", label="System h[n]")
+axs[1].set_title("System Response h[n]")
+axs[1].set_ylabel("Amplitude")
+axs[1].legend()
+axs[1].grid()
+
+# Plot convolution output
+axs[2].stem(y, linefmt="r", markerfmt="ro", basefmt="r-", label="Output y[n]")
+axs[2].set_title("Convolution Output y[n] = x[n] * h[n]")
+axs[2].set_xlabel("n")
+axs[2].set_ylabel("Amplitude")
+axs[2].legend()
+axs[2].grid()
+
+# Adjust layout and show plot
+plt.tight_layout()
+plt.show()
+
+
+```
+
+---
+
+## Introduction to Fourier Series
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| fig-align: center
+#| label: image quiver
+
+# Define two orthogonal vectors
+v1 = np.array([1, 0])  # X-axis unit vector
+v2 = np.array([0, 1])  # Y-axis unit vector
+
+# Define a third vector
+v3 = np.array([2, 3])  # Arbitrary vector
+
+# Compute projections of v3 onto v1 and v2
+proj_v1 = (np.dot(v3, v1) / np.dot(v1, v1)) * v1
+proj_v2 = (np.dot(v3, v2) / np.dot(v2, v2)) * v2
+
+# Create a figure
+fig, ax = plt.subplots(figsize=(10, 10))
+
+# Plot projections using quiver
+ax.quiver(
+    0,
+    0,
+    *proj_v1,
+    color="purple",
+    angles="xy",
+    scale_units="xy",
+    scale=1,
+    label="Projection on v1"
+)
+ax.quiver(
+    0,
+    0,
+    *proj_v2,
+    color="orange",
+    angles="xy",
+    scale_units="xy",
+    scale=1,
+    label="Projection on v2"
+)
+
+# Plot the orthogonal vectors
+ax.quiver(
+    0, 0, *v1, color="r", angles="xy", scale_units="xy", scale=1, label="v1 (X-axis)"
+)
+ax.quiver(
+    0, 0, *v2, color="g", angles="xy", scale_units="xy", scale=1, label="v2 (Y-axis)"
+)
+
+# Plot the third vector
+ax.quiver(0, 0, *v3, color="b", angles="xy", scale_units="xy", scale=1, label="v3")
+
+
+
+# Plot dashed lines to show projection points
+ax.plot([proj_v1[0], v3[0]], [proj_v1[1], v3[1]], "k--", alpha=0.5)  # Projection to v1
+ax.plot([proj_v2[0], v3[0]], [proj_v2[1], v3[1]], "k--", alpha=0.5)  # Projection to v2
+
+# Set grid and limits
+ax.set_xlim(-1, 4)
+ax.set_ylim(-1, 4)
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.set_title("Two Orthogonal Vectors & Projection of a Third Vector")
+ax.axhline(0, color="black", linewidth=1)
+ax.axvline(0, color="black", linewidth=1)
+ax.grid()
+ax.legend()
+
+# Show the plot
+plt.show()
+```
+
+---
+
+## Introduction to Fourier Series
+
+- **Convolution** requiere the representation of the signal in a sum of impulse functions.
+- **Fourier series** represents periodic signals as a sum of sinusoids:
+  
+  $$ x(t) = \sum_{n=-\infty}^{\infty} C_n e^{jn\omega_0 t} $$
+  
+  where \( C_n \) are the Fourier coefficients.
+
+- Decomposing a signal into sinusoidal components allows **frequency analysis**.
+
+---
+
+## Fourier Coefficients
+
+- The Fourier coefficients \( C_n \) are computed as:
+  
+  $$ C_n = \frac{1}{T} \int_{0}^{T} x(t) e^{-jn\omega_0 t} dt $$
+
+- Determines how much of each frequency is present in the signal.
+
+---
+
+## Example of Fourier Series Expansion
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Imag02
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+T = 2*np.pi  # Period
+w0 = 2*np.pi / T  # Fundamental frequency
+t = np.linspace(0, T, 400)
+
+# Fourier series approximation of a square wave
+x_approx = (4/np.pi) * (np.sin(w0*t) + (1/3)*np.sin(3*w0*t) + (1/5)*np.sin(5*w0*t))
+
+plt.plot(t, x_approx, label="Fourier Approximation")
+plt.title("Fourier Series Approximation of a Square Wave")
+plt.xlabel("Time")
+plt.ylabel("Amplitude")
+plt.legend()
+plt.show()
+
+```
+
+---
+
+## Relationship Between Frequency Content and Sampling Frequency
+
+- **Sampling theorem:** A signal must be sampled at a frequency **at least twice** its highest frequency component:
+  
+  $$ f_s \geq 2 f_{max} $$
+
+- **Aliasing** occurs if sampling frequency is too low.
+
+---
+
