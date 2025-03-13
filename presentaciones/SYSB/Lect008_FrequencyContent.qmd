@@ -82,7 +82,7 @@ path_ecg="../../data"
 ## Convolution in Time Domain
 
 - Convolution is a fundamental operation in signal processing.
-- Given two signals \( x(t) \) and \( h(t) \), their convolution is defined as:
+- Given two signals $x(t)$ and $h(t)$, their convolution is defined as:
   
   $$ y(t) = x(t) * h(t) = \int_{-\infty}^{\infty} x(\tau) h(t - \tau) d\tau $$
   
@@ -235,7 +235,7 @@ plt.show()
   
   $$ x(t) = \sum_{n=-\infty}^{\infty} C_n e^{jn\omega_0 t} $$
   
-  where \( C_n \) are the Fourier coefficients.
+  where $C_n$ are the Fourier coefficients.
 
 - Decomposing a signal into sinusoidal components allows **frequency analysis**.
 
@@ -243,7 +243,7 @@ plt.show()
 
 ## Fourier Coefficients
 
-- The Fourier coefficients \( C_n \) are computed as:
+- The Fourier coefficients $C_n$ are computed as:
   
   $$ C_n = \frac{1}{T} \int_{0}^{T} x(t) e^{-jn\omega_0 t} dt $$
 
@@ -360,13 +360,237 @@ plt.show()
 
 ```
 
-## Relationship Between Frequency Content and Sampling Frequency
-
-- **Sampling theorem:** A signal must be sampled at a frequency **at least twice** its highest frequency component:
-  
-  $$ f_s \geq 2 f_{max} $$
-
-- **Aliasing** occurs if sampling frequency is too low.
+## **Linearity**
+- If $f_1(x)$ and $f_2(x)$ have Fourier series,
+- Then for any constants $a, b$,
+- $a f_1(x) + b f_2(x)$ has a Fourier series,
+- With coefficients scaled accordingly.
 
 ---
 
+## **Time Shifting**
+- If $f(x)$ has Fourier coefficients $a_n, b_n$,
+- Then $f(x - x_0)$ has coefficients:
+- $a_n \cos(n\omega x_0) + b_n \sin(n\omega x_0)$,
+- And $b_n \cos(n\omega x_0) - a_n \sin(n\omega x_0)$.
+
+---
+
+## **Frequency Scaling**
+- If $g(x) = f(cx)$,
+- Then the period scales by $c$,
+- The fundamental frequency changes to $c\omega$,
+- Fourier coefficients adjust accordingly.
+
+---
+
+## ** Differentiation Property**
+- If $f(x)$ is differentiable,
+- Then $f'(x)$ has Fourier series,
+- With coefficients scaled as $n a_n, n b_n$,
+- Higher frequencies get amplified.
+
+---
+
+## **Integration Property**
+- If $f(x)$ has a Fourier series,
+- Then $\int f(x) dx$ has a Fourier series,
+- With coefficients scaled as $\frac{a_n}{n}, \frac{b_n}{n}$,
+- Lower frequencies get emphasized.
+
+---
+
+## **Parseval’s Theorem**
+- The total signal energy is conserved,
+- Energy in time domain equals energy in frequency domain,
+- Given by:
+- $\sum (a_n^2 + b_n^2) = \frac{1}{T} \int |f(x)|^2 dx$.
+
+---
+
+## **Convolution Property**
+- Convolution in time domain,
+- Is multiplication in Fourier series coefficients,
+- If $f_1$ and $f_2$ are convoluted,
+- Their Fourier coefficients multiply component-wise.
+
+---
+
+## **Discrete Time Fourier Series**
+- Represents periodic discrete signals using harmonics.
+- Extends Fourier series to discrete-time domain.
+- Fundamental in digital signal processing.
+- Basis for the Discrete Fourier Transform (DFT).
+
+---
+
+## **Mathematical Expression**
+- A periodic sequence $x[n]$ can be expressed as:
+- $$x[n] = \sum_{k=0}^{N-1} C_k e^{j(2\pi k n / N)}$$.
+- The coefficients $C_k$ are computed as:
+- $C_k = \frac{1}{N} \sum_{n=0}^{N-1} x[n] e^{-j(2\pi k n / N)}$.
+
+---
+
+## **Periodicity and Symmetry**
+- The coefficients $C_k$ repeat every $N$.
+- Ensures correct reconstruction of signals.
+- Explains frequency domain representation.
+- Basis for spectral analysis.
+
+---
+
+## **Key Properties**
+- **Linearity**: Superposition holds.
+- **Time Shift**: Causes phase shift in coefficients.
+- **Parseval’s Theorem**: Energy conservation.
+- **Convolution**: Time convolution → Frequency multiplication.
+
+---
+
+## **Frequency Domain Interpretation**
+- $C_k$ represents discrete frequency content.
+- The spectrum consists of $N$ harmonics.
+- Resolution improves with larger $N$.
+- Essential for analyzing periodic discrete signals.
+
+---
+
+## **Comparison with Continuous Case**
+- DTFS applies to discrete periodic signals.
+- Continuous Fourier series applies to continuous functions.
+- Both represent signals as sums of sinusoids.
+- DTFS is used in digital communications and audio processing.
+
+
+## Example of th DTFS
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Example of DTFS
+
+# Define a periodic discrete signal
+N = 8  # Period of the signal
+n = np.arange(N)
+x_n = np.array([1, 2, 3, 4, 3, 2, 1, 0])  # Example discrete signal
+
+# Compute DTFS coefficients
+C_k = np.fft.fft(x_n) / N  # Normalized Discrete Fourier Transform
+
+# Reconstruct the signal using DTFS
+x_reconstructed = np.zeros(N, dtype=complex)
+for k in range(N):
+    x_reconstructed += C_k[k] * np.exp(1j * 2 * np.pi * k * n / N)
+
+# Plot original and reconstructed signals
+plt.figure(figsize=(10, 4))
+plt.stem(n, x_n, linefmt='b-', markerfmt='bo', basefmt='r-', label='Original Signal')
+plt.stem(n, np.real(x_reconstructed), linefmt='r--', markerfmt='go', basefmt='r-', label='Reconstructed Signal')
+plt.xlabel("n")
+plt.ylabel("Amplitude")
+plt.title("DTFS: Original vs Reconstructed Signal")
+plt.legend()
+plt.grid()
+plt.show()
+
+# Print DTFS Coefficients
+print("DTFS Coefficients:")
+for k in range(N):
+    print(f"C[{k}] = {C_k[k]:.4f}")
+
+```
+
+## Example 02
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: example of dtfs periodicity
+
+# Define a periodic discrete signal
+N = 8  # Period of the signal
+n = np.arange(N)
+x_n = np.array([1, 2, 3, 4, 3, 2, 1, 0])  # Example discrete signal
+
+# Compute DTFS coefficients
+C_k = np.fft.fft(x_n) / N  # Normalized Discrete Fourier Transform
+
+# Verify periodicity property: C[k] repeats every N
+C_k_extended = np.tile(C_k, 2)  # Extend coefficients to see repetition
+k_extended = np.arange(2 * N)
+
+# Plot DTFS coefficients and their periodic repetition
+plt.figure(figsize=(10, 4))
+plt.stem(
+    k_extended,
+    np.real(C_k_extended),
+    linefmt="b-",
+    markerfmt="bo",
+    basefmt="r-",
+    label="Real Part",
+)
+plt.stem(
+    k_extended,
+    np.imag(C_k_extended),
+    linefmt="g--",
+    markerfmt="go",
+    basefmt="r-",
+    label="Imaginary Part",
+)
+plt.xlabel("n")
+plt.ylabel("Magnitude")
+plt.title("DTFS Periodicity: Coefficients Repeat Every N Samples")
+plt.legend()
+plt.grid()
+plt.show()
+
+# Print DTFS Coefficients to observe periodicity
+# print("DTFS Coefficients (showing periodicity):")
+# for k in range(2 * N):
+#     print(f"C[{k}] = {C_k_extended[k]:.4f}")
+
+```
+
+
+## **Conceptual Foundation**
+- Fourier Series represents periodic signals in terms of sinusoids.
+- As period $T \to \infty$, the signal becomes aperiodic.
+- The Fourier Transform generalizes Fourier Series to aperiodic signals.
+- Transforms signals from time to frequency domain.
+
+---
+
+## **Mathematical Transition**
+- Fourier Series of a periodic signal:
+- $$f(x) = \sum_{n=-\infty}^{\infty} C_n e^{j(2\pi n x / T)}$$.
+- As $T \to \infty$, frequency spacing $\frac{1}{T}$ → differential.
+- Leads to the Fourier Transform:
+- $$F(\omega) = \int_{-\infty}^{\infty} f(x) e^{-j\omega x} dx$$.
+
+---
+
+## **Frequency Spectrum Interpretation**
+- Fourier Series: discrete frequency spectrum.
+- Fourier Transform: continuous frequency spectrum.
+- Coefficients $C_n$ become the function $F(\omega)$.
+- Allows analysis of arbitrary signals in frequency domain.
+
+---
+
+## **Inverse Fourier Transform**
+- Recovers time-domain signal from $F(\omega)$.
+- Defined as:
+- $$f(x) = \frac{1}{2\pi} \int_{-\infty}^{\infty} F(\omega) e^{j\omega x} d\omega$$.
+- Ensures complete information preservation.
+- Basis for signal reconstruction in DSP.
+
+---
+
+## **Energy and Parseval’s Theorem**
+- Energy conservation in time and frequency domains.
+- Parseval’s theorem states:
+- $$\int |f(x)|^2 dx = \frac{1}{2\pi} \int |F(\omega)|^2 d\omega$$.
+- Ensures no energy loss between domains.
