@@ -1,0 +1,4401 @@
+---
+title: '[Predict the onset of diabetes based on diagnostic measures](https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database)'
+---
+
+
+
+
+
+## Context
+
+This dataset is originally from the National Institute of Diabetes and Digestive and Kidney Diseases. The objective of the dataset is to diagnostically predict whether or not a patient has diabetes, based on certain diagnostic measurements included in the dataset. Several constraints were placed on the selection of these instances from a larger database. In particular, all patients here are females at least 21 years old of Pima Indian heritage.
+
+[Smith, J.W., Everhart, J.E., Dickson, W.C., Knowler, W.C., & Johannes, R.S. (1988). Using the ADAP learning algorithm to forecast the onset of diabetes mellitus. In Proceedings of the Symposium on Computer Applications and Medical Care (pp. 261--265). IEEE Computer Society Press.](https://europepmc.org/backend/ptpmcrender.fcgi?accid=PMC2245318&blobtype=pdf)
+
+## Variables
+
+- **Pregnancies**: Number of times pregnant
+
+- **Glucose**: Plasma glucose concentration a 2 hours in an oral glucose tolerance test
+
+- **BloodPressur**e: Diastolic blood pressure (mm Hg)
+
+- **SkinThickness**: Triceps skin fold thickness (mm)
+
+- **Insulin**: 2-Hour serum insulin (mu U/ml)
+
+- **BMI**: Body mass index (weight in kg/(height in m)^2)
+
+- **DiabetesPedigreeFunction**: Diabetes pedigree function
+
+- **Age**: Age (years)
+
+- **Outcome**: Class variable (0 or 1) 268 of 768 are 1, the others are 0
+
+::: {#cell-5 .cell execution_count=1}
+``` {.python .cell-code}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, random_split
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+import statsmodels.api as sm
+```
+:::
+
+
+::: {#cell-6 .cell execution_count=2}
+``` {.python .cell-code}
+num_gpus = torch.cuda.device_count()
+print(f"Number of GPUs available: {num_gpus}")
+for i in range(num_gpus):
+    print(f"{i+1}. GPU {i}: {torch.cuda.get_device_name(i)}")
+
+device = 0  # "Select the index of the GPU you wish to use"
+torch.cuda.set_device(device)
+print(f"GPU selection: {torch.cuda.get_device_name(device)}")
+
+device1 = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device1}")
+```
+
+::: {.cell-output .cell-output-stdout}
+```
+Number of GPUs available: 1
+1. GPU 0: NVIDIA GeForce MX110
+GPU selection: NVIDIA GeForce MX110
+Using device: cuda:0
+```
+:::
+:::
+
+
+## Load data
+
+::: {#cell-8 .cell execution_count=3}
+``` {.python .cell-code}
+data = pd.read_csv("../../data/diabetes.csv")
+```
+:::
+
+
+## Check any missing values
+
+::: {#cell-10 .cell execution_count=4}
+``` {.python .cell-code}
+data.describe()
+data.isna().sum()
+```
+
+::: {.cell-output .cell-output-display execution_count=4}
+```
+Pregnancies                 0
+Glucose                     0
+BloodPressure               0
+SkinThickness               0
+Insulin                     0
+BMI                         0
+DiabetesPedigreeFunction    0
+Age                         0
+Outcome                     0
+dtype: int64
+```
+:::
+:::
+
+
+::: {#cell-11 .cell execution_count=5}
+``` {.python .cell-code}
+col_entradas = [
+    "Pregnancies",
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI",
+    "DiabetesPedigreeFunction",
+    "Age"
+]
+col_salidas = [
+    "Outcome"
+]
+```
+:::
+
+
+::: {#cell-12 .cell execution_count=6}
+``` {.python .cell-code}
+data[col_salidas].head()
+```
+
+::: {.cell-output .cell-output-display execution_count=6}
+
+```{=html}
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Outcome</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+```
+
+:::
+:::
+
+
+## Explore the data relationship
+
+::: {#cell-14 .cell execution_count=7}
+``` {.python .cell-code}
+sns.countplot(data=data, x="Outcome")
+```
+
+::: {.cell-output .cell-output-display}
+![](cod004_sol_NeuralNetwork_files/figure-html/cell-8-output-1.png){}
+:::
+:::
+
+
+## Normalize and standarize the data
+
+::: {#cell-16 .cell execution_count=8}
+``` {.python .cell-code}
+standarScaler_features = StandardScaler().fit(data[col_entradas])
+entradas_norm = standarScaler_features.transform(data[col_entradas])
+salida_norm = data[col_salidas].values
+
+```
+:::
+
+
+## Create neural network data
+
+### Create Dataset
+
+::: {#cell-19 .cell execution_count=9}
+``` {.python .cell-code}
+class TabularDataset(Dataset):
+    def __init__(self, ent, sal):
+        self.inputs = torch.tensor(ent, dtype=torch.float32)
+        self.outputs = torch.tensor(sal, dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, idx):
+        return self.inputs[idx], self.outputs[idx]
+```
+:::
+
+
+::: {#cell-20 .cell execution_count=10}
+``` {.python .cell-code}
+conjuntoDatos = TabularDataset(ent=entradas_norm, sal=salida_norm)
+
+train_ds, val_ds, test_ds = random_split(conjuntoDatos, [0.7, 0.15, 0.15])
+
+train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_ds, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_ds, batch_size=32, shuffle=True)
+```
+:::
+
+
+::: {#cell-21 .cell execution_count=11}
+``` {.python .cell-code}
+for batch in train_loader:
+    X_batch, y_batch = batch
+    print(X_batch.shape, y_batch.shape)
+```
+
+::: {.cell-output .cell-output-stdout}
+```
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([32, 8]) torch.Size([32, 1])
+torch.Size([26, 8]) torch.Size([26, 1])
+```
+:::
+:::
+
+
+## Train model
+
+::: {#cell-23 .cell execution_count=12}
+``` {.python .cell-code}
+class RedNeuronal(nn.Module):
+    def __init__(self, ent, sal):
+        super(RedNeuronal, self).__init__()
+        self.num_caract = ent
+        self.num_salidas = sal
+        self.fc1 = nn.Linear(self.num_caract, 10)  # Capa oculta 1
+        self.act1 = nn.ReLU()
+        self.fc2 = nn.Linear(10, 12) # Capa oculta 2
+        self.act2 = nn.ReLU()
+        self.fc3 = nn.Linear(12, 13)  # Capa oculta 3
+        self.act3 = nn.ReLU()
+        self.fc4 = nn.Linear(13, self.num_salidas)  # Capa de salida
+        self.act4 = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.act1(self.fc1(x))
+        x = self.act2(self.fc2(x))
+        x = self.act3(self.fc3(x))
+        x = self.act4(self.fc4(x))
+        return x
+```
+:::
+
+
+::: {#cell-24 .cell execution_count=13}
+``` {.python .cell-code}
+epocas = 1000  # Número de épocas de entrenamiento
+batch_size = 32  # Tamaño del lote
+```
+:::
+
+
+::: {#cell-25 .cell execution_count=14}
+``` {.python .cell-code}
+red = RedNeuronal(8, 1)
+red = red.to(device=device1)
+```
+:::
+
+
+::: {#cell-26 .cell execution_count=15}
+``` {.python .cell-code}
+print(red.parameters())
+```
+
+::: {.cell-output .cell-output-stdout}
+```
+<generator object Module.parameters at 0x7f7ae23a5ee0>
+```
+:::
+:::
+
+
+::: {#cell-27 .cell execution_count=16}
+``` {.python .cell-code}
+criterio = nn.BCELoss()
+optimizador = optim.Adam(red.parameters(), lr=0.001)
+```
+:::
+
+
+::: {#cell-28 .cell execution_count=17}
+``` {.python .cell-code}
+# Entrenar la red neuronal
+for epoca in range(epocas):
+    perdida_entrenamiento = 0
+    for X_batch, y_batch in train_loader:
+        # Pasar los datos por la red neuronal
+        salida = red(X_batch.to(device=device1))
+
+        # Calcular la pérdida
+        perdida = criterio(salida, y_batch.to(device=device1))
+
+        # Actualizar los pesos
+        optimizador.zero_grad()
+        perdida.backward()
+        optimizador.step()
+        perdida_entrenamiento += perdida.item()
+
+    # Imprimir la pérdida en cada época
+    #print(f"Época {epoca+1}, pérdida: {perdida.item():.8f}")
+    perdida_validacion = 0
+    con_exactitud = 0
+    total = 0
+    with torch.no_grad():
+        for X_batch, y_batch in val_loader:
+            # Pasar los datos por la red neuronal
+            salida = red(X_batch.to(device=device1))
+
+            # Calcular la pérdida
+            perdida = criterio(salida, y_batch.to(device=device1))
+
+            perdida_validacion += perdida.item()
+
+            # Calcular la exactitud
+            _, predicciones = torch.max(salida, 1)
+            con_exactitud += (predicciones.cpu().numpy() == y_batch.cpu().numpy()).sum().item()
+            total += y_batch.shape[0]
+
+    # Imprimir los resultados
+    print(f"Época {epoca+1}")
+    print(f"Perdida entrenamiento: {perdida_entrenamiento/len(train_loader)}")
+    print(f"Perdida validación: {perdida_validacion/len(val_loader)}")
+    print(f"Exactitud validación: {con_exactitud/total:.4f}")
+```
+
+::: {.cell-output .cell-output-stdout}
+```
+Época 1
+Perdida entrenamiento: 0.6791575761402354
+Perdida validación: 0.6788250803947449
+Exactitud validación: 18.0609
+Época 2
+Perdida entrenamiento: 0.672294301145217
+Perdida validación: 0.6751690059900284
+Exactitud validación: 18.4000
+Época 3
+Perdida entrenamiento: 0.6647399173063391
+Perdida validación: 0.6713864207267761
+Exactitud validación: 18.7391
+Época 4
+Perdida entrenamiento: 0.6535137961892521
+Perdida validación: 0.6575797200202942
+Exactitud validación: 18.4000
+Época 5
+Perdida entrenamiento: 0.6389946797314812
+Perdida validación: 0.6436730623245239
+Exactitud validación: 18.2870
+Época 6
+Perdida entrenamiento: 0.6213853324160856
+Perdida validación: 0.6348690390586853
+Exactitud validación: 18.6261
+Época 7
+Perdida entrenamiento: 0.5960922311334049
+Perdida validación: 0.6058164685964584
+Exactitud validación: 18.5130
+Época 8
+Perdida entrenamiento: 0.5712940009201274
+Perdida validación: 0.5880416631698608
+Exactitud validación: 18.7391
+Época 9
+Perdida entrenamiento: 0.5457583104862886
+Perdida validación: 0.5503197610378265
+Exactitud validación: 18.4000
+Época 10
+Perdida entrenamiento: 0.5210335955900305
+Perdida validación: 0.5285529047250748
+Exactitud validación: 18.4000
+Época 11
+Perdida entrenamiento: 0.4988165813333848
+Perdida validación: 0.5061830580234528
+Exactitud validación: 18.2870
+Época 12
+Perdida entrenamiento: 0.48283538572928486
+Perdida validación: 0.5024331212043762
+Exactitud validación: 18.5130
+Época 13
+Perdida entrenamiento: 0.4708527694730198
+Perdida validación: 0.5093462020158768
+Exactitud validación: 18.4000
+Época 14
+Perdida entrenamiento: 0.4619144955102135
+Perdida validación: 0.4764373451471329
+Exactitud validación: 18.4000
+Época 15
+Perdida entrenamiento: 0.4541836258243112
+Perdida validación: 0.4746478497982025
+Exactitud validación: 17.9478
+Época 16
+Perdida entrenamiento: 0.4520234956460841
+Perdida validación: 0.48348189145326614
+Exactitud validación: 18.5130
+Época 17
+Perdida entrenamiento: 0.44661900751730976
+Perdida validación: 0.47032642364501953
+Exactitud validación: 18.0609
+Época 18
+Perdida entrenamiento: 0.44420213033171263
+Perdida validación: 0.4675467982888222
+Exactitud validación: 18.4000
+Época 19
+Perdida entrenamiento: 0.44500470512053547
+Perdida validación: 0.46534235775470734
+Exactitud validación: 18.5130
+Época 20
+Perdida entrenamiento: 0.44122909447726083
+Perdida validación: 0.49303658306598663
+Exactitud validación: 18.4000
+Época 21
+Perdida entrenamiento: 0.439960497267106
+Perdida validación: 0.4710696116089821
+Exactitud validación: 18.0609
+Época 22
+Perdida entrenamiento: 0.43822164395276236
+Perdida validación: 0.4644882157444954
+Exactitud validación: 18.4000
+Época 23
+Perdida entrenamiento: 0.43539681855370016
+Perdida validación: 0.48128364980220795
+Exactitud validación: 18.4000
+Época 24
+Perdida entrenamiento: 0.43452516373466044
+Perdida validación: 0.49383869767189026
+Exactitud validación: 18.5130
+Época 25
+Perdida entrenamiento: 0.4337502367356244
+Perdida validación: 0.461711123585701
+Exactitud validación: 18.1739
+Época 26
+Perdida entrenamiento: 0.4328044530223398
+Perdida validación: 0.4867813438177109
+Exactitud validación: 18.6261
+Época 27
+Perdida entrenamiento: 0.4315945961896111
+Perdida validación: 0.49709317088127136
+Exactitud validación: 18.8522
+Época 28
+Perdida entrenamiento: 0.43218792361371655
+Perdida validación: 0.4762030094861984
+Exactitud validación: 18.6261
+Época 29
+Perdida entrenamiento: 0.42929310570744905
+Perdida validación: 0.4678042158484459
+Exactitud validación: 18.4000
+Época 30
+Perdida entrenamiento: 0.42652833286453695
+Perdida validación: 0.4651280418038368
+Exactitud validación: 18.6261
+Época 31
+Perdida entrenamiento: 0.4259583511773278
+Perdida validación: 0.48188481479883194
+Exactitud validación: 18.6261
+Época 32
+Perdida entrenamiento: 0.4245906016405891
+Perdida validación: 0.48621364682912827
+Exactitud validación: 18.1739
+Época 33
+Perdida entrenamiento: 0.4256867608603309
+Perdida validación: 0.5174973607063293
+Exactitud validación: 18.6261
+Época 34
+Perdida entrenamiento: 0.4248025277081658
+Perdida validación: 0.4981654956936836
+Exactitud validación: 18.7391
+Época 35
+Perdida entrenamiento: 0.42286987865672393
+Perdida validación: 0.4870433583855629
+Exactitud validación: 18.7391
+Época 36
+Perdida entrenamiento: 0.42132503057227416
+Perdida validación: 0.48050128668546677
+Exactitud validación: 18.6261
+Época 37
+Perdida entrenamiento: 0.422717108446009
+Perdida validación: 0.4715006574988365
+Exactitud validación: 18.2870
+Época 38
+Perdida entrenamiento: 0.41828276742907133
+Perdida validación: 0.4957212060689926
+Exactitud validación: 18.4000
+Época 39
+Perdida entrenamiento: 0.41759711153366985
+Perdida validación: 0.4781687557697296
+Exactitud validación: 18.1739
+Época 40
+Perdida entrenamiento: 0.4186316009830026
+Perdida validación: 0.467018261551857
+Exactitud validación: 18.7391
+Época 41
+Perdida entrenamiento: 0.41757552763995004
+Perdida validación: 0.47248195111751556
+Exactitud validación: 18.5130
+Época 42
+Perdida entrenamiento: 0.41657427479239073
+Perdida validación: 0.5107008069753647
+Exactitud validación: 18.9652
+Época 43
+Perdida entrenamiento: 0.41385892559500304
+Perdida validación: 0.48618149757385254
+Exactitud validación: 18.6261
+Época 44
+Perdida entrenamiento: 0.4130455264273812
+Perdida validación: 0.48718027025461197
+Exactitud validación: 18.1739
+Época 45
+Perdida entrenamiento: 0.4121672230608323
+Perdida validación: 0.49359724670648575
+Exactitud validación: 18.4000
+Época 46
+Perdida entrenamiento: 0.4103984973009895
+Perdida validación: 0.5008325800299644
+Exactitud validación: 18.6261
+Época 47
+Perdida entrenamiento: 0.40746283005265627
+Perdida validación: 0.5021576881408691
+Exactitud validación: 18.4000
+Época 48
+Perdida entrenamiento: 0.4073647067827337
+Perdida validación: 0.4890240281820297
+Exactitud validación: 18.5130
+Época 49
+Perdida entrenamiento: 0.40921850765452666
+Perdida validación: 0.5141201466321945
+Exactitud validación: 18.4000
+Época 50
+Perdida entrenamiento: 0.40371377503170686
+Perdida validación: 0.5138585902750492
+Exactitud validación: 18.4000
+Época 51
+Perdida entrenamiento: 0.40545569798525644
+Perdida validación: 0.49403806775808334
+Exactitud validación: 18.7391
+Época 52
+Perdida entrenamiento: 0.4029516472535975
+Perdida validación: 0.4981403201818466
+Exactitud validación: 18.4000
+Época 53
+Perdida entrenamiento: 0.40148040301659527
+Perdida validación: 0.470258504152298
+Exactitud validación: 18.1739
+Época 54
+Perdida entrenamiento: 0.4014539648504818
+Perdida validación: 0.5071394890546799
+Exactitud validación: 18.5130
+Época 55
+Perdida entrenamiento: 0.4001041352748871
+Perdida validación: 0.5059882402420044
+Exactitud validación: 18.7391
+Época 56
+Perdida entrenamiento: 0.398499013746486
+Perdida validación: 0.465816680341959
+Exactitud validación: 18.1739
+Época 57
+Perdida entrenamiento: 0.39581065318163705
+Perdida validación: 0.4719567634165287
+Exactitud validación: 18.4000
+Época 58
+Perdida entrenamiento: 0.3962685343097238
+Perdida validación: 0.49108629673719406
+Exactitud validación: 17.9478
+Época 59
+Perdida entrenamiento: 0.3972399699337342
+Perdida validación: 0.5343546643853188
+Exactitud validación: 18.4000
+Época 60
+Perdida entrenamiento: 0.39424481111414295
+Perdida validación: 0.5204134956002235
+Exactitud validación: 18.0609
+Época 61
+Perdida entrenamiento: 0.3933473562493044
+Perdida validación: 0.48885199427604675
+Exactitud validación: 18.2870
+Época 62
+Perdida entrenamiento: 0.39581848593319163
+Perdida validación: 0.5045148134231567
+Exactitud validación: 18.6261
+Época 63
+Perdida entrenamiento: 0.39225762381273155
+Perdida validación: 0.49928755313158035
+Exactitud validación: 18.5130
+Época 64
+Perdida entrenamiento: 0.39095135120784535
+Perdida validación: 0.49818097054958344
+Exactitud validación: 18.4000
+Época 65
+Perdida entrenamiento: 0.39278412917081046
+Perdida validación: 0.51187414675951
+Exactitud validación: 18.4000
+Época 66
+Perdida entrenamiento: 0.3880087408949347
+Perdida validación: 0.5048925578594208
+Exactitud validación: 18.4000
+Época 67
+Perdida entrenamiento: 0.3891824781894684
+Perdida validación: 0.49526503682136536
+Exactitud validación: 18.6261
+Época 68
+Perdida entrenamiento: 0.38694337185691385
+Perdida validación: 0.520538330078125
+Exactitud validación: 18.7391
+Época 69
+Perdida entrenamiento: 0.3850225508213043
+Perdida validación: 0.4962310940027237
+Exactitud validación: 18.1739
+Época 70
+Perdida entrenamiento: 0.3856160588124219
+Perdida validación: 0.5117396265268326
+Exactitud validación: 18.6261
+Época 71
+Perdida entrenamiento: 0.38290825836798725
+Perdida validación: 0.48271531239151955
+Exactitud validación: 18.7391
+Época 72
+Perdida entrenamiento: 0.3842119478127536
+Perdida validación: 0.5159867852926254
+Exactitud validación: 18.1739
+Época 73
+Perdida entrenamiento: 0.38493889570236206
+Perdida validación: 0.5417948067188263
+Exactitud validación: 18.5130
+Época 74
+Perdida entrenamiento: 0.38206734727410707
+Perdida validación: 0.4967944473028183
+Exactitud validación: 18.4000
+Época 75
+Perdida entrenamiento: 0.3789928336353863
+Perdida validación: 0.518608808517456
+Exactitud validación: 18.5130
+Época 76
+Perdida entrenamiento: 0.3797504796701319
+Perdida validación: 0.5038291662931442
+Exactitud validación: 18.2870
+Época 77
+Perdida entrenamiento: 0.3783522914437687
+Perdida validación: 0.5356133580207825
+Exactitud validación: 18.1739
+Época 78
+Perdida entrenamiento: 0.37765972754534555
+Perdida validación: 0.5259551480412483
+Exactitud validación: 18.4000
+Época 79
+Perdida entrenamiento: 0.3763415795915267
+Perdida validación: 0.5199824124574661
+Exactitud validación: 18.0609
+Época 80
+Perdida entrenamiento: 0.3773508159553303
+Perdida validación: 0.49937019497156143
+Exactitud validación: 18.2870
+Época 81
+Perdida entrenamiento: 0.37419071442940655
+Perdida validación: 0.5143114551901817
+Exactitud validación: 18.6261
+Época 82
+Perdida entrenamiento: 0.37580522544243755
+Perdida validación: 0.5341081693768501
+Exactitud validación: 18.4000
+Época 83
+Perdida entrenamiento: 0.3732707009595983
+Perdida validación: 0.5355776324868202
+Exactitud validación: 18.6261
+Época 84
+Perdida entrenamiento: 0.37286416923298554
+Perdida validación: 0.5186856985092163
+Exactitud validación: 18.4000
+Época 85
+Perdida entrenamiento: 0.3705448946532081
+Perdida validación: 0.5483004599809647
+Exactitud validación: 18.4000
+Época 86
+Perdida entrenamiento: 0.3727482636185253
+Perdida validación: 0.5254365280270576
+Exactitud validación: 18.2870
+Época 87
+Perdida entrenamiento: 0.3692259718390072
+Perdida validación: 0.5111869126558304
+Exactitud validación: 18.5130
+Época 88
+Perdida entrenamiento: 0.37127525315565224
+Perdida validación: 0.5337236076593399
+Exactitud validación: 18.4000
+Época 89
+Perdida entrenamiento: 0.37246738461887136
+Perdida validación: 0.5206818729639053
+Exactitud validación: 18.1739
+Época 90
+Perdida entrenamiento: 0.3690295158063664
+Perdida validación: 0.5593036413192749
+Exactitud validación: 18.5130
+Época 91
+Perdida entrenamiento: 0.369259593241355
+Perdida validación: 0.5117775499820709
+Exactitud validación: 18.2870
+Época 92
+Perdida entrenamiento: 0.3679639767198002
+Perdida validación: 0.5290718674659729
+Exactitud validación: 18.4000
+Época 93
+Perdida entrenamiento: 0.36736031928483176
+Perdida validación: 0.5078761726617813
+Exactitud validación: 18.4000
+Época 94
+Perdida entrenamiento: 0.3644753282561022
+Perdida validación: 0.5632258951663971
+Exactitud validación: 18.7391
+Época 95
+Perdida entrenamiento: 0.36306865776286407
+Perdida validación: 0.5218587443232536
+Exactitud validación: 18.2870
+Época 96
+Perdida entrenamiento: 0.3643888498053831
+Perdida validación: 0.5354526937007904
+Exactitud validación: 18.2870
+Época 97
+Perdida entrenamiento: 0.3653539445470361
+Perdida validación: 0.51034265011549
+Exactitud validación: 18.4000
+Época 98
+Perdida entrenamiento: 0.36249710707103505
+Perdida validación: 0.5734138116240501
+Exactitud validación: 18.6261
+Época 99
+Perdida entrenamiento: 0.36265045316780314
+Perdida validación: 0.5656266584992409
+Exactitud validación: 18.7391
+Época 100
+Perdida entrenamiento: 0.3610046874074375
+Perdida validación: 0.521674856543541
+Exactitud validación: 18.2870
+Época 101
+Perdida entrenamiento: 0.35992640081573934
+Perdida validación: 0.5487679094076157
+Exactitud validación: 18.2870
+Época 102
+Perdida entrenamiento: 0.3585259414771024
+Perdida validación: 0.548629879951477
+Exactitud validación: 18.5130
+Época 103
+Perdida entrenamiento: 0.35833654684178967
+Perdida validación: 0.5379441231489182
+Exactitud validación: 18.4000
+Época 104
+Perdida entrenamiento: 0.3592461680664736
+Perdida validación: 0.543404832482338
+Exactitud validación: 18.4000
+Época 105
+Perdida entrenamiento: 0.3567296178901897
+Perdida validación: 0.5594352409243584
+Exactitud validación: 18.2870
+Época 106
+Perdida entrenamiento: 0.3556781069320791
+Perdida validación: 0.5586513355374336
+Exactitud validación: 18.4000
+Época 107
+Perdida entrenamiento: 0.35517681609181795
+Perdida validación: 0.5655415803194046
+Exactitud validación: 18.4000
+Época 108
+Perdida entrenamiento: 0.35475079189328584
+Perdida validación: 0.5609813407063484
+Exactitud validación: 18.8522
+Época 109
+Perdida entrenamiento: 0.3557695606175591
+Perdida validación: 0.5627079755067825
+Exactitud validación: 18.2870
+Época 110
+Perdida entrenamiento: 0.3561686961089863
+Perdida validación: 0.5387836992740631
+Exactitud validación: 18.4000
+Época 111
+Perdida entrenamiento: 0.35163088756449085
+Perdida validación: 0.5590721815824509
+Exactitud validación: 18.1739
+Época 112
+Perdida entrenamiento: 0.35371597812456246
+Perdida validación: 0.5587764009833336
+Exactitud validación: 18.2870
+Época 113
+Perdida entrenamiento: 0.3535332837525536
+Perdida validación: 0.5312048122286797
+Exactitud validación: 18.5130
+Época 114
+Perdida entrenamiento: 0.35189832834636464
+Perdida validación: 0.6044761911034584
+Exactitud validación: 18.8522
+Época 115
+Perdida entrenamiento: 0.3514702092198765
+Perdida validación: 0.5321017280220985
+Exactitud validación: 18.6261
+Época 116
+Perdida entrenamiento: 0.351543351131327
+Perdida validación: 0.5573963150382042
+Exactitud validación: 18.6261
+Época 117
+Perdida entrenamiento: 0.3497464911026113
+Perdida validación: 0.5573238208889961
+Exactitud validación: 18.4000
+Época 118
+Perdida entrenamiento: 0.3498367386705735
+Perdida validación: 0.5645684897899628
+Exactitud validación: 18.2870
+Época 119
+Perdida entrenamiento: 0.35061120899284587
+Perdida validación: 0.5626191198825836
+Exactitud validación: 18.5130
+Época 120
+Perdida entrenamiento: 0.34882452558068666
+Perdida validación: 0.5745996534824371
+Exactitud validación: 18.2870
+Época 121
+Perdida entrenamiento: 0.3476862302597831
+Perdida validación: 0.5468194410204887
+Exactitud validación: 18.4000
+Época 122
+Perdida entrenamiento: 0.34637948432389426
+Perdida validación: 0.533638957887888
+Exactitud validación: 17.9478
+Época 123
+Perdida entrenamiento: 0.34753450838958516
+Perdida validación: 0.5294349901378155
+Exactitud validación: 18.1739
+Época 124
+Perdida entrenamiento: 0.3470301829716739
+Perdida validación: 0.5638434365391731
+Exactitud validación: 18.4000
+Época 125
+Perdida entrenamiento: 0.3439143107217901
+Perdida validación: 0.5707154497504234
+Exactitud validación: 18.8522
+Época 126
+Perdida entrenamiento: 0.34399966369656954
+Perdida validación: 0.5750905275344849
+Exactitud validación: 18.5130
+Época 127
+Perdida entrenamiento: 0.3459861094460768
+Perdida validación: 0.5637594535946846
+Exactitud validación: 18.2870
+Época 128
+Perdida entrenamiento: 0.3425804122405894
+Perdida validación: 0.5966473817825317
+Exactitud validación: 18.7391
+Época 129
+Perdida entrenamiento: 0.34382107065004464
+Perdida validación: 0.5452658385038376
+Exactitud validación: 18.4000
+Época 130
+Perdida entrenamiento: 0.3432043326251647
+Perdida validación: 0.568010963499546
+Exactitud validación: 18.5130
+Época 131
+Perdida entrenamiento: 0.34486333587590384
+Perdida validación: 0.5764288678765297
+Exactitud validación: 18.4000
+Época 132
+Perdida entrenamiento: 0.3452732370180242
+Perdida validación: 0.5937597900629044
+Exactitud validación: 18.5130
+Época 133
+Perdida entrenamiento: 0.343221268233131
+Perdida validación: 0.6223113089799881
+Exactitud validación: 18.7391
+Época 134
+Perdida entrenamiento: 0.3406377662630642
+Perdida validación: 0.6121482476592064
+Exactitud validación: 18.7391
+Época 135
+Perdida entrenamiento: 0.34228555770481334
+Perdida validación: 0.5532180443406105
+Exactitud validación: 18.1739
+Época 136
+Perdida entrenamiento: 0.3407059855320874
+Perdida validación: 0.6256612241268158
+Exactitud validación: 18.6261
+Época 137
+Perdida entrenamiento: 0.33841385210261626
+Perdida validación: 0.6118277311325073
+Exactitud validación: 18.7391
+Época 138
+Perdida entrenamiento: 0.3379518126740175
+Perdida validación: 0.5608039274811745
+Exactitud validación: 18.4000
+Época 139
+Perdida entrenamiento: 0.33698144818053527
+Perdida validación: 0.6184676513075829
+Exactitud validación: 18.6261
+Época 140
+Perdida entrenamiento: 0.3397687033695333
+Perdida validación: 0.6316100880503654
+Exactitud validación: 18.5130
+Época 141
+Perdida entrenamiento: 0.33633708515587973
+Perdida validación: 0.5819898918271065
+Exactitud validación: 18.6261
+Época 142
+Perdida entrenamiento: 0.33748694290133086
+Perdida validación: 0.6265446171164513
+Exactitud validación: 18.1739
+Época 143
+Perdida entrenamiento: 0.3356994197649114
+Perdida validación: 0.6239243969321251
+Exactitud validación: 18.4000
+Época 144
+Perdida entrenamiento: 0.33472176159129424
+Perdida validación: 0.6359140202403069
+Exactitud validación: 18.4000
+Época 145
+Perdida entrenamiento: 0.3353544543771183
+Perdida validación: 0.623450018465519
+Exactitud validación: 18.4000
+Época 146
+Perdida entrenamiento: 0.33618306412416343
+Perdida validación: 0.5927932560443878
+Exactitud validación: 18.0609
+Época 147
+Perdida entrenamiento: 0.3340167955440633
+Perdida validación: 0.6286558359861374
+Exactitud validación: 18.6261
+Época 148
+Perdida entrenamiento: 0.33400292519260855
+Perdida validación: 0.6745086014270782
+Exactitud validación: 18.1739
+Época 149
+Perdida entrenamiento: 0.3350304067134857
+Perdida validación: 0.6481637880206108
+Exactitud validación: 18.5130
+Época 150
+Perdida entrenamiento: 0.3336921281674329
+Perdida validación: 0.6298792809247971
+Exactitud validación: 18.7391
+Época 151
+Perdida entrenamiento: 0.3350611933890511
+Perdida validación: 0.5883950218558311
+Exactitud validación: 18.0609
+Época 152
+Perdida entrenamiento: 0.3336448108448702
+Perdida validación: 0.6367370784282684
+Exactitud validación: 18.5130
+Época 153
+Perdida entrenamiento: 0.3326067302156897
+Perdida validación: 0.6520734950900078
+Exactitud validación: 18.2870
+Época 154
+Perdida entrenamiento: 0.3309824501766878
+Perdida validación: 0.6116059124469757
+Exactitud validación: 18.2870
+Época 155
+Perdida entrenamiento: 0.3331507540800992
+Perdida validación: 0.590815544128418
+Exactitud validación: 18.5130
+Época 156
+Perdida entrenamiento: 0.33216743872446175
+Perdida validación: 0.6476473957300186
+Exactitud validación: 18.2870
+Época 157
+Perdida entrenamiento: 0.3311873867231257
+Perdida validación: 0.6468140035867691
+Exactitud validación: 18.0609
+Época 158
+Perdida entrenamiento: 0.32796593273387237
+Perdida validación: 0.6146449446678162
+Exactitud validación: 18.1739
+Época 159
+Perdida entrenamiento: 0.33034057389287386
+Perdida validación: 0.6230598539113998
+Exactitud validación: 18.5130
+Época 160
+Perdida entrenamiento: 0.3273730260484359
+Perdida validación: 0.6443871557712555
+Exactitud validación: 18.4000
+Época 161
+Perdida entrenamiento: 0.330964570536333
+Perdida validación: 0.6126606613397598
+Exactitud validación: 18.6261
+Época 162
+Perdida entrenamiento: 0.33085155487060547
+Perdida validación: 0.6176680326461792
+Exactitud validación: 18.5130
+Época 163
+Perdida entrenamiento: 0.32789769067483787
+Perdida validación: 0.5946464017033577
+Exactitud validación: 18.5130
+Época 164
+Perdida entrenamiento: 0.3267712610609391
+Perdida validación: 0.6227770447731018
+Exactitud validación: 18.2870
+Época 165
+Perdida entrenamiento: 0.3263696502236759
+Perdida validación: 0.6890445426106453
+Exactitud validación: 18.2870
+Época 166
+Perdida entrenamiento: 0.3250192473916447
+Perdida validación: 0.6499665081501007
+Exactitud validación: 18.5130
+Época 167
+Perdida entrenamiento: 0.3261696854058434
+Perdida validación: 0.6132025644183159
+Exactitud validación: 18.2870
+Época 168
+Perdida entrenamiento: 0.3261833287337247
+Perdida validación: 0.6634091883897781
+Exactitud validación: 18.5130
+Época 169
+Perdida entrenamiento: 0.32349429411046643
+Perdida validación: 0.6630931124091148
+Exactitud validación: 18.6261
+Época 170
+Perdida entrenamiento: 0.3271436393260956
+Perdida validación: 0.612961657345295
+Exactitud validación: 18.5130
+Época 171
+Perdida entrenamiento: 0.32476263098856983
+Perdida validación: 0.6598226502537727
+Exactitud validación: 18.2870
+Época 172
+Perdida entrenamiento: 0.324515997486956
+Perdida validación: 0.6418932229280472
+Exactitud validación: 18.4000
+Época 173
+Perdida entrenamiento: 0.32433526919168587
+Perdida validación: 0.7335801050066948
+Exactitud validación: 18.2870
+Época 174
+Perdida entrenamiento: 0.3219207516487907
+Perdida validación: 0.653811901807785
+Exactitud validación: 18.2870
+Época 175
+Perdida entrenamiento: 0.3205060888739193
+Perdida validación: 0.6664783358573914
+Exactitud validación: 18.5130
+Época 176
+Perdida entrenamiento: 0.3207370875512852
+Perdida validación: 0.6229857131838799
+Exactitud validación: 18.0609
+Época 177
+Perdida entrenamiento: 0.3227768680628608
+Perdida validación: 0.6437440887093544
+Exactitud validación: 18.2870
+Época 178
+Perdida entrenamiento: 0.3209051349583794
+Perdida validación: 0.6665943264961243
+Exactitud validación: 18.4000
+Época 179
+Perdida entrenamiento: 0.32111615643781777
+Perdida validación: 0.6589837148785591
+Exactitud validación: 18.5130
+Época 180
+Perdida entrenamiento: 0.3208710200646344
+Perdida validación: 0.6451635211706161
+Exactitud validación: 18.4000
+Época 181
+Perdida entrenamiento: 0.3188728216816397
+Perdida validación: 0.6509027481079102
+Exactitud validación: 18.4000
+Época 182
+Perdida entrenamiento: 0.3178029682706384
+Perdida validación: 0.6660331636667252
+Exactitud validación: 18.2870
+Época 183
+Perdida entrenamiento: 0.31673886320170236
+Perdida validación: 0.6581268012523651
+Exactitud validación: 18.2870
+Época 184
+Perdida entrenamiento: 0.31750109002870675
+Perdida validación: 0.6372020319104195
+Exactitud validación: 18.5130
+Época 185
+Perdida entrenamiento: 0.31816011930213256
+Perdida validación: 0.7313763499259949
+Exactitud validación: 18.4000
+Época 186
+Perdida entrenamiento: 0.3156069096396951
+Perdida validación: 0.6771089732646942
+Exactitud validación: 18.4000
+Época 187
+Perdida entrenamiento: 0.31772204532342796
+Perdida validación: 0.6511183455586433
+Exactitud validación: 18.4000
+Época 188
+Perdida entrenamiento: 0.31324949685265036
+Perdida validación: 0.6433937773108482
+Exactitud validación: 18.1739
+Época 189
+Perdida entrenamiento: 0.31725497894427357
+Perdida validación: 0.68333500623703
+Exactitud validación: 18.1739
+Época 190
+Perdida entrenamiento: 0.3123554464648752
+Perdida validación: 0.6660071387887001
+Exactitud validación: 18.8522
+Época 191
+Perdida entrenamiento: 0.3153311452444862
+Perdida validación: 0.7063699811697006
+Exactitud validación: 18.7391
+Época 192
+Perdida entrenamiento: 0.31404705433284535
+Perdida validación: 0.6741388291120529
+Exactitud validación: 18.7391
+Época 193
+Perdida entrenamiento: 0.31402675632168264
+Perdida validación: 0.6543318554759026
+Exactitud validación: 18.1739
+Época 194
+Perdida entrenamiento: 0.3119946630562053
+Perdida validación: 0.6574038416147232
+Exactitud validación: 18.5130
+Época 195
+Perdida entrenamiento: 0.3136322226594476
+Perdida validación: 0.7180648446083069
+Exactitud validación: 18.2870
+Época 196
+Perdida entrenamiento: 0.3097478344159968
+Perdida validación: 0.6812009885907173
+Exactitud validación: 18.2870
+Época 197
+Perdida entrenamiento: 0.3116472389768152
+Perdida validación: 0.6507846117019653
+Exactitud validación: 18.4000
+Época 198
+Perdida entrenamiento: 0.31110472188276406
+Perdida validación: 0.6414782479405403
+Exactitud validación: 18.2870
+Época 199
+Perdida entrenamiento: 0.3103514997398152
+Perdida validación: 0.6524050757288933
+Exactitud validación: 18.4000
+Época 200
+Perdida entrenamiento: 0.31179756802671094
+Perdida validación: 0.6920239329338074
+Exactitud validación: 18.7391
+Época 201
+Perdida entrenamiento: 0.3084581047296524
+Perdida validación: 0.764978215098381
+Exactitud validación: 18.0609
+Época 202
+Perdida entrenamiento: 0.30916617986033945
+Perdida validación: 0.7176909744739532
+Exactitud validación: 18.4000
+Época 203
+Perdida entrenamiento: 0.3087397515773773
+Perdida validación: 0.7063323929905891
+Exactitud validación: 18.2870
+Época 204
+Perdida entrenamiento: 0.3106594672974418
+Perdida validación: 0.6954813897609711
+Exactitud validación: 18.4000
+Época 205
+Perdida entrenamiento: 0.30759740226409016
+Perdida validación: 0.7038579732179642
+Exactitud validación: 18.1739
+Época 206
+Perdida entrenamiento: 0.3062534963383394
+Perdida validación: 0.7156248390674591
+Exactitud validación: 18.2870
+Época 207
+Perdida entrenamiento: 0.30647197278106914
+Perdida validación: 0.688948281109333
+Exactitud validación: 18.5130
+Época 208
+Perdida entrenamiento: 0.3078196758733076
+Perdida validación: 0.692335918545723
+Exactitud validación: 18.6261
+Época 209
+Perdida entrenamiento: 0.30704403011237874
+Perdida validación: 0.6741050034761429
+Exactitud validación: 17.9478
+Época 210
+Perdida entrenamiento: 0.30527643508770885
+Perdida validación: 0.6659369245171547
+Exactitud validación: 18.5130
+Época 211
+Perdida entrenamiento: 0.3071153356748469
+Perdida validación: 0.7391846030950546
+Exactitud validación: 18.6261
+Época 212
+Perdida entrenamiento: 0.30531730371363025
+Perdida validación: 0.7998167648911476
+Exactitud validación: 18.5130
+Época 213
+Perdida entrenamiento: 0.3038189893259722
+Perdida validación: 0.7052174434065819
+Exactitud validación: 17.9478
+Época 214
+Perdida entrenamiento: 0.30341966976137724
+Perdida validación: 0.7350720167160034
+Exactitud validación: 18.5130
+Época 215
+Perdida entrenamiento: 0.30246863645665784
+Perdida validación: 0.7088495343923569
+Exactitud validación: 18.5130
+Época 216
+Perdida entrenamiento: 0.30353131013758045
+Perdida validación: 0.6834466755390167
+Exactitud validación: 18.6261
+Época 217
+Perdida entrenamiento: 0.30161605074125175
+Perdida validación: 0.7241852506995201
+Exactitud validación: 17.9478
+Época 218
+Perdida entrenamiento: 0.3025359528906205
+Perdida validación: 0.6786011755466461
+Exactitud validación: 18.1739
+Época 219
+Perdida entrenamiento: 0.3013206886894563
+Perdida validación: 0.679993025958538
+Exactitud validación: 18.5130
+Época 220
+Perdida entrenamiento: 0.3010849926401587
+Perdida validación: 0.8055609986186028
+Exactitud validación: 18.7391
+Época 221
+Perdida entrenamiento: 0.299965525374693
+Perdida validación: 0.6772769540548325
+Exactitud validación: 18.4000
+Época 222
+Perdida entrenamiento: 0.3033907431013444
+Perdida validación: 0.736585833132267
+Exactitud validación: 18.5130
+Época 223
+Perdida entrenamiento: 0.3007599991910598
+Perdida validación: 0.7596707493066788
+Exactitud validación: 18.2870
+Época 224
+Perdida entrenamiento: 0.30001555558513193
+Perdida validación: 0.6992309913039207
+Exactitud validación: 18.2870
+Época 225
+Perdida entrenamiento: 0.2969650775194168
+Perdida validación: 0.7044773250818253
+Exactitud validación: 18.2870
+Época 226
+Perdida entrenamiento: 0.29871873557567596
+Perdida validación: 0.6746115535497665
+Exactitud validación: 18.5130
+Época 227
+Perdida entrenamiento: 0.2973190230481765
+Perdida validación: 0.684038981795311
+Exactitud validación: 18.4000
+Época 228
+Perdida entrenamiento: 0.2981330340399462
+Perdida validación: 0.7490448206663132
+Exactitud validación: 18.8522
+Época 229
+Perdida entrenamiento: 0.29559924935593324
+Perdida validación: 0.694603718817234
+Exactitud validación: 18.4000
+Época 230
+Perdida entrenamiento: 0.2944230069132412
+Perdida validación: 0.7294625043869019
+Exactitud validación: 18.5130
+Época 231
+Perdida entrenamiento: 0.29362457640030803
+Perdida validación: 0.7362787425518036
+Exactitud validación: 18.6261
+Época 232
+Perdida entrenamiento: 0.294377674074734
+Perdida validación: 0.7065712809562683
+Exactitud validación: 18.5130
+Época 233
+Perdida entrenamiento: 0.29613833129405975
+Perdida validación: 0.7128828167915344
+Exactitud validación: 18.2870
+Época 234
+Perdida entrenamiento: 0.29697078904684854
+Perdida validación: 0.7355586439371109
+Exactitud validación: 18.2870
+Época 235
+Perdida entrenamiento: 0.2928716233547996
+Perdida validación: 0.8148213103413582
+Exactitud validación: 18.7391
+Época 236
+Perdida entrenamiento: 0.2956160175449708
+Perdida validación: 0.7032250016927719
+Exactitud validación: 18.5130
+Época 237
+Perdida entrenamiento: 0.29322683942668576
+Perdida validación: 0.7366586253046989
+Exactitud validación: 18.6261
+Época 238
+Perdida entrenamiento: 0.29531940730179057
+Perdida validación: 0.716269001364708
+Exactitud validación: 18.2870
+Época 239
+Perdida entrenamiento: 0.29456058582838845
+Perdida validación: 0.8046405576169491
+Exactitud validación: 18.6261
+Época 240
+Perdida entrenamiento: 0.2919597485486199
+Perdida validación: 0.7698554992675781
+Exactitud validación: 18.1739
+Época 241
+Perdida entrenamiento: 0.2926513622788822
+Perdida validación: 0.6973117738962173
+Exactitud validación: 18.7391
+Época 242
+Perdida entrenamiento: 0.2892984853071325
+Perdida validación: 0.7638273388147354
+Exactitud validación: 18.4000
+Época 243
+Perdida entrenamiento: 0.29051580937469706
+Perdida validación: 0.7815098166465759
+Exactitud validación: 18.7391
+Época 244
+Perdida entrenamiento: 0.2899246417424258
+Perdida validación: 0.7704179286956787
+Exactitud validación: 18.1739
+Época 245
+Perdida entrenamiento: 0.28837614375002246
+Perdida validación: 0.7450488656759262
+Exactitud validación: 18.4000
+Época 246
+Perdida entrenamiento: 0.29001492174232707
+Perdida validación: 0.7398979514837265
+Exactitud validación: 18.1739
+Época 247
+Perdida entrenamiento: 0.28900785919497995
+Perdida validación: 0.7784785479307175
+Exactitud validación: 18.0609
+Época 248
+Perdida entrenamiento: 0.28841665474807515
+Perdida validación: 0.7403790205717087
+Exactitud validación: 18.5130
+Época 249
+Perdida entrenamiento: 0.2894595230326933
+Perdida validación: 0.7213053703308105
+Exactitud validación: 18.2870
+Época 250
+Perdida entrenamiento: 0.2888253462665221
+Perdida validación: 0.766401544213295
+Exactitud validación: 18.2870
+Época 251
+Perdida entrenamiento: 0.2866971107090221
+Perdida validación: 0.7406387180089951
+Exactitud validación: 18.5130
+Época 252
+Perdida entrenamiento: 0.2872468583724078
+Perdida validación: 0.7808045633137226
+Exactitud validación: 18.5130
+Época 253
+Perdida entrenamiento: 0.2877846333910437
+Perdida validación: 0.7809512466192245
+Exactitud validación: 18.4000
+Época 254
+Perdida entrenamiento: 0.2867770826115328
+Perdida validación: 0.7319426983594894
+Exactitud validación: 18.1739
+Época 255
+Perdida entrenamiento: 0.28648798080051646
+Perdida validación: 0.7230148687958717
+Exactitud validación: 18.4000
+Época 256
+Perdida entrenamiento: 0.2846994154593524
+Perdida validación: 0.7592649683356285
+Exactitud validación: 18.4000
+Época 257
+Perdida entrenamiento: 0.2864809036254883
+Perdida validación: 0.7423518821597099
+Exactitud validación: 18.2870
+Época 258
+Perdida entrenamiento: 0.2850097224992864
+Perdida validación: 0.8285829573869705
+Exactitud validación: 18.2870
+Época 259
+Perdida entrenamiento: 0.2860611309023464
+Perdida validación: 0.7817785143852234
+Exactitud validación: 18.5130
+Época 260
+Perdida entrenamiento: 0.28397778027197895
+Perdida validación: 0.7759557962417603
+Exactitud validación: 18.1739
+Época 261
+Perdida entrenamiento: 0.2851453958188786
+Perdida validación: 0.773240715265274
+Exactitud validación: 18.1739
+Época 262
+Perdida entrenamiento: 0.28346505322877097
+Perdida validación: 0.8145815879106522
+Exactitud validación: 18.4000
+Época 263
+Perdida entrenamiento: 0.2839648855083129
+Perdida validación: 0.8247283324599266
+Exactitud validación: 18.2870
+Época 264
+Perdida entrenamiento: 0.2820875758633894
+Perdida validación: 0.7470234334468842
+Exactitud validación: 18.1739
+Época 265
+Perdida entrenamiento: 0.2828727487255545
+Perdida validación: 0.7517593279480934
+Exactitud validación: 18.4000
+Época 266
+Perdida entrenamiento: 0.28342335364397836
+Perdida validación: 0.745085820555687
+Exactitud validación: 18.0609
+Época 267
+Perdida entrenamiento: 0.28173114271724925
+Perdida validación: 0.8318959027528763
+Exactitud validación: 18.5130
+Época 268
+Perdida entrenamiento: 0.28258827241028056
+Perdida validación: 0.7550449594855309
+Exactitud validación: 18.5130
+Época 269
+Perdida entrenamiento: 0.2806198824854458
+Perdida validación: 0.815860778093338
+Exactitud validación: 17.9478
+Época 270
+Perdida entrenamiento: 0.2798441560829387
+Perdida validación: 0.8292346000671387
+Exactitud validación: 18.7391
+Época 271
+Perdida entrenamiento: 0.28328849813517404
+Perdida validación: 0.84027498960495
+Exactitud validación: 17.9478
+Época 272
+Perdida entrenamiento: 0.27925308399340687
+Perdida validación: 0.8446707427501678
+Exactitud validación: 18.5130
+Época 273
+Perdida entrenamiento: 0.279740308137501
+Perdida validación: 0.7891214042901993
+Exactitud validación: 18.4000
+Época 274
+Perdida entrenamiento: 0.2804296621504952
+Perdida validación: 0.7523273676633835
+Exactitud validación: 18.6261
+Época 275
+Perdida entrenamiento: 0.2786500278641196
+Perdida validación: 0.8763114959001541
+Exactitud validación: 18.5130
+Época 276
+Perdida entrenamiento: 0.2789465942803551
+Perdida validación: 0.7518940791487694
+Exactitud validación: 18.4000
+Época 277
+Perdida entrenamiento: 0.2798019025255652
+Perdida validación: 0.8489273488521576
+Exactitud validación: 18.7391
+Época 278
+Perdida entrenamiento: 0.280226955519003
+Perdida validación: 0.766749732196331
+Exactitud validación: 18.5130
+Época 279
+Perdida entrenamiento: 0.2779183343929403
+Perdida validación: 0.7820227146148682
+Exactitud validación: 18.4000
+Época 280
+Perdida entrenamiento: 0.2765612396247247
+Perdida validación: 0.7857282161712646
+Exactitud validación: 18.4000
+Época 281
+Perdida entrenamiento: 0.27886566169121685
+Perdida validación: 0.8160237297415733
+Exactitud validación: 18.6261
+Época 282
+Perdida entrenamiento: 0.2769961637609145
+Perdida validación: 0.8009995818138123
+Exactitud validación: 18.5130
+Época 283
+Perdida entrenamiento: 0.2754744019578485
+Perdida validación: 0.8242090195417404
+Exactitud validación: 18.2870
+Época 284
+Perdida entrenamiento: 0.27566534894354205
+Perdida validación: 0.8263423070311546
+Exactitud validación: 18.4000
+Época 285
+Perdida entrenamiento: 0.275710387264981
+Perdida validación: 0.7984395027160645
+Exactitud validación: 18.7391
+Época 286
+Perdida entrenamiento: 0.2722511160023072
+Perdida validación: 0.7776636183261871
+Exactitud validación: 18.7391
+Época 287
+Perdida entrenamiento: 0.2785680565763922
+Perdida validación: 0.8693821281194687
+Exactitud validación: 18.1739
+Época 288
+Perdida entrenamiento: 0.2776385243324673
+Perdida validación: 0.8111721277236938
+Exactitud validación: 18.5130
+Época 289
+Perdida entrenamiento: 0.2753101648653255
+Perdida validación: 0.7979157716035843
+Exactitud validación: 18.6261
+Época 290
+Perdida entrenamiento: 0.2721212304690305
+Perdida validación: 0.8984339684247971
+Exactitud validación: 18.1739
+Época 291
+Perdida entrenamiento: 0.27208081150756164
+Perdida validación: 0.8066085278987885
+Exactitud validación: 18.0609
+Época 292
+Perdida entrenamiento: 0.2724810707218507
+Perdida validación: 0.858610674738884
+Exactitud validación: 18.1739
+Época 293
+Perdida entrenamiento: 0.2749691465321709
+Perdida validación: 0.8009930029511452
+Exactitud validación: 18.4000
+Época 294
+Perdida entrenamiento: 0.2745845510679133
+Perdida validación: 0.8322249576449394
+Exactitud validación: 18.6261
+Época 295
+Perdida entrenamiento: 0.27191179903114543
+Perdida validación: 0.8544426411390305
+Exactitud validación: 18.5130
+Época 296
+Perdida entrenamiento: 0.2718319112763685
+Perdida validación: 0.7973638772964478
+Exactitud validación: 18.2870
+Época 297
+Perdida entrenamiento: 0.27322857257197886
+Perdida validación: 0.8390850126743317
+Exactitud validación: 18.2870
+Época 298
+Perdida entrenamiento: 0.2706087967928718
+Perdida validación: 0.8332074135541916
+Exactitud validación: 18.2870
+Época 299
+Perdida entrenamiento: 0.27064647394068103
+Perdida validación: 0.7855604067444801
+Exactitud validación: 18.6261
+Época 300
+Perdida entrenamiento: 0.27028607620912437
+Perdida validación: 0.844075620174408
+Exactitud validación: 18.5130
+Época 301
+Perdida entrenamiento: 0.27047083395368915
+Perdida validación: 0.7950586900115013
+Exactitud validación: 18.7391
+Época 302
+Perdida entrenamiento: 0.2688707393758437
+Perdida validación: 0.8446274772286415
+Exactitud validación: 18.4000
+Época 303
+Perdida entrenamiento: 0.27010226337348714
+Perdida validación: 0.8923372030258179
+Exactitud validación: 18.1739
+Época 304
+Perdida entrenamiento: 0.26951658988700194
+Perdida validación: 0.8144352659583092
+Exactitud validación: 18.7391
+Época 305
+Perdida entrenamiento: 0.2690744391259025
+Perdida validación: 0.9116105735301971
+Exactitud validación: 18.4000
+Época 306
+Perdida entrenamiento: 0.26870520588229685
+Perdida validación: 0.8943951576948166
+Exactitud validación: 18.6261
+Época 307
+Perdida entrenamiento: 0.27256863783387575
+Perdida validación: 0.9162701666355133
+Exactitud validación: 18.2870
+Época 308
+Perdida entrenamiento: 0.26849985648604
+Perdida validación: 0.8575167655944824
+Exactitud validación: 18.1739
+Época 309
+Perdida entrenamiento: 0.2659115265397465
+Perdida validación: 0.8369210362434387
+Exactitud validación: 18.9652
+Época 310
+Perdida entrenamiento: 0.26523913004819083
+Perdida validación: 0.8102370351552963
+Exactitud validación: 18.5130
+Época 311
+Perdida entrenamiento: 0.26695583322468924
+Perdida validación: 0.8106616139411926
+Exactitud validación: 18.5130
+Época 312
+Perdida entrenamiento: 0.26486619518083687
+Perdida validación: 0.862990252673626
+Exactitud validación: 18.7391
+Época 313
+Perdida entrenamiento: 0.2670781770173241
+Perdida validación: 0.9409219324588776
+Exactitud validación: 18.2870
+Época 314
+Perdida entrenamiento: 0.26387015773969535
+Perdida validación: 0.8297825679183006
+Exactitud validación: 18.5130
+Época 315
+Perdida entrenamiento: 0.2630258443600991
+Perdida validación: 0.8401200473308563
+Exactitud validación: 18.6261
+Época 316
+Perdida entrenamiento: 0.26609305248540993
+Perdida validación: 0.8802365660667419
+Exactitud validación: 18.4000
+Época 317
+Perdida entrenamiento: 0.26455171406269073
+Perdida validación: 0.85386922955513
+Exactitud validación: 18.7391
+Época 318
+Perdida entrenamiento: 0.2650342899210313
+Perdida validación: 0.913348600268364
+Exactitud validación: 18.6261
+Época 319
+Perdida entrenamiento: 0.2632635078009437
+Perdida validación: 0.8332754224538803
+Exactitud validación: 18.6261
+Época 320
+Perdida entrenamiento: 0.2620505313662922
+Perdida validación: 0.8459868878126144
+Exactitud validación: 18.1739
+Época 321
+Perdida entrenamiento: 0.2629975974559784
+Perdida validación: 0.96159228682518
+Exactitud validación: 18.8522
+Época 322
+Perdida entrenamiento: 0.26157911384806914
+Perdida validación: 0.8396739363670349
+Exactitud validación: 18.6261
+Época 323
+Perdida entrenamiento: 0.2618062881862416
+Perdida validación: 0.8706338852643967
+Exactitud validación: 18.1739
+Época 324
+Perdida entrenamiento: 0.26290398397866416
+Perdida validación: 0.9644896686077118
+Exactitud validación: 18.6261
+Época 325
+Perdida entrenamiento: 0.2609732878558776
+Perdida validación: 0.9126636236906052
+Exactitud validación: 18.0609
+Época 326
+Perdida entrenamiento: 0.26105780110639687
+Perdida validación: 0.9232337772846222
+Exactitud validación: 18.1739
+Época 327
+Perdida entrenamiento: 0.26264332410167246
+Perdida validación: 0.8974900245666504
+Exactitud validación: 18.4000
+Época 328
+Perdida entrenamiento: 0.2613668257699293
+Perdida validación: 0.8862783759832382
+Exactitud validación: 18.4000
+Época 329
+Perdida entrenamiento: 0.25836709930616264
+Perdida validación: 0.8626670092344284
+Exactitud validación: 18.5130
+Época 330
+Perdida entrenamiento: 0.25922364522429076
+Perdida validación: 0.8830067962408066
+Exactitud validación: 18.4000
+Época 331
+Perdida entrenamiento: 0.26386993597535524
+Perdida validación: 0.8540544435381889
+Exactitud validación: 18.2870
+Época 332
+Perdida entrenamiento: 0.2593020134988953
+Perdida validación: 0.9039890021085739
+Exactitud validación: 18.6261
+Época 333
+Perdida entrenamiento: 0.2595018516568577
+Perdida validación: 0.8899291157722473
+Exactitud validación: 17.9478
+Época 334
+Perdida entrenamiento: 0.25665878986611085
+Perdida validación: 0.8394737765192986
+Exactitud validación: 18.5130
+Época 335
+Perdida entrenamiento: 0.25748301604214835
+Perdida validación: 0.9290647059679031
+Exactitud validación: 18.7391
+Época 336
+Perdida entrenamiento: 0.2590382677667281
+Perdida validación: 0.8649090602993965
+Exactitud validación: 18.2870
+Época 337
+Perdida entrenamiento: 0.2554243496235679
+Perdida validación: 0.9593407809734344
+Exactitud validación: 18.7391
+Época 338
+Perdida entrenamiento: 0.25691094906891093
+Perdida validación: 0.9706677794456482
+Exactitud validación: 18.2870
+Época 339
+Perdida entrenamiento: 0.25731626678915587
+Perdida validación: 0.9453080892562866
+Exactitud validación: 18.6261
+Época 340
+Perdida entrenamiento: 0.25507257659645644
+Perdida validación: 1.0293856039643288
+Exactitud validación: 18.1739
+Época 341
+Perdida entrenamiento: 0.25653984616784486
+Perdida validación: 0.9515304788947105
+Exactitud validación: 18.6261
+Época 342
+Perdida entrenamiento: 0.2530783467433032
+Perdida validación: 0.9056045934557915
+Exactitud validación: 18.5130
+Época 343
+Perdida entrenamiento: 0.25274669072207284
+Perdida validación: 0.918601781129837
+Exactitud validación: 18.5130
+Época 344
+Perdida entrenamiento: 0.25438859269899483
+Perdida validación: 0.8851798251271248
+Exactitud validación: 18.6261
+Época 345
+Perdida entrenamiento: 0.25582583599230824
+Perdida validación: 0.8939363956451416
+Exactitud validación: 18.5130
+Época 346
+Perdida entrenamiento: 0.25355858443414464
+Perdida validación: 0.9068932980298996
+Exactitud validación: 18.5130
+Época 347
+Perdida entrenamiento: 0.2524866067311343
+Perdida validación: 0.8788146674633026
+Exactitud validación: 18.1739
+Época 348
+Perdida entrenamiento: 0.2536166170064141
+Perdida validación: 0.9186953902244568
+Exactitud validación: 18.5130
+Época 349
+Perdida entrenamiento: 0.25076256341793957
+Perdida validación: 0.9136313498020172
+Exactitud validación: 18.1739
+Época 350
+Perdida entrenamiento: 0.2505396744784187
+Perdida validación: 0.8769859820604324
+Exactitud validación: 18.1739
+Época 351
+Perdida entrenamiento: 0.2476857444819282
+Perdida validación: 0.9611544162034988
+Exactitud validación: 18.1739
+Época 352
+Perdida entrenamiento: 0.2510046801146339
+Perdida validación: 0.8769300132989883
+Exactitud validación: 18.7391
+Época 353
+Perdida entrenamiento: 0.2519538367495817
+Perdida validación: 1.009942501783371
+Exactitud validación: 18.6261
+Época 354
+Perdida entrenamiento: 0.25590333780821634
+Perdida validación: 1.0110169053077698
+Exactitud validación: 18.4000
+Época 355
+Perdida entrenamiento: 0.24665287882089615
+Perdida validación: 0.963760256767273
+Exactitud validación: 18.4000
+Época 356
+Perdida entrenamiento: 0.24831677973270416
+Perdida validación: 0.9520362615585327
+Exactitud validación: 18.4000
+Época 357
+Perdida entrenamiento: 0.25036969605614157
+Perdida validación: 0.9705468714237213
+Exactitud validación: 18.1739
+Época 358
+Perdida entrenamiento: 0.2493774198433932
+Perdida validación: 0.9390139281749725
+Exactitud validación: 18.2870
+Época 359
+Perdida entrenamiento: 0.24896152755793402
+Perdida validación: 0.9668420851230621
+Exactitud validación: 18.8522
+Época 360
+Perdida entrenamiento: 0.24545341993079467
+Perdida validación: 0.9598726183176041
+Exactitud validación: 18.4000
+Época 361
+Perdida entrenamiento: 0.2458833907456959
+Perdida validación: 0.9334637522697449
+Exactitud validación: 18.1739
+Época 362
+Perdida entrenamiento: 0.24675725137486176
+Perdida validación: 0.9621522575616837
+Exactitud validación: 18.0609
+Época 363
+Perdida entrenamiento: 0.24821498946231954
+Perdida validación: 0.9556918889284134
+Exactitud validación: 18.7391
+Época 364
+Perdida entrenamiento: 0.24909637824577444
+Perdida validación: 0.8772937767207623
+Exactitud validación: 18.4000
+Época 365
+Perdida entrenamiento: 0.2441341666614308
+Perdida validación: 0.9345356523990631
+Exactitud validación: 18.6261
+Época 366
+Perdida entrenamiento: 0.2470776263405295
+Perdida validación: 1.1278765723109245
+Exactitud validación: 18.4000
+Época 367
+Perdida entrenamiento: 0.24338742038782904
+Perdida validación: 0.9173186719417572
+Exactitud validación: 18.7391
+Época 368
+Perdida entrenamiento: 0.24587972418350332
+Perdida validación: 0.9912368655204773
+Exactitud validación: 18.0609
+Época 369
+Perdida entrenamiento: 0.2427884471767089
+Perdida validación: 0.9538993611931801
+Exactitud validación: 18.7391
+Época 370
+Perdida entrenamiento: 0.243407864780987
+Perdida validación: 1.0761137753725052
+Exactitud validación: 18.4000
+Época 371
+Perdida entrenamiento: 0.24230772344505086
+Perdida validación: 0.968388170003891
+Exactitud validación: 18.6261
+Época 372
+Perdida entrenamiento: 0.2439663826542742
+Perdida validación: 0.9714508131146431
+Exactitud validación: 18.6261
+Época 373
+Perdida entrenamiento: 0.24384574592113495
+Perdida validación: 0.9771965891122818
+Exactitud validación: 18.4000
+Época 374
+Perdida entrenamiento: 0.24184141614857843
+Perdida validación: 0.9964085817337036
+Exactitud validación: 18.4000
+Época 375
+Perdida entrenamiento: 0.24101467518245473
+Perdida validación: 0.9356465041637421
+Exactitud validación: 17.9478
+Época 376
+Perdida entrenamiento: 0.24006997969220667
+Perdida validación: 0.9156605526804924
+Exactitud validación: 18.0609
+Época 377
+Perdida entrenamiento: 0.23987779985455907
+Perdida validación: 1.0531059503555298
+Exactitud validación: 18.2870
+Época 378
+Perdida entrenamiento: 0.24004541951067307
+Perdida validación: 1.0218062326312065
+Exactitud validación: 18.6261
+Época 379
+Perdida entrenamiento: 0.23972525666741765
+Perdida validación: 1.0781173408031464
+Exactitud validación: 18.4000
+Época 380
+Perdida entrenamiento: 0.23826756415998235
+Perdida validación: 1.0114049911499023
+Exactitud validación: 18.2870
+Época 381
+Perdida entrenamiento: 0.24126425473129048
+Perdida validación: 0.9385729283094406
+Exactitud validación: 18.2870
+Época 382
+Perdida entrenamiento: 0.23986119557829463
+Perdida validación: 1.0387549847364426
+Exactitud validación: 18.5130
+Época 383
+Perdida entrenamiento: 0.2385270192342646
+Perdida validación: 0.9609201848506927
+Exactitud validación: 18.6261
+Época 384
+Perdida entrenamiento: 0.23623030238291798
+Perdida validación: 0.9485830962657928
+Exactitud validación: 18.9652
+Época 385
+Perdida entrenamiento: 0.2384230853880153
+Perdida validación: 0.9416188150644302
+Exactitud validación: 18.4000
+Época 386
+Perdida entrenamiento: 0.23678378015756607
+Perdida validación: 0.9777514040470123
+Exactitud validación: 18.5130
+Época 387
+Perdida entrenamiento: 0.2363624467569239
+Perdida validación: 1.0215286016464233
+Exactitud validación: 18.7391
+Época 388
+Perdida entrenamiento: 0.23862669660764582
+Perdida validación: 0.9029609151184559
+Exactitud validación: 18.1739
+Época 389
+Perdida entrenamiento: 0.23591116070747375
+Perdida validación: 0.981246717274189
+Exactitud validación: 18.6261
+Época 390
+Perdida entrenamiento: 0.23835155718466816
+Perdida validación: 1.0086095109581947
+Exactitud validación: 18.2870
+Época 391
+Perdida entrenamiento: 0.2371460374663858
+Perdida validación: 1.0065960884094238
+Exactitud validación: 18.1739
+Época 392
+Perdida entrenamiento: 0.23677723285029917
+Perdida validación: 0.9826027452945709
+Exactitud validación: 18.5130
+Época 393
+Perdida entrenamiento: 0.23566791196079814
+Perdida validación: 1.0341725945472717
+Exactitud validación: 18.7391
+Época 394
+Perdida entrenamiento: 0.23627526444547317
+Perdida validación: 1.0409796610474586
+Exactitud validación: 18.6261
+Época 395
+Perdida entrenamiento: 0.23617835518191843
+Perdida validación: 1.6217666417360306
+Exactitud validación: 18.5130
+Época 396
+Perdida entrenamiento: 0.233415008029517
+Perdida validación: 0.9137831814587116
+Exactitud validación: 18.4000
+Época 397
+Perdida entrenamiento: 0.2343826009070172
+Perdida validación: 1.7579079121351242
+Exactitud validación: 18.7391
+Época 398
+Perdida entrenamiento: 0.23368020224220612
+Perdida validación: 1.0100515186786652
+Exactitud validación: 18.7391
+Época 399
+Perdida entrenamiento: 0.2321076200288885
+Perdida validación: 1.6793339550495148
+Exactitud validación: 18.6261
+Época 400
+Perdida entrenamiento: 0.23293223012896144
+Perdida validación: 1.610338568687439
+Exactitud validación: 18.6261
+Época 401
+Perdida entrenamiento: 0.23105231278082905
+Perdida validación: 1.6416560858488083
+Exactitud validación: 18.4000
+Época 402
+Perdida entrenamiento: 0.23033762372591915
+Perdida validación: 1.66363063454628
+Exactitud validación: 18.4000
+Época 403
+Perdida entrenamiento: 0.23017951057237737
+Perdida validación: 1.6514071226119995
+Exactitud validación: 18.4000
+Época 404
+Perdida entrenamiento: 0.23135478268651402
+Perdida validación: 1.703551098704338
+Exactitud validación: 18.6261
+Época 405
+Perdida entrenamiento: 0.23199564174694173
+Perdida validación: 1.6757195889949799
+Exactitud validación: 18.2870
+Época 406
+Perdida entrenamiento: 0.23011183563400717
+Perdida validación: 2.195468708872795
+Exactitud validación: 18.5130
+Época 407
+Perdida entrenamiento: 0.2305179115603952
+Perdida validación: 2.174595355987549
+Exactitud validación: 18.7391
+Época 408
+Perdida entrenamiento: 0.23433966364930658
+Perdida validación: 1.7009802162647247
+Exactitud validación: 18.5130
+Época 409
+Perdida entrenamiento: 0.23122593146913192
+Perdida validación: 1.6614426672458649
+Exactitud validación: 18.9652
+Época 410
+Perdida entrenamiento: 0.22980902212507584
+Perdida validación: 1.6923879534006119
+Exactitud validación: 18.5130
+Época 411
+Perdida entrenamiento: 0.2278544008731842
+Perdida validación: 1.6532950922846794
+Exactitud validación: 18.4000
+Época 412
+Perdida entrenamiento: 0.22777951815549066
+Perdida validación: 1.680533990263939
+Exactitud validación: 18.6261
+Época 413
+Perdida entrenamiento: 0.22783642744316773
+Perdida validación: 1.6505683958530426
+Exactitud validación: 18.4000
+Época 414
+Perdida entrenamiento: 0.22797440430697272
+Perdida validación: 1.6364076286554337
+Exactitud validación: 18.2870
+Época 415
+Perdida entrenamiento: 0.22762182880850398
+Perdida validación: 1.630989708006382
+Exactitud validación: 18.2870
+Época 416
+Perdida entrenamiento: 0.227926942793762
+Perdida validación: 1.6618505418300629
+Exactitud validación: 18.6261
+Época 417
+Perdida entrenamiento: 0.22629480239223032
+Perdida validación: 1.6968141943216324
+Exactitud validación: 18.4000
+Época 418
+Perdida entrenamiento: 0.22488318559001474
+Perdida validación: 1.7578092515468597
+Exactitud validación: 18.2870
+Época 419
+Perdida entrenamiento: 0.2263673219610663
+Perdida validación: 1.6131335943937302
+Exactitud validación: 18.1739
+Época 420
+Perdida entrenamiento: 0.22987113630070405
+Perdida validación: 1.7163729965686798
+Exactitud validación: 18.1739
+Época 421
+Perdida entrenamiento: 0.22674175527165918
+Perdida validación: 1.6752920597791672
+Exactitud validación: 18.8522
+Época 422
+Perdida entrenamiento: 0.22827263702364528
+Perdida validación: 1.7154240310192108
+Exactitud validación: 18.5130
+Época 423
+Perdida entrenamiento: 0.2220915402559673
+Perdida validación: 1.6310960724949837
+Exactitud validación: 18.1739
+Época 424
+Perdida entrenamiento: 0.22505173613043392
+Perdida validación: 1.6115675866603851
+Exactitud validación: 18.1739
+Época 425
+Perdida entrenamiento: 0.22220089418046615
+Perdida validación: 2.214143306016922
+Exactitud validación: 18.1739
+Época 426
+Perdida entrenamiento: 0.2250201561871697
+Perdida validación: 1.64544016122818
+Exactitud validación: 18.1739
+Época 427
+Perdida entrenamiento: 0.22550559876596227
+Perdida validación: 1.6851514726877213
+Exactitud validación: 18.7391
+Época 428
+Perdida entrenamiento: 0.22317052457262487
+Perdida validación: 1.7038426101207733
+Exactitud validación: 18.7391
+Época 429
+Perdida entrenamiento: 0.22356641993803136
+Perdida validación: 1.710338070988655
+Exactitud validación: 18.4000
+Época 430
+Perdida entrenamiento: 0.22142810199190588
+Perdida validación: 1.7483271360397339
+Exactitud validación: 18.7391
+Época 431
+Perdida entrenamiento: 0.22034293062546673
+Perdida validación: 1.6430785655975342
+Exactitud validación: 18.7391
+Época 432
+Perdida entrenamiento: 0.22316901824053595
+Perdida validación: 1.7672994136810303
+Exactitud validación: 18.4000
+Época 433
+Perdida entrenamiento: 0.22463338383856943
+Perdida validación: 1.6433425098657608
+Exactitud validación: 18.4000
+Época 434
+Perdida entrenamiento: 0.22231091646587148
+Perdida validación: 1.6801955252885818
+Exactitud validación: 18.5130
+Época 435
+Perdida entrenamiento: 0.2208845168352127
+Perdida validación: 1.6813064217567444
+Exactitud validación: 18.2870
+Época 436
+Perdida entrenamiento: 0.22095614584053264
+Perdida validación: 1.6760065108537674
+Exactitud validación: 18.6261
+Época 437
+Perdida entrenamiento: 0.22033456712961197
+Perdida validación: 1.678830772638321
+Exactitud validación: 18.7391
+Época 438
+Perdida entrenamiento: 0.22007577559527228
+Perdida validación: 1.6954376250505447
+Exactitud validación: 18.6261
+Época 439
+Perdida entrenamiento: 0.22003603507490718
+Perdida validación: 1.725928619503975
+Exactitud validación: 18.8522
+Época 440
+Perdida entrenamiento: 0.22195249708259807
+Perdida validación: 1.8037448972463608
+Exactitud validación: 18.5130
+Época 441
+Perdida entrenamiento: 0.21979504736030803
+Perdida validación: 1.6947238594293594
+Exactitud validación: 18.1739
+Época 442
+Perdida entrenamiento: 0.21700231205014622
+Perdida validación: 1.7131413221359253
+Exactitud validación: 18.5130
+Época 443
+Perdida entrenamiento: 0.21716881061301513
+Perdida validación: 1.7016572207212448
+Exactitud validación: 18.2870
+Época 444
+Perdida entrenamiento: 0.21755946778199253
+Perdida validación: 2.2080706506967545
+Exactitud validación: 18.4000
+Época 445
+Perdida entrenamiento: 0.21960881308597677
+Perdida validación: 2.2232966125011444
+Exactitud validación: 18.2870
+Época 446
+Perdida entrenamiento: 0.2177817536627545
+Perdida validación: 1.674214854836464
+Exactitud validación: 18.2870
+Época 447
+Perdida entrenamiento: 0.22076668239691677
+Perdida validación: 1.6826488673686981
+Exactitud validación: 18.4000
+Época 448
+Perdida entrenamiento: 0.2175587897791582
+Perdida validación: 1.684437245130539
+Exactitud validación: 18.4000
+Época 449
+Perdida entrenamiento: 0.21597974396803798
+Perdida validación: 1.7088166177272797
+Exactitud validación: 18.2870
+Época 450
+Perdida entrenamiento: 0.21813132044147043
+Perdida validación: 1.733146995306015
+Exactitud validación: 18.1739
+Época 451
+Perdida entrenamiento: 0.21773759976905935
+Perdida validación: 1.6941641122102737
+Exactitud validación: 18.2870
+Época 452
+Perdida entrenamiento: 0.21535080583656535
+Perdida validación: 1.76713265478611
+Exactitud validación: 18.4000
+Época 453
+Perdida entrenamiento: 0.21499554462292614
+Perdida validación: 1.725937306880951
+Exactitud validación: 18.4000
+Época 454
+Perdida entrenamiento: 0.21762167399420457
+Perdida validación: 1.745834544301033
+Exactitud validación: 18.4000
+Época 455
+Perdida entrenamiento: 0.21529359852566438
+Perdida validación: 1.7183891236782074
+Exactitud validación: 18.6261
+Época 456
+Perdida entrenamiento: 0.21322160959243774
+Perdida validación: 1.665738008916378
+Exactitud validación: 18.5130
+Época 457
+Perdida entrenamiento: 0.21297074021661982
+Perdida validación: 1.6415093056857586
+Exactitud validación: 18.1739
+Época 458
+Perdida entrenamiento: 0.2120342228342505
+Perdida validación: 1.6675629317760468
+Exactitud validación: 18.5130
+Época 459
+Perdida entrenamiento: 0.21290872377507827
+Perdida validación: 1.7062142491340637
+Exactitud validación: 18.1739
+Época 460
+Perdida entrenamiento: 0.2155881883466945
+Perdida validación: 1.6664244383573532
+Exactitud validación: 18.6261
+Época 461
+Perdida entrenamiento: 0.2123072870513972
+Perdida validación: 1.6892398595809937
+Exactitud validación: 18.1739
+Época 462
+Perdida entrenamiento: 0.21215057285392985
+Perdida validación: 1.71298286318779
+Exactitud validación: 18.5130
+Época 463
+Perdida entrenamiento: 0.2131307668545667
+Perdida validación: 2.3371381908655167
+Exactitud validación: 18.4000
+Época 464
+Perdida entrenamiento: 0.21063883252003612
+Perdida validación: 1.6871272176504135
+Exactitud validación: 18.4000
+Época 465
+Perdida entrenamiento: 0.21041779746027553
+Perdida validación: 1.7584034204483032
+Exactitud validación: 18.8522
+Época 466
+Perdida entrenamiento: 0.20908518573817084
+Perdida validación: 1.7399623692035675
+Exactitud validación: 18.2870
+Época 467
+Perdida entrenamiento: 0.20974228049025817
+Perdida validación: 1.7392813563346863
+Exactitud validación: 18.0609
+Época 468
+Perdida entrenamiento: 0.20860017222516677
+Perdida validación: 1.7459359467029572
+Exactitud validación: 18.6261
+Época 469
+Perdida entrenamiento: 0.20901529490947723
+Perdida validación: 1.6576770320534706
+Exactitud validación: 18.2870
+Época 470
+Perdida entrenamiento: 0.20985684850636652
+Perdida validación: 1.6809408068656921
+Exactitud validación: 17.8348
+Época 471
+Perdida entrenamiento: 0.20888636611840306
+Perdida validación: 1.7095791101455688
+Exactitud validación: 18.4000
+Época 472
+Perdida entrenamiento: 0.20915422983029308
+Perdida validación: 1.735638752579689
+Exactitud validación: 18.6261
+Época 473
+Perdida entrenamiento: 0.21087617295629837
+Perdida validación: 2.223282590508461
+Exactitud validación: 18.8522
+Época 474
+Perdida entrenamiento: 0.21059176501105814
+Perdida validación: 2.2696365863084793
+Exactitud validación: 18.4000
+Época 475
+Perdida entrenamiento: 0.20993135518887462
+Perdida validación: 2.3144669383764267
+Exactitud validación: 18.4000
+Época 476
+Perdida entrenamiento: 0.2069975641720435
+Perdida validación: 1.7147362232208252
+Exactitud validación: 17.9478
+Época 477
+Perdida entrenamiento: 0.20739179674316854
+Perdida validación: 1.7762307822704315
+Exactitud validación: 18.4000
+Época 478
+Perdida entrenamiento: 0.20736681187854095
+Perdida validación: 1.7321285605430603
+Exactitud validación: 18.7391
+Época 479
+Perdida entrenamiento: 0.20850269627921722
+Perdida validación: 1.7248305529356003
+Exactitud validación: 18.5130
+Época 480
+Perdida entrenamiento: 0.20808968561537125
+Perdida validación: 1.6793062910437584
+Exactitud validación: 18.5130
+Época 481
+Perdida entrenamiento: 0.2063585151644314
+Perdida validación: 2.3160250037908554
+Exactitud validación: 18.4000
+Época 482
+Perdida entrenamiento: 0.20922441298470779
+Perdida validación: 1.7382783144712448
+Exactitud validación: 18.7391
+Época 483
+Perdida entrenamiento: 0.2089783260050942
+Perdida validación: 1.675756473094225
+Exactitud validación: 18.2870
+Época 484
+Perdida entrenamiento: 0.20955036317600922
+Perdida validación: 1.7968875467777252
+Exactitud validación: 18.5130
+Época 485
+Perdida entrenamiento: 0.20719658802537358
+Perdida validación: 2.281432792544365
+Exactitud validación: 18.2870
+Época 486
+Perdida entrenamiento: 0.20671694988713546
+Perdida validación: 2.290306895971298
+Exactitud validación: 18.5130
+Época 487
+Perdida entrenamiento: 0.20706017490695505
+Perdida validación: 1.7116160094738007
+Exactitud validación: 18.4000
+Época 488
+Perdida entrenamiento: 0.20524413971339955
+Perdida validación: 1.8093033283948898
+Exactitud validación: 18.5130
+Época 489
+Perdida entrenamiento: 0.2051747401847559
+Perdida validación: 1.7765755355358124
+Exactitud validación: 18.6261
+Época 490
+Perdida entrenamiento: 0.20630764128530726
+Perdida validación: 1.7870673686265945
+Exactitud validación: 18.2870
+Época 491
+Perdida entrenamiento: 0.20644442780929453
+Perdida validación: 2.2809912860393524
+Exactitud validación: 18.5130
+Época 492
+Perdida entrenamiento: 0.2057285668218837
+Perdida validación: 2.258572533726692
+Exactitud validación: 17.8348
+Época 493
+Perdida entrenamiento: 0.2029068154447219
+Perdida validación: 1.6803431659936905
+Exactitud validación: 18.7391
+Época 494
+Perdida entrenamiento: 0.2028874272809309
+Perdida validación: 1.8127751350402832
+Exactitud validación: 18.7391
+Época 495
+Perdida entrenamiento: 0.2052424208206289
+Perdida validación: 1.7849414199590683
+Exactitud validación: 18.7391
+Época 496
+Perdida entrenamiento: 0.20392162791069815
+Perdida validación: 1.7237890660762787
+Exactitud validación: 18.4000
+Época 497
+Perdida entrenamiento: 0.20092843429130666
+Perdida validación: 2.2871531173586845
+Exactitud validación: 18.6261
+Época 498
+Perdida entrenamiento: 0.20234436278834061
+Perdida validación: 2.2854884639382362
+Exactitud validación: 18.2870
+Época 499
+Perdida entrenamiento: 0.20332733541727066
+Perdida validación: 1.7827043235301971
+Exactitud validación: 18.6261
+Época 500
+Perdida entrenamiento: 0.20469026092220755
+Perdida validación: 2.3745395615696907
+Exactitud validación: 18.5130
+Época 501
+Perdida entrenamiento: 0.20449996783452876
+Perdida validación: 1.7906746417284012
+Exactitud validación: 18.6261
+Época 502
+Perdida entrenamiento: 0.20517864034456365
+Perdida validación: 1.732749417424202
+Exactitud validación: 18.5130
+Época 503
+Perdida entrenamiento: 0.20195804273380952
+Perdida validación: 2.2683166712522507
+Exactitud validación: 18.5130
+Época 504
+Perdida entrenamiento: 0.2007514510084601
+Perdida validación: 1.7528420686721802
+Exactitud validación: 18.4000
+Época 505
+Perdida entrenamiento: 0.2026394693290486
+Perdida validación: 1.7850606441497803
+Exactitud validación: 18.4000
+Época 506
+Perdida entrenamiento: 0.20051894775208304
+Perdida validación: 1.7376345694065094
+Exactitud validación: 18.5130
+Época 507
+Perdida entrenamiento: 0.1994068114196553
+Perdida validación: 1.813426986336708
+Exactitud validación: 18.2870
+Época 508
+Perdida entrenamiento: 0.20079496415222392
+Perdida validación: 2.327720493078232
+Exactitud validación: 18.2870
+Época 509
+Perdida entrenamiento: 0.20256532158921747
+Perdida validación: 1.7458709627389908
+Exactitud validación: 18.4000
+Época 510
+Perdida entrenamiento: 0.20124467067858753
+Perdida validación: 1.7705589160323143
+Exactitud validación: 18.5130
+Época 511
+Perdida entrenamiento: 0.19941148468676737
+Perdida validación: 1.796208769083023
+Exactitud validación: 18.4000
+Época 512
+Perdida entrenamiento: 0.19882883394465728
+Perdida validación: 1.749910831451416
+Exactitud validación: 18.4000
+Época 513
+Perdida entrenamiento: 0.2000570288475822
+Perdida validación: 1.796690434217453
+Exactitud validación: 18.5130
+Época 514
+Perdida entrenamiento: 0.19875034295460758
+Perdida validación: 1.7634713500738144
+Exactitud validación: 18.4000
+Época 515
+Perdida entrenamiento: 0.19847256471129024
+Perdida validación: 1.7303752601146698
+Exactitud validación: 18.2870
+Época 516
+Perdida entrenamiento: 0.19714518767945907
+Perdida validación: 1.7873051464557648
+Exactitud validación: 18.7391
+Época 517
+Perdida entrenamiento: 0.19987665379748626
+Perdida validación: 2.3726578801870346
+Exactitud validación: 18.0609
+Época 518
+Perdida entrenamiento: 0.19713971062618144
+Perdida validación: 1.8600481450557709
+Exactitud validación: 18.6261
+Época 519
+Perdida entrenamiento: 0.19719707089311936
+Perdida validación: 1.7947774976491928
+Exactitud validación: 18.5130
+Época 520
+Perdida entrenamiento: 0.19800057525143905
+Perdida validación: 1.8386373445391655
+Exactitud validación: 18.4000
+Época 521
+Perdida entrenamiento: 0.19503561845597098
+Perdida validación: 1.86511692404747
+Exactitud validación: 18.0609
+Época 522
+Perdida entrenamiento: 0.19703502164167516
+Perdida validación: 2.2786576449871063
+Exactitud validación: 18.7391
+Época 523
+Perdida entrenamiento: 0.1965047695180949
+Perdida validación: 1.7550715208053589
+Exactitud validación: 18.5130
+Época 524
+Perdida entrenamiento: 0.19743618281448588
+Perdida validación: 1.7788794338703156
+Exactitud validación: 18.4000
+Época 525
+Perdida entrenamiento: 0.19581336571889765
+Perdida validación: 2.3412183597683907
+Exactitud validación: 18.6261
+Época 526
+Perdida entrenamiento: 0.19735115065294154
+Perdida validación: 1.7944573611021042
+Exactitud validación: 18.5130
+Época 527
+Perdida entrenamiento: 0.1972572623806841
+Perdida validación: 1.7847600281238556
+Exactitud validación: 18.4000
+Época 528
+Perdida entrenamiento: 0.19613027397324057
+Perdida validación: 1.8530294448137283
+Exactitud validación: 18.2870
+Época 529
+Perdida entrenamiento: 0.19604966395041523
+Perdida validación: 1.8482124507427216
+Exactitud validación: 18.6261
+Época 530
+Perdida entrenamiento: 0.19563549099599614
+Perdida validación: 1.7713856101036072
+Exactitud validación: 18.6261
+Época 531
+Perdida entrenamiento: 0.1955263259656289
+Perdida validación: 1.8069935888051987
+Exactitud validación: 17.9478
+Época 532
+Perdida entrenamiento: 0.19411977774956646
+Perdida validación: 1.8041860908269882
+Exactitud validación: 18.6261
+Época 533
+Perdida entrenamiento: 0.1945977715008399
+Perdida validación: 1.825106680393219
+Exactitud validación: 18.2870
+Época 534
+Perdida entrenamiento: 0.1952920450883753
+Perdida validación: 2.3135114312171936
+Exactitud validación: 18.6261
+Época 535
+Perdida entrenamiento: 0.19248855683733435
+Perdida validación: 1.8990767300128937
+Exactitud validación: 18.4000
+Época 536
+Perdida entrenamiento: 0.19831059960757985
+Perdida validación: 1.80620726197958
+Exactitud validación: 18.2870
+Época 537
+Perdida entrenamiento: 0.1929608224069371
+Perdida validación: 1.7912742048501968
+Exactitud validación: 18.4000
+Época 538
+Perdida entrenamiento: 0.19296798898893244
+Perdida validación: 1.7543442994356155
+Exactitud validación: 18.1739
+Época 539
+Perdida entrenamiento: 0.1950954786118339
+Perdida validación: 1.8118992149829865
+Exactitud validación: 18.4000
+Época 540
+Perdida entrenamiento: 0.1945850323228275
+Perdida validación: 1.8098999336361885
+Exactitud validación: 18.2870
+Época 541
+Perdida entrenamiento: 0.19389351413530462
+Perdida validación: 2.289820373058319
+Exactitud validación: 18.2870
+Época 542
+Perdida entrenamiento: 0.19105484468095443
+Perdida validación: 1.794912725687027
+Exactitud validación: 18.0609
+Época 543
+Perdida entrenamiento: 0.19384890005869024
+Perdida validación: 1.875189632177353
+Exactitud validación: 18.1739
+Época 544
+Perdida entrenamiento: 0.19117492963286006
+Perdida validación: 1.809283822774887
+Exactitud validación: 18.4000
+Época 545
+Perdida entrenamiento: 0.19236618893987992
+Perdida validación: 2.2911151945590973
+Exactitud validación: 18.6261
+Época 546
+Perdida entrenamiento: 0.19125396495356278
+Perdida validación: 1.7524409666657448
+Exactitud validación: 18.5130
+Época 547
+Perdida entrenamiento: 0.19026901047019398
+Perdida validación: 1.8327823728322983
+Exactitud validación: 18.4000
+Época 548
+Perdida entrenamiento: 0.1921607873895589
+Perdida validación: 2.307979680597782
+Exactitud validación: 18.2870
+Época 549
+Perdida entrenamiento: 0.19157351816401763
+Perdida validación: 1.8872595876455307
+Exactitud validación: 18.4000
+Época 550
+Perdida entrenamiento: 0.19094288480632446
+Perdida validación: 1.9153790324926376
+Exactitud validación: 18.6261
+Época 551
+Perdida entrenamiento: 0.19048834592103958
+Perdida validación: 1.7659415304660797
+Exactitud validación: 18.5130
+Época 552
+Perdida entrenamiento: 0.19038300785948248
+Perdida validación: 1.7611987218260765
+Exactitud validación: 18.4000
+Época 553
+Perdida entrenamiento: 0.18965064383604946
+Perdida validación: 1.871100902557373
+Exactitud validación: 18.2870
+Época 554
+Perdida entrenamiento: 0.19062230779844172
+Perdida validación: 1.8860596120357513
+Exactitud validación: 18.2870
+Época 555
+Perdida entrenamiento: 0.18969056185554056
+Perdida validación: 2.3548885583877563
+Exactitud validación: 18.0609
+Época 556
+Perdida entrenamiento: 0.18985140696167946
+Perdida validación: 2.386777237057686
+Exactitud validación: 18.5130
+Época 557
+Perdida entrenamiento: 0.19206796192071018
+Perdida validación: 1.804469645023346
+Exactitud validación: 18.2870
+Época 558
+Perdida entrenamiento: 0.1930651068687439
+Perdida validación: 1.8630142956972122
+Exactitud validación: 18.4000
+Época 559
+Perdida entrenamiento: 0.1930370124823907
+Perdida validación: 1.7798155397176743
+Exactitud validación: 18.4000
+Época 560
+Perdida entrenamiento: 0.1902738498414264
+Perdida validación: 1.8318945318460464
+Exactitud validación: 18.4000
+Época 561
+Perdida entrenamiento: 0.19049055655212963
+Perdida validación: 1.7881848067045212
+Exactitud validación: 18.4000
+Época 562
+Perdida entrenamiento: 0.18791185231769786
+Perdida validación: 1.8009058833122253
+Exactitud validación: 18.7391
+Época 563
+Perdida entrenamiento: 0.18878159409060197
+Perdida validación: 2.3612941056489944
+Exactitud validación: 18.2870
+Época 564
+Perdida entrenamiento: 0.18708483611836152
+Perdida validación: 1.795827567577362
+Exactitud validación: 18.6261
+Época 565
+Perdida entrenamiento: 0.18627881477860844
+Perdida validación: 1.8481564670801163
+Exactitud validación: 18.5130
+Época 566
+Perdida entrenamiento: 0.18686316863578908
+Perdida validación: 1.8827480152249336
+Exactitud validación: 18.5130
+Época 567
+Perdida entrenamiento: 0.18734496525105307
+Perdida validación: 2.437557488679886
+Exactitud validación: 18.6261
+Época 568
+Perdida entrenamiento: 0.18700052578659618
+Perdida validación: 1.8809164464473724
+Exactitud validación: 18.6261
+Época 569
+Perdida entrenamiento: 0.1859943498583401
+Perdida validación: 2.3979000598192215
+Exactitud validación: 18.5130
+Época 570
+Perdida entrenamiento: 0.1867598135243444
+Perdida validación: 2.401433676481247
+Exactitud validación: 18.4000
+Época 571
+Perdida entrenamiento: 0.18641008743468454
+Perdida validación: 1.8099213689565659
+Exactitud validación: 18.4000
+Época 572
+Perdida entrenamiento: 0.1878149176345152
+Perdida validación: 1.8095275163650513
+Exactitud validación: 18.7391
+Época 573
+Perdida entrenamiento: 0.1844573288279421
+Perdida validación: 1.815418690443039
+Exactitud validación: 18.4000
+Época 574
+Perdida entrenamiento: 0.18568310711313696
+Perdida validación: 1.7979236990213394
+Exactitud validación: 18.5130
+Época 575
+Perdida entrenamiento: 0.1849901847103063
+Perdida validación: 1.8825554847717285
+Exactitud validación: 18.4000
+Época 576
+Perdida entrenamiento: 0.18612053245306015
+Perdida validación: 1.80270117521286
+Exactitud validación: 18.4000
+Época 577
+Perdida entrenamiento: 0.1876081745414173
+Perdida validación: 1.8711232542991638
+Exactitud validación: 18.2870
+Época 578
+Perdida entrenamiento: 0.18576577305793762
+Perdida validación: 1.908687710762024
+Exactitud validación: 18.2870
+Época 579
+Perdida entrenamiento: 0.18641850834383683
+Perdida validación: 1.86570705473423
+Exactitud validación: 17.9478
+Época 580
+Perdida entrenamiento: 0.1835003499599064
+Perdida validación: 1.8697331100702286
+Exactitud validación: 18.6261
+Época 581
+Perdida entrenamiento: 0.18529456985347412
+Perdida validación: 1.7919117659330368
+Exactitud validación: 18.2870
+Época 582
+Perdida entrenamiento: 0.1841503298457931
+Perdida validación: 2.4412302374839783
+Exactitud validación: 18.7391
+Época 583
+Perdida entrenamiento: 0.18371729158303318
+Perdida validación: 1.8544679284095764
+Exactitud validación: 18.8522
+Época 584
+Perdida entrenamiento: 0.18499108140959458
+Perdida validación: 1.8232229053974152
+Exactitud validación: 18.5130
+Época 585
+Perdida entrenamiento: 0.1860760952181676
+Perdida validación: 1.841095194220543
+Exactitud validación: 18.5130
+Época 586
+Perdida entrenamiento: 0.18593923703712575
+Perdida validación: 1.8760543167591095
+Exactitud validación: 18.5130
+Época 587
+Perdida entrenamiento: 0.18209941509891958
+Perdida validación: 1.9005913734436035
+Exactitud validación: 18.5130
+Época 588
+Perdida entrenamiento: 0.18258259160553708
+Perdida validación: 1.858061134815216
+Exactitud validación: 18.6261
+Época 589
+Perdida entrenamiento: 0.18598782183492885
+Perdida validación: 2.420540153980255
+Exactitud validación: 18.2870
+Época 590
+Perdida entrenamiento: 0.1828598489656168
+Perdida validación: 1.8328881710767746
+Exactitud validación: 18.6261
+Época 591
+Perdida entrenamiento: 0.1841830584932776
+Perdida validación: 1.8384827971458435
+Exactitud validación: 18.5130
+Época 592
+Perdida entrenamiento: 0.1838392247171963
+Perdida validación: 2.3826200664043427
+Exactitud validación: 18.6261
+Época 593
+Perdida entrenamiento: 0.18054470770499287
+Perdida validación: 2.3773992508649826
+Exactitud validación: 18.7391
+Época 594
+Perdida entrenamiento: 0.18052921707139297
+Perdida validación: 1.9906710982322693
+Exactitud validación: 18.0609
+Época 595
+Perdida entrenamiento: 0.18146830621887655
+Perdida validación: 2.434752732515335
+Exactitud validación: 18.5130
+Época 596
+Perdida entrenamiento: 0.17948470089365454
+Perdida validación: 1.852248728275299
+Exactitud validación: 18.7391
+Época 597
+Perdida entrenamiento: 0.17860462297411525
+Perdida validación: 2.346190959215164
+Exactitud validación: 18.5130
+Época 598
+Perdida entrenamiento: 0.18151379288995967
+Perdida validación: 1.9093308448791504
+Exactitud validación: 18.5130
+Época 599
+Perdida entrenamiento: 0.17953513781814015
+Perdida validación: 1.927807793021202
+Exactitud validación: 18.6261
+Época 600
+Perdida entrenamiento: 0.18134287832414403
+Perdida validación: 1.8202008605003357
+Exactitud validación: 17.9478
+Época 601
+Perdida entrenamiento: 0.18065105510108612
+Perdida validación: 2.4191258996725082
+Exactitud validación: 18.0609
+Época 602
+Perdida entrenamiento: 0.17909427337786732
+Perdida validación: 2.3444060534238815
+Exactitud validación: 17.9478
+Época 603
+Perdida entrenamiento: 0.1807249688050326
+Perdida validación: 1.859527364373207
+Exactitud validación: 18.6261
+Época 604
+Perdida entrenamiento: 0.17981747581678278
+Perdida validación: 1.8991383910179138
+Exactitud validación: 18.4000
+Época 605
+Perdida entrenamiento: 0.18046181123046315
+Perdida validación: 1.9196833372116089
+Exactitud validación: 18.2870
+Época 606
+Perdida entrenamiento: 0.17735964761060827
+Perdida validación: 1.8872027397155762
+Exactitud validación: 18.4000
+Época 607
+Perdida entrenamiento: 0.17956263265189001
+Perdida validación: 1.8883287459611893
+Exactitud validación: 18.2870
+Época 608
+Perdida entrenamiento: 0.17843612239641302
+Perdida validación: 2.382715880870819
+Exactitud validación: 18.2870
+Época 609
+Perdida entrenamiento: 0.17757347269969828
+Perdida validación: 1.932212918996811
+Exactitud validación: 18.6261
+Época 610
+Perdida entrenamiento: 0.1786287356825436
+Perdida validación: 1.9283054769039154
+Exactitud validación: 18.4000
+Época 611
+Perdida entrenamiento: 0.17991680958691766
+Perdida validación: 2.5501490607857704
+Exactitud validación: 18.2870
+Época 612
+Perdida entrenamiento: 0.18011304056819746
+Perdida validación: 1.7971415668725967
+Exactitud validación: 18.4000
+Época 613
+Perdida entrenamiento: 0.17593874650843003
+Perdida validación: 2.426175683736801
+Exactitud validación: 18.4000
+Época 614
+Perdida entrenamiento: 0.17618215829133987
+Perdida validación: 2.452900141477585
+Exactitud validación: 18.5130
+Época 615
+Perdida entrenamiento: 0.17730087129508748
+Perdida validación: 1.8392793536186218
+Exactitud validación: 18.5130
+Época 616
+Perdida entrenamiento: 0.1800769615699263
+Perdida validación: 1.9838367700576782
+Exactitud validación: 18.8522
+Época 617
+Perdida entrenamiento: 0.17642011405790553
+Perdida validación: 1.9059662222862244
+Exactitud validación: 18.7391
+Época 618
+Perdida entrenamiento: 0.17710689542924657
+Perdida validación: 1.862879142165184
+Exactitud validación: 18.5130
+Época 619
+Perdida entrenamiento: 0.17686956814106772
+Perdida validación: 1.8814306408166885
+Exactitud validación: 18.4000
+Época 620
+Perdida entrenamiento: 0.17600232581881917
+Perdida validación: 1.8020828627049923
+Exactitud validación: 18.1739
+Época 621
+Perdida entrenamiento: 0.17544799276134548
+Perdida validación: 1.811521127820015
+Exactitud validación: 18.6261
+Época 622
+Perdida entrenamiento: 0.17697353485752554
+Perdida validación: 1.877358078956604
+Exactitud validación: 18.5130
+Época 623
+Perdida entrenamiento: 0.17406106301966837
+Perdida validación: 1.8654315024614334
+Exactitud validación: 18.1739
+Época 624
+Perdida entrenamiento: 0.17648298687794628
+Perdida validación: 1.8686436414718628
+Exactitud validación: 18.5130
+Época 625
+Perdida entrenamiento: 0.17434970179901405
+Perdida validación: 1.919616162776947
+Exactitud validación: 18.9652
+Época 626
+Perdida entrenamiento: 0.17567084598190644
+Perdida validación: 1.9153682887554169
+Exactitud validación: 18.0609
+Época 627
+Perdida entrenamiento: 0.17896952392423854
+Perdida validación: 1.8582693189382553
+Exactitud validación: 18.0609
+Época 628
+Perdida entrenamiento: 0.17745003915008375
+Perdida validación: 1.9257307648658752
+Exactitud validación: 18.5130
+Época 629
+Perdida entrenamiento: 0.1788088896257036
+Perdida validación: 1.931223213672638
+Exactitud validación: 18.5130
+Época 630
+Perdida entrenamiento: 0.17631110548973083
+Perdida validación: 2.3573699593544006
+Exactitud validación: 18.6261
+Época 631
+Perdida entrenamiento: 0.17479468860170422
+Perdida validación: 1.9445046782493591
+Exactitud validación: 18.6261
+Época 632
+Perdida entrenamiento: 0.1756579818971017
+Perdida validación: 1.973215788602829
+Exactitud validación: 18.1739
+Época 633
+Perdida entrenamiento: 0.17561784189413576
+Perdida validación: 1.9100207686424255
+Exactitud validación: 18.8522
+Época 634
+Perdida entrenamiento: 0.1757204962127349
+Perdida validación: 1.939280390739441
+Exactitud validación: 18.1739
+Época 635
+Perdida entrenamiento: 0.17755503207445145
+Perdida validación: 1.981196641921997
+Exactitud validación: 18.5130
+Época 636
+Perdida entrenamiento: 0.17460980178678737
+Perdida validación: 1.9405174255371094
+Exactitud validación: 18.4000
+Época 637
+Perdida entrenamiento: 0.17348291571525967
+Perdida validación: 1.8273062705993652
+Exactitud validación: 18.4000
+Época 638
+Perdida entrenamiento: 0.1731029485954958
+Perdida validación: 2.380571126937866
+Exactitud validación: 18.0609
+Época 639
+Perdida entrenamiento: 0.17311051268787944
+Perdida validación: 2.059565246105194
+Exactitud validación: 18.4000
+Época 640
+Perdida entrenamiento: 0.17420342915198384
+Perdida validación: 1.9567348062992096
+Exactitud validación: 18.6261
+Época 641
+Perdida entrenamiento: 0.17315113938906612
+Perdida validación: 1.9034782350063324
+Exactitud validación: 18.5130
+Época 642
+Perdida entrenamiento: 0.1723686158657074
+Perdida validación: 1.9813492596149445
+Exactitud validación: 18.5130
+Época 643
+Perdida entrenamiento: 0.1716386500526877
+Perdida validación: 1.9668281972408295
+Exactitud validación: 18.4000
+Época 644
+Perdida entrenamiento: 0.17454188360887415
+Perdida validación: 2.3830559104681015
+Exactitud validación: 18.2870
+Época 645
+Perdida entrenamiento: 0.17409280687570572
+Perdida validación: 1.8761438131332397
+Exactitud validación: 18.1739
+Época 646
+Perdida entrenamiento: 0.17281085559550455
+Perdida validación: 1.8756016343832016
+Exactitud validación: 18.4000
+Época 647
+Perdida entrenamiento: 0.17153984615031412
+Perdida validación: 1.9308282732963562
+Exactitud validación: 18.7391
+Época 648
+Perdida entrenamiento: 0.17411951852195404
+Perdida validación: 1.8359106853604317
+Exactitud validación: 17.8348
+Época 649
+Perdida entrenamiento: 0.17255713790655136
+Perdida validación: 1.8988316506147385
+Exactitud validación: 18.5130
+Época 650
+Perdida entrenamiento: 0.17018533541875727
+Perdida validación: 1.949387177824974
+Exactitud validación: 18.6261
+Época 651
+Perdida entrenamiento: 0.17180895630051107
+Perdida validación: 1.9061071127653122
+Exactitud validación: 18.5130
+Época 652
+Perdida entrenamiento: 0.1712561582817751
+Perdida validación: 1.9416884183883667
+Exactitud validación: 18.9652
+Época 653
+Perdida entrenamiento: 0.17215262353420258
+Perdida validación: 1.8685024976730347
+Exactitud validación: 18.8522
+Época 654
+Perdida entrenamiento: 0.16887790841214798
+Perdida validación: 1.8882263749837875
+Exactitud validación: 18.2870
+Época 655
+Perdida entrenamiento: 0.17128623868612683
+Perdida validación: 2.458386555314064
+Exactitud validación: 18.1739
+Época 656
+Perdida entrenamiento: 0.170212522149086
+Perdida validación: 1.954999327659607
+Exactitud validación: 18.5130
+Época 657
+Perdida entrenamiento: 0.1741621494293213
+Perdida validación: 1.9523300230503082
+Exactitud validación: 18.5130
+Época 658
+Perdida entrenamiento: 0.17083424548892415
+Perdida validación: 1.959117352962494
+Exactitud validación: 18.7391
+Época 659
+Perdida entrenamiento: 0.16970867137698567
+Perdida validación: 1.8965559303760529
+Exactitud validación: 18.4000
+Época 660
+Perdida entrenamiento: 0.16913258941734538
+Perdida validación: 1.9195391535758972
+Exactitud validación: 18.2870
+Época 661
+Perdida entrenamiento: 0.16958869686898062
+Perdida validación: 2.4342183619737625
+Exactitud validación: 17.7217
+Época 662
+Perdida entrenamiento: 0.1689609788796481
+Perdida validación: 1.990819126367569
+Exactitud validación: 18.6261
+Época 663
+Perdida entrenamiento: 0.17155426433857748
+Perdida validación: 2.4798940420150757
+Exactitud validación: 18.6261
+Época 664
+Perdida entrenamiento: 0.17054487940143137
+Perdida validación: 1.982157289981842
+Exactitud validación: 18.5130
+Época 665
+Perdida entrenamiento: 0.16904305841992884
+Perdida validación: 1.8254309445619583
+Exactitud validación: 18.4000
+Época 666
+Perdida entrenamiento: 0.16776984053499558
+Perdida validación: 1.9470479041337967
+Exactitud validación: 18.6261
+Época 667
+Perdida entrenamiento: 0.16710532982559764
+Perdida validación: 2.491328239440918
+Exactitud validación: 18.8522
+Época 668
+Perdida entrenamiento: 0.16992384808904984
+Perdida validación: 1.9949734210968018
+Exactitud validación: 18.7391
+Época 669
+Perdida entrenamiento: 0.16685624595950632
+Perdida validación: 1.8857195228338242
+Exactitud validación: 18.4000
+Época 670
+Perdida entrenamiento: 0.16876719979678884
+Perdida validación: 1.880652368068695
+Exactitud validación: 18.8522
+Época 671
+Perdida entrenamiento: 0.1676985665279276
+Perdida validación: 1.9278014451265335
+Exactitud validación: 18.0609
+Época 672
+Perdida entrenamiento: 0.1676903353894458
+Perdida validación: 1.950418546795845
+Exactitud validación: 18.6261
+Época 673
+Perdida entrenamiento: 0.1701295621254865
+Perdida validación: 1.8648300468921661
+Exactitud validación: 17.9478
+Época 674
+Perdida entrenamiento: 0.17001822459347107
+Perdida validación: 1.8509264029562473
+Exactitud validación: 18.1739
+Época 675
+Perdida entrenamiento: 0.16711394970907884
+Perdida validación: 1.954179808497429
+Exactitud validación: 18.5130
+Época 676
+Perdida entrenamiento: 0.16708773023941936
+Perdida validación: 1.924515724182129
+Exactitud validación: 18.2870
+Época 677
+Perdida entrenamiento: 0.16858496648423812
+Perdida validación: 2.000500962138176
+Exactitud validación: 18.4000
+Época 678
+Perdida entrenamiento: 0.16450631793807535
+Perdida validación: 2.566338747739792
+Exactitud validación: 18.2870
+Época 679
+Perdida entrenamiento: 0.16761167566565907
+Perdida validación: 2.0148858428001404
+Exactitud validación: 18.4000
+Época 680
+Perdida entrenamiento: 0.16833147757193623
+Perdida validación: 2.074228048324585
+Exactitud validación: 18.6261
+Época 681
+Perdida entrenamiento: 0.16532384385080898
+Perdida validación: 1.9695260673761368
+Exactitud validación: 18.6261
+Época 682
+Perdida entrenamiento: 0.16553058124640407
+Perdida validación: 1.9510675370693207
+Exactitud validación: 18.4000
+Época 683
+Perdida entrenamiento: 0.16487656051621719
+Perdida validación: 2.4368354082107544
+Exactitud validación: 18.0609
+Época 684
+Perdida entrenamiento: 0.1665136836030904
+Perdida validación: 1.9446289241313934
+Exactitud validación: 18.6261
+Época 685
+Perdida entrenamiento: 0.16706801074392655
+Perdida validación: 2.0074078142642975
+Exactitud validación: 18.2870
+Época 686
+Perdida entrenamiento: 0.16774573746849508
+Perdida validación: 1.9531133472919464
+Exactitud validación: 18.2870
+Época 687
+Perdida entrenamiento: 0.1662634378846954
+Perdida validación: 1.9650149643421173
+Exactitud validación: 18.1739
+Época 688
+Perdida entrenamiento: 0.165897518834647
+Perdida validación: 1.9263443648815155
+Exactitud validación: 18.5130
+Época 689
+Perdida entrenamiento: 0.16783844898728764
+Perdida validación: 2.5158949941396713
+Exactitud validación: 18.1739
+Época 690
+Perdida entrenamiento: 0.1632937078966814
+Perdida validación: 2.1293532699346542
+Exactitud validación: 18.4000
+Época 691
+Perdida entrenamiento: 0.16604621116729343
+Perdida validación: 1.994159609079361
+Exactitud validación: 18.2870
+Época 692
+Perdida entrenamiento: 0.16435301785959916
+Perdida validación: 1.955128014087677
+Exactitud validación: 18.5130
+Época 693
+Perdida entrenamiento: 0.16429974248304086
+Perdida validación: 1.9711505323648453
+Exactitud validación: 18.4000
+Época 694
+Perdida entrenamiento: 0.1655895092031535
+Perdida validación: 1.929766833782196
+Exactitud validación: 18.4000
+Época 695
+Perdida entrenamiento: 0.16631515455596588
+Perdida validación: 2.5120222568511963
+Exactitud validación: 18.6261
+Época 696
+Perdida entrenamiento: 0.16254296022302964
+Perdida validación: 2.6067320108413696
+Exactitud validación: 18.5130
+Época 697
+Perdida entrenamiento: 0.16614514501655803
+Perdida validación: 1.9055406600236893
+Exactitud validación: 18.2870
+Época 698
+Perdida entrenamiento: 0.16295288327862234
+Perdida validación: 2.6316159069538116
+Exactitud validación: 18.4000
+Época 699
+Perdida entrenamiento: 0.16373521878438838
+Perdida validación: 1.9525791704654694
+Exactitud validación: 18.4000
+Época 700
+Perdida entrenamiento: 0.16521619216484182
+Perdida validación: 2.574406772851944
+Exactitud validación: 18.4000
+Época 701
+Perdida entrenamiento: 0.1622587906963685
+Perdida validación: 2.044219732284546
+Exactitud validación: 18.5130
+Época 702
+Perdida entrenamiento: 0.16276384846252553
+Perdida validación: 2.4917390048503876
+Exactitud validación: 18.2870
+Época 703
+Perdida entrenamiento: 0.16085231830092037
+Perdida validación: 2.0034276843070984
+Exactitud validación: 18.7391
+Época 704
+Perdida entrenamiento: 0.1621255900929956
+Perdida validación: 1.8788238018751144
+Exactitud validación: 18.0609
+Época 705
+Perdida entrenamiento: 0.16276478811221964
+Perdida validación: 2.609136253595352
+Exactitud validación: 18.7391
+Época 706
+Perdida entrenamiento: 0.16290473981815226
+Perdida validación: 2.039955824613571
+Exactitud validación: 18.1739
+Época 707
+Perdida entrenamiento: 0.1612090832170318
+Perdida validación: 2.555538982152939
+Exactitud validación: 18.6261
+Época 708
+Perdida entrenamiento: 0.16272959770525203
+Perdida validación: 2.6732825934886932
+Exactitud validación: 18.6261
+Época 709
+Perdida entrenamiento: 0.16046422807609334
+Perdida validación: 2.65529066324234
+Exactitud validación: 18.2870
+Época 710
+Perdida entrenamiento: 0.1593300660743433
+Perdida validación: 2.6579330414533615
+Exactitud validación: 18.1739
+Época 711
+Perdida entrenamiento: 0.16260490128222635
+Perdida validación: 3.1879926919937134
+Exactitud validación: 18.2870
+Época 712
+Perdida entrenamiento: 0.1639710743637646
+Perdida validación: 2.5582952350378036
+Exactitud validación: 18.1739
+Época 713
+Perdida entrenamiento: 0.16152114859398672
+Perdida validación: 3.1042632460594177
+Exactitud validación: 18.0609
+Época 714
+Perdida entrenamiento: 0.16002430547686183
+Perdida validación: 2.019172251224518
+Exactitud validación: 18.5130
+Época 715
+Perdida entrenamiento: 0.162712872685755
+Perdida validación: 2.5908713340759277
+Exactitud validación: 18.2870
+Época 716
+Perdida entrenamiento: 0.16232478969237385
+Perdida validación: 3.1466260999441147
+Exactitud validación: 18.6261
+Época 717
+Perdida entrenamiento: 0.15897689803558238
+Perdida validación: 2.5849307030439377
+Exactitud validación: 18.1739
+Época 718
+Perdida entrenamiento: 0.16153902823434158
+Perdida validación: 2.647393435239792
+Exactitud validación: 18.1739
+Época 719
+Perdida entrenamiento: 0.16119855642318726
+Perdida validación: 2.612269088625908
+Exactitud validación: 18.5130
+Época 720
+Perdida entrenamiento: 0.15967204334104762
+Perdida validación: 2.601207673549652
+Exactitud validación: 18.0609
+Época 721
+Perdida entrenamiento: 0.15950890805791407
+Perdida validación: 2.5986678898334503
+Exactitud validación: 18.4000
+Época 722
+Perdida entrenamiento: 0.1589717917582568
+Perdida validación: 2.7100989818573
+Exactitud validación: 18.5130
+Época 723
+Perdida entrenamiento: 0.16081694338251562
+Perdida validación: 3.600108325481415
+Exactitud validación: 18.2870
+Época 724
+Perdida entrenamiento: 0.16270827458185308
+Perdida validación: 2.6002797037363052
+Exactitud validación: 18.2870
+Época 725
+Perdida entrenamiento: 0.1581830897313707
+Perdida validación: 2.6805626302957535
+Exactitud validación: 18.4000
+Época 726
+Perdida entrenamiento: 0.1591141451807583
+Perdida validación: 2.6532941460609436
+Exactitud validación: 18.9652
+Época 727
+Perdida entrenamiento: 0.157598956981126
+Perdida validación: 2.572138734161854
+Exactitud validación: 18.2870
+Época 728
+Perdida entrenamiento: 0.15787621149245432
+Perdida validación: 2.6060239374637604
+Exactitud validación: 18.1739
+Época 729
+Perdida entrenamiento: 0.15959105903611465
+Perdida validación: 2.6934962272644043
+Exactitud validación: 18.2870
+Época 730
+Perdida entrenamiento: 0.1582015459151829
+Perdida validación: 2.60768923163414
+Exactitud validación: 18.5130
+Época 731
+Perdida entrenamiento: 0.157621492357815
+Perdida validación: 3.6954606622457504
+Exactitud validación: 18.6261
+Época 732
+Perdida entrenamiento: 0.15893621874206207
+Perdida validación: 2.7011904567480087
+Exactitud validación: 18.6261
+Época 733
+Perdida entrenamiento: 0.15736218322725856
+Perdida validación: 2.8146928548812866
+Exactitud validación: 18.6261
+Época 734
+Perdida entrenamiento: 0.1576247026815134
+Perdida validación: 3.218151092529297
+Exactitud validación: 18.4000
+Época 735
+Perdida entrenamiento: 0.15623568064149687
+Perdida validación: 2.5988488644361496
+Exactitud validación: 18.2870
+Época 736
+Perdida entrenamiento: 0.1571689445306273
+Perdida validación: 2.706854522228241
+Exactitud validación: 18.2870
+Época 737
+Perdida entrenamiento: 0.15617569579797633
+Perdida validación: 2.713013231754303
+Exactitud validación: 18.8522
+Época 738
+Perdida entrenamiento: 0.15783894587965572
+Perdida validación: 2.7247913777828217
+Exactitud validación: 18.4000
+Época 739
+Perdida entrenamiento: 0.15578018676708727
+Perdida validación: 2.6655010879039764
+Exactitud validación: 18.5130
+Época 740
+Perdida entrenamiento: 0.15636154088903875
+Perdida validación: 3.165435329079628
+Exactitud validación: 18.2870
+Época 741
+Perdida entrenamiento: 0.15926396539982626
+Perdida validación: 2.5721025094389915
+Exactitud validación: 18.0609
+Época 742
+Perdida entrenamiento: 0.156381642774624
+Perdida validación: 2.6201601326465607
+Exactitud validación: 18.2870
+Época 743
+Perdida entrenamiento: 0.15768505413742626
+Perdida validación: 2.618269592523575
+Exactitud validación: 18.5130
+Época 744
+Perdida entrenamiento: 0.1584767182083691
+Perdida validación: 2.642210215330124
+Exactitud validación: 18.2870
+Época 745
+Perdida entrenamiento: 0.1547083705663681
+Perdida validación: 2.74025359749794
+Exactitud validación: 18.2870
+Época 746
+Perdida entrenamiento: 0.15429270661929073
+Perdida validación: 2.722310483455658
+Exactitud validación: 18.9652
+Época 747
+Perdida entrenamiento: 0.15567336516345248
+Perdida validación: 2.602600187063217
+Exactitud validación: 18.4000
+Época 748
+Perdida entrenamiento: 0.15859329021152327
+Perdida validación: 2.6595190167427063
+Exactitud validación: 18.4000
+Época 749
+Perdida entrenamiento: 0.1617139963542714
+Perdida validación: 2.670899897813797
+Exactitud validación: 18.2870
+Época 750
+Perdida entrenamiento: 0.1628905837150181
+Perdida validación: 3.219875618815422
+Exactitud validación: 18.6261
+Época 751
+Perdida entrenamiento: 0.16012920132454703
+Perdida validación: 3.225644052028656
+Exactitud validación: 18.2870
+Época 752
+Perdida entrenamiento: 0.15868979188449242
+Perdida validación: 2.67586637288332
+Exactitud validación: 18.4000
+Época 753
+Perdida entrenamiento: 0.1629258720752071
+Perdida validación: 2.6681269705295563
+Exactitud validación: 18.4000
+Época 754
+Perdida entrenamiento: 0.15711017215953155
+Perdida validación: 3.1297914385795593
+Exactitud validación: 17.8348
+Época 755
+Perdida entrenamiento: 0.1531862835673725
+Perdida validación: 2.726800709962845
+Exactitud validación: 18.6261
+Época 756
+Perdida entrenamiento: 0.15572210028767586
+Perdida validación: 2.682586520910263
+Exactitud validación: 18.4000
+Época 757
+Perdida entrenamiento: 0.15500885072876425
+Perdida validación: 2.609253168106079
+Exactitud validación: 18.6261
+Época 758
+Perdida entrenamiento: 0.1528870090842247
+Perdida validación: 2.7033819258213043
+Exactitud validación: 18.4000
+Época 759
+Perdida entrenamiento: 0.15350659870926073
+Perdida validación: 3.182022213935852
+Exactitud validación: 18.2870
+Época 760
+Perdida entrenamiento: 0.15298916180344188
+Perdida validación: 2.600184068083763
+Exactitud validación: 18.4000
+Época 761
+Perdida entrenamiento: 0.1532105700496365
+Perdida validación: 2.6323400884866714
+Exactitud validación: 18.2870
+Época 762
+Perdida entrenamiento: 0.15355657391688404
+Perdida validación: 2.684819757938385
+Exactitud validación: 18.7391
+Época 763
+Perdida entrenamiento: 0.15543739366180756
+Perdida validación: 3.7091951966285706
+Exactitud validación: 18.4000
+Época 764
+Perdida entrenamiento: 0.15140601116068222
+Perdida validación: 3.2474584877490997
+Exactitud validación: 18.1739
+Época 765
+Perdida entrenamiento: 0.1533643844373086
+Perdida validación: 2.633063405752182
+Exactitud validación: 18.5130
+Época 766
+Perdida entrenamiento: 0.15192966732908697
+Perdida validación: 3.1432758569717407
+Exactitud validación: 18.1739
+Época 767
+Perdida entrenamiento: 0.15253492926850037
+Perdida validación: 3.246622011065483
+Exactitud validación: 18.5130
+Época 768
+Perdida entrenamiento: 0.15309041738510132
+Perdida validación: 2.62382273375988
+Exactitud validación: 18.6261
+Época 769
+Perdida entrenamiento: 0.15307236353264136
+Perdida validación: 3.6945867389440536
+Exactitud validación: 17.9478
+Época 770
+Perdida entrenamiento: 0.15285500949796507
+Perdida validación: 2.6508836895227432
+Exactitud validación: 18.2870
+Época 771
+Perdida entrenamiento: 0.15295826271176338
+Perdida validación: 2.6306875497102737
+Exactitud validación: 17.8348
+Época 772
+Perdida entrenamiento: 0.15547319151022854
+Perdida validación: 2.6264542788267136
+Exactitud validación: 18.2870
+Época 773
+Perdida entrenamiento: 0.1503035711014972
+Perdida validación: 2.7056295573711395
+Exactitud validación: 18.4000
+Época 774
+Perdida entrenamiento: 0.15113376037162893
+Perdida validación: 3.1897840797901154
+Exactitud validación: 18.2870
+Época 775
+Perdida entrenamiento: 0.15134701746351578
+Perdida validación: 2.728394031524658
+Exactitud validación: 18.4000
+Época 776
+Perdida entrenamiento: 0.1525684919427423
+Perdida validación: 2.6042723059654236
+Exactitud validación: 18.1739
+Época 777
+Perdida entrenamiento: 0.1504207696108257
+Perdida validación: 2.600286602973938
+Exactitud validación: 18.0609
+Época 778
+Perdida entrenamiento: 0.14879275551613638
+Perdida validación: 3.278126984834671
+Exactitud validación: 18.6261
+Época 779
+Perdida entrenamiento: 0.1492233626982745
+Perdida validación: 3.162637710571289
+Exactitud validación: 17.9478
+Época 780
+Perdida entrenamiento: 0.15052652950672543
+Perdida validación: 3.2997718304395676
+Exactitud validación: 18.5130
+Época 781
+Perdida entrenamiento: 0.1493004634976387
+Perdida validación: 2.6290631741285324
+Exactitud validación: 18.4000
+Época 782
+Perdida entrenamiento: 0.15232405197971008
+Perdida validación: 2.6413462162017822
+Exactitud validación: 18.1739
+Época 783
+Perdida entrenamiento: 0.149240040603806
+Perdida validación: 3.256709098815918
+Exactitud validación: 18.6261
+Época 784
+Perdida entrenamiento: 0.15085110112148173
+Perdida validación: 3.1722599267959595
+Exactitud validación: 18.4000
+Época 785
+Perdida entrenamiento: 0.151833686101086
+Perdida validación: 2.7989502251148224
+Exactitud validación: 18.6261
+Época 786
+Perdida entrenamiento: 0.1522596204543815
+Perdida validación: 3.242053836584091
+Exactitud validación: 18.2870
+Época 787
+Perdida entrenamiento: 0.14921585799140089
+Perdida validación: 2.6283081024885178
+Exactitud validación: 18.0609
+Época 788
+Perdida entrenamiento: 0.14916231044951608
+Perdida validación: 2.6112345829606056
+Exactitud validación: 18.5130
+Época 789
+Perdida entrenamiento: 0.14993023477932987
+Perdida validación: 2.7713897675275803
+Exactitud validación: 18.5130
+Época 790
+Perdida entrenamiento: 0.14652396913836985
+Perdida validación: 2.666732057929039
+Exactitud validación: 18.2870
+Época 791
+Perdida entrenamiento: 0.14829734318396626
+Perdida validación: 2.7664362490177155
+Exactitud validación: 18.5130
+Época 792
+Perdida entrenamiento: 0.14896368410657435
+Perdida validación: 2.713522434234619
+Exactitud validación: 18.1739
+Época 793
+Perdida entrenamiento: 0.1503126388963531
+Perdida validación: 2.7845799028873444
+Exactitud validación: 18.4000
+Época 794
+Perdida entrenamiento: 0.1479355679715381
+Perdida validación: 3.245860606431961
+Exactitud validación: 18.2870
+Época 795
+Perdida entrenamiento: 0.14547785524936283
+Perdida validación: 3.1711438596248627
+Exactitud validación: 17.9478
+Época 796
+Perdida entrenamiento: 0.14639997482299805
+Perdida validación: 2.6832973659038544
+Exactitud validación: 18.0609
+Época 797
+Perdida entrenamiento: 0.14787339857395956
+Perdida validación: 3.2161754816770554
+Exactitud validación: 18.8522
+Época 798
+Perdida entrenamiento: 0.14859987883006825
+Perdida validación: 2.6865431666374207
+Exactitud validación: 18.4000
+Época 799
+Perdida entrenamiento: 0.1477495445048108
+Perdida validación: 2.63492251932621
+Exactitud validación: 18.2870
+Época 800
+Perdida entrenamiento: 0.14877094437970834
+Perdida validación: 2.6738118827342987
+Exactitud validación: 18.1739
+Época 801
+Perdida entrenamiento: 0.1459410251939998
+Perdida validación: 2.6356877088546753
+Exactitud validación: 18.2870
+Época 802
+Perdida entrenamiento: 0.14662704945487134
+Perdida validación: 2.6701188534498215
+Exactitud validación: 18.0609
+Época 803
+Perdida entrenamiento: 0.14530917300897486
+Perdida validación: 2.6025548111647367
+Exactitud validación: 18.0609
+Época 804
+Perdida entrenamiento: 0.14726974793216763
+Perdida validación: 2.7442044615745544
+Exactitud validación: 18.6261
+Época 805
+Perdida entrenamiento: 0.14796733768547282
+Perdida validación: 2.7691594064235687
+Exactitud validación: 18.4000
+Época 806
+Perdida entrenamiento: 0.144820795777966
+Perdida validación: 2.7950679063796997
+Exactitud validación: 18.1739
+Época 807
+Perdida entrenamiento: 0.1451437639839509
+Perdida validación: 2.794357866048813
+Exactitud validación: 18.4000
+Época 808
+Perdida entrenamiento: 0.14519775439711177
+Perdida validación: 3.242251545190811
+Exactitud validación: 18.5130
+Época 809
+Perdida entrenamiento: 0.14527228825232563
+Perdida validación: 3.215233623981476
+Exactitud validación: 18.4000
+Época 810
+Perdida entrenamiento: 0.14561747715753667
+Perdida validación: 2.7339600920677185
+Exactitud validación: 18.1739
+Época 811
+Perdida entrenamiento: 0.1456113238545025
+Perdida validación: 2.7056923508644104
+Exactitud validación: 18.6261
+Época 812
+Perdida entrenamiento: 0.14788693189620972
+Perdida validación: 2.826267398893833
+Exactitud validación: 18.6261
+Época 813
+Perdida entrenamiento: 0.14552707049776525
+Perdida validación: 2.6988613605499268
+Exactitud validación: 18.2870
+Época 814
+Perdida entrenamiento: 0.14622166621334412
+Perdida validación: 2.7413794100284576
+Exactitud validación: 18.6261
+Época 815
+Perdida entrenamiento: 0.143801851745914
+Perdida validación: 2.6483813747763634
+Exactitud validación: 18.6261
+Época 816
+Perdida entrenamiento: 0.14336932428619442
+Perdida validación: 2.7818442583084106
+Exactitud validación: 18.7391
+Época 817
+Perdida entrenamiento: 0.14512714743614197
+Perdida validación: 3.2018503546714783
+Exactitud validación: 18.1739
+Época 818
+Perdida entrenamiento: 0.14359367025249145
+Perdida validación: 3.8155419528484344
+Exactitud validación: 18.4000
+Época 819
+Perdida entrenamiento: 0.14185754341237686
+Perdida validación: 2.6466083750128746
+Exactitud validación: 18.7391
+Época 820
+Perdida entrenamiento: 0.14415400869706096
+Perdida validación: 2.8113376051187515
+Exactitud validación: 18.7391
+Época 821
+Perdida entrenamiento: 0.14479920443366556
+Perdida validación: 2.733074575662613
+Exactitud validación: 18.2870
+Época 822
+Perdida entrenamiento: 0.14300062858006535
+Perdida validación: 2.66407323628664
+Exactitud validación: 17.9478
+Época 823
+Perdida entrenamiento: 0.14438624636215322
+Perdida validación: 2.725124940276146
+Exactitud validación: 18.6261
+Época 824
+Perdida entrenamiento: 0.14179060323273435
+Perdida validación: 3.7919468730688095
+Exactitud validación: 18.7391
+Época 825
+Perdida entrenamiento: 0.14401953755056157
+Perdida validación: 2.940170705318451
+Exactitud validación: 18.8522
+Época 826
+Perdida entrenamiento: 0.14078793148784077
+Perdida validación: 2.730820268392563
+Exactitud validación: 18.6261
+Época 827
+Perdida entrenamiento: 0.14310375184697263
+Perdida validación: 2.7902650237083435
+Exactitud validación: 18.8522
+Época 828
+Perdida entrenamiento: 0.1415631906951175
+Perdida validación: 2.798295736312866
+Exactitud validación: 18.5130
+Época 829
+Perdida entrenamiento: 0.1424680740079459
+Perdida validación: 2.751399964094162
+Exactitud validación: 18.4000
+Época 830
+Perdida entrenamiento: 0.1435266877798473
+Perdida validación: 2.73421211540699
+Exactitud validación: 18.1739
+Época 831
+Perdida entrenamiento: 0.14105699036051245
+Perdida validación: 2.752659022808075
+Exactitud validación: 18.1739
+Época 832
+Perdida entrenamiento: 0.1436002629206461
+Perdida validación: 2.6599045991897583
+Exactitud validación: 18.5130
+Época 833
+Perdida entrenamiento: 0.14401213079690933
+Perdida validación: 2.719948261976242
+Exactitud validación: 18.2870
+Época 834
+Perdida entrenamiento: 0.14162796144099796
+Perdida validación: 3.2921559512615204
+Exactitud validación: 18.2870
+Época 835
+Perdida entrenamiento: 0.14128982319551356
+Perdida validación: 2.6709438040852547
+Exactitud validación: 18.4000
+Época 836
+Perdida entrenamiento: 0.14059947935097358
+Perdida validación: 2.7341255843639374
+Exactitud validación: 18.4000
+Época 837
+Perdida entrenamiento: 0.1398994068012518
+Perdida validación: 2.786491632461548
+Exactitud validación: 18.5130
+Época 838
+Perdida entrenamiento: 0.14133495618315303
+Perdida validación: 2.690669760107994
+Exactitud validación: 18.2870
+Época 839
+Perdida entrenamiento: 0.1424069856019581
+Perdida validación: 3.295660972595215
+Exactitud validación: 18.4000
+Época 840
+Perdida entrenamiento: 0.1393086116980104
+Perdida validación: 2.660525068640709
+Exactitud validación: 18.5130
+Época 841
+Perdida entrenamiento: 0.14105064158930497
+Perdida validación: 2.737117111682892
+Exactitud validación: 18.4000
+Época 842
+Perdida entrenamiento: 0.13984821671072176
+Perdida validación: 2.802027255296707
+Exactitud validación: 18.5130
+Época 843
+Perdida entrenamiento: 0.14101365844116492
+Perdida validación: 2.8786006718873978
+Exactitud validación: 18.6261
+Época 844
+Perdida entrenamiento: 0.14051969480865142
+Perdida validación: 2.7385316342115402
+Exactitud validación: 18.6261
+Época 845
+Perdida entrenamiento: 0.14059160868911183
+Perdida validación: 3.7438178658485413
+Exactitud validación: 18.4000
+Época 846
+Perdida entrenamiento: 0.1408574015778654
+Perdida validación: 3.268863081932068
+Exactitud validación: 18.2870
+Época 847
+Perdida entrenamiento: 0.14002320258056417
+Perdida validación: 3.4570556730031967
+Exactitud validación: 18.5130
+Época 848
+Perdida entrenamiento: 0.14203892955008676
+Perdida validación: 2.8030443489551544
+Exactitud validación: 18.4000
+Época 849
+Perdida entrenamiento: 0.14011239435742884
+Perdida validación: 2.820237874984741
+Exactitud validación: 18.2870
+Época 850
+Perdida entrenamiento: 0.1396850124001503
+Perdida validación: 3.243169218301773
+Exactitud validación: 18.5130
+Época 851
+Perdida entrenamiento: 0.13872243946089463
+Perdida validación: 2.7179784178733826
+Exactitud validación: 18.5130
+Época 852
+Perdida entrenamiento: 0.13912279465619257
+Perdida validación: 2.7133824974298477
+Exactitud validación: 18.1739
+Época 853
+Perdida entrenamiento: 0.13690624988692648
+Perdida validación: 2.8744891583919525
+Exactitud validación: 18.1739
+Época 854
+Perdida entrenamiento: 0.1364170865100973
+Perdida validación: 2.780077964067459
+Exactitud validación: 18.4000
+Época 855
+Perdida entrenamiento: 0.13848148680785122
+Perdida validación: 2.732403054833412
+Exactitud validación: 18.4000
+Época 856
+Perdida entrenamiento: 0.13774363828056
+Perdida validación: 2.748747408390045
+Exactitud validación: 18.1739
+Época 857
+Perdida entrenamiento: 0.13970747677718892
+Perdida validación: 2.7384248077869415
+Exactitud validación: 18.7391
+Época 858
+Perdida entrenamiento: 0.13931907012182124
+Perdida validación: 2.7981139421463013
+Exactitud validación: 18.5130
+Época 859
+Perdida entrenamiento: 0.13711956625475602
+Perdida validación: 2.746776044368744
+Exactitud validación: 18.4000
+Época 860
+Perdida entrenamiento: 0.14136996602310853
+Perdida validación: 2.961911305785179
+Exactitud validación: 18.8522
+Época 861
+Perdida entrenamiento: 0.1371486279017785
+Perdida validación: 2.920855939388275
+Exactitud validación: 18.9652
+Época 862
+Perdida entrenamiento: 0.1369148339418804
+Perdida validación: 3.3346258997917175
+Exactitud validación: 17.9478
+Época 863
+Perdida entrenamiento: 0.1381302679724553
+Perdida validación: 2.696602389216423
+Exactitud validación: 18.1739
+Época 864
+Perdida entrenamiento: 0.13654666306341395
+Perdida validación: 2.7097426876425743
+Exactitud validación: 18.5130
+Época 865
+Perdida entrenamiento: 0.1373768339262289
+Perdida validación: 2.822031795978546
+Exactitud validación: 17.8348
+Época 866
+Perdida entrenamiento: 0.1341216191649437
+Perdida validación: 2.705332897603512
+Exactitud validación: 18.1739
+Época 867
+Perdida entrenamiento: 0.1376872159102384
+Perdida validación: 2.7694733440876007
+Exactitud validación: 18.0609
+Época 868
+Perdida entrenamiento: 0.13436881759587457
+Perdida validación: 2.782355934381485
+Exactitud validación: 18.6261
+Época 869
+Perdida entrenamiento: 0.13662084586480083
+Perdida validación: 2.75421804189682
+Exactitud validación: 18.1739
+Época 870
+Perdida entrenamiento: 0.1360327185076826
+Perdida validación: 2.8113476634025574
+Exactitud validación: 18.7391
+Época 871
+Perdida entrenamiento: 0.13782303298220916
+Perdida validación: 2.779130682349205
+Exactitud validación: 18.5130
+Época 872
+Perdida entrenamiento: 0.13344334416529713
+Perdida validación: 2.784419059753418
+Exactitud validación: 18.2870
+Época 873
+Perdida entrenamiento: 0.13555954462465117
+Perdida validación: 2.7529250234365463
+Exactitud validación: 18.2870
+Época 874
+Perdida entrenamiento: 0.1355480694157236
+Perdida validación: 3.300339162349701
+Exactitud validación: 18.4000
+Época 875
+Perdida entrenamiento: 0.13865461638745138
+Perdida validación: 2.9780090004205704
+Exactitud validación: 18.7391
+Época 876
+Perdida entrenamiento: 0.1376051098546561
+Perdida validación: 2.8903158009052277
+Exactitud validación: 18.2870
+Época 877
+Perdida entrenamiento: 0.13494748030515277
+Perdida validación: 2.7917942702770233
+Exactitud validación: 18.6261
+Época 878
+Perdida entrenamiento: 0.1352824815275038
+Perdida validación: 3.3168766498565674
+Exactitud validación: 18.6261
+Época 879
+Perdida entrenamiento: 0.1324736436500269
+Perdida validación: 2.7636314928531647
+Exactitud validación: 18.4000
+Época 880
+Perdida entrenamiento: 0.13348486493615544
+Perdida validación: 2.871694028377533
+Exactitud validación: 18.5130
+Época 881
+Perdida entrenamiento: 0.13614112927633173
+Perdida validación: 2.82409131526947
+Exactitud validación: 18.7391
+Época 882
+Perdida entrenamiento: 0.13355802678886583
+Perdida validación: 2.7636439353227615
+Exactitud validación: 18.4000
+Época 883
+Perdida entrenamiento: 0.1327956191757146
+Perdida validación: 2.812580853700638
+Exactitud validación: 18.1739
+Época 884
+Perdida entrenamiento: 0.13378482684493065
+Perdida validación: 2.7658906280994415
+Exactitud validación: 18.2870
+Época 885
+Perdida entrenamiento: 0.1324151684256161
+Perdida validación: 2.857463538646698
+Exactitud validación: 18.4000
+Época 886
+Perdida entrenamiento: 0.1337796228335184
+Perdida validación: 3.4032358527183533
+Exactitud validación: 18.4000
+Época 887
+Perdida entrenamiento: 0.13265221697442672
+Perdida validación: 3.3464408963918686
+Exactitud validación: 18.2870
+Época 888
+Perdida entrenamiento: 0.13283191577476613
+Perdida validación: 2.790514573454857
+Exactitud validación: 18.5130
+Época 889
+Perdida entrenamiento: 0.13208355623133042
+Perdida validación: 2.8009232729673386
+Exactitud validación: 18.5130
+Época 890
+Perdida entrenamiento: 0.13509997550178976
+Perdida validación: 2.8039220198988914
+Exactitud validación: 18.5130
+Época 891
+Perdida entrenamiento: 0.13466739829848795
+Perdida validación: 2.90687495470047
+Exactitud validación: 18.2870
+Época 892
+Perdida entrenamiento: 0.1318563308347674
+Perdida validación: 2.8616604059934616
+Exactitud validación: 18.6261
+Época 893
+Perdida entrenamiento: 0.13101407315801172
+Perdida validación: 2.96872079372406
+Exactitud validación: 18.6261
+Época 894
+Perdida entrenamiento: 0.13524135245996363
+Perdida validación: 2.829436719417572
+Exactitud validación: 18.5130
+Época 895
+Perdida entrenamiento: 0.13446547616930568
+Perdida validación: 2.8921854197978973
+Exactitud validación: 18.4000
+Época 896
+Perdida entrenamiento: 0.13377005256274166
+Perdida validación: 2.9073114544153214
+Exactitud validación: 18.5130
+Época 897
+Perdida entrenamiento: 0.13366495949380539
+Perdida validación: 2.869605004787445
+Exactitud validación: 18.4000
+Época 898
+Perdida entrenamiento: 0.13367976116783478
+Perdida validación: 2.8357715904712677
+Exactitud validación: 18.2870
+Época 899
+Perdida entrenamiento: 0.13272172037292929
+Perdida validación: 3.323453515768051
+Exactitud validación: 18.2870
+Época 900
+Perdida entrenamiento: 0.132703357759644
+Perdida validación: 2.9263442158699036
+Exactitud validación: 18.6261
+Época 901
+Perdida entrenamiento: 0.13167799373759942
+Perdida validación: 3.4298669397830963
+Exactitud validación: 18.0609
+Época 902
+Perdida entrenamiento: 0.1339989497381098
+Perdida validación: 2.8030209839344025
+Exactitud validación: 18.2870
+Época 903
+Perdida entrenamiento: 0.1287992243819377
+Perdida validación: 2.8654688000679016
+Exactitud validación: 18.7391
+Época 904
+Perdida entrenamiento: 0.13100341444506364
+Perdida validación: 3.4879584312438965
+Exactitud validación: 18.4000
+Época 905
+Perdida entrenamiento: 0.1310742236673832
+Perdida validación: 2.7952137142419815
+Exactitud validación: 18.2870
+Época 906
+Perdida entrenamiento: 0.12950651961214402
+Perdida validación: 2.8933157920837402
+Exactitud validación: 18.5130
+Época 907
+Perdida entrenamiento: 0.12948743275859775
+Perdida validación: 2.920369252562523
+Exactitud validación: 18.9652
+Época 908
+Perdida entrenamiento: 0.12981591811951468
+Perdida validación: 2.874404937028885
+Exactitud validación: 18.2870
+Época 909
+Perdida entrenamiento: 0.1289715587216265
+Perdida validación: 3.2992987632751465
+Exactitud validación: 18.7391
+Época 910
+Perdida entrenamiento: 0.1300869676120141
+Perdida validación: 3.415118455886841
+Exactitud validación: 18.1739
+Época 911
+Perdida entrenamiento: 0.1314496520687552
+Perdida validación: 2.855779469013214
+Exactitud validación: 18.4000
+Época 912
+Perdida entrenamiento: 0.13039520207573385
+Perdida validación: 2.863826960325241
+Exactitud validación: 18.2870
+Época 913
+Perdida entrenamiento: 0.12854845580809257
+Perdida validación: 3.4703205823898315
+Exactitud validación: 18.5130
+Época 914
+Perdida entrenamiento: 0.1311737588223289
+Perdida validación: 2.8276840299367905
+Exactitud validación: 18.1739
+Época 915
+Perdida entrenamiento: 0.12898599926163168
+Perdida validación: 2.808225929737091
+Exactitud validación: 18.2870
+Época 916
+Perdida entrenamiento: 0.12826384625890674
+Perdida validación: 2.954753652215004
+Exactitud validación: 18.0609
+Época 917
+Perdida entrenamiento: 0.1291312752839397
+Perdida validación: 3.455663487315178
+Exactitud validación: 18.2870
+Época 918
+Perdida entrenamiento: 0.1272546608439263
+Perdida validación: 2.840626373887062
+Exactitud validación: 18.6261
+Época 919
+Perdida entrenamiento: 0.12807583589764202
+Perdida validación: 2.908486932516098
+Exactitud validación: 18.7391
+Época 920
+Perdida entrenamiento: 0.12984531920622377
+Perdida validación: 2.949549823999405
+Exactitud validación: 18.1739
+Época 921
+Perdida entrenamiento: 0.12714826140333624
+Perdida validación: 2.9026261270046234
+Exactitud validación: 18.0609
+Época 922
+Perdida entrenamiento: 0.12683334858978496
+Perdida validación: 3.4384027123451233
+Exactitud validación: 18.4000
+Época 923
+Perdida entrenamiento: 0.12668604359907262
+Perdida validación: 3.4019243717193604
+Exactitud validación: 17.9478
+Época 924
+Perdida entrenamiento: 0.1273968097041635
+Perdida validación: 3.4543668031692505
+Exactitud validación: 18.0609
+Época 925
+Perdida entrenamiento: 0.1270380519768771
+Perdida validación: 2.9080685824155807
+Exactitud validación: 18.4000
+Época 926
+Perdida entrenamiento: 0.12678182059351137
+Perdida validación: 2.854278191924095
+Exactitud validación: 18.6261
+Época 927
+Perdida entrenamiento: 0.1272417313474066
+Perdida validación: 3.409367948770523
+Exactitud validación: 18.5130
+Época 928
+Perdida entrenamiento: 0.12685667372801723
+Perdida validación: 4.08304163813591
+Exactitud validación: 18.4000
+Época 929
+Perdida entrenamiento: 0.12677246003466494
+Perdida validación: 2.8712600469589233
+Exactitud validación: 18.4000
+Época 930
+Perdida entrenamiento: 0.12664389434982748
+Perdida validación: 2.9682075679302216
+Exactitud validación: 18.5130
+Época 931
+Perdida entrenamiento: 0.12917877909015207
+Perdida validación: 2.8417866826057434
+Exactitud validación: 18.1739
+Época 932
+Perdida entrenamiento: 0.12731395530350068
+Perdida validación: 2.898645430803299
+Exactitud validación: 18.4000
+Época 933
+Perdida entrenamiento: 0.12507441157803817
+Perdida validación: 2.914635419845581
+Exactitud validación: 18.5130
+Época 934
+Perdida entrenamiento: 0.12594195674447453
+Perdida validación: 2.912827104330063
+Exactitud validación: 18.4000
+Época 935
+Perdida entrenamiento: 0.1251837317557896
+Perdida validación: 3.5243859738111496
+Exactitud validación: 18.4000
+Época 936
+Perdida entrenamiento: 0.12473153717377607
+Perdida validación: 2.9899864494800568
+Exactitud validación: 18.6261
+Época 937
+Perdida entrenamiento: 0.12627896666526794
+Perdida validación: 2.940245568752289
+Exactitud validación: 17.9478
+Época 938
+Perdida entrenamiento: 0.12539050552774877
+Perdida validación: 3.506003439426422
+Exactitud validación: 18.6261
+Época 939
+Perdida entrenamiento: 0.12461071943535525
+Perdida validación: 2.9693265557289124
+Exactitud validación: 18.8522
+Época 940
+Perdida entrenamiento: 0.12703695104402654
+Perdida validación: 3.0138815343379974
+Exactitud validación: 18.6261
+Época 941
+Perdida entrenamiento: 0.12593218640369527
+Perdida validación: 3.412371516227722
+Exactitud validación: 18.8522
+Época 942
+Perdida entrenamiento: 0.12484191182781668
+Perdida validación: 2.875510886311531
+Exactitud validación: 18.4000
+Época 943
+Perdida entrenamiento: 0.12549839157830267
+Perdida validación: 3.0640504956245422
+Exactitud validación: 18.2870
+Época 944
+Perdida entrenamiento: 0.1243065052172717
+Perdida validación: 3.010021924972534
+Exactitud validación: 18.5130
+Época 945
+Perdida entrenamiento: 0.12402418606421527
+Perdida validación: 2.888392746448517
+Exactitud validación: 18.6261
+Época 946
+Perdida entrenamiento: 0.12377885378458921
+Perdida validación: 2.8283270969986916
+Exactitud validación: 18.1739
+Época 947
+Perdida entrenamiento: 0.12332157023689326
+Perdida validación: 3.4357332587242126
+Exactitud validación: 18.1739
+Época 948
+Perdida entrenamiento: 0.12415540525141884
+Perdida validación: 2.9335389137268066
+Exactitud validación: 18.7391
+Época 949
+Perdida entrenamiento: 0.12486725640209283
+Perdida validación: 2.931018203496933
+Exactitud validación: 18.6261
+Época 950
+Perdida entrenamiento: 0.12408434424330206
+Perdida validación: 3.054698035120964
+Exactitud validación: 18.6261
+Época 951
+Perdida entrenamiento: 0.12574190032832763
+Perdida validación: 3.0038841366767883
+Exactitud validación: 18.2870
+Época 952
+Perdida entrenamiento: 0.12242736294865608
+Perdida validación: 4.074982047080994
+Exactitud validación: 18.4000
+Época 953
+Perdida entrenamiento: 0.12435674601617981
+Perdida validación: 2.973332405090332
+Exactitud validación: 18.5130
+Época 954
+Perdida entrenamiento: 0.12533021915484877
+Perdida validación: 3.4903931617736816
+Exactitud validación: 18.5130
+Época 955
+Perdida entrenamiento: 0.12362913436749402
+Perdida validación: 2.894077181816101
+Exactitud validación: 18.0609
+Época 956
+Perdida entrenamiento: 0.1241259554072338
+Perdida validación: 3.5641388595104218
+Exactitud validación: 18.8522
+Época 957
+Perdida entrenamiento: 0.12326250049997778
+Perdida validación: 2.894750624895096
+Exactitud validación: 18.7391
+Época 958
+Perdida entrenamiento: 0.12201590529259514
+Perdida validación: 3.554157704114914
+Exactitud validación: 18.7391
+Época 959
+Perdida entrenamiento: 0.12234444193103734
+Perdida validación: 3.0658498108386993
+Exactitud validación: 18.7391
+Época 960
+Perdida entrenamiento: 0.1225890420815524
+Perdida validación: 2.9639132916927338
+Exactitud validación: 18.2870
+Época 961
+Perdida entrenamiento: 0.12655563323813326
+Perdida validación: 3.4610494822263718
+Exactitud validación: 18.2870
+Época 962
+Perdida entrenamiento: 0.12557828514014974
+Perdida validación: 3.0472725331783295
+Exactitud validación: 18.7391
+Época 963
+Perdida entrenamiento: 0.12406371117514722
+Perdida validación: 3.4296689927577972
+Exactitud validación: 18.5130
+Época 964
+Perdida entrenamiento: 0.12306797109982547
+Perdida validación: 2.8831294775009155
+Exactitud validación: 18.6261
+Época 965
+Perdida entrenamiento: 0.12154533823623377
+Perdida validación: 3.0393559336662292
+Exactitud validación: 18.0609
+Época 966
+Perdida entrenamiento: 0.12231333071694654
+Perdida validación: 2.893571987748146
+Exactitud validación: 18.2870
+Época 967
+Perdida entrenamiento: 0.12442432300132863
+Perdida validación: 2.8784404695034027
+Exactitud validación: 18.8522
+Época 968
+Perdida entrenamiento: 0.12219117998200305
+Perdida validación: 3.0569884181022644
+Exactitud validación: 18.5130
+Época 969
+Perdida entrenamiento: 0.1204835956587511
+Perdida validación: 3.0531783998012543
+Exactitud validación: 18.1739
+Época 970
+Perdida entrenamiento: 0.12147321595865138
+Perdida validación: 3.105465844273567
+Exactitud validación: 18.5130
+Época 971
+Perdida entrenamiento: 0.11965199538013514
+Perdida validación: 2.9067180305719376
+Exactitud validación: 18.2870
+Época 972
+Perdida entrenamiento: 0.1203617955393651
+Perdida validación: 2.853972941637039
+Exactitud validación: 18.2870
+Época 973
+Perdida entrenamiento: 0.12197020540342611
+Perdida validación: 2.951186329126358
+Exactitud validación: 18.6261
+Época 974
+Perdida entrenamiento: 0.12436810749418595
+Perdida validación: 3.067672148346901
+Exactitud validación: 18.6261
+Época 975
+Perdida entrenamiento: 0.12134960271856364
+Perdida validación: 3.5442528426647186
+Exactitud validación: 18.2870
+Época 976
+Perdida entrenamiento: 0.1222062270869227
+Perdida validación: 3.071064904332161
+Exactitud validación: 18.7391
+Época 977
+Perdida entrenamiento: 0.12381410642581828
+Perdida validación: 2.9515878558158875
+Exactitud validación: 18.1739
+Época 978
+Perdida entrenamiento: 0.11919486478847616
+Perdida validación: 2.987251326441765
+Exactitud validación: 18.8522
+Época 979
+Perdida entrenamiento: 0.12118908982066547
+Perdida validación: 2.964499592781067
+Exactitud validación: 18.2870
+Época 980
+Perdida entrenamiento: 0.11982706517857664
+Perdida validación: 2.884852759540081
+Exactitud validación: 18.2870
+Época 981
+Perdida entrenamiento: 0.12243366482503273
+Perdida validación: 2.9526966214179993
+Exactitud validación: 18.5130
+Época 982
+Perdida entrenamiento: 0.12023616615025436
+Perdida validación: 2.892222762107849
+Exactitud validación: 18.5130
+Época 983
+Perdida entrenamiento: 0.11949533388456877
+Perdida validación: 3.0738677978515625
+Exactitud validación: 18.5130
+Época 984
+Perdida entrenamiento: 0.11815058308489182
+Perdida validación: 2.943865194916725
+Exactitud validación: 18.1739
+Época 985
+Perdida entrenamiento: 0.12010063581606921
+Perdida validación: 3.0461696088314056
+Exactitud validación: 18.2870
+Época 986
+Perdida entrenamiento: 0.1200608185985509
+Perdida validación: 4.0663831532001495
+Exactitud validación: 18.4000
+Época 987
+Perdida entrenamiento: 0.11974002442815725
+Perdida validación: 3.468088820576668
+Exactitud validación: 18.1739
+Época 988
+Perdida entrenamiento: 0.11906973097254248
+Perdida validación: 2.943978175520897
+Exactitud validación: 18.0609
+Época 989
+Perdida entrenamiento: 0.12085146150168251
+Perdida validación: 3.0875197649002075
+Exactitud validación: 18.4000
+Época 990
+Perdida entrenamiento: 0.11931220442056656
+Perdida validación: 3.4530164301395416
+Exactitud validación: 18.2870
+Época 991
+Perdida entrenamiento: 0.1200842373073101
+Perdida validación: 3.108154445886612
+Exactitud validación: 18.4000
+Época 992
+Perdida entrenamiento: 0.11944863528889768
+Perdida validación: 3.4121116399765015
+Exactitud validación: 18.2870
+Época 993
+Perdida entrenamiento: 0.11968237862867467
+Perdida validación: 2.9360441118478775
+Exactitud validación: 18.2870
+Época 994
+Perdida entrenamiento: 0.11799231237348388
+Perdida validación: 3.036650687456131
+Exactitud validación: 18.4000
+Época 995
+Perdida entrenamiento: 0.11872703187605914
+Perdida validación: 2.939451888203621
+Exactitud validación: 18.4000
+Época 996
+Perdida entrenamiento: 0.1186886644538711
+Perdida validación: 3.0029216408729553
+Exactitud validación: 18.4000
+Época 997
+Perdida entrenamiento: 0.11697329558870372
+Perdida validación: 2.912400111556053
+Exactitud validación: 18.1739
+Época 998
+Perdida entrenamiento: 0.11653838547713616
+Perdida validación: 3.0047235190868378
+Exactitud validación: 18.1739
+Época 999
+Perdida entrenamiento: 0.11792571338660576
+Perdida validación: 4.158627465367317
+Exactitud validación: 18.5130
+Época 1000
+Perdida entrenamiento: 0.11670456804773387
+Perdida validación: 2.9439720809459686
+Exactitud validación: 18.1739
+```
+:::
+:::
+
+
+## Eval Model
+

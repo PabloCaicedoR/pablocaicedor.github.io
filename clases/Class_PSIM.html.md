@@ -1,0 +1,101 @@
+---
+title: "Procesado de Señales e Imágenes Médicas"
+description: "Sitio de la asignatura Procesado de Señales e Imágenes Médicas en la Escuela Colombiana de Ingeniería"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo R."
+date: "2024-01-22"
+date-modified: "2024-01-22"
+image: "../recursos/imagenes/clases/psim/PSIM01.jpeg"
+---
+
+
+
+
+
+# Introducción
+
+"Un área de rápido crecimiento y variedad de aplicaciones en la ingeniería biomédica a nivel nacional y global es el procesamiento digital de señales e imágenes médicas. Es por eso, que a través de este curso se desea dar las herramientas necesarias para los graduados del programa puedan tener competencias básicas en las técnicas clásicas y algunas técnicas modernas de procesamiento de señales e imágenes. La primera parte del curso se encuentra enfocada al desarrollo de técnicas de procesamiento para señales biomédicas unidimensionales, exponiendo primero su origen fisiológico y siguiendo con la presentación de las principales técnicas para su análisis y procesamiento. La segunda parte del curso hace énfasis en el estudio de imágenes médicas, partiendo de una explicación de los principales métodos computacionales utilizados para procesamiento digital de imágenes y luego exponiendo brevemente el proceso de su formación. A través de prácticas de laboratorio con señales e imágenes médicas (reales o simuladas), el estudiante podrá aplicar y reforzar los conocimientos aprendidos en el curso" fragmento tomado del microcurriculo de la asignatura.
+
+El curso está dividido en 4 partes:
+1.	Introducción al procesado de señales e imágenes biomédicas.
+2.	Fundamentos procesado de señales e imágenes biomédicas
+3.	Extracción de características de señales biomédicas.
+4.	Extracción de características de imágenes biomédicas.
+
+# Material del Curso
+
+## Presentaciones
+
+- [Presentación del curso](../presentaciones/PSIM/Lect001_Presentacion.qmd)
+- [Introducción](../presentaciones/PSIM/Lect002_Intro_PSIM.qmd)
+- [Introducción al procesamiento de imagenes](../presentaciones/PSIM/lect004_Intro_ImgProc.qmd)
+- [La imagen digital. Procesamiento de Imágenes](../presentaciones/PSIM/Lect005_Imag_Proc_001.qmd)
+  
+## Datos
+
+* [Data Sources](../presentaciones/PSIM/Asist001_SourcesData.qmd)
+
+## Códigos
+
+
+## Laboratorios
+
+- [Laboratorio 01](../laboratorios/PSIM/eval001_ConductaEntrada.ipynb)
+- [Laboratorio 02](../laboratorios/PSIM/lab02_SignalProcessing.ipynb)
+
+## Talleres \& Examenes Anteriores
+
+- [Primer Parcial 2024-I](../recursos/talleres/examen01_p.pdf)
+- [Primer Parcial 2024-II. Examen01](../evaluaciones/Examen0001/Examen0001.pdf)
+- [Primer Parcial 2024-II. Examen02](../evaluaciones/Examen0001/Examen0002.pdf)
+- [Primer Parcial 2024-II. Examen03](../evaluaciones/Examen0001/Examen0003.pdf)
+
+# Evaluaciones
+
+-	Examen parcial 1 (15%)
+-	Examen parcial 2 (15%)
+-	Examen final (20%)
+-	Laboratorios (30%) 
+-	Proyecto Final (20%)
+
+# Grupos
+
+| ID Estudiante | Nombre                            | Programa Académico   | Correo Electrónico                                                                    | Grupo |
+| ------------- | --------------------------------- | -------------------- | ------------------------------------------------------------------------------------- | ----- |
+|  1000093823   | ANA MARÍA MELO ALVAREZ            | Ingeniería Biomédica | ana.melo-a@mail.escuelaing.edu.co                                                     | D     |
+|  1000095009   | ANA SOFÍA GARCÍA GUTIÉRREZ        | Ingeniería Biomédica | ana.garcia-g@mail.escuelaing.edu.co                                                   | F     |
+|  1000095189   | BRENDA GISELLE TABACO SALCEDO     | Ingeniería Biomédica | brenda.tabaco-s@mail.escuelaing.edu.co                                                | C     |
+|  1000095107   | DANIEL FERNANDO AMAYA HERRERA     | Ingeniería Biomédica | daniel.amaya-h@mail.escuelaing.edu.co                                                 | I     |
+|  1000046334   | DARIAN VALENTINA ROMERO CALDERON  | Ingeniería Biomédica | darian.romero@mail.escuelaing.edu.co                                                  | H     |
+|  1000093060   | DAVID RICARDO FLÓREZ SUAREZ       | Ingeniería Biomédica | david.florez-s@mail.escuelaing.edu.co                                                 | A     |
+|  1000096587   | GELEN CAMILA ACOSTA RIAÑO         | Ingeniería Biomédica | [gelen.acosta-r@mail.escuelaing.edu.co](mailto:gelen.acosta-r@mail.escuelaing.edu.co) | E     |
+|  1000092699   | JUAN ANDRES LOZANO CORTES         | Ingeniería Biomédica | juan.lozano-c@mail.escuelaing.edu.co                                                  | D     |
+|  1000092925   | JUAN MANUEL HERNANDEZ VELOZA      | Ingeniería Biomédica | [juan.hveloza@mail.escuelaing.edu.co](mailto:juan.hveloza@mail.escuelaing.edu.co)     | C     |
+|  1000090606   | JUAN SEBASTIÁN SERRANO GUTIÉRREZ  | Ingeniería Biomédica | [juan.serrano-g@mail.escuelaing.edu.co](mailto:juan.serrano-g@mail.escuelaing.edu.co) | A     |
+|  1000095042   | JUANITA MORENO PACHECO            | Ingeniería Biomédica | juanita.moreno-p@mail.escuelaing.edu.co                                               | I     |
+|  1000045037   | KEVIN EDUARDO GUTIERREZ CASTILLO  | Ingeniería Biomédica | kevin.gutierrez-c@mail.escuelaing.edu.co                                              | B     |
+|  1000044895   | LUIS DAVID GUTIERREZ URQUIJO      | Ingeniería Biomédica | luis.gutierrez-u@mail.escuelaing.edu.co                                               | B     |
+|  1000096721   | LUIS MAURICIO CALDERÓN VÁSQUEZ    | Ingeniería Biomédica | luis.calderon-v@mail.escuelaing.edu.co                                                | G     |
+|  1000046479   | MARIA PAULA SANCHEZ CIFUENTES     | Ingeniería Biomédica | maria.sanchez-c@mail.escuelaing.edu.co                                                | H     |
+|  1000095848   | MARTIN PATIÑO MELO                | Ingeniería Biomédica | martin.patino-m@mail.escuelaing.edu.co                                                | E     |
+|  1000093688   | MARÍA FERNANDA LIZCANO SOLANO     | Ingeniería Biomédica | maria.lizcano-s@mail.escuelaing.edu.co                                                | I     |
+|  1000095668   | SANTIAGO ANDRÉS CARREÑO CONTRERAS | Ingeniería Biomédica | santiago.carreno-c@mail.escuelaing.edu.co                                             | G     |
+|  1000097027   | SANTIAGO NOGUERA ROSERO           | Ingeniería Biomédica | santiago.noguera-r@mail.escuelaing.edu.co                                             | H     |
+|  1000095368   | VALENTINA JIMÉNEZ ACOSTA          | Ingeniería Biomédica | valentina.jimenez-a@mail.escuelaing.edu.co                                            | F     |
+|  1000002432   | VALERIA FLOREZ HIDALGO            | Ingeniería Biomédica | valeria.florez@mail.escuelaing.edu.co                                                 | B     |
+
+# Horarios de clase
+
+## Clases
+
+**Lunes** 2:30pm-4:00pm F-105. **Martes** 2:30pm-4:00pm  D-201.
+
+## Laboratorio
+
+ **JUEVES** 2:30pm-4:00pm. I1-304
+
+## Atención a estudiantes
+
+::: {.column-margin}
+![](../recursos/imagenes/generales/Escuela_Rosario_logo.png)
+:::

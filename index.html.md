@@ -1,0 +1,51 @@
+---
+title: "PECR Knowledge Hub"
+lang: es
+listing:
+  - id: clases
+    contents: "clases/*.qmd"
+    fields: [image, date, title, description]
+    sort: 
+        - "date desc"
+        - "title desc"
+    type: grid
+  - id: tutoriales
+    contents: "tutoriales/*.qmd"
+    fields: [image, date, title, description]
+    sort: 
+        - "date desc"
+        - "title desc"
+    type: grid
+  - id: proyectos
+    contents: "proyectos/*.qmd"
+    fields: [image, date, title, description]
+    sort: 
+        - "date desc"
+        - "title desc"
+    type: grid
+---
+
+
+
+
+
+
+
+## Clases
+
+:::{#clases}
+:::
+
+
+## Tutoriales
+
+:::{#tutoriales}
+
+
+:::
+
+
+## Proyectos
+
+:::{#proyectos}
+:::

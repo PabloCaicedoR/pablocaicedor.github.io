@@ -1,0 +1,66 @@
+---
+title: "Aprendizaje automático para el procesamiento de señales e imágenes médicas"
+description: "Sitio de la asignatura Procesado de Señales e Imágenes Médicas en la Escuela Colombiana de Ingeniería"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo R."
+date: "2024-08-17"
+date-modified: "2024-08-17"
+image: "../recursos/imagenes/clases/asim/imagen_curso_asim4.jpeg"
+---
+
+
+
+
+
+# Introducción
+
+Aprender procesamiento de señales e imágenes con aprendizaje automático en medicina es crucial para mejorar la precisión y eficiencia en el diagnóstico y tratamiento de enfermedades. El aprendizaje automático permite analizar grandes cantidades de datos de imágenes médicas y señales biomédicas, como rayos X, tomografías computarizadas, resonancia magnética, ECG, EEG y EMG, para identificar patrones y anomalías que pueden indicar la presencia de enfermedades. Esto puede llevar a un diagnóstico más preciso y temprano, lo que a su vez puede mejorar los resultados para los pacientes y reducir la morbilidad y mortalidad.
+
+Además, el aprendizaje automático puede ayudar a personalizar tratamientos para pacientes individuales según sus características únicas de imágenes médicas y señales. También puede automatizar tareas clínicas rutinarias, como segmentación de imágenes, extracción de características y análisis de datos, lo que permite a los médicos centrarse en la toma de decisiones de alto nivel.
+
+La aplicación del aprendizaje automático en medicina también puede facilitar la investigación médica, analizando grandes conjuntos de datos para identificar tendencias y patrones que pueden revelar nuevos conocimientos sobre enfermedades y tratamientos. Además, puede permitir la monitorización remota de pacientes y la telemedicina, ampliando el acceso a servicios de atención médica.
+
+# Material del Curso
+
+## Presentaciones
+
+* [Lect002: Introducción al Machine Learning](../presentaciones/ASIM/Lect002_IntroductionMachineLearning.qmd)
+* [Lect003: Introducción al Machine Learning](../presentaciones/ASIM/Lect003_IntroductionMachineLearning.qmd)
+* [Lect004: Neural Network](../presentaciones/ASIM/Lect004_IntroductionMachineLearning.qmd)
+* [Lect005: CNN](../presentaciones/ASIM/lect005_CNN.qmd)
+
+## Laboratorios
+
+* [Lab00: Conducta de entrada](../evaluaciones/eval001_ConductaEntrada.ipynb)
+* [Lab01: Programación orientada a objetos](../laboratorios/ASIM/lab001_OOP.ipynb)
+* [Solución Lab01: Programación orientada a objetos](../laboratorios/ASIM/lab001_OOP_solution.py)
+* [Lab02: Regresión lineal](../codigo/ASIM/cod003_sol_LinearRegression_InsuranceCosts.ipynb)
+* [Lab:03 Red Neuronal](../codigo/ASIM/cod004_sol1_NeuralNetwork.ipynb)
+
+# Evaluaciones
+
+**Informe de proyecto:** 25%
+
+**Informe de proyecto:** 25%
+
+**Póster & presentación (Idea):** 5%
+
+**Póster & presentación (Resultados Finales):** 20%
+
+**Artículo o idea de negocio sobre el proyecto**: 25%
+
+# Horarios de clase
+
+## Clases
+
+ **Sábado** 7:00am-8:30am I1-304.
+
+## Laboratorio
+
+ **Sábado** 8:30am-10:00am I1-304.
+
+## Atención a estudiantes
+
+::: {.column-margin}
+![](../recursos/imagenes/generales/Escuela_Rosario_logo.png)
+:::

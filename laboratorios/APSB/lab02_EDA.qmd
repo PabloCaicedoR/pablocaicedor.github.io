@@ -1,0 +1,195 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-01-30"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+# **Taller: Construcción, Análisis Exploratorio y Modelado de Datos Biomédicos**
+
+## **Objetivos**
+1. Construir un conjunto de datos a partir de señales e imágenes biomédicas.
+2. Aplicar técnicas de preprocesamiento y limpieza de datos.
+3. Realizar un análisis exploratorio de datos (EDA).
+4. Extraer relaciones matemáticas mediante modelos de regresión y regresión logística.
+5. Comparar el desempeño de múltiples modelos y seleccionar el más adecuado.
+
+---
+
+## **Parte 1: Construcción del Conjunto de Datos**
+
+### **1.1. Selección de la Fuente de Datos**
+Cada estudiante debe elegir un conjunto de datos biomédicos, que puede provenir de:
+- **Señales fisiológicas:** ECG, EEG, PPG, EMG.
+- **Imágenes médicas:** Radiografías, resonancias, tomografías.
+- **Bases de datos públicas:** PhysioNet, Kaggle, NIH, entre otras.
+
+### **1.2. Adquisición y Preprocesamiento**
+Dependiendo del tipo de datos, se deben aplicar las siguientes técnicas:
+
+#### **Para Señales:**
+- Carga de archivos (`.csv`, `.edf`, `.mat`).
+- Filtrado de ruido y artefactos con técnicas adecuadas.
+
+#### **Para Imágenes:**
+- Carga de imágenes (`.png`, `.jpg`, `.dicom`).
+- Conversión a escala de grises, realce de contraste o segmentación si es necesario.
+
+---
+
+## **Parte 2: Análisis Exploratorio de Datos (EDA)**
+
+### **2.1. Exploración y Descripción de Datos**
+Los estudiantes deben:
+- Analizar la estructura del conjunto de datos.
+- Identificar posibles valores atípicos o datos faltantes.
+
+### **2.2. Visualización de Datos**
+- Gráficos de señales en el dominio del tiempo y la frecuencia.
+- Histogramas de intensidades en imágenes médicas.
+
+---
+
+## **Parte 3: Extracción de Relaciones Matemáticas con Modelos Predictivos**
+
+### **3.1. Selección de Variables**
+Cada estudiante debe seleccionar una o más variables independientes y una variable dependiente con la que se intentará encontrar una relación matemática.
+
+Ejemplos de relaciones a explorar:
+- **Señales:** ¿Cómo se relaciona la variabilidad del ECG con la edad?
+- **Imágenes:** ¿Existe una correlación entre el área de una lesión y la presencia de patología?
+
+### **3.2. Entrenamiento de Modelos de Regresión**
+Se entrenarán y compararán distintos modelos:
+
+#### **Regresión Lineal**
+Para analizar relaciones entre variables numéricas.
+
+1. Separar el conjunto de datos en entrenamiento y prueba.
+2. Ajustar un modelo de regresión lineal.
+3. Evaluar el desempeño con métricas como el error cuadrático medio (MSE).
+4. Generar una gráfica que muestre la relación encontrada.
+
+#### **Regresión Logística**
+Para predecir una variable categórica, como la presencia o ausencia de una condición médica.
+
+1. Seleccionar variables predictoras y la variable objetivo.
+2. Dividir los datos en conjunto de entrenamiento y prueba.
+3. Entrenar un modelo de regresión logística.
+4. Evaluar el desempeño utilizando la precisión y la matriz de confusión.
+
+---
+
+## **Parte 4: Comparación y Selección del Mejor Modelo**
+Cada estudiante debe probar múltiples modelos y justificar su elección con base en:
+- **Regresión lineal vs. Regresión polinómica** (para variables continuas).
+- **Regresión logística vs. Árboles de decisión** (para clasificación binaria).
+
+Criterios de evaluación:
+- **Error cuadrático medio (MSE)** para regresión.
+- **Precisión y matriz de confusión** para clasificación.
+
+Se espera que cada estudiante explique:
+- ¿Cuál fue el modelo más adecuado?
+- ¿Por qué eligieron ese modelo y no otro?
+- ¿Cómo pueden mejorarlo?
+
+---
+
+## **Parte 5: Interpretación y Discusión**
+Los estudiantes deben responder:
+1. ¿Qué relación matemática encontraron en los datos?
+2. ¿Cuál fue el modelo más adecuado y por qué?
+3. ¿Cómo podrían mejorar la predicción o ajustar mejor el modelo?
+
+---
+
+## **Evaluación**
+- **Entrega:** Un informe en Jupyter Notebook con código, visualizaciones y análisis.
+- **Criterios:** Correcta implementación de modelos, análisis de resultados y justificación del mejor modelo.
+
+---
+
+## **Rúbrica de Evaluación**
+La calificación total será de **100 puntos**, distribuidos de la siguiente manera:
+
+| **Criterio**                         | **Excelente (20 pts)**          | **Aceptable (10 pts)**         | **Deficiente (5 pts)**        | **Puntos** |
+|--------------------------------------|--------------------------------|-------------------------------|------------------------------|------------|
+| **Selección y Construcción del Dataset** | Se elige un conjunto de datos relevante y se preprocesa adecuadamente. | Se elige un conjunto de datos adecuado pero con preprocesamiento incompleto. | El conjunto de datos no es adecuado o carece de preprocesamiento. |  |
+| **Exploración y Visualización** | Se realizan estadísticas descriptivas y gráficos claros y relevantes. | Se presentan estadísticas básicas y gráficos, pero con poca interpretación. | No se incluyen estadísticas ni gráficos relevantes. |  |
+| **Entrenamiento de Modelos** | Se implementan correctamente al menos dos modelos y se comparan sus resultados. | Se implementa un modelo correctamente pero sin comparación. | La implementación de los modelos es incompleta o incorrecta. |  |
+| **Evaluación y Selección del Mejor Modelo** | Se justifican las métricas y se elige el mejor modelo con base en evidencia. | Se elige un modelo, pero sin un análisis detallado de métricas. | No hay justificación clara para la elección del modelo. |  |
+| **Interpretación y Conclusiones** | Se explican claramente los hallazgos y posibles aplicaciones clínicas. | Se presentan hallazgos, pero sin mucha profundidad. | No se presentan hallazgos o la explicación es insuficiente. |  |
+| **Calidad del Código y Presentación** | El código es claro, bien documentado y correctamente estructurado. | El código tiene errores menores o falta de documentación. | El código es desordenado, con errores o sin documentación. |  |
+
+### **Escala de Evaluación**
+- **90 - 100 puntos:** Sobresaliente.
+- **75 - 89 puntos:** Bueno.
+- **50 - 74 puntos:** Necesita mejora.
+- **0 - 49 puntos:** Deficiente.
+
+---
+
+**Notas adicionales:** Se recomienda el uso de bibliotecas como `pandas`, `numpy`, `matplotlib`, `scikit-learn` y `seaborn` para análisis y visualización.
+
+---
