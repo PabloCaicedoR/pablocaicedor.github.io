@@ -1,0 +1,213 @@
+---
+title: "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde"
+description: "APSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+
+# Introducción
+
+La **Transformada de Fourier** es una herramienta matemática fundamental que permite descomponer una señal en sus componentes de frecuencia. En términos simples, transforma una señal del dominio del tiempo (cómo varía en el tiempo) al dominio de la frecuencia (qué frecuencias contiene).
+
+En procesamiento de señales, la transformada de Fourier tiene aplicaciones vastas: análisis de audio, imágenes, comunicaciones y señales biomédicas. En particular, para señales fisiológicas como las electromiográficas (**EMG**), la representación en frecuencia es muy útil. 
+
+Este documento explora los fundamentos avanzados de la transformada de Fourier en su versión continua y discreta, la definición y cálculo de la **Transformada Discreta de Fourier (DFT)**, y el algoritmo eficiente conocido como **Transformada Rápida de Fourier (FFT)**. Finalmente, aplicaremos estos conceptos al análisis de señales EMG para identificar frecuencias predominantes y filtrar ruido, con ejemplos en Python que ilustran paso a paso la implementación.
+
+# Fundamentos Matemáticos
+
+## Transformada de Fourier Continua
+
+La **Transformada de Fourier continua** de una señal $x(t)$ se define como:
+
+$$
+X(\omega) = \int_{-\infty}^{\infty} x(t)\, e^{-j\,\omega\,t}\,dt.
+$$
+
+Su inversa se expresa como:
+
+$$
+x(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} X(\omega)\, e^{\,j\,\omega\,t}\,d\omega.
+$$
+
+Esta transformación nos permite analizar la frecuencia de una señal continua.
+
+## Transformada Discreta de Fourier (DFT)
+
+La **Transformada Discreta de Fourier (DFT)** de una señal discreta de longitud $N$ se define como:
+
+$$
+X[k] = \sum_{n=0}^{N-1} x[n] \, e^{-j rac{2\pi}{N} k\,n}, \quad k = 0,1,\dots,N-1.
+$$
+
+Su inversa es:
+
+$$
+x[n] = rac{1}{N}\sum_{k=0}^{N-1} X[k] \, e^{\,j rac{2\pi}{N} k\,n}, \quad n = 0,1,\dots,N-1.
+$$
+
+### Implementación en Python
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: DFT Implementation
+
+
+import cmath, math
+
+def dft(x):
+    """Calcula la Transformada Discreta de Fourier (DFT)"""
+    N = len(x)
+    X = []
+    for k in range(N):
+        s = 0+0j  
+        for n in range(N):
+            angle = -2 * math.pi * k * n / N
+            s += x[n] * cmath.exp(1j * angle)
+        X.append(s)
+    return X
+
+# Ejemplo
+x = [1, 1, 1, 1]
+X = dft(x)
+print([round(X.real, 3)+round(X.imag, 3)*1j for X in X])
+```
+
+# Transformada Rápida de Fourier (FFT)
+
+La **Transformada Rápida de Fourier (FFT)** reduce la complejidad computacional de la DFT de $O(N^2)$ a $O(N\log N)$ mediante el algoritmo de la mariposa.
+
+### Implementación de FFT en Python
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: FFT implementation
+
+def fft_recursive(x):
+    """Calcula la FFT usando recursión"""
+    N = len(x)
+    if N <= 1:
+        return x.copy()
+    even = fft_recursive(x[0::2])
+    odd  = fft_recursive(x[1::2])
+    X = [0]*N
+    for k in range(N//2):
+        exp_factor = cmath.exp(-2j * math.pi * k / N)
+        X[k] = even[k] + exp_factor * odd[k]
+        X[k + N//2] = even[k] - exp_factor * odd[k]
+    return X
+
+# Prueba con un ejemplo
+x = [0, 1, 2, 3, 4, 5, 6, 7]
+X_fft = fft_recursive(x)
+print(X_fft)
+```
+
+# Aplicaciones en EMG
+
+Las señales EMG tienen un espectro que abarca desde pocos Hz hasta unos cientos de Hz. La FFT permite identificar **frecuencias dominantes** y eliminar ruido, como la interferencia de la red eléctrica a 50 Hz.
+
+## Detección de Frecuencia Dominante en EMG
+
+```{python}
+import numpy as np
+
+fs = 1000  # Hz
+T  = 1.0   # segundos
+N  = int(T * fs)
+t  = np.linspace(0, T, N, endpoint=False)
+
+np.random.seed(0)
+noise = np.random.normal(0, 1, N)
+Noise_spec = np.fft.fft(noise)
+freqs = np.fft.fftfreq(N, d=1/fs)
+
+for k, f in enumerate(freqs):
+    if abs(f) < 20 or abs(f) > 450:
+        Noise_spec[k] = 0
+noise_filtered = np.fft.ifft(Noise_spec).real
+
+interference = 5.0 * np.cos(2*np.pi*50*t)
+emg_signal = noise_filtered + interference
+
+EMG_spec = np.fft.fft(emg_signal)
+mag = np.abs(EMG_spec)
+mag[0] = 0
+dominant_idx = np.argmax(mag)
+dominant_freq = abs(freqs[dominant_idx])
+print(f"Frecuencia dominante estimada: {dominant_freq:.1f} Hz")
+```
+
+# Conclusión
+
+Este informe revisó la **Transformada de Fourier** y su aplicación en señales EMG, destacando la FFT para análisis espectral y filtrado de ruido. La FFT se emplea para:
+
+- **Identificar frecuencias dominantes** en señales musculares.
+- **Filtrar ruido de red** en 50/60 Hz.
+- **Monitorear la fatiga muscular** mediante análisis espectral.
+
+Gracias a su eficiencia computacional, la FFT es una herramienta esencial en el procesamiento de señales fisiológicas.
