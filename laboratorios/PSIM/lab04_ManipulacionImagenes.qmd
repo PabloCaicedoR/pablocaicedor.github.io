@@ -1,0 +1,130 @@
+---
+title: "Laboratorio 004: Manipulacion de Imágenes"
+description: "PSIM"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+# 🧪 Laboratorio: Codificación de Información en Imágenes Digitales
+
+## 🎯 Objetivos del laboratorio
+
+- Comprender la estructura digital de una imagen como matriz de píxeles.
+- Aplicar técnicas básicas de manipulación de imágenes usando Python.
+- Desarrollar funciones para codificar y decodificar información textual en imágenes.
+- Reflexionar sobre la importancia del procesamiento de imágenes en aplicaciones biomédicas.
+
+## 🛠️ Herramientas
+
+- Lenguaje: Python 3
+- Librerías: opencv-python (cv2), numpy, matplotlib, pydicom.
+
+## 🔬 Actividades comunes a todos los grupos
+
+1. **Carga y visualización de imágenes dicom**
+2. **Conversión de texto a binario**
+3. **Codificación de bits en el canal de color**
+4. **Recuperación del mensaje codificado**
+5. **Generación de la imagen dicom**
+
+## 🔀 Variantes del laboratorio por grupo
+
+Cada grupo trabajará una variante distinta del laboratorio base. Esto garantiza diversidad de enfoques y evita el plagio entre equipos.
+
+| Grupo | Variante asignada | Descripción |
+|-------|--------------------|-------------|
+| A | Canal rojo | Solo puede usar el canal rojo para codificar. |
+| B | Orden inverso | El mensaje se codifica recorriendo los píxeles en orden inverso. |
+| C | Dos mensajes | Codifica dos mensajes distintos: uno en azul y otro en verde. |
+| D | Compresión básica | Comprime el mensaje antes de insertarlo. |
+| E | Escala de grises | Utiliza imágenes en escala de grises para codificación. |
+| F | Alto contraste | Solo se permite codificar en píxeles con alto contraste respecto a sus vecinos. |
+| G | Patrón de ajedrez | El mensaje se codifica en píxeles alternos como patrón de ajedrez. |
+| H | Tres bits | Se usan los tres bits menos significativos para codificar cada carácter. |
+| I | Baja variabilidad local | El mensaje solo se codifica en zonas donde los valores de píxel son muy similares entre vecinos. |
+
+## 🧠 Ejercicio integrador
+
+Codifica el siguiente mensaje dentro de una imagen asignada por el docente:  
+`"Paciente Juan Pérez, ID: 203911, ECG normal, sin antecedentes"`
+
+Cada grupo deberá:
+
+- Entregar el código Python funcional.
+- Comparar la imagen original y la modificada.
+- Recuperar correctamente el mensaje.
+- Entregar un informe breve explicando el proceso y los retos del grupo.
+
+## 📌 Evaluación
+
+| Criterio | Puntaje |
+|---------|---------|
+| Manipulación básica de imágenes | 20 pts |
+| Codificación y recuperación funcional | 40 pts |
+| Adaptación a la variante del grupo | 30 pts |
+| Informe técnico claro y bien escrito | 10 pt |
+| **Total** | **100 pts** |
+
+## 💬 Pregunta de reflexión
+
+> ¿Qué aplicaciones biomédicas podrían beneficiarse del ocultamiento de datos en imágenes? Explica una situación clínica concreta donde esta técnica sería útil.
