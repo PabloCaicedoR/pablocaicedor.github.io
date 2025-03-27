@@ -347,21 +347,21 @@
     "href": "clases/Class_SYSB.html#talleres-examenes-anteriores",
     "title": "Sistemas y Señales Biomédicos",
     "section": "Talleres & Examenes Anteriores",
-    "text": "Talleres & Examenes Anteriores\n\nTaller1: Introduccion al procesamiento de señales\nPrimer Parcial 2025-1 A\nPrimer Parcial 2025-1 B"
+    "text": "Talleres & Examenes Anteriores\n\nTaller1: Introduccion al procesamiento de señales\nTaller2: Sistemas LTI, Convolución, Series de FOURIER\nPrimer Parcial 2025-1 A\nPrimer Parcial 2025-1 B"
   },
   {
     "objectID": "clases/Class_SYSB.html#clases",
     "href": "clases/Class_SYSB.html#clases",
     "title": "Sistemas y Señales Biomédicos",
     "section": "Clases",
-    "text": "Clases\nLunes: 10:00am-11:30am. F204. Jueves: 10:00am-11:30am. F206."
+    "text": "Clases\n\nLunes: 10:00am-11:30am. F204.\n\nJueves: 10:00am-11:30am. F206."
   },
   {
     "objectID": "clases/Class_SYSB.html#laboratorio",
     "href": "clases/Class_SYSB.html#laboratorio",
     "title": "Sistemas y Señales Biomédicos",
     "section": "Laboratorio",
-    "text": "Laboratorio\nMartes: 10:00am-11:30am. I1-308."
+    "text": "Laboratorio\n\nMartes: 10:00am-11:30am. I1-308."
   },
   {
     "objectID": "clases/Class_SYSB.html#atención-a-estudiantes",
@@ -4582,7 +4582,7 @@
     "href": "recursos/documentos/fft_abstract.html",
     "title": "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde",
     "section": "",
-    "text": "La Transformada de Fourier continua es una transformación integral que permite descomponer una señal continua \\(x(t)\\) (en el dominio del tiempo) en sus componentes de frecuencia. Matemáticamente, la transformada de Fourier de \\(x(t)\\) se define como la integral de \\(x(t)\\) multiplicada por una exponencial compleja oscilante. En una formulación típica, la transformada \\(X(\\omega)\\) viene dada por:\n\\[X(\\omega) = \\int_{-\\infty}^{+\\infty} x(t) e^{-i\\omega t} dt\\]\ndonde \\(\\omega\\) es la frecuencia angular en radianes/segundo (relacionada con la frecuencia \\(f\\) en Hertz por \\(\\omega = 2\\pi f\\)). Esta integral produce una función \\(X(\\omega)\\) en el dominio de la frecuencia que indica qué tanto contribuye cada frecuencia \\(\\omega\\) en la señal original.\nLa transformada inversa (que recupera \\(x(t)\\) a partir de \\(X(\\omega)\\)) se define con un factor \\(1/2\\pi\\) así:\n\\[x(t) = \\frac{1}{2\\pi} \\int_{-\\infty}^{+\\infty} X(\\omega) e^{i\\omega t} d\\omega\\]\nEsta pareja de ecuaciones muestra que la transformación de Fourier es reversible: podemos pasar del dominio del tiempo al de frecuencia y viceversa sin pérdida de información.\n\n\n\nLa Transformada Discreta de Fourier (DFT) es la versión discreta de la transformada de Fourier que opera sobre un conjunto finito de muestras. Si tenemos \\(N\\) muestras de una señal \\(x[n]\\), la DFT produce \\(N\\) valores \\(X[k]\\) que representan la contribución de \\(N\\) frecuencias discretas. Matemáticamente, la DFT se define por la sumatoria:\n\\[X(k) = \\sum_{n=0}^{N-1} x(n) e^{-i 2\\pi k n/N}, \\quad k = 0,1,2,\\dots, N-1\\]\nCada \\(X(k)\\) corresponde a la amplitud (y fase) de la componente de frecuencia \\(2\\pi k/N\\) rad/s presente en la señal. La transformada inversa discreta (IDFT) permite recuperar \\(x(n)\\) a partir de \\(X(k)\\) mediante:\n\\[x(n) = \\frac{1}{N}\\sum_{k=0}^{N-1} X(k) e^{i 2\\pi k n/N}\\]\nLa DFT asume que la señal de entrada \\(x[n]\\) es un período de una señal periódica de duración \\(N\\).\n\n\n\nLa Transformada Rápida de Fourier (FFT) no es una transformada diferente, sino un algoritmo optimizado para calcular la DFT de forma más eficiente. Un cálculo directo de la DFT requiere \\(N^2\\) operaciones, mientras que la FFT reduce la complejidad computacional a \\(O(N \\log N)\\).\nEl algoritmo más utilizado es el Cooley-Tukey FFT, que divide la DFT en subproblemas más pequeños mediante la estrategia de divide y vencerás. El proceso implica:\n\nDividir la DFT de tamaño \\(N\\) en dos DFT de tamaño \\(N/2\\).\nReutilizar cálculos mediante factores complejos (twiddle factors).\nAplicar una estructura de cálculo en forma de mariposa, donde los coeficientes FFT se combinan de manera eficiente.\n\n\n\n\nLas señales de electromiografía (EMG) representan la actividad eléctrica producida por los músculos, típicamente medidas en la superficie de la piel (sEMG). Al aplicar la transformada de Fourier (usualmente mediante FFT) obtenemos el espectro de frecuencia, que revela cómo está distribuida la energía de la señal en diferentes bandas de frecuencia.\nAlgunas características comunes extraídas mediante la FFT en señales EMG incluyen:\n\nFrecuencia Media (MNF, Mean Frequency): Media ponderada de la frecuencia en el espectro de potencia.\nFrecuencia Mediana (MDF, Median Frequency): Frecuencia que divide el espectro en dos partes de igual energía.\nIdentificación de picos espectrales, útiles para analizar patrones de activación muscular y fatiga.\n\n\n\n\n\nimport numpy as np\n\n# Parámetros de la señal\nfs = 1000  # Frecuencia de muestreo en Hz\nT = 1.0    # Duración de la señal en segundos\nN = int(T * fs)  # Número de muestras\n\n# Construcción de una señal EMG simulada con ruido y componentes sinusoidales\nt = np.linspace(0, T, N, endpoint=False)\nsignal = 0.5 * np.sin(2 * np.pi * 50 * t) + 0.3 * np.sin(2 * np.pi * 120 * t)\nnp.random.seed(42)\nsignal += 0.2 * np.random.randn(N)\n\n# FFT de la señal\nfft_values = np.fft.fft(signal)\nfreqs = np.fft.fftfreq(N, d=1/fs)\n\n# Tomar solo la mitad del espectro\nhalf_N = N // 2\nfreqs_half = freqs[:half_N]\nfft_half = fft_values[:half_N]\n\n# Espectro de potencia\npower_spectrum = (np.abs(fft_half) ** 2) / N\n\n# Cálculo de la Frecuencia Media y Mediana\nmean_freq = np.sum(freqs_half * power_spectrum) / np.sum(power_spectrum)\ncumulative_power = np.cumsum(power_spectrum)\ntotal_power = cumulative_power[-1]\nmedian_index = np.searchsorted(cumulative_power, total_power/2)\nmedian_freq = freqs_half[median_index]\n\n# Identificación de picos espectrales\nmagnitude_spectrum = np.abs(fft_half) / N\ntop3_indices = np.argsort(magnitude_spectrum)[-3:][::-1]\ntop3_freqs = freqs_half[top3_indices]\n\n# Resultados\nprint(\"Frecuencia media (MNF): {:.2f} Hz\".format(mean_freq))\n\nFrecuencia media (MNF): 102.94 Hz\n\nprint(\"Frecuencia mediana (MDF): {:.2f} Hz\".format(median_freq))\n\nFrecuencia mediana (MDF): 50.00 Hz\n\nprint(\"Principales frecuencias del espectro:\", [\"{:.1f} Hz\".format(f) for f in top3_freqs])\n\nPrincipales frecuencias del espectro: ['50.0 Hz', '120.0 Hz', '221.0 Hz']\n\n\n\n\n\nSe genera una señal sintética de EMG con componentes sinusoidales y ruido aleatorio.\nSe aplica la Transformada Rápida de Fourier (FFT) para obtener el espectro de frecuencia.\nSe calcula la Frecuencia Media (MNF) y la Frecuencia Mediana (MDF).\nSe identifican los picos principales del espectro.\n\nEste análisis frecuencial permite extraer información relevante de señales EMG para detectar fatiga, analizar activación muscular o evaluar rendimiento en estudios clínicos y deportivos."
+    "text": "La Transformada de Fourier es una herramienta matemática fundamental que permite descomponer una señal en sus componentes de frecuencia. En términos simples, transforma una señal del dominio del tiempo (cómo varía en el tiempo) al dominio de la frecuencia (qué frecuencias contiene).\nEn procesamiento de señales, la transformada de Fourier tiene aplicaciones vastas: análisis de audio, imágenes, comunicaciones y señales biomédicas. En particular, para señales fisiológicas como las electromiográficas (EMG), la representación en frecuencia es muy útil.\nEste documento explora los fundamentos avanzados de la transformada de Fourier en su versión continua y discreta, la definición y cálculo de la Transformada Discreta de Fourier (DFT), y el algoritmo eficiente conocido como Transformada Rápida de Fourier (FFT). Finalmente, aplicaremos estos conceptos al análisis de señales EMG para identificar frecuencias predominantes y filtrar ruido, con ejemplos en Python que ilustran paso a paso la implementación."
   },
   {
     "objectID": "recursos/documentos/fft_abstract.html#transformada-de-fourier-continua-cft",
@@ -4618,5 +4618,96 @@
     "title": "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde",
     "section": "",
     "text": "import numpy as np\n\n# Parámetros de la señal\nfs = 1000  # Frecuencia de muestreo en Hz\nT = 1.0    # Duración de la señal en segundos\nN = int(T * fs)  # Número de muestras\n\n# Construcción de una señal EMG simulada con ruido y componentes sinusoidales\nt = np.linspace(0, T, N, endpoint=False)\nsignal = 0.5 * np.sin(2 * np.pi * 50 * t) + 0.3 * np.sin(2 * np.pi * 120 * t)\nnp.random.seed(42)\nsignal += 0.2 * np.random.randn(N)\n\n# FFT de la señal\nfft_values = np.fft.fft(signal)\nfreqs = np.fft.fftfreq(N, d=1/fs)\n\n# Tomar solo la mitad del espectro\nhalf_N = N // 2\nfreqs_half = freqs[:half_N]\nfft_half = fft_values[:half_N]\n\n# Espectro de potencia\npower_spectrum = (np.abs(fft_half) ** 2) / N\n\n# Cálculo de la Frecuencia Media y Mediana\nmean_freq = np.sum(freqs_half * power_spectrum) / np.sum(power_spectrum)\ncumulative_power = np.cumsum(power_spectrum)\ntotal_power = cumulative_power[-1]\nmedian_index = np.searchsorted(cumulative_power, total_power/2)\nmedian_freq = freqs_half[median_index]\n\n# Identificación de picos espectrales\nmagnitude_spectrum = np.abs(fft_half) / N\ntop3_indices = np.argsort(magnitude_spectrum)[-3:][::-1]\ntop3_freqs = freqs_half[top3_indices]\n\n# Resultados\nprint(\"Frecuencia media (MNF): {:.2f} Hz\".format(mean_freq))\n\nFrecuencia media (MNF): 102.94 Hz\n\nprint(\"Frecuencia mediana (MDF): {:.2f} Hz\".format(median_freq))\n\nFrecuencia mediana (MDF): 50.00 Hz\n\nprint(\"Principales frecuencias del espectro:\", [\"{:.1f} Hz\".format(f) for f in top3_freqs])\n\nPrincipales frecuencias del espectro: ['50.0 Hz', '120.0 Hz', '221.0 Hz']\n\n\n\n\n\nSe genera una señal sintética de EMG con componentes sinusoidales y ruido aleatorio.\nSe aplica la Transformada Rápida de Fourier (FFT) para obtener el espectro de frecuencia.\nSe calcula la Frecuencia Media (MNF) y la Frecuencia Mediana (MDF).\nSe identifican los picos principales del espectro.\n\nEste análisis frecuencial permite extraer información relevante de señales EMG para detectar fatiga, analizar activación muscular o evaluar rendimiento en estudios clínicos y deportivos."
+  },
+  {
+    "objectID": "recursos/documentos/fft_abstract.html#transformada-de-fourier-continua",
+    "href": "recursos/documentos/fft_abstract.html#transformada-de-fourier-continua",
+    "title": "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde",
+    "section": "Transformada de Fourier Continua",
+    "text": "Transformada de Fourier Continua\nLa Transformada de Fourier continua de una señal \\(x(t)\\) se define como:\n\\[\nX(\\omega) = \\int_{-\\infty}^{\\infty} x(t)\\, e^{-j\\,\\omega\\,t}\\,dt.\n\\]\nSu inversa se expresa como:\n\\[\nx(t) = \\frac{1}{2\\pi}\\int_{-\\infty}^{\\infty} X(\\omega)\\, e^{\\,j\\,\\omega\\,t}\\,d\\omega.\n\\]\nEsta transformación nos permite analizar la frecuencia de una señal continua."
+  },
+  {
+    "objectID": "recursos/documentos/fft_abstract.html#transformada-discreta-de-fourier-dft",
+    "href": "recursos/documentos/fft_abstract.html#transformada-discreta-de-fourier-dft",
+    "title": "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde",
+    "section": "Transformada Discreta de Fourier (DFT)",
+    "text": "Transformada Discreta de Fourier (DFT)\nLa Transformada Discreta de Fourier (DFT) de una señal discreta de longitud \\(N\\) se define como:\n\\[\nX[k] = \\sum_{n=0}^{N-1} x[n] \\, e^{-j \frac{2\\pi}{N} k\\,n}, \\quad k = 0,1,\\dots,N-1.\n\\]\nSu inversa es:\n\\[\nx[n] = \frac{1}{N}\\sum_{k=0}^{N-1} X[k] \\, e^{\\,j \frac{2\\pi}{N} k\\,n}, \\quad n = 0,1,\\dots,N-1.\n\\]\n\nImplementación en Python\n\nimport cmath, math\n\ndef dft(x):\n    \"\"\"Calcula la Transformada Discreta de Fourier (DFT)\"\"\"\n    N = len(x)\n    X = []\n    for k in range(N):\n        s = 0+0j  \n        for n in range(N):\n            angle = -2 * math.pi * k * n / N\n            s += x[n] * cmath.exp(1j * angle)\n        X.append(s)\n    return X\n\n# Ejemplo\nx = [1, 1, 1, 1]\nX = dft(x)\nprint([round(X.real, 3)+round(X.imag, 3)*1j for X in X])\n\n[(4+0j), (-0+0j), 0j, 0j]"
+  },
+  {
+    "objectID": "recursos/documentos/fft_abstract.html#detección-de-frecuencia-dominante-en-emg",
+    "href": "recursos/documentos/fft_abstract.html#detección-de-frecuencia-dominante-en-emg",
+    "title": "Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde",
+    "section": "Detección de Frecuencia Dominante en EMG",
+    "text": "Detección de Frecuencia Dominante en EMG\n\n\nFrecuencia dominante estimada: 50.0 Hz"
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html",
+    "href": "recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la\nvariable independiente, clasificación de señales, ADC y DAC."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html#descripción",
+    "href": "recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html#descripción",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la\nvariable independiente, clasificación de señales, ADC y DAC."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html#procedimiento",
+    "href": "recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html#procedimiento",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Procedimiento",
+    "text": "Procedimiento\nExplique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.\n\n1. Considere la señal\n\\[x(t) = \\begin{cases}\n  t + 1, & -1 \\leq t \\leq 0 \\\\\n  2, & 0 &lt; t \\leq 2 \\\\\n  1, & 2 &lt; t \\leq 3 \\\\\n  0, & \\text{en otro caso}\n\\end{cases}\\]\nDibuje:\n\n\\(x(t)\\)\n\\(x(t - 2)\\)\n\\(x(2t + 1)\\)\n\\(x(-3t)\\)\n\n\n\n2. Determine si las siguientes señales son periódicas y encuentre su periodo\n\n\\(x(t) = \\cos(2t) + \\cos(\\pi t)\\)\n\n\\(x(t) = e^{-j(\\frac{4\\pi}{3})t} + e^{j(\\frac{2\\pi}{5})t}\\)\n\n\\(x(n) = \\cos(n/8) \\cos(\\pi n/8)\\)\n\n\\(x(n) = \\cos(3\\pi n/2) - \\sin(\\frac{\\pi n}{8}) + 3\\cos(\\frac{\\pi n}{4} + \\frac{\\pi}{3})\\)\n\n\n\n3. Demuestre que si \\(x(t)\\) y \\(y(t)\\) son señales impares, entonces:\n\n\\(z(t) = x(t)y(t)\\) es una señal par\n\n\\(g(t) = x(t) + y(t)\\) es una señal impar.\n\nSiendo \\(x(t) = \\sin(t)\\) y \\(y(t) = t\\), grafique en Python \\(z(t)\\) y \\(g(t)\\). ¿Se cumple lo indicado en los numerales a y b?\n\n\n\n4. Encuentre la expresión analítica de las señales mostradas a continuación utilizando funciones \\(u(t)\\) y \\(r(t)\\) (escalón unitario y rampa).\n\n\n\n5. Para una señal análoga \\(x_a(t) = \\sin(600\\pi t) + 3\\sin(480\\pi t)\\), encontrar:\n\nIndique si la señal \\(x_a(t)\\) es una señal periódica, en caso afirmativo, indique el periodo de la señal.\n\nFrecuencia de muestreo que cumpla con el teorema de Nyquist.\n\nEncontrar \\(x_a[n]\\) con la frecuencia de muestreo encontrada en el punto anterior.\n\nIndique si la señal \\(x_a[n]\\) es una señal periódica, en caso afirmativo, indique el periodo de la señal.\n\n\n\n6. Considere el sistema de procesamiento de señales mostrado en la figura:\n\nSi la entrada es \\(x_a(t) = 2 \\sin(720\\pi t) + 2\\), encontrar:\n\nLa salida \\(x_a[n]\\) si \\(T_{m1} = 12.5ms\\). ¿Con esta frecuencia se puede reconstruir la señal \\(x_a(t)\\) en \\(y(t)\\) si \\(T_{m2} = T_{m1}\\)? Justifique su respuesta.\n\nLa salida \\(x_a[n]\\) si la frecuencia de muestreo del ADC es 8 veces la frecuencia de Nyquist. ¿La señal es periódica en tiempo discreto? Justifique su respuesta.\n\nPara la señal del punto b, encontrar la señal cuantizada de un ciclo de la señal si el tamaño del registro es de 4 bits y el rango de valores que maneja a la entrada es de 0 a 5."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/Taller_2025_1.html",
+    "href": "recursos/talleres/SYSB/Taller_2025_1.html",
+    "title": "Taller 1 - Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "Taller 1\nProfesores\nJenny Carolina Castiblanco Sánchez\nPablo Eduardo Caicedo Rodríguez\nDescripción\nA través de este taller se reforzarán los conocimientos en: señales, transformaciones de la variable independiente, clasificación de señales, ADC y DAC.\nProcedimiento\nExplique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.\nConsidere la señal\nDibuje:\nDetermine si las siguientes señales son periódicas y encuentre su periodo\nPara las siguientes señales encuentre, la potencia instantánea, la energía y la potencia promedio. Indique si la señal se considera de energía o de potencia.\nDemuestre que si y son señales impares, entonces:\n, es una señal par\nes una señal impar.\nSiendo y , grafique en Python y . ¿se cumple lo indicado en el numeral a y b?\nEncuentre la expresión analítica de las señales mostradas a continuación utilizando funciones y (escalón unitario y rampa).\nPara una señal análoga encontrar\nIndique si la señal es una señal periódica, en caso afirmativo, indique el periodo de la señal.\nFrecuencia de muestro que cumpla con el teorema de Nyquist.\nEncontrar con la frecuencia de muestreo encontrada en el punto anterior.\nIndique si la señal es una señal periódica, en caso afirmativo, indique el periodo de la señal.\nConsidere el sistema de procesamiento de señales mostrado en la figura:\nRecuerde que . Si la entrada es , encontrar:\nLa salida si . ¿Con esta frecuencia se puede reconstruir la señal en si ? Justifique su respuesta.\nLa salida si la frecuencia de muestreo del ADC es 8 veces la frecuencia de Nyquist. ¿La señal es periódica en tiempo discreto? Justifique su respuesta.\nPara la señal del punto b, encontrar la señal cuantizada de un ciclo de la señal si el tamaño del registro es de 4bits y el rango de valores que maneja a la entrada es de 0 a 5."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/SYSB202501_Sol_TallerRepasoIntroSennales.html",
+    "href": "recursos/talleres/SYSB/SYSB202501_Sol_TallerRepasoIntroSennales.html",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la\nvariable independiente, clasificación de señales, ADC y DAC."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/SYSB202501_Sol_TallerRepasoIntroSennales.html#descripción",
+    "href": "recursos/talleres/SYSB/SYSB202501_Sol_TallerRepasoIntroSennales.html#descripción",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la\nvariable independiente, clasificación de señales, ADC y DAC."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB/SYSB202501_Sol_TallerRepasoIntroSennales.html#procedimiento",
+    "href": "recursos/talleres/SYSB/SYSB202501_Sol_TallerRepasoIntroSennales.html#procedimiento",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Procedimiento",
+    "text": "Procedimiento\nExplique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.\n\n1. Considere la señal\n\\[x(t) = \\begin{cases}\n  t + 1, & -1 \\leq t \\leq 0 \\\\\n  2, & 0 &lt; t \\leq 2 \\\\\n  1, & 2 &lt; t \\leq 3 \\\\\n  0, & \\text{en otro caso}\n\\end{cases}\\]\nDibuje:\n\nSolución\nSe grafican las transformaciones solicitadas en Python con Matplotlib.\nimport numpy as np\nimport matplotlib.pyplot as plt\n\ndef x_t(t):\n    return np.piecewise(t, [(-1 &lt;= t) & (t &lt;= 0), (0 &lt; t) & (t &lt;= 2), (2 &lt; t) & (t &lt;= 3)],\n                         [lambda t: t + 1, 2, 1, 0])\n\nt = np.linspace(-2, 4, 1000)\nplt.plot(t, x_t(t), label='x(t)')\nplt.xlabel('t')\nplt.ylabel('x(t)')\nplt.legend()\nplt.show()\n\n\n\n\n2. Determine si las siguientes señales son periódicas y encuentre su periodo\n\nSolución\nAnalizamos si \\(\\frac{f_0}{f_s}\\) es racional.\n\n\\(x(t) = \\cos(2t) + \\cos(\\pi t)\\)\n\nPeríodos: \\(T_1 = \\frac{2\\pi}{2} = \\pi\\), \\(T_2 = \\frac{2\\pi}{\\pi} = 2\\)\nMínimo común múltiplo: **Período = 2*\n\n\\(x(t) = e^{-j(4\\pi/3)t} + e^{j(2\\pi/5)t}\\)\n\nSe buscan los períodos fundamentales.\nNo es periódica porque las razones de frecuencias son irracionales.\n\n\n…\n\n\n\n\n5. Para una señal análoga \\(x_a(t) = \\sin(600\\pi t) + 3\\sin(480\\pi t)\\), encontrar:\n\nSolución\n\nPeríodo de la señal:\n\nFrecuencias: \\(f_1 = 300Hz\\), \\(f_2 = 240Hz\\)\nMCM de \\(\\frac{1}{300}\\) y \\(\\frac{1}{240}\\) → T = 1/60 s\n\nFrecuencia de muestreo\n\nTeorema de Nyquist: \\(f_s &gt; 2f_{max} = 600Hz\\)\n\nSeñal muestreada:\nfs = 600  # Hz\nn = np.arange(0, 100)\nxa_n = np.sin(600*np.pi*n/fs) + 3*np.sin(480*np.pi*n/fs)\nplt.stem(n, xa_n)\nplt.show()\n\n…\n\n\n\n6. Muestreo y cuantización\n\nSolución\n\nFrecuencia de muestreo:\n\n\\(T_m1 = 12.5ms\\) → \\(f_s = 80Hz\\)\nNo cumple Nyquist → No se puede reconstruir\n\nMuestreo a 8 veces Nyquist:\n\n\\(f_s = 5760Hz\\)\nSe evalúa si \\(\\frac{f_0}{f_s}\\) es racional → Sí es periódica\n\nCuantización (4 bits, rango 0-5):\n\nPaso de cuantización: \\(\\Delta = \\frac{5}{2^4}\\)\nSe discretiza la señal según niveles de cuantización.\n\n\nimport numpy as np\nlevels = np.linspace(0, 5, 16)\nquantized_signal = np.digitize(xa_n, levels) * (5 / 16)\nplt.stem(n, quantized_signal)\nplt.show()\n\nFin del taller."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB202501_Sol_TallerRepasoIntroSennales.html.html",
+    "href": "recursos/talleres/SYSB202501_Sol_TallerRepasoIntroSennales.html.html",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la\nvariable independiente, clasificación de señales, ADC y DAC."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB202501_Sol_TallerRepasoIntroSennales.html.html#descripción",
+    "href": "recursos/talleres/SYSB202501_Sol_TallerRepasoIntroSennales.html.html#descripción",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "",
+    "text": "A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la\nvariable independiente, clasificación de señales, ADC y DAC."
+  },
+  {
+    "objectID": "recursos/talleres/SYSB202501_Sol_TallerRepasoIntroSennales.html.html#procedimiento",
+    "href": "recursos/talleres/SYSB202501_Sol_TallerRepasoIntroSennales.html.html#procedimiento",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Procedimiento",
+    "text": "Procedimiento\nExplique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.\n\n1. Considere la señal\n\\[x(t) = \\begin{cases}\n  t + 1, & -1 \\leq t \\leq 0 \\\\\n  2, & 0 &lt; t \\leq 2 \\\\\n  1, & 2 &lt; t \\leq 3 \\\\\n  0, & \\text{en otro caso}\n\\end{cases}\\]\nDibuje:\n\nSolución\nSe grafican las transformaciones solicitadas en Python con Matplotlib.\nimport numpy as np\nimport matplotlib.pyplot as plt\n\ndef x_t(t):\n    return np.piecewise(t, [(-1 &lt;= t) & (t &lt;= 0), (0 &lt; t) & (t &lt;= 2), (2 &lt; t) & (t &lt;= 3)],\n                         [lambda t: t + 1, 2, 1, 0])\n\nt = np.linspace(-2, 4, 1000)\nplt.plot(t, x_t(t), label='x(t)')\nplt.xlabel('t')\nplt.ylabel('x(t)')\nplt.legend()\nplt.show()\n\n\n\n\n2. Determine si las siguientes señales son periódicas y encuentre su periodo\n\nSolución\nAnalizamos si \\(\\frac{f_0}{f_s}\\) es racional.\n\n\\(x(t) = \\cos(2t) + \\cos(\\pi t)\\)\n\nPeríodos: \\(T_1 = \\frac{2\\pi}{2} = \\pi\\), \\(T_2 = \\frac{2\\pi}{\\pi} = 2\\)\nMínimo común múltiplo: **Período = 2*\n\n\\(x(t) = e^{-j(4\\pi/3)t} + e^{j(2\\pi/5)t}\\)\n\nSe buscan los períodos fundamentales.\nNo es periódica porque las razones de frecuencias son irracionales.\n\n\n…\n\n\n\n\n5. Para una señal análoga \\(x_a(t) = \\sin(600\\pi t) + 3\\sin(480\\pi t)\\), encontrar:\n\nSolución\n\nPeríodo de la señal:\n\nFrecuencias: \\(f_1 = 300Hz\\), \\(f_2 = 240Hz\\)\nMCM de \\(\\frac{1}{300}\\) y \\(\\frac{1}{240}\\) → T = 1/60 s\n\nFrecuencia de muestreo\n\nTeorema de Nyquist: \\(f_s &gt; 2f_{max} = 600Hz\\)\n\nSeñal muestreada:\nfs = 600  # Hz\nn = np.arange(0, 100)\nxa_n = np.sin(600*np.pi*n/fs) + 3*np.sin(480*np.pi*n/fs)\nplt.stem(n, xa_n)\nplt.show()\n\n…\n\n\n\n6. Muestreo y cuantización\n\nSolución\n\nFrecuencia de muestreo:\n\n\\(T_m1 = 12.5ms\\) → \\(f_s = 80Hz\\)\nNo cumple Nyquist → No se puede reconstruir\n\nMuestreo a 8 veces Nyquist:\n\n\\(f_s = 5760Hz\\)\nSe evalúa si \\(\\frac{f_0}{f_s}\\) es racional → Sí es periódica\n\nCuantización (4 bits, rango 0-5):\n\nPaso de cuantización: \\(\\Delta = \\frac{5}{2^4}\\)\nSe discretiza la señal según niveles de cuantización.\n\n\nimport numpy as np\nlevels = np.linspace(0, 5, 16)\nquantized_signal = np.digitize(xa_n, levels) * (5 / 16)\nplt.stem(n, quantized_signal)\nplt.show()\n\nFin del taller."
   }
 ]

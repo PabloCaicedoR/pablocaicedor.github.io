@@ -6,10 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Ph.D. Jenny Carolina Castiblanco">
 <meta name="author" content="Ph.D. Pablo Eduardo Caicedo Rodríguez">
-<meta name="description" content="APSB">
+<meta name="description" content="SYSB">
 
-<title>Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde – PECR Knowledge Hub</title>
+<title>Sistemas y Señales Biomédicos – PECR Knowledge Hub</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -4952,13 +4953,13 @@ text-justify: inter-word;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<div class="quarto-title-block"><div><h1 class="title">Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Código</button></div></div>
-<p class="subtitle lead">Ingeniería Biomédica</p>
+<div class="quarto-title-block"><div><h1 class="title">Sistemas y Señales Biomédicos</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Código</button></div></div>
+<p class="subtitle lead">Taller Repaso 01: Introducción al procesamiento de Señales</p>
 </div>
 
 <div>
   <div class="description">
-    APSB
+    SYSB
   </div>
 </div>
 
@@ -4966,8 +4967,9 @@ text-justify: inter-word;
 <div class="quarto-title-meta">
 
     <div>
-    <div class="quarto-title-meta-heading">Autor/a</div>
+    <div class="quarto-title-meta-heading">Autores/as</div>
     <div class="quarto-title-meta-contents">
+             <p>Ph.D. Jenny Carolina Castiblanco </p>
              <p>Ph.D. Pablo Eduardo Caicedo Rodríguez </p>
           </div>
   </div>
@@ -4975,7 +4977,7 @@ text-justify: inter-word;
     <div>
     <div class="quarto-title-meta-heading">Fecha de publicación</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">27 de marzo de 2025</p>
+      <p class="date">20 de febrero de 2025</p>
     </div>
   </div>
   
@@ -4987,119 +4989,121 @@ text-justify: inter-word;
 </header>
 
 
-<section id="introducción" class="level1">
-<h1>Introducción</h1>
-<p>La <strong>Transformada de Fourier</strong> es una herramienta matemática fundamental que permite descomponer una señal en sus componentes de frecuencia. En términos simples, transforma una señal del dominio del tiempo (cómo varía en el tiempo) al dominio de la frecuencia (qué frecuencias contiene).</p>
-<p>En procesamiento de señales, la transformada de Fourier tiene aplicaciones vastas: análisis de audio, imágenes, comunicaciones y señales biomédicas. En particular, para señales fisiológicas como las electromiográficas (<strong>EMG</strong>), la representación en frecuencia es muy útil.</p>
-<p>Este documento explora los fundamentos avanzados de la transformada de Fourier en su versión continua y discreta, la definición y cálculo de la <strong>Transformada Discreta de Fourier (DFT)</strong>, y el algoritmo eficiente conocido como <strong>Transformada Rápida de Fourier (FFT)</strong>. Finalmente, aplicaremos estos conceptos al análisis de señales EMG para identificar frecuencias predominantes y filtrar ruido, con ejemplos en Python que ilustran paso a paso la implementación.</p>
+<section id="descripción" class="level2">
+<h2 class="anchored" data-anchor-id="descripción">Descripción</h2>
+<p>A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la
+variable independiente, clasificación de señales, ADC y DAC.</p>
 </section>
-<section id="fundamentos-matemáticos" class="level1">
-<h1>Fundamentos Matemáticos</h1>
-<section id="transformada-de-fourier-continua" class="level2">
-<h2 class="anchored" data-anchor-id="transformada-de-fourier-continua">Transformada de Fourier Continua</h2>
-<p>La <strong>Transformada de Fourier continua</strong> de una señal <span class="math inline">\(x(t)\)</span> se define como:</p>
-<p><span class="math display">\[
-X(\omega) = \int_{-\infty}^{\infty} x(t)\, e^{-j\,\omega\,t}\,dt.
-\]</span></p>
-<p>Su inversa se expresa como:</p>
-<p><span class="math display">\[
-x(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} X(\omega)\, e^{\,j\,\omega\,t}\,d\omega.
-\]</span></p>
-<p>Esta transformación nos permite analizar la frecuencia de una señal continua.</p>
-</section>
-<section id="transformada-discreta-de-fourier-dft" class="level2">
-<h2 class="anchored" data-anchor-id="transformada-discreta-de-fourier-dft">Transformada Discreta de Fourier (DFT)</h2>
-<p>La <strong>Transformada Discreta de Fourier (DFT)</strong> de una señal discreta de longitud <span class="math inline">\(N\)</span> se define como:</p>
-<p><span class="math display">\[
-X[k] = \sum_{n=0}^{N-1} x[n] \, e^{-j rac{2\pi}{N} k\,n}, \quad k = 0,1,\dots,N-1.
-\]</span></p>
-<p>Su inversa es:</p>
-<p><span class="math display">\[
-x[n] = rac{1}{N}\sum_{k=0}^{N-1} X[k] \, e^{\,j rac{2\pi}{N} k\,n}, \quad n = 0,1,\dots,N-1.
-\]</span></p>
-<section id="implementación-en-python" class="level3">
-<h3 class="anchored" data-anchor-id="implementación-en-python">Implementación en Python</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> cmath, math</span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">def</span> dft(x):</span>
-<span id="cb1-4"><a href="#cb1-4"></a>    <span class="co">&quot;&quot;&quot;Calcula la Transformada Discreta de Fourier (DFT)&quot;&quot;&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>    N <span class="op">=</span> <span class="bu">len</span>(x)</span>
-<span id="cb1-6"><a href="#cb1-6"></a>    X <span class="op">=</span> []</span>
-<span id="cb1-7"><a href="#cb1-7"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(N):</span>
-<span id="cb1-8"><a href="#cb1-8"></a>        s <span class="op">=</span> <span class="dv">0</span><span class="op">+</span><span class="ot">0j</span>  </span>
-<span id="cb1-9"><a href="#cb1-9"></a>        <span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(N):</span>
-<span id="cb1-10"><a href="#cb1-10"></a>            angle <span class="op">=</span> <span class="op">-</span><span class="dv">2</span> <span class="op">*</span> math.pi <span class="op">*</span> k <span class="op">*</span> n <span class="op">/</span> N</span>
-<span id="cb1-11"><a href="#cb1-11"></a>            s <span class="op">+=</span> x[n] <span class="op">*</span> cmath.exp(<span class="ot">1j</span> <span class="op">*</span> angle)</span>
-<span id="cb1-12"><a href="#cb1-12"></a>        X.append(s)</span>
-<span id="cb1-13"><a href="#cb1-13"></a>    <span class="cf">return</span> X</span>
-<span id="cb1-14"><a href="#cb1-14"></a></span>
-<span id="cb1-15"><a href="#cb1-15"></a><span class="co"># Ejemplo</span></span>
-<span id="cb1-16"><a href="#cb1-16"></a>x <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>]</span>
-<span id="cb1-17"><a href="#cb1-17"></a>X <span class="op">=</span> dft(x)</span>
-<span id="cb1-18"><a href="#cb1-18"></a><span class="bu">print</span>([<span class="bu">round</span>(X.real, <span class="dv">3</span>)<span class="op">+</span><span class="bu">round</span>(X.imag, <span class="dv">3</span>)<span class="op">*</span><span class="ot">1j</span> <span class="cf">for</span> X <span class="kw">in</span> X])</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[(4+0j), (-0+0j), 0j, 0j]</code></pre>
-</div>
-</div>
+<section id="procedimiento" class="level2">
+<h2 class="anchored" data-anchor-id="procedimiento">Procedimiento</h2>
+<p>Explique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.</p>
+<section id="considere-la-señal" class="level3">
+<h3 class="anchored" data-anchor-id="considere-la-señal">1. Considere la señal</h3>
+<p><span class="math display">\[x(t) = \begin{cases}
+  t + 1, &amp; -1 \leq t \leq 0 \\
+  2, &amp; 0 &lt; t \leq 2 \\
+  1, &amp; 2 &lt; t \leq 3 \\
+  0, &amp; \text{en otro caso}
+\end{cases}\]</span>
+Dibuje:</p>
+<section id="solución" class="level4">
+<h4 class="anchored" data-anchor-id="solución"><strong>Solución</strong></h4>
+<p>Se grafican las transformaciones solicitadas en Python con Matplotlib.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">def</span> x_t(t):</span>
+<span id="cb1-5"><a href="#cb1-5"></a>    <span class="cf">return</span> np.piecewise(t, [(<span class="op">-</span><span class="dv">1</span> <span class="op">&lt;=</span> t) <span class="op">&amp;</span> (t <span class="op">&lt;=</span> <span class="dv">0</span>), (<span class="dv">0</span> <span class="op">&lt;</span> t) <span class="op">&amp;</span> (t <span class="op">&lt;=</span> <span class="dv">2</span>), (<span class="dv">2</span> <span class="op">&lt;</span> t) <span class="op">&amp;</span> (t <span class="op">&lt;=</span> <span class="dv">3</span>)],</span>
+<span id="cb1-6"><a href="#cb1-6"></a>                         [<span class="kw">lambda</span> t: t <span class="op">+</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>])</span>
+<span id="cb1-7"><a href="#cb1-7"></a></span>
+<span id="cb1-8"><a href="#cb1-8"></a>t <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">1000</span>)</span>
+<span id="cb1-9"><a href="#cb1-9"></a>plt.plot(t, x_t(t), label<span class="op">=</span><span class="st">&#39;x(t)&#39;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10"></a>plt.xlabel(<span class="st">&#39;t&#39;</span>)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>plt.ylabel(<span class="st">&#39;x(t)&#39;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>plt.legend()</span>
+<span id="cb1-13"><a href="#cb1-13"></a>plt.show()</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
 </section>
 </section>
-</section>
-<section id="transformada-rápida-de-fourier-fft" class="level1">
-<h1>Transformada Rápida de Fourier (FFT)</h1>
-<p>La <strong>Transformada Rápida de Fourier (FFT)</strong> reduce la complejidad computacional de la DFT de <span class="math inline">\(O(N^2)\)</span> a <span class="math inline">\(O(N\log N)\)</span> mediante el algoritmo de la mariposa.</p>
-<section id="implementación-de-fft-en-python" class="level3">
-<h3 class="anchored" data-anchor-id="implementación-de-fft-en-python">Implementación de FFT en Python</h3>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">def</span> fft_recursive(x):</span>
-<span id="cb3-2"><a href="#cb3-2"></a>    <span class="co">&quot;&quot;&quot;Calcula la FFT usando recursión&quot;&quot;&quot;</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>    N <span class="op">=</span> <span class="bu">len</span>(x)</span>
-<span id="cb3-4"><a href="#cb3-4"></a>    <span class="cf">if</span> N <span class="op">&lt;=</span> <span class="dv">1</span>:</span>
-<span id="cb3-5"><a href="#cb3-5"></a>        <span class="cf">return</span> x.copy()</span>
-<span id="cb3-6"><a href="#cb3-6"></a>    even <span class="op">=</span> fft_recursive(x[<span class="dv">0</span>::<span class="dv">2</span>])</span>
-<span id="cb3-7"><a href="#cb3-7"></a>    odd  <span class="op">=</span> fft_recursive(x[<span class="dv">1</span>::<span class="dv">2</span>])</span>
-<span id="cb3-8"><a href="#cb3-8"></a>    X <span class="op">=</span> [<span class="dv">0</span>]<span class="op">*</span>N</span>
-<span id="cb3-9"><a href="#cb3-9"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(N<span class="op">//</span><span class="dv">2</span>):</span>
-<span id="cb3-10"><a href="#cb3-10"></a>        exp_factor <span class="op">=</span> cmath.exp(<span class="op">-</span><span class="ot">2j</span> <span class="op">*</span> math.pi <span class="op">*</span> k <span class="op">/</span> N)</span>
-<span id="cb3-11"><a href="#cb3-11"></a>        X[k] <span class="op">=</span> even[k] <span class="op">+</span> exp_factor <span class="op">*</span> odd[k]</span>
-<span id="cb3-12"><a href="#cb3-12"></a>        X[k <span class="op">+</span> N<span class="op">//</span><span class="dv">2</span>] <span class="op">=</span> even[k] <span class="op">-</span> exp_factor <span class="op">*</span> odd[k]</span>
-<span id="cb3-13"><a href="#cb3-13"></a>    <span class="cf">return</span> X</span>
-<span id="cb3-14"><a href="#cb3-14"></a></span>
-<span id="cb3-15"><a href="#cb3-15"></a><span class="co"># Prueba con un ejemplo</span></span>
-<span id="cb3-16"><a href="#cb3-16"></a>x <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>]</span>
-<span id="cb3-17"><a href="#cb3-17"></a>X_fft <span class="op">=</span> fft_recursive(x)</span>
-<span id="cb3-18"><a href="#cb3-18"></a><span class="bu">print</span>(X_fft)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[(28+0j), (-4+9.65685424949238j), (-4+4j), (-4+1.6568542494923797j), (-4+0j), (-3.9999999999999996-1.6568542494923797j), (-3.9999999999999996-4j), (-3.9999999999999987-9.65685424949238j)]</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="aplicaciones-en-emg" class="level1">
-<h1>Aplicaciones en EMG</h1>
-<p>Las señales EMG tienen un espectro que abarca desde pocos Hz hasta unos cientos de Hz. La FFT permite identificar <strong>frecuencias dominantes</strong> y eliminar ruido, como la interferencia de la red eléctrica a 50 Hz.</p>
-<section id="detección-de-frecuencia-dominante-en-emg" class="level2">
-<h2 class="anchored" data-anchor-id="detección-de-frecuencia-dominante-en-emg">Detección de Frecuencia Dominante en EMG</h2>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>Frecuencia dominante estimada: 50.0 Hz</code></pre>
-</div>
-</div>
-</section>
-</section>
-<section id="conclusión" class="level1">
-<h1>Conclusión</h1>
-<p>Este informe revisó la <strong>Transformada de Fourier</strong> y su aplicación en señales EMG, destacando la FFT para análisis espectral y filtrado de ruido. La FFT se emplea para:</p>
+<section id="determine-si-las-siguientes-señales-son-periódicas-y-encuentre-su-periodo" class="level3">
+<h3 class="anchored" data-anchor-id="determine-si-las-siguientes-señales-son-periódicas-y-encuentre-su-periodo">2. Determine si las siguientes señales son periódicas y encuentre su periodo</h3>
+<section id="solución-1" class="level4">
+<h4 class="anchored" data-anchor-id="solución-1"><strong>Solución</strong></h4>
+<p>Analizamos si <span class="math inline">\(\frac{f_0}{f_s}\)</span> es racional.</p>
+<ol type="a">
+<li><span class="math inline">\(x(t) = \cos(2t) + \cos(\pi t)\)</span>
 <ul>
-<li><strong>Identificar frecuencias dominantes</strong> en señales musculares.</li>
-<li><strong>Filtrar ruido de red</strong> en 50/60 Hz.</li>
-<li><strong>Monitorear la fatiga muscular</strong> mediante análisis espectral.</li>
-</ul>
-<p>Gracias a su eficiencia computacional, la FFT es una herramienta esencial en el procesamiento de señales fisiológicas.</p>
+<li>Períodos: <span class="math inline">\(T_1 = \frac{2\pi}{2} = \pi\)</span>, <span class="math inline">\(T_2 = \frac{2\pi}{\pi} = 2\)</span></li>
+<li>Mínimo común múltiplo: **Período = 2*</li>
+</ul></li>
+<li><span class="math inline">\(x(t) = e^{-j(4\pi/3)t} + e^{j(2\pi/5)t}\)</span>
+<ul>
+<li>Se buscan los períodos fundamentales.</li>
+<li><strong>No es periódica</strong> porque las razones de frecuencias son irracionales.</li>
+</ul></li>
+</ol>
+<p>…</p>
+<hr>
+</section>
+</section>
+<section id="para-una-señal-análoga-x_at-sin600pi-t-3sin480pi-t-encontrar" class="level3">
+<h3 class="anchored" data-anchor-id="para-una-señal-análoga-x_at-sin600pi-t-3sin480pi-t-encontrar">5. Para una señal análoga <span class="math inline">\(x_a(t) = \sin(600\pi t) + 3\sin(480\pi t)\)</span>, encontrar:</h3>
+<section id="solución-2" class="level4">
+<h4 class="anchored" data-anchor-id="solución-2"><strong>Solución</strong></h4>
+<ol type="a">
+<li><p>Período de la señal:</p>
+<ul>
+<li>Frecuencias: <span class="math inline">\(f_1 = 300Hz\)</span>, <span class="math inline">\(f_2 = 240Hz\)</span></li>
+<li>MCM de <span class="math inline">\(\frac{1}{300}\)</span> y <span class="math inline">\(\frac{1}{240}\)</span> → <strong>T = 1/60 s</strong></li>
+</ul></li>
+<li><p><strong>Frecuencia de muestreo</strong></p>
+<ul>
+<li>Teorema de Nyquist: <span class="math inline">\(f_s &gt; 2f_{max} = 600Hz\)</span></li>
+</ul></li>
+<li><p><strong>Señal muestreada:</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>fs <span class="op">=</span> <span class="dv">600</span>  <span class="co"># Hz</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>n <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">100</span>)</span>
+<span id="cb2-3"><a href="#cb2-3"></a>xa_n <span class="op">=</span> np.sin(<span class="dv">600</span><span class="op">*</span>np.pi<span class="op">*</span>n<span class="op">/</span>fs) <span class="op">+</span> <span class="dv">3</span><span class="op">*</span>np.sin(<span class="dv">480</span><span class="op">*</span>np.pi<span class="op">*</span>n<span class="op">/</span>fs)</span>
+<span id="cb2-4"><a href="#cb2-4"></a>plt.stem(n, xa_n)</span>
+<span id="cb2-5"><a href="#cb2-5"></a>plt.show()</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+</ol>
+<p>…</p>
+</section>
+</section>
+<section id="muestreo-y-cuantización" class="level3">
+<h3 class="anchored" data-anchor-id="muestreo-y-cuantización">6. Muestreo y cuantización</h3>
+<section id="solución-3" class="level4">
+<h4 class="anchored" data-anchor-id="solución-3"><strong>Solución</strong></h4>
+<ol type="a">
+<li><strong>Frecuencia de muestreo:</strong>
+<ul>
+<li><span class="math inline">\(T_m1 = 12.5ms\)</span> → <span class="math inline">\(f_s = 80Hz\)</span></li>
+<li>No cumple Nyquist → <strong>No se puede reconstruir</strong></li>
+</ul></li>
+<li><strong>Muestreo a 8 veces Nyquist:</strong>
+<ul>
+<li><span class="math inline">\(f_s = 5760Hz\)</span></li>
+<li>Se evalúa si <span class="math inline">\(\frac{f_0}{f_s}\)</span> es racional → <strong>Sí es periódica</strong></li>
+</ul></li>
+<li><strong>Cuantización (4 bits, rango 0-5):</strong>
+<ul>
+<li>Paso de cuantización: <span class="math inline">\(\Delta = \frac{5}{2^4}\)</span></li>
+<li>Se discretiza la señal según niveles de cuantización.</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2"></a>levels <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">16</span>)</span>
+<span id="cb3-3"><a href="#cb3-3"></a>quantized_signal <span class="op">=</span> np.digitize(xa_n, levels) <span class="op">*</span> (<span class="dv">5</span> <span class="op">/</span> <span class="dv">16</span>)</span>
+<span id="cb3-4"><a href="#cb3-4"></a>plt.stem(n, quantized_signal)</span>
+<span id="cb3-5"><a href="#cb3-5"></a>plt.show()</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+<p><strong>Fin del taller</strong>.</p>
 
 
 <!-- -->
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -5574,220 +5578,153 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   }
 });
 </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Ejecutar el código</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class>
-<div class="sourceCode" id="cb6" data-shortcodes="false"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">---</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="an">title:</span><span class="co"> &quot;Adquisición y Procesamiento de Señales Biomédicas en Tecnologías de Borde&quot;</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="an">description:</span><span class="co"> &quot;APSB&quot;</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="an">subtitle:</span><span class="co"> &quot;Ingeniería Biomédica&quot;</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="an">lang:</span><span class="co"> es</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="an">author:</span><span class="co"> &quot;Ph.D. Pablo Eduardo Caicedo Rodríguez&quot;</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="an">date:</span><span class="co"> &quot;`r Sys.Date()`&quot;</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a><span class="an">format:</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a><span class="co">  html: </span></span>
-<span id="cb6-10"><a href="#cb6-10"></a><span class="co">    code-tools: true</span></span>
-<span id="cb6-11"><a href="#cb6-11"></a><span class="co">    code-overflow: wrap</span></span>
-<span id="cb6-12"><a href="#cb6-12"></a><span class="co">    code-line-numbers: true</span></span>
-<span id="cb6-13"><a href="#cb6-13"></a><span class="co">    code-copy: true</span></span>
-<span id="cb6-14"><a href="#cb6-14"></a><span class="co">    fig-align: center</span></span>
-<span id="cb6-15"><a href="#cb6-15"></a><span class="co">    self-contained: true</span></span>
-<span id="cb6-16"><a href="#cb6-16"></a><span class="co">    theme: </span></span>
-<span id="cb6-17"><a href="#cb6-17"></a><span class="co">      - simple</span></span>
-<span id="cb6-18"><a href="#cb6-18"></a><span class="co">      - ../../recursos/estilos/metropolis.scss</span></span>
-<span id="cb6-19"><a href="#cb6-19"></a><span class="co">    slide-number: true</span></span>
-<span id="cb6-20"><a href="#cb6-20"></a><span class="co">    preview-links: auto</span></span>
-<span id="cb6-21"><a href="#cb6-21"></a><span class="co">    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png</span></span>
-<span id="cb6-22"><a href="#cb6-22"></a><span class="co">    css: ../../recursos/estilos/styles_pres.scss</span></span>
-<span id="cb6-23"><a href="#cb6-23"></a><span class="co">    footer: &lt;https://pablocaicedor.github.io/&gt;</span></span>
-<span id="cb6-24"><a href="#cb6-24"></a><span class="co">    transition: fade</span></span>
-<span id="cb6-25"><a href="#cb6-25"></a><span class="co">    progress: true</span></span>
-<span id="cb6-26"><a href="#cb6-26"></a><span class="co">    scrollable: true</span></span>
-<span id="cb6-27"><a href="#cb6-27"></a></span>
-<span id="cb6-28"><a href="#cb6-28"></a><span class="an">resources:</span></span>
-<span id="cb6-29"><a href="#cb6-29"></a><span class="co">  - demo.pdf</span></span>
-<span id="cb6-30"><a href="#cb6-30"></a><span class="co">---</span></span>
-<span id="cb6-31"><a href="#cb6-31"></a></span>
-<span id="cb6-34"><a href="#cb6-34"></a><span class="in">```{r}</span></span>
-<span id="cb6-35"><a href="#cb6-35"></a><span class="co">#| echo: false</span></span>
-<span id="cb6-36"><a href="#cb6-36"></a><span class="co">#| eval: true</span></span>
-<span id="cb6-37"><a href="#cb6-37"></a><span class="co">#| output: false</span></span>
-<span id="cb6-38"><a href="#cb6-38"></a><span class="co">#| label: Loading R-Libraries</span></span>
-<span id="cb6-39"><a href="#cb6-39"></a><span class="co"># install.packages(c(&quot;DiagrammeR&quot;, &quot;reticulate&quot;, &quot;kableExtra&quot;, &quot;tidyverse&quot;, &quot;knitr&quot;, &quot;cowplot&quot;, &quot;ggfx&quot;))</span></span>
-<span id="cb6-40"><a href="#cb6-40"></a><span class="fu">library</span>(<span class="st">&quot;DiagrammeR&quot;</span>)</span>
-<span id="cb6-41"><a href="#cb6-41"></a><span class="fu">library</span>(<span class="st">&quot;reticulate&quot;</span>)</span>
-<span id="cb6-42"><a href="#cb6-42"></a><span class="fu">library</span>(<span class="st">&quot;kableExtra&quot;</span>)</span>
-<span id="cb6-43"><a href="#cb6-43"></a><span class="fu">library</span>(<span class="st">&quot;tidyverse&quot;</span>)</span>
-<span id="cb6-44"><a href="#cb6-44"></a><span class="fu">library</span>(<span class="st">&quot;knitr&quot;</span>)</span>
-<span id="cb6-45"><a href="#cb6-45"></a><span class="fu">library</span>(<span class="st">&quot;cowplot&quot;</span>)</span>
-<span id="cb6-46"><a href="#cb6-46"></a><span class="fu">library</span>(<span class="st">&quot;ggfx&quot;</span>)</span>
-<span id="cb6-47"><a href="#cb6-47"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb6-48"><a href="#cb6-48"></a></span>
-<span id="cb6-49"><a href="#cb6-49"></a>def.chunk.hook <span class="ot">&lt;-</span> knitr<span class="sc">::</span>knit_hooks<span class="sc">$</span><span class="fu">get</span>(<span class="st">&quot;chunk&quot;</span>)</span>
-<span id="cb6-50"><a href="#cb6-50"></a>knitr<span class="sc">::</span>knit_hooks<span class="sc">$</span><span class="fu">set</span>(<span class="at">chunk =</span> <span class="cf">function</span>(x, options) {</span>
-<span id="cb6-51"><a href="#cb6-51"></a>    x <span class="ot">&lt;-</span> <span class="fu">def.chunk.hook</span>(x, options)</span>
-<span id="cb6-52"><a href="#cb6-52"></a>    <span class="fu">ifelse</span>(options<span class="sc">$</span>size <span class="sc">!=</span> <span class="st">&quot;normalsize&quot;</span>, <span class="fu">paste0</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st"> </span><span class="sc">\\</span><span class="st">&quot;</span>, options<span class="sc">$</span>size, <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span>, x, <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st"> </span><span class="sc">\\</span><span class="st">normalsize&quot;</span>), x)</span>
-<span id="cb6-53"><a href="#cb6-53"></a>})</span>
-<span id="cb6-54"><a href="#cb6-54"></a><span class="in">```</span></span>
-<span id="cb6-55"><a href="#cb6-55"></a></span>
-<span id="cb6-58"><a href="#cb6-58"></a><span class="in">```{python}</span></span>
-<span id="cb6-59"><a href="#cb6-59"></a><span class="co">#| echo: false</span></span>
-<span id="cb6-60"><a href="#cb6-60"></a><span class="co">#| eval: true</span></span>
-<span id="cb6-61"><a href="#cb6-61"></a><span class="co">#| output: false</span></span>
-<span id="cb6-62"><a href="#cb6-62"></a><span class="co">#| label: Loading Python-Libraries</span></span>
-<span id="cb6-63"><a href="#cb6-63"></a></span>
-<span id="cb6-64"><a href="#cb6-64"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb6-65"><a href="#cb6-65"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb6-66"><a href="#cb6-66"></a>path_ecg<span class="op">=</span><span class="st">&quot;../../data&quot;</span></span>
-<span id="cb6-67"><a href="#cb6-67"></a></span>
-<span id="cb6-68"><a href="#cb6-68"></a><span class="co">#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write</span></span>
-<span id="cb6-69"><a href="#cb6-69"></a></span>
-<span id="cb6-70"><a href="#cb6-70"></a><span class="in">```</span></span>
-<span id="cb6-71"><a href="#cb6-71"></a></span>
-<span id="cb6-72"><a href="#cb6-72"></a></span>
-<span id="cb6-73"><a href="#cb6-73"></a><span class="fu"># Introducción</span></span>
-<span id="cb6-74"><a href="#cb6-74"></a></span>
-<span id="cb6-75"><a href="#cb6-75"></a>La **Transformada de Fourier** es una herramienta matemática fundamental que permite descomponer una señal en sus componentes de frecuencia. En términos simples, transforma una señal del dominio del tiempo (cómo varía en el tiempo) al dominio de la frecuencia (qué frecuencias contiene).</span>
-<span id="cb6-76"><a href="#cb6-76"></a></span>
-<span id="cb6-77"><a href="#cb6-77"></a>En procesamiento de señales, la transformada de Fourier tiene aplicaciones vastas: análisis de audio, imágenes, comunicaciones y señales biomédicas. En particular, para señales fisiológicas como las electromiográficas (**EMG**), la representación en frecuencia es muy útil. </span>
-<span id="cb6-78"><a href="#cb6-78"></a></span>
-<span id="cb6-79"><a href="#cb6-79"></a>Este documento explora los fundamentos avanzados de la transformada de Fourier en su versión continua y discreta, la definición y cálculo de la **Transformada Discreta de Fourier (DFT)**, y el algoritmo eficiente conocido como **Transformada Rápida de Fourier (FFT)**. Finalmente, aplicaremos estos conceptos al análisis de señales EMG para identificar frecuencias predominantes y filtrar ruido, con ejemplos en Python que ilustran paso a paso la implementación.</span>
-<span id="cb6-80"><a href="#cb6-80"></a></span>
-<span id="cb6-81"><a href="#cb6-81"></a><span class="fu"># Fundamentos Matemáticos</span></span>
-<span id="cb6-82"><a href="#cb6-82"></a></span>
-<span id="cb6-83"><a href="#cb6-83"></a><span class="fu">## Transformada de Fourier Continua</span></span>
-<span id="cb6-84"><a href="#cb6-84"></a></span>
-<span id="cb6-85"><a href="#cb6-85"></a>La **Transformada de Fourier continua** de una señal $x(t)$ se define como:</span>
-<span id="cb6-86"><a href="#cb6-86"></a></span>
-<span id="cb6-87"><a href="#cb6-87"></a>$$</span>
-<span id="cb6-88"><a href="#cb6-88"></a>X(\omega) = \int_{-\infty}^{\infty} x(t)\, e^{-j\,\omega\,t}\,dt.</span>
-<span id="cb6-89"><a href="#cb6-89"></a>$$</span>
-<span id="cb6-90"><a href="#cb6-90"></a></span>
-<span id="cb6-91"><a href="#cb6-91"></a>Su inversa se expresa como:</span>
-<span id="cb6-92"><a href="#cb6-92"></a></span>
-<span id="cb6-93"><a href="#cb6-93"></a>$$</span>
-<span id="cb6-94"><a href="#cb6-94"></a>x(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} X(\omega)\, e^{\,j\,\omega\,t}\,d\omega.</span>
-<span id="cb6-95"><a href="#cb6-95"></a>$$</span>
-<span id="cb6-96"><a href="#cb6-96"></a></span>
-<span id="cb6-97"><a href="#cb6-97"></a>Esta transformación nos permite analizar la frecuencia de una señal continua.</span>
-<span id="cb6-98"><a href="#cb6-98"></a></span>
-<span id="cb6-99"><a href="#cb6-99"></a><span class="fu">## Transformada Discreta de Fourier (DFT)</span></span>
-<span id="cb6-100"><a href="#cb6-100"></a></span>
-<span id="cb6-101"><a href="#cb6-101"></a>La **Transformada Discreta de Fourier (DFT)** de una señal discreta de longitud $N$ se define como:</span>
-<span id="cb6-102"><a href="#cb6-102"></a></span>
-<span id="cb6-103"><a href="#cb6-103"></a>$$</span>
-<span id="cb6-104"><a href="#cb6-104"></a>X<span class="co">[</span><span class="ot">k</span><span class="co">]</span> = \sum_{n=0}^{N-1} x<span class="co">[</span><span class="ot">n</span><span class="co">]</span> \, e^{-j rac{2\pi}{N} k\,n}, \quad k = 0,1,\dots,N-1.</span>
-<span id="cb6-105"><a href="#cb6-105"></a>$$</span>
-<span id="cb6-106"><a href="#cb6-106"></a></span>
-<span id="cb6-107"><a href="#cb6-107"></a>Su inversa es:</span>
-<span id="cb6-108"><a href="#cb6-108"></a></span>
-<span id="cb6-109"><a href="#cb6-109"></a>$$</span>
-<span id="cb6-110"><a href="#cb6-110"></a>x<span class="co">[</span><span class="ot">n</span><span class="co">]</span> = rac{1}{N}\sum_{k=0}^{N-1} X<span class="co">[</span><span class="ot">k</span><span class="co">]</span> \, e^{\,j rac{2\pi}{N} k\,n}, \quad n = 0,1,\dots,N-1.</span>
-<span id="cb6-111"><a href="#cb6-111"></a>$$</span>
-<span id="cb6-112"><a href="#cb6-112"></a></span>
-<span id="cb6-113"><a href="#cb6-113"></a><span class="fu">### Implementación en Python</span></span>
-<span id="cb6-114"><a href="#cb6-114"></a></span>
-<span id="cb6-117"><a href="#cb6-117"></a><span class="in">```{python}</span></span>
-<span id="cb6-118"><a href="#cb6-118"></a><span class="co">#| echo: true</span></span>
-<span id="cb6-119"><a href="#cb6-119"></a><span class="co">#| eval: true</span></span>
-<span id="cb6-120"><a href="#cb6-120"></a><span class="co">#| output: true</span></span>
-<span id="cb6-121"><a href="#cb6-121"></a><span class="co">#| label: DFT Implementation</span></span>
-<span id="cb6-122"><a href="#cb6-122"></a></span>
-<span id="cb6-123"><a href="#cb6-123"></a></span>
-<span id="cb6-124"><a href="#cb6-124"></a><span class="im">import</span> cmath, math</span>
-<span id="cb6-125"><a href="#cb6-125"></a></span>
-<span id="cb6-126"><a href="#cb6-126"></a><span class="kw">def</span> dft(x):</span>
-<span id="cb6-127"><a href="#cb6-127"></a>    <span class="co">&quot;&quot;&quot;Calcula la Transformada Discreta de Fourier (DFT)&quot;&quot;&quot;</span></span>
-<span id="cb6-128"><a href="#cb6-128"></a>    N <span class="op">=</span> <span class="bu">len</span>(x)</span>
-<span id="cb6-129"><a href="#cb6-129"></a>    X <span class="op">=</span> []</span>
-<span id="cb6-130"><a href="#cb6-130"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(N):</span>
-<span id="cb6-131"><a href="#cb6-131"></a>        s <span class="op">=</span> <span class="dv">0</span><span class="op">+</span><span class="ot">0j</span>  </span>
-<span id="cb6-132"><a href="#cb6-132"></a>        <span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(N):</span>
-<span id="cb6-133"><a href="#cb6-133"></a>            angle <span class="op">=</span> <span class="op">-</span><span class="dv">2</span> <span class="op">*</span> math.pi <span class="op">*</span> k <span class="op">*</span> n <span class="op">/</span> N</span>
-<span id="cb6-134"><a href="#cb6-134"></a>            s <span class="op">+=</span> x[n] <span class="op">*</span> cmath.exp(<span class="ot">1j</span> <span class="op">*</span> angle)</span>
-<span id="cb6-135"><a href="#cb6-135"></a>        X.append(s)</span>
-<span id="cb6-136"><a href="#cb6-136"></a>    <span class="cf">return</span> X</span>
-<span id="cb6-137"><a href="#cb6-137"></a></span>
-<span id="cb6-138"><a href="#cb6-138"></a><span class="co"># Ejemplo</span></span>
-<span id="cb6-139"><a href="#cb6-139"></a>x <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>]</span>
-<span id="cb6-140"><a href="#cb6-140"></a>X <span class="op">=</span> dft(x)</span>
-<span id="cb6-141"><a href="#cb6-141"></a><span class="bu">print</span>([<span class="bu">round</span>(X.real, <span class="dv">3</span>)<span class="op">+</span><span class="bu">round</span>(X.imag, <span class="dv">3</span>)<span class="op">*</span><span class="ot">1j</span> <span class="cf">for</span> X <span class="kw">in</span> X])</span>
-<span id="cb6-142"><a href="#cb6-142"></a><span class="in">```</span></span>
-<span id="cb6-143"><a href="#cb6-143"></a></span>
-<span id="cb6-144"><a href="#cb6-144"></a><span class="fu"># Transformada Rápida de Fourier (FFT)</span></span>
-<span id="cb6-145"><a href="#cb6-145"></a></span>
-<span id="cb6-146"><a href="#cb6-146"></a>La **Transformada Rápida de Fourier (FFT)** reduce la complejidad computacional de la DFT de $O(N^2)$ a $O(N\log N)$ mediante el algoritmo de la mariposa.</span>
-<span id="cb6-147"><a href="#cb6-147"></a></span>
-<span id="cb6-148"><a href="#cb6-148"></a><span class="fu">### Implementación de FFT en Python</span></span>
-<span id="cb6-149"><a href="#cb6-149"></a></span>
-<span id="cb6-152"><a href="#cb6-152"></a><span class="in">```{python}</span></span>
-<span id="cb6-153"><a href="#cb6-153"></a><span class="co">#| echo: true</span></span>
-<span id="cb6-154"><a href="#cb6-154"></a><span class="co">#| eval: true</span></span>
-<span id="cb6-155"><a href="#cb6-155"></a><span class="co">#| output: true</span></span>
-<span id="cb6-156"><a href="#cb6-156"></a><span class="co">#| label: FFT implementation</span></span>
-<span id="cb6-157"><a href="#cb6-157"></a></span>
-<span id="cb6-158"><a href="#cb6-158"></a><span class="kw">def</span> fft_recursive(x):</span>
-<span id="cb6-159"><a href="#cb6-159"></a>    <span class="co">&quot;&quot;&quot;Calcula la FFT usando recursión&quot;&quot;&quot;</span></span>
-<span id="cb6-160"><a href="#cb6-160"></a>    N <span class="op">=</span> <span class="bu">len</span>(x)</span>
-<span id="cb6-161"><a href="#cb6-161"></a>    <span class="cf">if</span> N <span class="op">&lt;=</span> <span class="dv">1</span>:</span>
-<span id="cb6-162"><a href="#cb6-162"></a>        <span class="cf">return</span> x.copy()</span>
-<span id="cb6-163"><a href="#cb6-163"></a>    even <span class="op">=</span> fft_recursive(x[<span class="dv">0</span>::<span class="dv">2</span>])</span>
-<span id="cb6-164"><a href="#cb6-164"></a>    odd  <span class="op">=</span> fft_recursive(x[<span class="dv">1</span>::<span class="dv">2</span>])</span>
-<span id="cb6-165"><a href="#cb6-165"></a>    X <span class="op">=</span> [<span class="dv">0</span>]<span class="op">*</span>N</span>
-<span id="cb6-166"><a href="#cb6-166"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(N<span class="op">//</span><span class="dv">2</span>):</span>
-<span id="cb6-167"><a href="#cb6-167"></a>        exp_factor <span class="op">=</span> cmath.exp(<span class="op">-</span><span class="ot">2j</span> <span class="op">*</span> math.pi <span class="op">*</span> k <span class="op">/</span> N)</span>
-<span id="cb6-168"><a href="#cb6-168"></a>        X[k] <span class="op">=</span> even[k] <span class="op">+</span> exp_factor <span class="op">*</span> odd[k]</span>
-<span id="cb6-169"><a href="#cb6-169"></a>        X[k <span class="op">+</span> N<span class="op">//</span><span class="dv">2</span>] <span class="op">=</span> even[k] <span class="op">-</span> exp_factor <span class="op">*</span> odd[k]</span>
-<span id="cb6-170"><a href="#cb6-170"></a>    <span class="cf">return</span> X</span>
-<span id="cb6-171"><a href="#cb6-171"></a></span>
-<span id="cb6-172"><a href="#cb6-172"></a><span class="co"># Prueba con un ejemplo</span></span>
-<span id="cb6-173"><a href="#cb6-173"></a>x <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>]</span>
-<span id="cb6-174"><a href="#cb6-174"></a>X_fft <span class="op">=</span> fft_recursive(x)</span>
-<span id="cb6-175"><a href="#cb6-175"></a><span class="bu">print</span>(X_fft)</span>
-<span id="cb6-176"><a href="#cb6-176"></a><span class="in">```</span></span>
-<span id="cb6-177"><a href="#cb6-177"></a></span>
-<span id="cb6-178"><a href="#cb6-178"></a><span class="fu"># Aplicaciones en EMG</span></span>
-<span id="cb6-179"><a href="#cb6-179"></a></span>
-<span id="cb6-180"><a href="#cb6-180"></a>Las señales EMG tienen un espectro que abarca desde pocos Hz hasta unos cientos de Hz. La FFT permite identificar **frecuencias dominantes** y eliminar ruido, como la interferencia de la red eléctrica a 50 Hz.</span>
-<span id="cb6-181"><a href="#cb6-181"></a></span>
-<span id="cb6-182"><a href="#cb6-182"></a><span class="fu">## Detección de Frecuencia Dominante en EMG</span></span>
-<span id="cb6-183"><a href="#cb6-183"></a></span>
-<span id="cb6-186"><a href="#cb6-186"></a><span class="in">```{python}</span></span>
-<span id="cb6-187"><a href="#cb6-187"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb6-188"><a href="#cb6-188"></a></span>
-<span id="cb6-189"><a href="#cb6-189"></a>fs <span class="op">=</span> <span class="dv">1000</span>  <span class="co"># Hz</span></span>
-<span id="cb6-190"><a href="#cb6-190"></a>T  <span class="op">=</span> <span class="fl">1.0</span>   <span class="co"># segundos</span></span>
-<span id="cb6-191"><a href="#cb6-191"></a>N  <span class="op">=</span> <span class="bu">int</span>(T <span class="op">*</span> fs)</span>
-<span id="cb6-192"><a href="#cb6-192"></a>t  <span class="op">=</span> np.linspace(<span class="dv">0</span>, T, N, endpoint<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb6-193"><a href="#cb6-193"></a></span>
-<span id="cb6-194"><a href="#cb6-194"></a>np.random.seed(<span class="dv">0</span>)</span>
-<span id="cb6-195"><a href="#cb6-195"></a>noise <span class="op">=</span> np.random.normal(<span class="dv">0</span>, <span class="dv">1</span>, N)</span>
-<span id="cb6-196"><a href="#cb6-196"></a>Noise_spec <span class="op">=</span> np.fft.fft(noise)</span>
-<span id="cb6-197"><a href="#cb6-197"></a>freqs <span class="op">=</span> np.fft.fftfreq(N, d<span class="op">=</span><span class="dv">1</span><span class="op">/</span>fs)</span>
-<span id="cb6-198"><a href="#cb6-198"></a></span>
-<span id="cb6-199"><a href="#cb6-199"></a><span class="cf">for</span> k, f <span class="kw">in</span> <span class="bu">enumerate</span>(freqs):</span>
-<span id="cb6-200"><a href="#cb6-200"></a>    <span class="cf">if</span> <span class="bu">abs</span>(f) <span class="op">&lt;</span> <span class="dv">20</span> <span class="kw">or</span> <span class="bu">abs</span>(f) <span class="op">&gt;</span> <span class="dv">450</span>:</span>
-<span id="cb6-201"><a href="#cb6-201"></a>        Noise_spec[k] <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb6-202"><a href="#cb6-202"></a>noise_filtered <span class="op">=</span> np.fft.ifft(Noise_spec).real</span>
-<span id="cb6-203"><a href="#cb6-203"></a></span>
-<span id="cb6-204"><a href="#cb6-204"></a>interference <span class="op">=</span> <span class="fl">5.0</span> <span class="op">*</span> np.cos(<span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span><span class="dv">50</span><span class="op">*</span>t)</span>
-<span id="cb6-205"><a href="#cb6-205"></a>emg_signal <span class="op">=</span> noise_filtered <span class="op">+</span> interference</span>
-<span id="cb6-206"><a href="#cb6-206"></a></span>
-<span id="cb6-207"><a href="#cb6-207"></a>EMG_spec <span class="op">=</span> np.fft.fft(emg_signal)</span>
-<span id="cb6-208"><a href="#cb6-208"></a>mag <span class="op">=</span> np.<span class="bu">abs</span>(EMG_spec)</span>
-<span id="cb6-209"><a href="#cb6-209"></a>mag[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb6-210"><a href="#cb6-210"></a>dominant_idx <span class="op">=</span> np.argmax(mag)</span>
-<span id="cb6-211"><a href="#cb6-211"></a>dominant_freq <span class="op">=</span> <span class="bu">abs</span>(freqs[dominant_idx])</span>
-<span id="cb6-212"><a href="#cb6-212"></a><span class="bu">print</span>(<span class="ss">f&quot;Frecuencia dominante estimada: </span><span class="sc">{</span>dominant_freq<span class="sc">:.1f}</span><span class="ss"> Hz&quot;</span>)</span>
-<span id="cb6-213"><a href="#cb6-213"></a><span class="in">```</span></span>
-<span id="cb6-214"><a href="#cb6-214"></a></span>
-<span id="cb6-215"><a href="#cb6-215"></a><span class="fu"># Conclusión</span></span>
-<span id="cb6-216"><a href="#cb6-216"></a></span>
-<span id="cb6-217"><a href="#cb6-217"></a>Este informe revisó la **Transformada de Fourier** y su aplicación en señales EMG, destacando la FFT para análisis espectral y filtrado de ruido. La FFT se emplea para:</span>
-<span id="cb6-218"><a href="#cb6-218"></a></span>
-<span id="cb6-219"><a href="#cb6-219"></a><span class="ss">- </span>**Identificar frecuencias dominantes** en señales musculares.</span>
-<span id="cb6-220"><a href="#cb6-220"></a><span class="ss">- </span>**Filtrar ruido de red** en 50/60 Hz.</span>
-<span id="cb6-221"><a href="#cb6-221"></a><span class="ss">- </span>**Monitorear la fatiga muscular** mediante análisis espectral.</span>
-<span id="cb6-222"><a href="#cb6-222"></a></span>
-<span id="cb6-223"><a href="#cb6-223"></a>Gracias a su eficiencia computacional, la FFT es una herramienta esencial en el procesamiento de señales fisiológicas.</span>
-</code><button title="Copiar al portapapeles" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4" data-shortcodes="false"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">---</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="an">title:</span><span class="co"> &quot;Sistemas y Señales Biomédicos&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="an">description:</span><span class="co"> &quot;SYSB&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="an">subtitle:</span><span class="co"> &quot;Taller Repaso 01: Introducción al procesamiento de Señales&quot;</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="an">lang:</span><span class="co"> es</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="an">author:</span><span class="co"> </span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co">    - &quot;Ph.D. Jenny Carolina Castiblanco&quot;</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="co">    - &quot;Ph.D. Pablo Eduardo Caicedo Rodríguez&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="an">date:</span><span class="co"> &quot;2025-02-20&quot;</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="an">format:</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="co">  html: </span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="co">    code-tools: true</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="co">    code-overflow: wrap</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="co">    code-line-numbers: true</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="co">    code-copy: true</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a><span class="co">    fig-align: center</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="co">    self-contained: true</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="co">    theme: </span></span>
+<span id="cb4-19"><a href="#cb4-19"></a><span class="co">      - simple</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="co">      - ../estilos/metropolis.scss</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a><span class="co">    slide-number: true</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a><span class="co">    preview-links: auto</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a><span class="co">    logo: ../imagenes/generales/Escuela_Rosario_logo.png</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a><span class="co">    css: ../estilos/styles_pres.scss</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a><span class="co">    footer: &lt;https://pablocaicedor.github.io/&gt;</span></span>
+<span id="cb4-26"><a href="#cb4-26"></a><span class="co">    transition: fade</span></span>
+<span id="cb4-27"><a href="#cb4-27"></a><span class="co">    progress: true</span></span>
+<span id="cb4-28"><a href="#cb4-28"></a><span class="co">    scrollable: true</span></span>
+<span id="cb4-29"><a href="#cb4-29"></a></span>
+<span id="cb4-30"><a href="#cb4-30"></a><span class="an">resources:</span></span>
+<span id="cb4-31"><a href="#cb4-31"></a><span class="co">  - demo.pdf</span></span>
+<span id="cb4-32"><a href="#cb4-32"></a><span class="co">---</span></span>
+<span id="cb4-33"><a href="#cb4-33"></a></span>
+<span id="cb4-34"><a href="#cb4-34"></a></span>
+<span id="cb4-35"><a href="#cb4-35"></a>::: {.cell}</span>
+<span id="cb4-36"><a href="#cb4-36"></a></span>
+<span id="cb4-37"><a href="#cb4-37"></a>:::</span>
+<span id="cb4-38"><a href="#cb4-38"></a></span>
+<span id="cb4-39"><a href="#cb4-39"></a>::: {.cell}</span>
+<span id="cb4-40"><a href="#cb4-40"></a></span>
+<span id="cb4-41"><a href="#cb4-41"></a>:::</span>
+<span id="cb4-42"><a href="#cb4-42"></a></span>
+<span id="cb4-43"><a href="#cb4-43"></a></span>
+<span id="cb4-44"><a href="#cb4-44"></a></span>
+<span id="cb4-45"><a href="#cb4-45"></a></span>
+<span id="cb4-46"><a href="#cb4-46"></a></span>
+<span id="cb4-47"><a href="#cb4-47"></a><span class="fu">## Descripción  </span></span>
+<span id="cb4-48"><a href="#cb4-48"></a>A través de este taller se reforzarán los conocimientos en: señales, transformaciones de la </span>
+<span id="cb4-49"><a href="#cb4-49"></a>variable independiente, clasificación de señales, ADC y DAC.  </span>
+<span id="cb4-50"><a href="#cb4-50"></a></span>
+<span id="cb4-51"><a href="#cb4-51"></a><span class="fu">## Procedimiento  </span></span>
+<span id="cb4-52"><a href="#cb4-52"></a>Explique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.  </span>
+<span id="cb4-53"><a href="#cb4-53"></a></span>
+<span id="cb4-54"><a href="#cb4-54"></a><span class="fu">### 1. Considere la señal</span></span>
+<span id="cb4-55"><a href="#cb4-55"></a>$$x(t) = \begin{cases} </span>
+<span id="cb4-56"><a href="#cb4-56"></a>  t + 1, &amp; -1 \leq t \leq 0 <span class="sc">\\</span> </span>
+<span id="cb4-57"><a href="#cb4-57"></a>  2, &amp; 0 &lt; t \leq 2 <span class="sc">\\</span> </span>
+<span id="cb4-58"><a href="#cb4-58"></a>  1, &amp; 2 &lt; t \leq 3 <span class="sc">\\</span> </span>
+<span id="cb4-59"><a href="#cb4-59"></a>  0, &amp; \text{en otro caso} </span>
+<span id="cb4-60"><a href="#cb4-60"></a> \end{cases}$$</span>
+<span id="cb4-61"><a href="#cb4-61"></a>Dibuje:</span>
+<span id="cb4-62"><a href="#cb4-62"></a></span>
+<span id="cb4-63"><a href="#cb4-63"></a><span class="fu">#### **Solución**</span></span>
+<span id="cb4-64"><a href="#cb4-64"></a>Se grafican las transformaciones solicitadas en Python con Matplotlib.</span>
+<span id="cb4-65"><a href="#cb4-65"></a><span class="in">```python</span></span>
+<span id="cb4-66"><a href="#cb4-66"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-67"><a href="#cb4-67"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb4-68"><a href="#cb4-68"></a></span>
+<span id="cb4-69"><a href="#cb4-69"></a><span class="kw">def</span> x_t(t):</span>
+<span id="cb4-70"><a href="#cb4-70"></a>    <span class="cf">return</span> np.piecewise(t, [(<span class="op">-</span><span class="dv">1</span> <span class="op">&lt;=</span> t) <span class="op">&amp;</span> (t <span class="op">&lt;=</span> <span class="dv">0</span>), (<span class="dv">0</span> <span class="op">&lt;</span> t) <span class="op">&amp;</span> (t <span class="op">&lt;=</span> <span class="dv">2</span>), (<span class="dv">2</span> <span class="op">&lt;</span> t) <span class="op">&amp;</span> (t <span class="op">&lt;=</span> <span class="dv">3</span>)],</span>
+<span id="cb4-71"><a href="#cb4-71"></a>                         [<span class="kw">lambda</span> t: t <span class="op">+</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>])</span>
+<span id="cb4-72"><a href="#cb4-72"></a></span>
+<span id="cb4-73"><a href="#cb4-73"></a>t <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">1000</span>)</span>
+<span id="cb4-74"><a href="#cb4-74"></a>plt.plot(t, x_t(t), label<span class="op">=</span><span class="st">&#39;x(t)&#39;</span>)</span>
+<span id="cb4-75"><a href="#cb4-75"></a>plt.xlabel(<span class="st">&#39;t&#39;</span>)</span>
+<span id="cb4-76"><a href="#cb4-76"></a>plt.ylabel(<span class="st">&#39;x(t)&#39;</span>)</span>
+<span id="cb4-77"><a href="#cb4-77"></a>plt.legend()</span>
+<span id="cb4-78"><a href="#cb4-78"></a>plt.show()</span>
+<span id="cb4-79"><a href="#cb4-79"></a><span class="in">```</span></span>
+<span id="cb4-80"><a href="#cb4-80"></a></span>
+<span id="cb4-81"><a href="#cb4-81"></a>---</span>
+<span id="cb4-82"><a href="#cb4-82"></a></span>
+<span id="cb4-83"><a href="#cb4-83"></a><span class="fu">### 2. Determine si las siguientes señales son periódicas y encuentre su periodo  </span></span>
+<span id="cb4-84"><a href="#cb4-84"></a><span class="fu">#### **Solución**</span></span>
+<span id="cb4-85"><a href="#cb4-85"></a>Analizamos si $\frac{f_0}{f_s}$ es racional.</span>
+<span id="cb4-86"><a href="#cb4-86"></a></span>
+<span id="cb4-87"><a href="#cb4-87"></a>a) $x(t) = \cos(2t) + \cos(\pi t)$</span>
+<span id="cb4-88"><a href="#cb4-88"></a><span class="ss">   - </span>Períodos: $T_1 = \frac{2\pi}{2} = \pi$, $T_2 = \frac{2\pi}{\pi} = 2$</span>
+<span id="cb4-89"><a href="#cb4-89"></a><span class="ss">   - </span>Mínimo común múltiplo: **Período = 2\pi**</span>
+<span id="cb4-90"><a href="#cb4-90"></a></span>
+<span id="cb4-91"><a href="#cb4-91"></a>b) $x(t) = e^{-j(4\pi/3)t} + e^{j(2\pi/5)t}$</span>
+<span id="cb4-92"><a href="#cb4-92"></a><span class="ss">   - </span>Se buscan los períodos fundamentales.</span>
+<span id="cb4-93"><a href="#cb4-93"></a><span class="ss">   - </span>**No es periódica** porque las razones de frecuencias son irracionales.</span>
+<span id="cb4-94"><a href="#cb4-94"></a></span>
+<span id="cb4-95"><a href="#cb4-95"></a>...</span>
+<span id="cb4-96"><a href="#cb4-96"></a></span>
+<span id="cb4-97"><a href="#cb4-97"></a>---</span>
+<span id="cb4-98"><a href="#cb4-98"></a></span>
+<span id="cb4-99"><a href="#cb4-99"></a><span class="fu">### 5. Para una señal análoga $x_a(t) = \sin(600\pi t) + 3\sin(480\pi t)$, encontrar:</span></span>
+<span id="cb4-100"><a href="#cb4-100"></a></span>
+<span id="cb4-101"><a href="#cb4-101"></a><span class="fu">#### **Solución**</span></span>
+<span id="cb4-102"><a href="#cb4-102"></a></span>
+<span id="cb4-103"><a href="#cb4-103"></a>a) Período de la señal:</span>
+<span id="cb4-104"><a href="#cb4-104"></a><span class="ss">   - </span>Frecuencias: $f_1 = 300Hz$, $f_2 = 240Hz$</span>
+<span id="cb4-105"><a href="#cb4-105"></a><span class="ss">   - </span>MCM de $\frac{1}{300}$ y $\frac{1}{240}$ → **T = 1/60 s**</span>
+<span id="cb4-106"><a href="#cb4-106"></a></span>
+<span id="cb4-107"><a href="#cb4-107"></a>b) **Frecuencia de muestreo**</span>
+<span id="cb4-108"><a href="#cb4-108"></a><span class="ss">   - </span>Teorema de Nyquist: $f_s &gt; 2f_{max} = 600Hz$</span>
+<span id="cb4-109"><a href="#cb4-109"></a></span>
+<span id="cb4-110"><a href="#cb4-110"></a>c) **Señal muestreada:**</span>
+<span id="cb4-111"><a href="#cb4-111"></a>   <span class="in">```python</span></span>
+<span id="cb4-112"><a href="#cb4-112"></a>   fs <span class="op">=</span> <span class="dv">600</span>  <span class="co"># Hz</span></span>
+<span id="cb4-113"><a href="#cb4-113"></a>   n <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">100</span>)</span>
+<span id="cb4-114"><a href="#cb4-114"></a>   xa_n <span class="op">=</span> np.sin(<span class="dv">600</span><span class="op">*</span>np.pi<span class="op">*</span>n<span class="op">/</span>fs) <span class="op">+</span> <span class="dv">3</span><span class="op">*</span>np.sin(<span class="dv">480</span><span class="op">*</span>np.pi<span class="op">*</span>n<span class="op">/</span>fs)</span>
+<span id="cb4-115"><a href="#cb4-115"></a>   plt.stem(n, xa_n)</span>
+<span id="cb4-116"><a href="#cb4-116"></a>   plt.show()</span>
+<span id="cb4-117"><a href="#cb4-117"></a>   <span class="in">```</span></span>
+<span id="cb4-118"><a href="#cb4-118"></a></span>
+<span id="cb4-119"><a href="#cb4-119"></a>...</span>
+<span id="cb4-120"><a href="#cb4-120"></a></span>
+<span id="cb4-121"><a href="#cb4-121"></a><span class="fu">### 6. Muestreo y cuantización</span></span>
+<span id="cb4-122"><a href="#cb4-122"></a></span>
+<span id="cb4-123"><a href="#cb4-123"></a><span class="fu">#### **Solución**</span></span>
+<span id="cb4-124"><a href="#cb4-124"></a></span>
+<span id="cb4-125"><a href="#cb4-125"></a>a) **Frecuencia de muestreo:**</span>
+<span id="cb4-126"><a href="#cb4-126"></a><span class="ss">   - </span>$T_m1 = 12.5ms$ → $f_s = 80Hz$</span>
+<span id="cb4-127"><a href="#cb4-127"></a><span class="ss">   - </span>No cumple Nyquist → **No se puede reconstruir**</span>
+<span id="cb4-128"><a href="#cb4-128"></a></span>
+<span id="cb4-129"><a href="#cb4-129"></a>b) **Muestreo a 8 veces Nyquist:**</span>
+<span id="cb4-130"><a href="#cb4-130"></a><span class="ss">   - </span>$f_s = 5760Hz$</span>
+<span id="cb4-131"><a href="#cb4-131"></a><span class="ss">   - </span>Se evalúa si $\frac{f_0}{f_s}$ es racional → **Sí es periódica**</span>
+<span id="cb4-132"><a href="#cb4-132"></a></span>
+<span id="cb4-133"><a href="#cb4-133"></a>c) **Cuantización (4 bits, rango 0-5):**</span>
+<span id="cb4-134"><a href="#cb4-134"></a><span class="ss">   - </span>Paso de cuantización: $\Delta = \frac{5}{2^4}$</span>
+<span id="cb4-135"><a href="#cb4-135"></a><span class="ss">   - </span>Se discretiza la señal según niveles de cuantización.</span>
+<span id="cb4-136"><a href="#cb4-136"></a>   </span>
+<span id="cb4-137"><a href="#cb4-137"></a><span class="in">```python</span></span>
+<span id="cb4-138"><a href="#cb4-138"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-139"><a href="#cb4-139"></a>levels <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">16</span>)</span>
+<span id="cb4-140"><a href="#cb4-140"></a>quantized_signal <span class="op">=</span> np.digitize(xa_n, levels) <span class="op">*</span> (<span class="dv">5</span> <span class="op">/</span> <span class="dv">16</span>)</span>
+<span id="cb4-141"><a href="#cb4-141"></a>plt.stem(n, quantized_signal)</span>
+<span id="cb4-142"><a href="#cb4-142"></a>plt.show()</span>
+<span id="cb4-143"><a href="#cb4-143"></a><span class="in">```</span></span>
+<span id="cb4-144"><a href="#cb4-144"></a></span>
+<span id="cb4-145"><a href="#cb4-145"></a>---</span>
+<span id="cb4-146"><a href="#cb4-146"></a></span>
+<span id="cb4-147"><a href="#cb4-147"></a>**Fin del taller**.</span></code><button title="Copiar al portapapeles" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
