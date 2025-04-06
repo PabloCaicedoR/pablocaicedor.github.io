@@ -1,0 +1,131 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Laboratorio 005: Análisis de información base del dataset (Demografía y estadística inicial)"
+lang: es
+author: 
+    - "Ph.D. Jenny Carolina Castiblanco"
+    - "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-03-4"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+# **Actividad de Aprendizaje: Procesamiento de señales electrocardiográficas**
+
+El procesamiento de señales de origen fisiológico —como las provenientes de sistemas cardiovasculares, neuromusculares o musculoesqueléticos— constituye un área clave dentro de la ingeniería biomédica y las ciencias de la salud. Su correcta interpretación requiere no solo conocimientos técnicos avanzados, sino también una capacidad crítica para integrar información multidisciplinar. 
+
+Los objetivos de esta actividad son:
+ 
+#. Analizar y comparar diferentes enfoques teóricos sobre el procesamiento de señales fisiológicas (ECG, EMG, PPG, etc.).
+#. Evaluar la calidad y rigurosidad técnica de fuentes bibliográficas científicas.
+#. Fomentar el pensamiento crítico y la capacidad de síntesis de los estudiantes.
+#. Desarrollar habilidades de lectura técnica y argumentación científica en contextos biomédicos.
+
+## **Duración** 
+4.5 horas
+
+## **Materiales**
+- Computador.
+- [Zheng, J., Zhang, J., Danioko, S. et al. A 12-lead electrocardiogram database for arrhythmia research covering more than 10,000 patients. Sci Data 7, 48 (2020). https://doi.org/10.1038/s41597-020-0386-x](https://www.nature.com/articles/s41597-020-0386-x)
+- [Dataset](https://physionet.org/content/ecg-arrhythmia/1.0.0/)
+- [Zheng, J., Chu, H., Struppa, D. et al. Optimal Multi-Stage Arrhythmia Classification Approach. Sci Rep 10, 2898 (2020). https://doi.org/10.1038/s41598-020-59821-7](https://www.nature.com/articles/s41598-020-59821-7)
+- [M. A. Martínez González, A. Sánchez-Villegas, E. A. Toledo Atucha, y J. Faulin Fajardo, Bioestadística amigable, Third. Madrid, España: Elsevier, 2020.]()
+
+---
+
+# Actividades prácticas
+
+En esta sección, se presentan las actividades prácticas que los estudiantes deben realizar para cumplir con el laboratorio. Es importante advertir que aparecerán múltiples palabras nuevas y que son propias del análisis de electrocardiografía. Para ello utilizando lo visto en los laboratorio 2, 3 y 4, explicar estos términos nuevos (aparecen en negrita).
+
+## Fase 1 – Carga y visualización
+
+#. Cargar una señal electrocardiográfica aleatoria del dataset.
+#. Visualizar la señal cruda.
+#. Identificar __ruido de línea base__ y __artefactos__. Explique que tipos de artefactos pueden aparecen en esta señal. Haga uso de diferentes artículos de naturaleza académica, por su puesto referencielos.
+
+## Fase 2 – Preprocesamiento 
+
+#. Realice un Filtrado __paso banda (0.5–40 Hz)__. Porque se utiliza este rango de frecuencia? Se aplica un filtro FIR o IIR, porque?
+#. Aplicar una __normalización de escala__ a la señal. ¿Por qué
+#. Aplicar un __corte de ruido de línea base__ a la señal. ¿Que técnicas existen para tal fin?
+#. Aplicar un __corte de artefactos__ a la señal. ¿Qué técnicas existen para tal fin?
+
+## Fase 3 – Detección de picos R y segmentación
+
+#. Realice una detección de picos R utilizando un algoritmo específico. ¿Qué algoritmo se ha utilizado? ¿Por qué? ¿Qué ventajas y desventajas tiene? Que tecnicas matematicas se han utilizado para el algoritmo?
+#. Calcular intervalos RR y __frecuencia cardíaca instantánea__. Que es una frecuencia cardíaca instantánea? ¿Por qué es importante?
+#. Segmentar la señal en intervalos de tiempo correspondientes a cada complejo QRS. ¿Que técnica utilizó y cual es la base matemática en la que se basó?
+
+## Fase 4 – Extracción de características
+
+#. Para cada sujeto del conjunto de datos, calcule las siguientes características:
+    #. __Frecuencia cardíaca promedio__.
+    #. __Frecuencia cardíaca máxima__.
+    #. __Frecuencia cardíaca mínima__.
+    #. __Intervalo RR promedio__.
+    #. __Intervalo RR máximo__.
+    #. __Intervalo RR mínimo__.
+    #. __Coeficiente de variación de la frecuencia cardíaca__.
+    #. __Número de latidos__
+#. Existen otras características que se pueden calcular, ¿cuáles son? Referencie al menos 3 artículos de naturaleza académica.
+#. Forme una tabla con las características calculadas para cada sujeto. Cada fila corresponde a un sujeto y cada columna corresponde a una característica.
+#. Determine si cada característica es paramétrica o no. Se recomienda utilizar técnicas estadísticas para determinar si una característica es paramétrica o no.
+#. Con la información de parametricidad de la variable, determine si esta tiene diferencias estadísticamente para las personas con arritmias y las personas sin arritmias.
+#. Utilizando un algoritmo de __regresión logística__, plantee un __modelo estadístico de clasificació__n. ¿Qué es una regresión logística? ¿Como se puede calcular? Que es un modelo estadístico de clasificación?
