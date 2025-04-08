@@ -52,18 +52,19 @@ knitr::knit_hooks$set(chunk = function(x, options) {
 ```
 
 ```{python}
-#| echo: false
-#| eval: true
-#| output: false
-#| label: Loading Python-Libraries
+# | echo: false
+# | eval: true
+# | output: false
+# | label: Loading Python-Libraries
 
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as sio
 import scipy.signal as sig
+from scipy.signal import tf2zpk
 
 
-path_ecg="../../data"
+path_ecg = "../../data"
 
 ```
 
@@ -71,145 +72,254 @@ path_ecg="../../data"
 
 # Digital Filters
 
-## Introduction
+## Why the Z-Transform?
 
-- The **Z-transform** is a fundamental tool in **digital signal processing (DSP)**, widely used in **biomedical signal processing**.
-- It allows analysis of **discrete-time biomedical signals** such as:
-  - **ECG (Electrocardiogram)**: Heart activity
-  - **EEG (Electroencephalogram)**: Brain waves
-  - **EMG (Electromyogram)**: Muscle activity
-- It helps design **digital filters**, analyze **system stability**, and perform **signal reconstruction**.
+- The Fourier Transform assumes signals are stable and well-behaved
+- But some biosignals or systems may not be absolutely summable
+- The **Z-Transform** generalizes the Fourier Transform
+- Useful for analyzing **discrete-time systems**, especially when stability and causality matter
 
 ---
 
-## Definition of the Z-Transform
+## Definition
 
-The **Z-transform** of a discrete-time signal $x[n]$ is defined as:
+Let $x[n]$ be a discrete-time signal.
+
+The **Z-Transform** is defined as:
 
 $$X(z) = \sum_{n=-\infty}^{\infty} x[n] z^{-n}$$
 
-where:
-- $X(z)$ is the **Z-domain representation** of $x[n]$.
-- $z$ is a **complex variable**: $z = r e^{j\omega}$, where $r$ is the magnitude and $\omega$ is the frequency.
-- The Z-transform provides a way to study **frequency characteristics** of biomedical signals.
-
----
-
-## The Inverse Z-Transform
-
-- The **Inverse Z-Transform** allows us to retrieve the original discrete-time signal from $X(z)$.
-- It is given by:
-
- $$x[n] = \frac{1}{2\pi j} \oint_{C} X(z) z^{n-1} dz$$
-
-- Common methods to compute the inverse Z-transform:
-  1. **Partial Fraction Expansion**: Used when dealing with rational functions.
-  2. **Power Series Expansion**: Expanding $X(z)$ as a series to identify coefficients.
-  3. **Residue Method**: Using contour integration for more complex cases.
-
-### **Example: Step Response in Biomedical Systems**
-- A simple **low-pass filter** used for smoothing an ECG signal has:
-  
- $$H(z) = \frac{1}{1 - 0.9z^{-1}}$$
-  
-  Expanding in a power series:
-  
- $$H(z) = 1 + 0.9z^{-1} + 0.81z^{-2} + 0.729z^{-3} + ...$$
-  
-  The inverse Z-transform reveals an **exponentially decaying impulse response**, modeling the smoothing effect of the filter.
-
----
-
-## Relationship with Sampling Method
-
-- **Biomedical signals originate in continuous time** and must be sampled for digital processing.
-- **Sampling frequency ($f_s$)** determines the accuracy of the digital representation:
-  
- $$T_s = \frac{1}{f_s}$$
-  
-- The Z-transform relates to sampling through the **Discrete-Time Fourier Transform (DTFT)**:
-  
- $$X(e^{j\omega}) = \sum_{n=-\infty}^{\infty} x[n] e^{-j\omega n}$$
-  
-  where $X(e^{j\omega})$ is obtained by evaluating the Z-transform along the unit circle: $z = e^{j\omega}$.
-
-### **Example: ECG Sampling Rate**
-- Standard ECG systems sample at **250 Hz or 500 Hz**.
-- The Nyquist frequency is **125 Hz or 250 Hz**, respectively.
-- Using the **Z-transform**, we analyze how filters modify the frequency content of ECG signals.
+Where:
+- $z \in \mathbb{C}$ is a complex variable
+- $z = re^{j\omega}$
 
 ---
 
 ## Region of Convergence (ROC)
 
-- The **Region of Convergence (ROC)** determines where the Z-transform sum **converges**.
-- The ROC provides insights into:
-  - **System stability**
-  - **Causality**
-  - **Invertibility**
+- The Z-Transform converges only for certain values of $z$
+- The set of $z$ for which the series converges is the **ROC**
+- ROC is critical for system stability and causality
 
-### **Types of ROC:**
-1. **Right-sided signals (causal systems):**
-   - The ROC is **outside the outermost pole**.
-   - The system is **stable if the ROC includes the unit circle** ($|z| = 1$).
-   
-2. **Left-sided signals (anti-causal systems):**
-   - The ROC is **inside the innermost pole**.
-   
-3. **Two-sided signals:**
-   - The ROC lies **between poles**.
+::: columns
+::: column
+**Causal Signals**  
+ROC is **outside** outermost pole
 
-### **Example: Stability of a Biomedical Filter**
-- A **high-pass ECG filter** with transfer function:
-  
- $$H(z) = \frac{1 - z^{-1}}{1 - 0.95 z^{-1}}$$
-  
-  - The **pole at 0.95** means the system is stable since $|0.95| < 1$.
-  - If the pole were **outside the unit circle**, the system would be unstable.
+**Anti-Causal Signals**  
+ROC is **inside** innermost pole
+:::
+:::
 
 ---
 
-## Relationship with Convolution
+## Z-Plane Representation
 
-- In biomedical DSP, **filtering operations rely on convolution**.
-- **Convolution in time domain**:
-  
- $$y[n] = x[n] * h[n] = \sum_{k=-\infty}^{\infty} x[k] h[n-k]$$
+- Poles: values of $z$ where $X(z) \to \infty$
+- Zeros: values where $X(z) = 0$
+- Visualization of poles and zeros helps in understanding system behavior
 
-- **Multiplication in Z-domain**:
-  
- $$Y(z) = X(z) H(z)$$
+::: {.panel-tabset}
 
-- This simplifies filter design, allowing us to analyze biomedical signals efficiently.
+## Transfer function
 
-### **Example: EEG Band-Pass Filtering**
-- EEG signals contain different **frequency bands**:
-  - **Delta (0.5–4 Hz)**: Deep sleep
-  - **Theta (4–8 Hz)**: Relaxation
-  - **Alpha (8–12 Hz)**: Resting state
-  - **Beta (12–30 Hz)**: Active thinking
-- A **band-pass filter** for extracting **alpha waves (8–12 Hz)** is designed as:
-  
- $$H(z) = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{1 + a_1 z^{-1} + a_2 z^{-2}}$$
-  
-  The Z-transform allows us to **analyze and optimize this filter**.
+$$H(z) = 1.00 \cdot \frac{(z - 0.50)}{(z - 0.90)}$$
+
+## ZPK (Zero-Pole-Kernel) Representation
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: zpk representation
+
+# Define numerator (zeros) and denominator (poles) coefficients of the transfer function
+# Example: H(z) = (1 - 0.5z^-1) / (1 - 0.9z^-1)
+b = [1, -0.5]  # Numerator coefficients (zeros)
+a = [1, -0.9]  # Denominator coefficients (poles)
+
+# Get zeros, poles, and gain
+z, p, k = tf2zpk(b, a)
+
+# Plot settings
+fig, ax = plt.subplots()
+ax.set_title("Pole-Zero Plot in the Z-Plane")
+
+# Draw unit circle
+unit_circle = plt.Circle((0, 0), 1, color="black", fill=False, linestyle="dashed")
+ax.add_artist(unit_circle)
+
+# Plot zeros and poles
+ax.plot(np.real(z), np.imag(z), "go", label="Zeros")  # green circles
+ax.plot(np.real(p), np.imag(p), "rx", label="Poles")  # red Xs
+
+# Axes and formatting
+ax.set_xlabel("Re")
+ax.set_ylabel("Im")
+ax.axhline(0, color="gray", linewidth=0.5)
+ax.axvline(0, color="gray", linewidth=0.5)
+ax.set_aspect("equal")
+ax.grid(True, linestyle="--", alpha=0.5)
+ax.legend()
+ax.set_xlim(-1.5, 1.5)
+ax.set_ylim(-1.5, 1.5)
+
+plt.show()
+
+```
+
+:::
 
 ---
 
-## Conclusion
+## Relationship with Fourier Transform
 
-- The **Z-transform** is crucial for **analyzing and processing biomedical signals**.
-- It enables:
-  - **Stability analysis** (Region of Convergence)
-  - **Filtering and feature extraction** (EEG, ECG, EMG signals)
-  - **Efficient signal convolution**
-- The **inverse Z-transform** reconstructs signals for further analysis.
-- Understanding the Z-transform helps in **filter design, denoising, and feature extraction** in biomedical applications.
+If the ROC includes the **unit circle**, $|z| = 1$, then:
+
+$$X(e^{j\omega}) = \sum_{n=-\infty}^{\infty} x[n] e^{-j\omega n}$$
+
+So the **Fourier Transform is a special case** of the Z-Transform.
 
 ---
 
-## References
+## Properties of the Z-Transform
 
-- Oppenheim, A. V., & Schafer, R. W. (2010). *Discrete-Time Signal Processing*.
-- Ingle, V. K., & Proakis, J. G. (2011). *Digital Signal Processing using MATLAB*.
-- Rangayyan, R. M. (2015). *Biomedical Signal Analysis*.
+- **Linearity**: $a x[n] + b y[n] \to aX(z) + bY(z)$
+- **Time shifting**: $x[n - k] \to z^{-k} X(z)$
+- **Scaling in the z-domain**: $a^n x[n] \to X(z/a)$
+- **Convolution**: $x[n] * h[n] \to X(z)H(z)$
+
+---
+
+## Example
+
+Let $x[n] = a^n u[n]$, where $|a| < 1$
+
+$$X(z) = \sum_{n=0}^{\infty} a^n z^{-n} = \frac{1}{1 - az^{-1}}, \quad \text{ROC: } |z| > |a|$$
+
+---
+
+## Difference Equations in DSP
+
+A **difference equation** relates input and output values at different time steps.
+
+$$y[n] - a_1 y[n-1] - a_2 y[n-2] = b_0 x[n] + b_1 x[n-1]$$
+
+Common in:
+- Digital filters (FIR, IIR)
+- Signal models in ECG, EEG analysis
+- Implementation in real-time biosignal systems
+
+---
+
+## Z-Transform of Time-Shifted Terms
+
+The Z-Transform turns time shifts into powers of $z^{-1}$:
+
+| Time Domain        | Z-Domain            |
+|--------------------|---------------------|
+| $x[n]$         | $X(z)$          |
+| $x[n-k]$       | $z^{-k} X(z)$   |
+| $y[n-k]$       | $z^{-k} Y(z)$   |
+
+---
+
+## Step 1: Apply Z-Transform
+
+Given:
+
+$$y[n] - a_1 y[n-1] - a_2 y[n-2] = b_0 x[n] + b_1 x[n-1]$$
+
+Apply $\mathcal{Z} \{ \cdot \}$:
+
+$$Y(z) - a_1 z^{-1} Y(z) - a_2 z^{-2} Y(z) = b_0 X(z) + b_1 z^{-1} X(z)$$
+
+---
+
+## Step 2: Factor and Solve for $H(z)$
+
+Group:
+
+$$Y(z)(1 - a_1 z^{-1} - a_2 z^{-2}) = X(z)(b_0 + b_1 z^{-1})$$
+
+Divide both sides:
+
+$$H(z) = \frac{Y(z)}{X(z)} = \frac{b_0 + b_1 z^{-1}}{1 - a_1 z^{-1} - a_2 z^{-2}}$$
+
+---
+
+## Example
+
+**Given:**
+
+$$y[n] - 0.9 y[n-1] = x[n] - 0.5 x[n-1]$$
+
+**Z-Transform:**
+
+$$Y(z)(1 - 0.9 z^{-1}) = X(z)(1 - 0.5 z^{-1})$$
+
+**Transfer Function:**
+
+$$H(z) = \frac{1 - 0.5 z^{-1}}{1 - 0.9 z^{-1}}$$
+
+---
+
+## Poles and Zeros
+
+Let’s analyze $H(z)$:
+
+- **Zeros**: Roots of the numerator $\Rightarrow z = 0.5$
+- **Poles**: Roots of the denominator $\Rightarrow z = 0.9$
+
+:::{.columns}
+::: {.column}
+**Pole-Zero Plot**  
+Visualizes system behavior  
+Check for:
+- Stability (poles inside unit circle)
+- Frequency shaping
+:::
+:::
+
+---
+
+## Practice
+
+Convert this equation:
+
+$$y[n] = 0.6 y[n-1] + x[n] + x[n-1]$$
+
+Find:
+- $H(z)$
+- Poles and zeros
+- Plot them in the Z-plane
+
+---
+
+## Application in Biosignal Processing
+
+- Analysis of digital filters for ECG, EEG, etc.
+- Design of stable and causal filtering systems
+- Useful in difference equation modeling of biosignals
+
+---
+
+## Summary
+
+- Z-Transform is a powerful tool for analyzing discrete systems
+- Provides insight into stability, causality, and system behavior
+- A generalization of the Fourier Transform
+- Crucial in digital signal processing of biosignals
+- Z-Transform converts difference equations into algebraic expressions
+- Transfer function $H(z)$ tells us how the system responds to inputs
+- Key for digital filter design in biosignal processing
+
+---
+
+## Next Steps
+
+- Practice Z-Transform computations
+- Pole-zero plotting exercises
+- Application to real biosignal filtering problems
+
+---

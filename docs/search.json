@@ -53,7 +53,7 @@
     "href": "clases/Class_SYSB.html#presentaciones",
     "title": "Sistemas y Señales Biomédicos",
     "section": "Presentaciones",
-    "text": "Presentaciones\n\nPresentación del curso\nIntroducción\nClasificacion de sañales\nSeñales Notables 1/2\nSeñales Notables 2/2\nAdquisición y Muestreo\nFiltros Digitales\nContenido Frecuencial"
+    "text": "Presentaciones\n\nPresentación del curso\nIntroducción\nClasificacion de sañales\nSeñales Notables 1/2\nSeñales Notables 2/2\nAdquisición y Muestreo\nFiltros Digitales\nContenido Frecuencial\nTransformada Z"
   },
   {
     "objectID": "clases/Class_SYSB.html#datos",
@@ -557,7 +557,7 @@
     "href": "codigo/preparing_slides_002.html",
     "title": "PECR Knowledge Hub",
     "section": "",
-    "text": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Define a periodic discrete signal\nN = 8  # Period of the signal\nn = np.arange(N)\nx_n = np.array([1, 2, 3, 4, 3, 2, 1, 0])  # Example discrete signal\n\n# Compute DTFS coefficients\nC_k = np.fft.fft(x_n) / N  # Normalized Discrete Fourier Transform\n\n# Reconstruct the signal using DTFS\nx_reconstructed = np.zeros(N, dtype=complex)\nfor k in range(N):\n    x_reconstructed += C_k[k] * np.exp(1j * 2 * np.pi * k * n / N)\n\n# Plot original and reconstructed signals\nplt.figure(figsize=(10, 4))\nplt.stem(n, x_n, linefmt='b-', markerfmt='bo', basefmt='r-', label='Original Signal')\nplt.stem(n, np.real(x_reconstructed), linefmt='r--', markerfmt='go', basefmt='r-', label='Reconstructed Signal')\nplt.xlabel(\"n\")\nplt.ylabel(\"Amplitude\")\nplt.title(\"DTFS: Original vs Reconstructed Signal\")\nplt.legend()\nplt.grid()\nplt.show()\n\n# Print DTFS Coefficients\nprint(\"DTFS Coefficients:\")\nfor k in range(N):\n    print(f\"C[{k}] = {C_k[k]:.4f}\")\n\n\n\n\n\n\n\n\nDTFS Coefficients:\nC[0] = 2.0000+0.0000j\nC[1] = -0.6036-0.6036j\nC[2] = 0.0000+0.0000j\nC[3] = 0.1036-0.1036j\nC[4] = 0.0000+0.0000j\nC[5] = 0.1036+0.1036j\nC[6] = 0.0000+0.0000j\nC[7] = -0.6036+0.6036j\n\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Define a periodic discrete signal\nN = 8  # Period of the signal\nn = np.arange(N)\nx_n = np.array([1, 2, 3, 4, 3, 2, 1, 0])  # Example discrete signal\n\n# Compute DTFS coefficients\nC_k = np.fft.fft(x_n) / N  # Normalized Discrete Fourier Transform\n\n# Verify periodicity property: C[k] repeats every N\nC_k_extended = np.tile(C_k, 2)  # Extend coefficients to see repetition\nk_extended = np.arange(2 * N)\n\n# Plot DTFS coefficients and their periodic repetition\nplt.figure(figsize=(10, 4))\nplt.stem(\n    k_extended,\n    np.real(C_k_extended),\n    linefmt=\"b-\",\n    markerfmt=\"bo\",\n    basefmt=\"r-\",\n    label=\"Real Part\",\n)\nplt.stem(\n    k_extended,\n    np.imag(C_k_extended),\n    linefmt=\"g--\",\n    markerfmt=\"go\",\n    basefmt=\"r-\",\n    label=\"Imaginary Part\",\n)\nplt.xlabel(\"n\")\nplt.ylabel(\"Magnitude\")\nplt.title(\"DTFS Periodicity: Coefficients Repeat Every N Samples\")\nplt.legend()\nplt.grid()\nplt.show()\n\n# Print DTFS Coefficients to observe periodicity\nprint(\"DTFS Coefficients (showing periodicity):\")\nfor k in range(2 * N):\n    print(f\"C[{k}] = {C_k_extended[k]:.4f}\")\n\n\n\n\n\n\n\n\nDTFS Coefficients (showing periodicity):\nC[0] = 2.0000+0.0000j\nC[1] = -0.6036-0.6036j\nC[2] = 0.0000+0.0000j\nC[3] = 0.1036-0.1036j\nC[4] = 0.0000+0.0000j\nC[5] = 0.1036+0.1036j\nC[6] = 0.0000+0.0000j\nC[7] = -0.6036+0.6036j\nC[8] = 2.0000+0.0000j\nC[9] = -0.6036-0.6036j\nC[10] = 0.0000+0.0000j\nC[11] = 0.1036-0.1036j\nC[12] = 0.0000+0.0000j\nC[13] = 0.1036+0.1036j\nC[14] = 0.0000+0.0000j\nC[15] = -0.6036+0.6036j\n\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Parámetros\nfs_cont = 5000  # Frecuencia de muestreo \"continua\" (muy alta)\nfs_sampled = 1000  # Frecuencia de muestreo baja\nT = 1  # Duración de la señal en segundos\nf_signal = 30  # Frecuencia de la señal\n\n# Señal continua\nt_cont = np.linspace(0, T, fs_cont * T, endpoint=False)\nsignal_cont = np.sin(2 * np.pi * f_signal * t_cont)\n\n# Señal muestreada\nt_sampled = np.linspace(0, T, fs_sampled * T, endpoint=False)\nsignal_sampled = np.sin(2 * np.pi * f_signal * t_sampled)\n\n# FFT continua\nfft_cont = np.fft.fft(signal_cont)\nfreqs_cont = np.fft.fftfreq(len(signal_cont), d=1 / fs_cont)\n\n# FFT muestreada\nfft_sampled = np.fft.fft(signal_sampled)\nfreqs_sampled = np.fft.fftfreq(len(signal_sampled), d=1 / fs_sampled)\n\n# Graficar espectro original y espectro muestreado\nplt.figure(figsize=(12, 6))\n\nplt.subplot(3, 1, 1)\nplt.plot(\n    t_cont, signal_cont\n)\nplt.subplot(3, 1, 2)\nplt.plot(\n    freqs_cont[: len(freqs_cont) // 2],\n    np.abs(fft_cont[: len(freqs_cont) // 2]),\n    label=\"Espectro original\",\n)\nplt.title(\"Espectro de la señal continua\")\nplt.xlabel(\"Frecuencia (Hz)\")\nplt.ylabel(\"Magnitud\")\nplt.legend()\n\nplt.subplot(3, 1, 3)\nplt.plot(\n    freqs_sampled[: len(freqs_sampled) // 2],\n    np.abs(fft_sampled[: len(freqs_sampled) // 2]),\n    label=\"Espectro muestreado\",\n)\nplt.title(\"Espectro después del muestreo (repeticiones cada f_s)\")\nplt.xlabel(\"Frecuencia (Hz)\")\nplt.ylabel(\"Magnitud\")\nplt.legend()\n\nplt.tight_layout()\nplt.show()"
+    "text": "import numpy as np\nimport matplotlib.pyplot as plt\n\n# Define a periodic discrete signal\nN = 8  # Period of the signal\nn = np.arange(N)\nx_n = np.array([1, 2, 3, 4, 3, 2, 1, 0])  # Example discrete signal\n\n# Compute DTFS coefficients\nC_k = np.fft.fft(x_n) / N  # Normalized Discrete Fourier Transform\n\n# Reconstruct the signal using DTFS\nx_reconstructed = np.zeros(N, dtype=complex)\nfor k in range(N):\n    x_reconstructed += C_k[k] * np.exp(1j * 2 * np.pi * k * n / N)\n\n# Plot original and reconstructed signals\nplt.figure(figsize=(10, 4))\nplt.stem(n, x_n, linefmt='b-', markerfmt='bo', basefmt='r-', label='Original Signal')\nplt.stem(n, np.real(x_reconstructed), linefmt='r--', markerfmt='go', basefmt='r-', label='Reconstructed Signal')\nplt.xlabel(\"n\")\nplt.ylabel(\"Amplitude\")\nplt.title(\"DTFS: Original vs Reconstructed Signal\")\nplt.legend()\nplt.grid()\nplt.show()\n\n# Print DTFS Coefficients\nprint(\"DTFS Coefficients:\")\nfor k in range(N):\n    print(f\"C[{k}] = {C_k[k]:.4f}\")\n\n\n\n\n\n\n\n\nDTFS Coefficients:\nC[0] = 2.0000+0.0000j\nC[1] = -0.6036-0.6036j\nC[2] = 0.0000+0.0000j\nC[3] = 0.1036-0.1036j\nC[4] = 0.0000+0.0000j\nC[5] = 0.1036+0.1036j\nC[6] = 0.0000+0.0000j\nC[7] = -0.6036+0.6036j\n\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Define a periodic discrete signal\nN = 8  # Period of the signal\nn = np.arange(N)\nx_n = np.array([1, 2, 3, 4, 3, 2, 1, 0])  # Example discrete signal\n\n# Compute DTFS coefficients\nC_k = np.fft.fft(x_n) / N  # Normalized Discrete Fourier Transform\n\n# Verify periodicity property: C[k] repeats every N\nC_k_extended = np.tile(C_k, 2)  # Extend coefficients to see repetition\nk_extended = np.arange(2 * N)\n\n# Plot DTFS coefficients and their periodic repetition\nplt.figure(figsize=(10, 4))\nplt.stem(\n    k_extended,\n    np.real(C_k_extended),\n    linefmt=\"b-\",\n    markerfmt=\"bo\",\n    basefmt=\"r-\",\n    label=\"Real Part\",\n)\nplt.stem(\n    k_extended,\n    np.imag(C_k_extended),\n    linefmt=\"g--\",\n    markerfmt=\"go\",\n    basefmt=\"r-\",\n    label=\"Imaginary Part\",\n)\nplt.xlabel(\"n\")\nplt.ylabel(\"Magnitude\")\nplt.title(\"DTFS Periodicity: Coefficients Repeat Every N Samples\")\nplt.legend()\nplt.grid()\nplt.show()\n\n# Print DTFS Coefficients to observe periodicity\nprint(\"DTFS Coefficients (showing periodicity):\")\nfor k in range(2 * N):\n    print(f\"C[{k}] = {C_k_extended[k]:.4f}\")\n\n\n\n\n\n\n\n\nDTFS Coefficients (showing periodicity):\nC[0] = 2.0000+0.0000j\nC[1] = -0.6036-0.6036j\nC[2] = 0.0000+0.0000j\nC[3] = 0.1036-0.1036j\nC[4] = 0.0000+0.0000j\nC[5] = 0.1036+0.1036j\nC[6] = 0.0000+0.0000j\nC[7] = -0.6036+0.6036j\nC[8] = 2.0000+0.0000j\nC[9] = -0.6036-0.6036j\nC[10] = 0.0000+0.0000j\nC[11] = 0.1036-0.1036j\nC[12] = 0.0000+0.0000j\nC[13] = 0.1036+0.1036j\nC[14] = 0.0000+0.0000j\nC[15] = -0.6036+0.6036j\n\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Parámetros\nfs_cont = 5000  # Frecuencia de muestreo \"continua\" (muy alta)\nfs_sampled = 1000  # Frecuencia de muestreo baja\nT = 1  # Duración de la señal en segundos\nf_signal = 30  # Frecuencia de la señal\n\n# Señal continua\nt_cont = np.linspace(0, T, fs_cont * T, endpoint=False)\nsignal_cont = np.sin(2 * np.pi * f_signal * t_cont)\n\n# Señal muestreada\nt_sampled = np.linspace(0, T, fs_sampled * T, endpoint=False)\nsignal_sampled = np.sin(2 * np.pi * f_signal * t_sampled)\n\n# FFT continua\nfft_cont = np.fft.fft(signal_cont)\nfreqs_cont = np.fft.fftfreq(len(signal_cont), d=1 / fs_cont)\n\n# FFT muestreada\nfft_sampled = np.fft.fft(signal_sampled)\nfreqs_sampled = np.fft.fftfreq(len(signal_sampled), d=1 / fs_sampled)\n\n# Graficar espectro original y espectro muestreado\nplt.figure(figsize=(12, 6))\n\nplt.subplot(3, 1, 1)\nplt.plot(\n    t_cont, signal_cont\n)\nplt.subplot(3, 1, 2)\nplt.plot(\n    freqs_cont[: len(freqs_cont) // 2],\n    np.abs(fft_cont[: len(freqs_cont) // 2]),\n    label=\"Espectro original\",\n)\nplt.title(\"Espectro de la señal continua\")\nplt.xlabel(\"Frecuencia (Hz)\")\nplt.ylabel(\"Magnitud\")\nplt.legend()\n\nplt.subplot(3, 1, 3)\nplt.plot(\n    freqs_sampled[: len(freqs_sampled) // 2],\n    np.abs(fft_sampled[: len(freqs_sampled) // 2]),\n    label=\"Espectro muestreado\",\n)\nplt.title(\"Espectro después del muestreo (repeticiones cada f_s)\")\nplt.xlabel(\"Frecuencia (Hz)\")\nplt.ylabel(\"Magnitud\")\nplt.legend()\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.signal import tf2zpk\n\n# Define numerator (zeros) and denominator (poles) coefficients of the transfer function\n# Example: H(z) = (1 - 0.5z^-1) / (1 - 0.9z^-1)\nb = [1, -0.5]  # Numerator coefficients (zeros)\na = [1, -0.9]  # Denominator coefficients (poles)\n\n# Get zeros, poles, and gain\nz, p, k = tf2zpk(b, a)\n\n# Plot settings\nfig, ax = plt.subplots()\nax.set_title(\"Pole-Zero Plot in the Z-Plane\")\n\n# Draw unit circle\nunit_circle = plt.Circle((0, 0), 1, color=\"black\", fill=False, linestyle=\"dashed\")\nax.add_artist(unit_circle)\n\n# Plot zeros and poles\nax.plot(np.real(z), np.imag(z), \"go\", label=\"Zeros\")  # green circles\nax.plot(np.real(p), np.imag(p), \"rx\", label=\"Poles\")  # red Xs\n\n# Axes and formatting\nax.set_xlabel(\"Re\")\nax.set_ylabel(\"Im\")\nax.axhline(0, color=\"gray\", linewidth=0.5)\nax.axvline(0, color=\"gray\", linewidth=0.5)\nax.set_aspect(\"equal\")\nax.grid(True, linestyle=\"--\", alpha=0.5)\nax.legend()\nax.set_xlim(-1.5, 1.5)\nax.set_ylim(-1.5, 1.5)\n\nplt.show()\n\n\n\n\n\n\n\n\n\ndef zpk_to_latex(z, p, k):\n    def format_factor(value):\n        sign = \"+\" if np.real(value) &lt; 0 else \"-\"\n        return f\"(z {sign} {abs(np.real(value)):.2f})\"\n\n    num = \" \".join([format_factor(zero) for zero in z]) if len(z) &gt; 0 else \"1\"\n    den = \" \".join([format_factor(pole) for pole in p]) if len(p) &gt; 0 else \"1\"\n\n    latex_str = r\"H(z) = \" + f\"{k:.2f} \\\\cdot \\\\frac{{{num}}}{{{den}}}\"\n    return latex_str\n\n\nzpk_to_latex(z,p,k)\n\n'H(z) = 1.00 \\\\cdot \\\\frac{(z - 0.50)}{(z - 0.90)}'"
   },
   {
     "objectID": "codigo/SYSB/remuestreo.html",
@@ -3063,7 +3063,7 @@
     "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#region-of-convergence-roc",
     "title": "Sistemas y Señales Biomédicos",
     "section": "Region of Convergence (ROC)",
-    "text": "Region of Convergence (ROC)\n\nThe Region of Convergence (ROC) determines where the Z-transform sum converges.\nThe ROC provides insights into:\n\nSystem stability\nCausality\nInvertibility\n\n\nTypes of ROC:\n\nRight-sided signals (causal systems):\n\nThe ROC is outside the outermost pole.\nThe system is stable if the ROC includes the unit circle (\\(|z| = 1\\)).\n\nLeft-sided signals (anti-causal systems):\n\nThe ROC is inside the innermost pole.\n\nTwo-sided signals:\n\nThe ROC lies between poles.\n\n\nExample: Stability of a Biomedical Filter\n\nA high-pass ECG filter with transfer function:\n\n\\[H(z) = \\frac{1 - z^{-1}}{1 - 0.95 z^{-1}}\\]\n\nThe pole at 0.95 means the system is stable since \\(|0.95| &lt; 1\\).\nIf the pole were outside the unit circle, the system would be unstable."
+    "text": "Region of Convergence (ROC)\n\nThe Z-Transform converges only for certain values of \\(z\\)\nThe set of \\(z\\) for which the series converges is the ROC\nROC is critical for system stability and causality\n\n\n\nCausal Signals\nROC is outside outermost pole\nAnti-Causal Signals\nROC is inside innermost pole"
   },
   {
     "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#relationship-with-convolution",
@@ -4786,5 +4786,124 @@
     "title": "Sistemas y Señales Biomédicos",
     "section": "Fase 4 – Extracción de características (Entrega Semana del 19 de mayo de 2025)",
     "text": "Fase 4 – Extracción de características (Entrega Semana del 19 de mayo de 2025)\n\nPara cada sujeto del conjunto de datos, calcule las siguientes características:\n\nFrecuencia cardíaca promedio.\nFrecuencia cardíaca máxima.\nFrecuencia cardíaca mínima.\nIntervalo RR promedio.\nIntervalo RR máximo.\nIntervalo RR mínimo.\nCoeficiente de variación de la frecuencia cardíaca.\nNúmero de latidos\n\nExisten otras características que se pueden calcular, ¿cuáles son? Referencie al menos 3 artículos de naturaleza académica.\nForme una tabla con las características calculadas para cada sujeto. Cada fila corresponde a un sujeto y cada columna corresponde a una característica.\nDetermine si cada característica es paramétrica o no. Se recomienda utilizar técnicas estadísticas para determinar si una característica es paramétrica o no.\nCon la información de parametricidad de la variable, determine si esta tiene diferencias estadísticamente para las personas con arritmias y las personas sin arritmias.\nUtilizando un algoritmo de regresión logística, plantee un __modelo estadístico de clasificació__n. ¿Qué es una regresión logística? ¿Como se puede calcular? Que es un modelo estadístico de clasificación?"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#why-the-z-transform",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#why-the-z-transform",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Why the Z-Transform?",
+    "text": "Why the Z-Transform?\n\nThe Fourier Transform assumes signals are stable and well-behaved\nBut some biosignals or systems may not be absolutely summable\nThe Z-Transform generalizes the Fourier Transform\nUseful for analyzing discrete-time systems, especially when stability and causality matter"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#definition",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#definition",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Definition",
+    "text": "Definition\nLet \\(x[n]\\) be a discrete-time signal.\nThe Z-Transform is defined as:\n\\[X(z) = \\sum_{n=-\\infty}^{\\infty} x[n] z^{-n}\\]\nWhere: - \\(z \\in \\mathbb{C}\\) is a complex variable - \\(z = re^{j\\omega}\\)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#z-plane-representation",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#z-plane-representation",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Z-Plane Representation",
+    "text": "Z-Plane Representation\n\nPoles: values of \\(z\\) where \\(X(z) \\to \\infty\\)\nZeros: values where \\(X(z) = 0\\)\nVisualization of poles and zeros helps in understanding system behavior\n\n\nTransfer functionZPK (Zero-Pole-Kernel) Representation\n\n\n\\[H(z) = 1.00 \\cdot \\frac{(z - 0.50)}{(z - 0.90)}\\]\n\n\n\n\n(-1.5, 1.5)\n\n\n(-1.5, 1.5)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#relationship-with-fourier-transform",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#relationship-with-fourier-transform",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Relationship with Fourier Transform",
+    "text": "Relationship with Fourier Transform\nIf the ROC includes the unit circle, \\(|z| = 1\\), then:\n\\[X(e^{j\\omega}) = \\sum_{n=-\\infty}^{\\infty} x[n] e^{-j\\omega n}\\]\nSo the Fourier Transform is a special case of the Z-Transform."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#properties-of-the-z-transform",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#properties-of-the-z-transform",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Properties of the Z-Transform",
+    "text": "Properties of the Z-Transform\n\nLinearity: \\(a x[n] + b y[n] \\to aX(z) + bY(z)\\)\nTime shifting: \\(x[n - k] \\to z^{-k} X(z)\\)\nScaling in the z-domain: \\(a^n x[n] \\to X(z/a)\\)\nConvolution: \\(x[n] * h[n] \\to X(z)H(z)\\)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#example",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#example",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Example",
+    "text": "Example\nLet \\(x[n] = a^n u[n]\\), where \\(|a| &lt; 1\\)\n\\[X(z) = \\sum_{n=0}^{\\infty} a^n z^{-n} = \\frac{1}{1 - az^{-1}}, \\quad \\text{ROC: } |z| &gt; |a|\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#application-in-biosignal-processing",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#application-in-biosignal-processing",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Application in Biosignal Processing",
+    "text": "Application in Biosignal Processing\n\nAnalysis of digital filters for ECG, EEG, etc.\nDesign of stable and causal filtering systems\nUseful in difference equation modeling of biosignals"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Summary",
+    "text": "Summary\n\nZ-Transform is a powerful tool for analyzing discrete systems\nProvides insight into stability, causality, and system behavior\nA generalization of the Fourier Transform\nCrucial in digital signal processing of biosignals\nZ-Transform converts difference equations into algebraic expressions\nTransfer function \\(H(z)\\) tells us how the system responds to inputs\nKey for digital filter design in biosignal processing"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#next-steps",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#next-steps",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Next Steps",
+    "text": "Next Steps\n\nPractice Z-Transform computations\nPole-zero plotting exercises\nApplication to real biosignal filtering problems"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#difference-equations-in-dsp",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#difference-equations-in-dsp",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Difference Equations in DSP",
+    "text": "Difference Equations in DSP\nA difference equation relates input and output values at different time steps.\n\\[y[n] - a_1 y[n-1] - a_2 y[n-2] = b_0 x[n] + b_1 x[n-1]\\]\nCommon in: - Digital filters (FIR, IIR) - Signal models in ECG, EEG analysis - Implementation in real-time biosignal systems"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#z-transform-of-time-shifted-terms",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#z-transform-of-time-shifted-terms",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Z-Transform of Time-Shifted Terms",
+    "text": "Z-Transform of Time-Shifted Terms\nThe Z-Transform turns time shifts into powers of \\(z^{-1}\\):\n\n\n\nTime Domain\nZ-Domain\n\n\n\n\n\\(x[n]\\)\n\\(X(z)\\)\n\n\n\\(x[n-k]\\)\n\\(z^{-k} X(z)\\)\n\n\n\\(y[n-k]\\)\n\\(z^{-k} Y(z)\\)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-apply-z-transform",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-apply-z-transform",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 1: Apply Z-Transform",
+    "text": "Step 1: Apply Z-Transform\nGiven:\n\\[y[n] - a_1 y[n-1] - a_2 y[n-2] = b_0 x[n] + b_1 x[n-1]\\]\nApply \\(\\mathcal{Z} \\{ \\cdot \\}\\):\n\\[Y(z) - a_1 z^{-1} Y(z) - a_2 z^{-2} Y(z) = b_0 X(z) + b_1 z^{-1} X(z)\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-factor-and-solve-for-hz",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-factor-and-solve-for-hz",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 2: Factor and Solve for \\(H(z)\\)",
+    "text": "Step 2: Factor and Solve for \\(H(z)\\)\nGroup:\n\\[Y(z)(1 - a_1 z^{-1} - a_2 z^{-2}) = X(z)(b_0 + b_1 z^{-1})\\]\nDivide both sides:\n\\[H(z) = \\frac{Y(z)}{X(z)} = \\frac{b_0 + b_1 z^{-1}}{1 - a_1 z^{-1} - a_2 z^{-2}}\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#example-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#example-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Example",
+    "text": "Example\nGiven:\n\\[y[n] - 0.9 y[n-1] = x[n] - 0.5 x[n-1]\\]\nZ-Transform:\n\\[Y(z)(1 - 0.9 z^{-1}) = X(z)(1 - 0.5 z^{-1})\\]\nTransfer Function:\n\\[H(z) = \\frac{1 - 0.5 z^{-1}}{1 - 0.9 z^{-1}}\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#poles-and-zeros",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#poles-and-zeros",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Poles and Zeros",
+    "text": "Poles and Zeros\nLet’s analyze \\(H(z)\\):\n\nZeros: Roots of the numerator \\(\\Rightarrow z = 0.5\\)\nPoles: Roots of the denominator \\(\\Rightarrow z = 0.9\\)\n\n\n\nPole-Zero Plot\nVisualizes system behavior\nCheck for: - Stability (poles inside unit circle) - Frequency shaping"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#practice",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#practice",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Practice",
+    "text": "Practice\nConvert this equation:\n\\[y[n] = 0.6 y[n-1] + x[n] + x[n-1]\\]\nFind: - \\(H(z)\\) - Poles and zeros - Plot them in the Z-plane"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Summary",
+    "text": "Summary\n\nZ-Transform is a powerful tool for analyzing discrete systems\nProvides insight into stability, causality, and system behavior\nA generalization of the Fourier Transform\nCrucial in digital signal processing of biosignals"
   }
 ]

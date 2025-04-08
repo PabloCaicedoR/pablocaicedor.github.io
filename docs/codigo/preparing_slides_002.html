@@ -336,6 +336,69 @@ C[15] = -0.6036+0.6036j</code></pre>
 </div>
 </div>
 </div>
+<div id="cell-3" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> tf2zpk</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Define numerator (zeros) and denominator (poles) coefficients of the transfer function</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: H(z) = (1 - 0.5z^-1) / (1 - 0.9z^-1)</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> [<span class="dv">1</span>, <span class="op">-</span><span class="fl">0.5</span>]  <span class="co"># Numerator coefficients (zeros)</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> [<span class="dv">1</span>, <span class="op">-</span><span class="fl">0.9</span>]  <span class="co"># Denominator coefficients (poles)</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Get zeros, poles, and gain</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>z, p, k <span class="op">=</span> tf2zpk(b, a)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot settings</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Pole-Zero Plot in the Z-Plane"</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw unit circle</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>unit_circle <span class="op">=</span> plt.Circle((<span class="dv">0</span>, <span class="dv">0</span>), <span class="dv">1</span>, color<span class="op">=</span><span class="st">"black"</span>, fill<span class="op">=</span><span class="va">False</span>, linestyle<span class="op">=</span><span class="st">"dashed"</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>ax.add_artist(unit_circle)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot zeros and poles</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>ax.plot(np.real(z), np.imag(z), <span class="st">"go"</span>, label<span class="op">=</span><span class="st">"Zeros"</span>)  <span class="co"># green circles</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>ax.plot(np.real(p), np.imag(p), <span class="st">"rx"</span>, label<span class="op">=</span><span class="st">"Poles"</span>)  <span class="co"># red Xs</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Axes and formatting</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"Re"</span>)</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Im"</span>)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>ax.axhline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"gray"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>ax.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">"gray"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>ax.legend()</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="op">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>ax.set_ylim(<span class="op">-</span><span class="fl">1.5</span>, <span class="fl">1.5</span>)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="preparing_slides_002_files/figure-html/cell-5-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-4" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> zpk_to_latex(z, p, k):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> format_factor(value):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        sign <span class="op">=</span> <span class="st">"+"</span> <span class="cf">if</span> np.real(value) <span class="op">&lt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">"-"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ss">f"(z </span><span class="sc">{</span>sign<span class="sc">}</span><span class="ss"> </span><span class="sc">{</span><span class="bu">abs</span>(np.real(value))<span class="sc">:.2f}</span><span class="ss">)"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    num <span class="op">=</span> <span class="st">" "</span>.join([format_factor(zero) <span class="cf">for</span> zero <span class="kw">in</span> z]) <span class="cf">if</span> <span class="bu">len</span>(z) <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">"1"</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    den <span class="op">=</span> <span class="st">" "</span>.join([format_factor(pole) <span class="cf">for</span> pole <span class="kw">in</span> p]) <span class="cf">if</span> <span class="bu">len</span>(p) <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">"1"</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    latex_str <span class="op">=</span> <span class="vs">r"H(z) = "</span> <span class="op">+</span> <span class="ss">f"</span><span class="sc">{</span>k<span class="sc">:.2f}</span><span class="ss"> </span><span class="ch">\\</span><span class="ss">cdot </span><span class="ch">\\</span><span class="ss">frac</span><span class="ch">{{</span><span class="sc">{</span>num<span class="sc">}</span><span class="ch">}}{{</span><span class="sc">{</span>den<span class="sc">}</span><span class="ch">}}</span><span class="ss">"</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> latex_str</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-5" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>zpk_to_latex(z,p,k)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<pre><code>'H(z) = 1.00 \\cdot \\frac{(z - 0.50)}{(z - 0.90)}'</code></pre>
+</div>
+</div>
 
 
 
