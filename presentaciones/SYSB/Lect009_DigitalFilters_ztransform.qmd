@@ -182,6 +182,182 @@ So the **Fourier Transform is a special case** of the Z-Transform.
 
 ---
 
+## Example Signal
+
+Let:
+
+$$x[n] = a^n u[n]$$
+
+Where:
+- $a \in \mathbb{R}$
+- $u[n]$ is the unit step function (0 for $n<0$, 1 for $n\geq 0$)
+
+---
+
+## Step 1: Z-Transform
+
+Apply the definition:
+
+$$X(z) = \sum_{n=0}^{\infty} a^n z^{-n}
+= \sum_{n=0}^{\infty} (az^{-1})^n$$
+
+This is a geometric series:
+
+$$X(z) = \frac{1}{1 - az^{-1}} = \frac{z}{z - a}$$
+
+---
+
+## What is a Geometric Series?
+
+A **geometric series** is a sum of terms where each term is multiplied by the same constant:
+
+$$S = \sum_{n=0}^{\infty} r^n = 1 + r + r^2 + r^3 + \cdots$$
+
+The value of $r$ determines whether this sum **converges** (has a finite limit) or **diverges**.
+
+---
+
+## Goal
+
+Understand **why** this series:
+
+$$\sum_{n=0}^{\infty} r^n$$
+
+**converges** if and only if:
+
+$$\boxed{|r| < 1}$$
+
+---
+
+## Partial Sums
+
+Let’s consider the sum up to the $N$-th term:
+
+$$S_N = \sum_{n=0}^{N} r^n = 1 + r + r^2 + \cdots + r^N$$
+
+This has a **closed-form expression**:
+
+$$S_N = \frac{1 - r^{N+1}}{1 - r} \quad \text{for } r \neq 1$$
+
+---
+
+## Taking the Limit
+
+To find the sum of the **infinite** series, take the limit as $N \to \infty$:
+
+$$S = \lim_{N \to \infty} S_N = \lim_{N \to \infty} \frac{1 - r^{N+1}}{1 - r}$$
+
+---
+
+## Case 1: $|r| < 1$
+
+If $|r| < 1$, then:
+
+$$r^{N+1} \to 0 \quad \text{as } N \to \infty$$
+
+So the sum becomes:
+
+$$S = \frac{1}{1 - r}$$
+
+✅ The geometric series **converges**.
+
+---
+
+## Case 2: $|r| \geq 1$
+
+- If $r = 1$, then $S_N = N + 1 \to \infty$
+- If $r = -1$, the sum oscillates: $1 - 1 + 1 - 1 + \cdots$
+- If $|r| > 1$, then $r^{N+1} \to \infty$
+
+❌ In all cases: the series **diverges**
+
+---
+
+## Intuition
+
+- When $|r| < 1$, each term $r^n$ gets **smaller and smaller**
+- Their total sum **settles to a finite number**
+- When $|r| \geq 1$, the terms don’t vanish — the sum keeps growing or oscillating
+
+---
+
+## Example: $r = 0.5$
+
+$$S = 1 + 0.5 + 0.25 + 0.125 + \cdots = \frac{1}{1 - 0.5} = 2$$
+
+Every term adds less. The sum "flattens out."
+
+---
+
+## Why This Matters
+
+The Z-Transform often gives us geometric series like:
+
+$$\sum_{n=0}^{\infty} (az^{-1})^n$$
+
+This converges **only if**:
+
+$$|az^{-1}| < 1 \Rightarrow |z| > |a|$$
+
+So, **understanding convergence of geometric series = understanding ROC in Z-transforms**.
+
+---
+
+## Summary
+
+| Condition       | Behavior     | Result              |
+|----------------|--------------|---------------------|
+| $|r| < 1$   | Terms shrink | Series converges    |
+| $|r| \geq 1$| Terms grow or oscillate | Diverges |
+
+$$\sum_{n=0}^{\infty} r^n = \frac{1}{1 - r} \quad \text{if } |r| < 1$$
+
+---
+
+
+## Step 2: Region of Convergence (ROC)
+
+For convergence of the geometric series:
+
+$$|az^{-1}| < 1 \Rightarrow |z| > |a|$$
+
+**Therefore, the ROC is:**
+
+$$\boxed{|z| > |a|}$$
+
+---
+
+## Interpretation
+
+- **Causal signal** (defined for $n \geq 0$)
+- ROC is **outside** the outermost pole
+- **Stable system** only if ROC includes the **unit circle** $|z| = 1$
+
+---
+
+## Example: $a = 0.5$
+
+$$x[n] = (0.5)^n u[n]$$
+
+Z-Transform:
+
+$$X(z) = \sum_{n=0}^{\infty} (0.5)^n z^{-n} = \frac{z}{z - 0.5}$$
+
+Region of Convergence:
+
+$$\boxed{|z| > 0.5}$$
+
+---
+
+## Summary
+
+| Signal                     | Z-Transform               | ROC            |
+|----------------------------|----------------------------|----------------|
+| $x[n] = a^n u[n]$      | $\frac{z}{z - a}$      | $|z| > |a|$ |
+| Example: $a = 0.5$     | $\frac{z}{z - 0.5}$    | $|z| > 0.5$ |
+
+---
+
 ## Properties of the Z-Transform
 
 - **Linearity**: $a x[n] + b y[n] \to aX(z) + bY(z)$
