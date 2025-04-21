@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jenny Carolina Castiblanco Sánchez">
+<meta name="author" content="Pablo Eduardo Caicedo Rodríguez”">
+<meta name="dcterms.date" content="2025-04-21">
+
+<title>Taller3: Análisis y diseños de filtros – PECR Knowledge Hub</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-985aa47af68dae11cd4d235c71fb941e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-44524390c5afc6d4700f511aa67cab8a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../recursos/estilos/styles_site.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Taller3: Análisis y diseños de filtros</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Authors</div>
+    <div class="quarto-title-meta-contents">
+             <p>Jenny Carolina Castiblanco Sánchez </p>
+             <p>Pablo Eduardo Caicedo Rodríguez” </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">April 21, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="análisis-de-señales-biomédicas-transformada-z-y-diseño-de-filtros-digitales" class="level1">
+<h1>Análisis de Señales Biomédicas: Transformada Z y Diseño de Filtros Digitales</h1>
+<section id="introducción" class="level2">
+<h2 class="anchored" data-anchor-id="introducción">Introducción</h2>
+<p>El procesamiento digital de señales biomédicas (como ECG y EEG) emplea herramientas matemáticas para analizar y mejorar la calidad de estas señales, extrayendo información útil para diagnóstico y monitoreo clínico (<a href="https://www.studysmarter.es/resumenes/ingenieria/ingenieria-biomedica/procesamiento-de-senales-biomedicas/#:~:text=El%20procesamiento%20%20de%20se%C3%B1ales,el%20cuidado%20de%20los%20pacientes">Procesamiento de señales biomédicas: EEG &amp; FPGA</a>). En particular, la transformada Z y los filtros digitales (FIR e IIR) son fundamentales para modelar, analizar y modificar señales en tiempo discreto. Por ejemplo, es común eliminar interferencias de línea base o ruido de red eléctrica (50/60 Hz) mediante filtros pasoalto o de rechazo (notch) adecuados (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=wander%2C%20powerline%20interference%2C%20electromyo%02graphic%20,pass%20filter%20of%20an%20appropriate"></a>). Este reporte teórico describe los conceptos clave para resolver un taller de análisis de señales biomédicas, cubriendo la <strong>transformada Z</strong>, la <strong>estabilidad y región de convergencia (ROC)</strong>, la <strong>representación de sistemas LTI</strong> (Lineales e Invariantes en el Tiempo) mediante <strong>polos y ceros</strong>, la <strong>respuesta al impulso</strong>, los <strong>diagramas de bloques</strong>, y el <strong>diseño de filtros digitales FIR e IIR</strong> (incluyendo métodos de ventaneo y transformación bilineal). Se incluyen ejemplos prácticos en Python (usando <code>numpy</code> y <code>scipy</code>) para ilustrar implementaciones, con un claro enfoque en aplicaciones biomédicas como el filtrado de señales ECG/EEG. Las explicaciones se apoyan en referencias académicas para asegurar rigor teórico.</p>
+</section>
+<section id="transformada-z-y-sistemas-lti-discretos" class="level2">
+<h2 class="anchored" data-anchor-id="transformada-z-y-sistemas-lti-discretos">Transformada Z y sistemas LTI discretos</h2>
+<p>La <strong>transformada Z</strong> convierte una señal <span class="math inline">\(x[n]\)</span> de tiempo discreto en una representación en el dominio complejo. En forma bilateral, se define como:</p>
+<p><span class="math display">\[X(z) = \mathcal{Z}\{x[n]\} = \sum_{n=-\infty}^{\infty} x[n]\,z^{-n},\]</span></p>
+<p>donde <span class="math inline">\(z\)</span> es una variable compleja <span class="math inline">\(z = A e^{j\omega}\)</span> (con <span class="math inline">\(A=|z|\)</span> y <span class="math inline">\(\omega = \arg(z)\)</span>) (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=La%20TZ%20bilateral%20de%20una,que%20se%20define">Transformada Z - Wikipedia, la enciclopedia libre</a>) (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=Image%3A%20%7B%5Cdisplaystyle%20X%28z%29%3DZ%5C%7Bx%5Bn%5D%5C%7D%3D%5Csum%20_%7Bn%3D,n%7D%5C">Transformada Z - Wikipedia, la enciclopedia libre</a>). En señales causales (<span class="math inline">\(x[n]=0\)</span> para <span class="math inline">\(n&lt;0\)</span>), suele usarse la <strong>transformada Z unilateral</strong> definida desde <span class="math inline">\(n=0\)</span> hasta <span class="math inline">\(\infty\)</span> (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=En%20el%20procesamiento%20de%20se%C3%B1ales,hacia%20afuera">Transformada Z - Wikipedia, la enciclopedia libre</a>). La transformada Z es análoga a la transformada de Laplace en sistemas continuos, y de hecho puede verse como una serie de Laurent (suma infinita de potencias) (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=nombre%20m%C3%A1s%20adecuado%20para%20la,las%20se%C3%B1ales%20de%20tiempo%20continuo">Transformada Z - Wikipedia, la enciclopedia libre</a>).</p>
+<p><strong>Región de Convergencia (ROC):</strong> No toda señal tiene transformada Z en forma cerrada; la serie anterior converge únicamente en ciertas regiones del plano <span class="math inline">\(z\)</span>. La <strong>ROC</strong> se define como el conjunto de valores de <span class="math inline">\(z\)</span> para los cuales la serie converge absolutamente (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=una%20se%C3%B1al%20tiene%20una%20suma,n%7D%7D%20es%20absolutamente%20sumable">Transformada Z - Wikipedia, la enciclopedia libre</a>). En términos prácticos, la ROC es el rango de <span class="math inline">\(z\)</span> donde <span class="math inline">\(\sum_{n=-\infty}^{\infty}|x[n]z^{-n}| &lt; \infty\)</span> (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=una%20se%C3%B1al%20tiene%20una%20suma,n%7D%7D%20es%20absolutamente%20sumable">Transformada Z - Wikipedia, la enciclopedia libre</a>). Por ejemplo, si <span class="math inline">\(x[n] = a^n u[n]\)</span> (secuencia exponencial causal con <span class="math inline">\(u[n]\)</span> la escalón unidad), su transformada Z es <span class="math inline">\(X(z) = \frac{1}{1 - a\,z^{-1}}\)</span>, pero esta expresión es válida solo si <span class="math inline">\(|z| &gt; |a|\)</span> (ya que la serie geométrica converge cuando <span class="math inline">\(|a/z|&lt;1\)</span>). Así, la ROC en este caso es <span class="math inline">\(|z| &gt; |a|\)</span>. Si la señal fuera anti-causal (<span class="math inline">\(x[n]=0\)</span> para <span class="math inline">\(n&gt;0\)</span>), la ROC sería <span class="math inline">\(|z| &lt; |a|\)</span> (convergencia hacia adentro). Si <span class="math inline">\(x[n]\)</span> tiene duración finita (FIR), su transformada Z existe para todo <span class="math inline">\(z\neq0\)</span> excepto quizá puntos donde la propia definición tenga singularidades (por lo general ROC = todo el plano <span class="math inline">\(z\)</span>, excepto tal vez <span class="math inline">\(z=0\)</span> o <span class="math inline">\(z=\infty\)</span>) (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=una%20se%C3%B1al%20tiene%20una%20suma,n%7D%7D%20es%20absolutamente%20sumable">Transformada Z - Wikipedia, la enciclopedia libre</a>). La ROC <strong>nunca incluye polos</strong> (donde la función <span class="math inline">\(X(z)\)</span> diverge) (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=,existir%20ning%C3%BAn%20polo%20para%20ROC">Transformada Z - Wikipedia, la enciclopedia libre</a>), es típicamente un anillo o media-plano en el plano <span class="math inline">\(z\)</span>, y su ubicación está ligada a propiedades de la señal como causalidad y estabilidad.</p>
+<p><strong>Polos y ceros:</strong> Cualquier función de transferencia discreta o transformada Z de una señal racional puede expresarse en forma de polos y ceros. Los <strong>ceros</strong> son valores de <span class="math inline">\(z\)</span> que anulan <span class="math inline">\(X(z)\)</span> (raíces del numerador), y los <strong>polos</strong> donde <span class="math inline">\(X(z)\)</span> diverge (raíces del denominador). Por ejemplo, en <span class="math inline">\(X(z) = \frac{1}{1 - a z^{-1}}\)</span>, hay un polo en <span class="math inline">\(z=a\)</span> y un cero en <span class="math inline">\(z=\infty\)</span> (o equivalente, un cero de orden 1 en el origen en la función <span class="math inline">\(X(z)\)</span> multiplicada por <span class="math inline">\(z^{-1}\)</span>). La representación gráfica de polos y ceros en el plano <span class="math inline">\(z\)</span> proporciona intuición sobre el comportamiento frecuencial: los ceros en la circunferencia unitaria (<span class="math inline">\(|z|=1\)</span>) cancelan ciertas frecuencias, mientras que los polos cercanos a la circunferencia unitaria amplifican componentes espectrales cercanas a su ángulo.</p>
+<p><strong>Causalidad:</strong> Un sistema LTI discreto es causal si <span class="math inline">\(h[n]=0\)</span> para <span class="math inline">\(n&lt;0\)</span> (su respuesta impulso es nula en tiempos negativos). En la transformada Z, esto implica que la ROC es externa, es decir, de la forma <span class="math inline">\(|z|&gt;R\)</span> (convergencia hacia <span class="math inline">\(\infty\)</span>) (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=En%20el%20procesamiento%20de%20se%C3%B1ales,hacia%20afuera">Transformada Z - Wikipedia, la enciclopedia libre</a>). Todos los polos de un sistema causal deben estar <em>dentro</em> de la ROC (que para causal es exterior al polo de mayor radio) (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=As%20explained%20above%2C%20the%20ROC,by%20two%20or%20more%20poles">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>). Un detalle importante es que la ubicación de polos por sí sola no determina completamente la causalidad o estabilidad; la ROC es la que define cuál de las posibles señales con esos polos es la realizada (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=It%20is%20important%20to%20understand,not%20include%20the%20unit%20circle">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>). Por ejemplo, una misma función racional puede corresponder a un sistema causal inestable o a un sistema no causal estable, dependiendo de si la ROC se toma fuera o entre polos (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=It%20is%20important%20to%20understand,not%20include%20the%20unit%20circle">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>).</p>
+<p><strong>Estabilidad BIBO:</strong> Un sistema es estable (en sentido BIBO: Bounded-Input Bounded-Output) si <strong>su respuesta al impulso <span class="math inline">\(h[n]\)</span> es absolutamente sumable</strong>, <span class="math inline">\(\sum_{n=-\infty}^{\infty}|h[n]| &lt; \infty\)</span>. Esta condición garantiza que cualquier entrada acotada produce salida acotada (<a href="https://en.wikipedia.org/wiki/BIBO_stability#:~:text=If%20Image%3A%20,R%7D%20%7D%20and">BIBO stability - Wikipedia</a>). En el dominio Z, estabilidad equivale a que la ROC de <span class="math inline">\(H(z)\)</span> <strong>contenga al círculo unitario</strong> (<span class="math inline">\(|z|=1\)</span>) (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=As%20explained%20above%2C%20the%20ROC,by%20two%20or%20more%20poles">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>). Para sistemas causales, esto se traduce en que <strong>todos los polos deben estar dentro del círculo unitario</strong> (ya que la ROC causal comienza fuera del polo de mayor magnitud) (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=As%20explained%20above%2C%20the%20ROC,by%20two%20or%20more%20poles">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>). Por tanto, un filtro digital causal será estable si sus polos <span class="math inline">\(p_i\)</span> satisfacen <span class="math inline">\(|p_i|&lt;1\)</span>. En sistemas no causales (e.g.&nbsp;acausales diseñados con filtrado hacia atrás y adelante para cancelar fase), la estabilidad puede lograrse con polos fuera del unitario siempre y cuando la ROC (un anillo) incluya el unitario (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=in%20discrete%20time%29,by%20two%20or%20more%20poles">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>), aunque estos casos son menos comunes en línea real. En general, para diseño de filtros digitales <strong>asumiremos causalidad</strong>, por lo que chequear estabilidad equivale a verificar polos dentro del unitario.</p>
+<p><strong>Ejemplo (ECG y estabilidad):</strong> Considere un filtro pasoalto diseñado para remover la línea base de ECG definido por la diferencia <span class="math inline">\(y[n] = x[n] - x[n-1]\)</span>. Su función de transferencia es <span class="math inline">\(H(z) = 1 - z^{-1}\)</span>, con un cero en <span class="math inline">\(z=1\)</span> (cancela DC) y un polo en <span class="math inline">\(z=0\)</span> (simple, debido al <span class="math inline">\(z^{-1}\)</span>). Este sistema es causal (diferencia causal) y su único polo <span class="math inline">\(z=0\)</span> está dentro del círculo unitario, por lo que es estable. De hecho, su respuesta al impulso <span class="math inline">\(h[n]=\delta[n] - \delta[n-1]\)</span> suma 0 en valor absoluto (sumable). Este filtro elimina componentes de muy baja frecuencia, como la deriva de línea base en un ECG (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=wander%2C%20powerline%20interference%2C%20electromyo%02graphic%20,pass%20filter%20of%20an%20appropriate"></a>), sin inestabilidad.</p>
+</section>
+<section id="análisis-de-sistemas-lti-en-tiempo-discreto" class="level2">
+<h2 class="anchored" data-anchor-id="análisis-de-sistemas-lti-en-tiempo-discreto">Análisis de sistemas LTI en tiempo discreto</h2>
+<p>Un sistema LTI discreto queda caracterizado completamente por su <strong>respuesta al impulso</strong> <span class="math inline">\(h[n]\)</span>. Dada cualquier entrada <span class="math inline">\(x[n]\)</span>, la salida es la <strong>convolución discreta</strong> <span class="math inline">\(y[n] = (x*h)[n] = \sum_{k=-\infty}^{\infty} h[k]\,x[n-k]\)</span>. En el dominio Z, esta convolución se convierte en multiplicación: <span class="math inline">\(Y(z) = H(z)\,X(z)\)</span> (dentro de la intersección de ROC de <span class="math inline">\(X\)</span> y <span class="math inline">\(H\)</span>). La función de transferencia <span class="math inline">\(H(z)\)</span> de un sistema LTI causal viene dada por la transformada Z de <span class="math inline">\(h[n]\)</span> (unilateral). En sistemas de coeficientes constantes (difundidos en ingeniería), <span class="math inline">\(H(z)\)</span> suele ser una <strong>función racional</strong> de <span class="math inline">\(z\)</span>:</p>
+<p><span class="math display">\[H(z) = \frac{B(z)}{A(z)} = \frac{b_0 + b_1 z^{-1} + \cdots + b_M z^{-M}}{1 + a_1 z^{-1} + \cdots + a_N z^{-N}},\]</span></p>
+<p>donde <span class="math inline">\(B(z)\)</span> y <span class="math inline">\(A(z)\)</span> son polinomios en <span class="math inline">\(z^{-1}\)</span>. La razón de escribir en potencias de <span class="math inline">\(z^{-1}\)</span> es para reflejar la causalidad (solo potencias no positivas de <span class="math inline">\(z\)</span>). La ecuación en diferencias asociada es:</p>
+<p><span class="math display">\[y[n] + a_1 y[n-1] + \cdots + a_N y[n-N] = b_0 x[n] + b_1 x[n-1] + \cdots + b_M x[n-M].\]</span></p>
+<p>Este es el modelo típico de sistemas LTI discreto. Si <span class="math inline">\(N=0\)</span> (no hay realimentación, solo ceros), el sistema es <strong>FIR</strong> (Finite Impulse Response), pues <span class="math inline">\(h[n]\)</span> es de duración finita (máximo <span class="math inline">\(M\)</span>). Si <span class="math inline">\(N&gt;0\)</span>, hay realimentación y el sistema es <strong>IIR</strong> (Infinite Impulse Response), con respuesta al impulso teóricamente infinita (aunque decreciente si es estable).</p>
+<p><strong>Diagramas de bloques:</strong> Un LTI puede implementarse mediante sumas, retardos (<span class="math inline">\(z^{-1}\)</span> representa un retardo de 1 muestra) y multiplicaciones por constantes. El diagrama de bloques representa visualmente la ecuación en diferencias. Por ejemplo, para un filtro IIR de segundo orden:</p>
+<p><span class="math display">\[y[n] = -a_1 y[n-1] - a_2 y[n-2] + b_0 x[n] + b_1 x[n-1] + b_2 x[n-2],\]</span></p>
+<p>el diagrama en forma <strong>Directa II</strong> combinaría los términos en una estructura canónica con dos bloques de retardo en la rama de realimentación y avance, sumadores para combinar las ramas, y coeficientes <span class="math inline">\(a_i\)</span>, <span class="math inline">\(b_i\)</span>. Cada polo corresponde a un lazo de realimentación (coeficientes <span class="math inline">\(a_i\)</span>) y cada cero a una ramificación hacia la entrada (coeficientes <span class="math inline">\(b_i\)</span>). Dibujar estos diagramas ayuda a entender la estructura interna, pero en este reporte nos enfocaremos más en el análisis matemático. Cabe destacar que <strong>el tipo de filtro (pasa-bajos, pasa-altos, etc.) puede inferirse</strong> de <span class="math inline">\(H(z)\)</span>: por ejemplo, si <span class="math inline">\(H(e^{j\omega})\)</span> (respuesta en frecuencia) atenúa bajas frecuencias y deja pasar altas, es pasa-altos. Un método práctico es evaluar <span class="math inline">\(H(z)\)</span> en <span class="math inline">\(z=e^{j0}\)</span> (DC, <span class="math inline">\(\omega=0\)</span>) y en <span class="math inline">\(z=e^{j\pi}\)</span> (Nyquist, <span class="math inline">\(\omega=\pi\)</span>): si <span class="math inline">\(|H(e^{j0})|=0\)</span> y <span class="math inline">\(|H(e^{j\pi})|\approx 1\)</span>, es pasa-altos; al revés sería pasa-bajos. Los <strong>ceros en <span class="math inline">\(z=1\)</span></strong> anulan <span class="math inline">\(\omega=0\)</span> (eliminan DC), típicos en pasa-altos (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=wander%2C%20powerline%20interference%2C%20electromyo%02graphic%20,pass%20filter%20of%20an%20appropriate"></a>), mientras <strong>ceros en <span class="math inline">\(z=-1\)</span></strong> anulan <span class="math inline">\(\omega=\pi\)</span> (eliminan la componente de Nyquist, típicos en pasa-bajos). Por su parte, <strong>polos cercanos a <span class="math inline">\(z=1\)</span></strong> refuerzan respuesta en bajas frecuencias; polos cercanos a <span class="math inline">\(z=-1\)</span> refuerzan la alta frecuencia <span class="math inline">\(\pi\)</span>. Así, el diagrama polo-cero brinda intuición: ceros sobre la circunferencia unitaria en cierto ángulo <span class="math inline">\(\theta_0\)</span> causan una <strong>notch</strong> (anulación) en la frecuencia <span class="math inline">\(\omega=\theta_0\)</span>, mientras polos cerca de la unidad en <span class="math inline">\(\theta_0\)</span> generan picos (potenciales resonancias) alrededor de esa frecuencia.</p>
+<p><strong>Ejemplo (Filtro notch 60 Hz):</strong> Un problema común en bioseñales es eliminar la interferencia de la red eléctrica (50/60 Hz) sobre, por ejemplo, EEG o ECG. Un filtro digital sencillo para eliminar 60 Hz (asumiendo frecuencia de muestreo <span class="math inline">\(f_s=5000\)</span> Hz) es colocar <strong>ceros conjugados en <span class="math inline">\(z = e^{\pm j 2\pi(60/5000)}\)</span></strong>. La función de transferencia resultante puede ser:</p>
+<p><span class="math display">\[H(z) = 1 - 2\cos(2\pi\frac{60}{5000})\,z^{-1} + z^{-2}.\]</span></p>
+<p>Este <span class="math inline">\(H(z)\)</span> tiene ceros en <span class="math inline">\(e^{\pm j2\pi(60/5000)}\)</span> que anulan exactamente la componente de 60 Hz, implementando un filtro <em>notch</em>. Además, es un filtro FIR (orden 2) con coeficientes simétricos, lo que le da fase lineal (importante para no deformar la forma de onda). ¿Es estable? Sí, al ser FIR no hay polos fuera del origen (solo polos en 0, con módulo 0). ¿Es causal? Sí, depende solo de muestras presentes y pasadas de la señal (<span class="math inline">\(x[n]\)</span>, <span class="math inline">\(x[n-1]\)</span>, <span class="math inline">\(x[n-2]\)</span>). ¿Qué tipo de filtro es? Es un <strong>rechaza-banda estrecho</strong> centrado en 60 Hz (deja pasar el resto, pero rechaza esa frecuencia). En aplicaciones, este notch suele atenuar ruido de red sin distorsionar significativamente las señales de interés (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=Hz,The%20chapter"></a>).</p>
+</section>
+<section id="diseño-de-filtros-fir-por-el-método-de-ventanas" class="level2">
+<h2 class="anchored" data-anchor-id="diseño-de-filtros-fir-por-el-método-de-ventanas">Diseño de filtros FIR por el método de ventanas</h2>
+<p>Los filtros FIR (Respuesta al Impulso Finita) son ampliamente utilizados en procesamiento biomédico porque pueden diseñarse para tener <strong>respuesta en fase lineal</strong>, evitando distorsión de fase en la señal filtrada (lo cual es útil para preservar la morfología de ondas ECG, por ejemplo). Una manera conceptualmente sencilla de diseñar un FIR es mediante el <strong>método de ventana</strong> (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=would%20choose%20the%20Hamming%20window%2C,In%20this">WindowFIRDesign.fm</a>). Consiste en: (1) definir la respuesta frecuencial ideal deseada <span class="math inline">\(H_d(e^{j\omega})\)</span>, (2) obtener la respuesta al impulso ideal <span class="math inline">\(h_d[n]\)</span> como la transformada inversa de Fourier de <span class="math inline">\(H_d\)</span>, y (3) truncar <span class="math inline">\(h_d[n]\)</span> (que usualmente es infinita o muy larga) mediante una <strong>función ventana</strong> <span class="math inline">\(w[n]\)</span> para obtener un FIR realizable <span class="math inline">\(h[n] = h_d[n]\,w[n]\)</span>.</p>
+<p>Por ejemplo, supongamos que queremos un filtro <strong>pasa-bajos ideal</strong> con frecuencia de corte <span class="math inline">\(\omega_c\)</span>. El impulso ideal es <span class="math inline">\(h_d[n] = \frac{\sin(\omega_c n)}{\pi n}\)</span> (un sinc) que se extiende infinitamente. Para obtener un FIR causal de longitud <span class="math inline">\(M\)</span>, se multiplica <span class="math inline">\(h_d[n]\)</span> por una ventana <span class="math inline">\(w[n]\)</span> de longitud <span class="math inline">\(M\)</span> centrada apropiadamente (y a menudo se aplica un corrimiento para hacer el filtro causal). Las ventanas comúnmente utilizadas incluyen: <strong>Rectangular, Bartlett (triangular), Hann (Hanning), Hamming, Blackman</strong>, y la <strong>Kaiser</strong> (que es ajustable). Cada ventana introduce un cierto <strong>lóbulo principal</strong> en la respuesta en frecuencia (determinando la anchura de la transición) y <strong>lóbulos laterales</strong> (que determinan el ripple o atenuación en bandas de rechazo) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=From%20the%20discussion%20above%20we,9%201">WindowFIRDesign.fm</a>) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>).</p>
+<p>Las características típicas de ventanas clásicas (según Oppenheim et al.&nbsp;(<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=would%20choose%20the%20Hamming%20window%2C,In%20this">WindowFIRDesign.fm</a>) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Hamming%20,M%20%2B%201">WindowFIRDesign.fm</a>)) son:</p>
+<ul>
+<li><strong>Rectangular:</strong> lóbulo principal más angosto (ancho <span class="math inline">\(\approx 4\pi/M\)</span> rad) pero lóbulos laterales más altos (primer sidelobe ~<span class="math inline">\(-13\)</span> dB, atenuación de rechazo $$21 dB) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>). Da la transición más abrupta para un orden dado, al costo de peor rechazo de banda.</li>
+<li><strong>Bartlett (triangular):</strong> lóbulo principal algo más ancho (<span class="math inline">\(\approx 8\pi/M\)</span>), sidelobes ~<span class="math inline">\(-25\)</span> dB (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>).</li>
+<li><strong>Hann:</strong> lóbulo principal <span class="math inline">\(\approx 8\pi/M\)</span>, sidelobes ~<span class="math inline">\(-31\)</span> dB (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>) (mejor rechazo que rectangular pero transiciones más suaves).</li>
+<li><strong>Hamming:</strong> lóbulo principal <span class="math inline">\(\approx 8\pi/M\)</span>, sidelobes <span class="math inline">\(\approx -41\)</span> dB (mínima atenuación ~53 dB en rechazo) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=would%20choose%20the%20Hamming%20window%2C,In%20this">WindowFIRDesign.fm</a>) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Hamming%20,M%20%2B%201">WindowFIRDesign.fm</a>). Es muy popular por su buen compromiso entre ancho de transición y rechazo en banda eliminada.</li>
+<li><strong>Blackman:</strong> lóbulo principal más ancho (<span class="math inline">\(\approx 12\pi/M\)</span>) pero sidelobes muy bajos (~<span class="math inline">\(-57\)</span> dB, atenuación ~74 dB) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Hamming%20,M%20%2B%201">WindowFIRDesign.fm</a>).</li>
+<li><strong>Kaiser:</strong> permite escoger un parámetro <span class="math inline">\(\beta\)</span> para controlar la atenuación de lóbulo lateral, ofreciendo flexibilidad. Aproximadamente, para lograr <span class="math inline">\(A\)</span> dB de atenuación, <span class="math inline">\(\beta \approx 0.1102(A-8.7)\)</span> (para <span class="math inline">\(A&gt;50\)</span>), y el ancho de transición normalizado <span class="math inline">\(\Delta\omega\)</span> se relaciona con el orden <span class="math inline">\(M\)</span> y <span class="math inline">\(\beta\)</span> por <span class="math inline">\(M \approx \frac{A - 8}{2.285\,\Delta\omega}\)</span> (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=would%20choose%20the%20Hamming%20window%2C,In%20this">WindowFIRDesign.fm</a>) (estas fórmulas provienen de aproximaciones de Kaiser y ayudan a dimensionar el filtro).</li>
+</ul>
+<p>El método de ventanas es sencillo pero implica un <strong>compromiso fijo</strong> entre ancho de transición y ripple: una vez elegida la ventana, la única forma de mejorar la pendiente de corte es aumentar <span class="math inline">\(M\)</span> (orden del filtro). Por ejemplo, la ventana Hamming siempre tendrá ~<span class="math inline">\(-53\)</span> dB de mínimo en rechazo sin importar <span class="math inline">\(M\)</span> (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=would%20choose%20the%20Hamming%20window%2C,In%20this">WindowFIRDesign.fm</a>), pero al incrementar <span class="math inline">\(M\)</span> se reducirá la anchura de transición. En contraste, la ventana rectangular logra transiciones muy rápidas con orden modesto, pero su pobre rechazo (~21 dB) la hace inadecuada si necesitamos, digamos, eliminar ruido fuerte. En señales biomédicas, suele preferirse reducir al mínimo distorsiones residuales de ruido, por lo que ventanas con mejor rechazo (Hamming, Blackman o Kaiser ajustada) son comunes.</p>
+<p><strong>Cálculo del orden para especificaciones dadas:</strong> Dado un requerimiento de diseño (ej. atenuación mínima de 40 dB en banda eliminada y transición de 10 Hz), podemos estimar el orden necesario. Por ejemplo, en el taller se plantea diseñar un pasa-bajos FIR con <span class="math inline">\(f_c = 55\)</span> Hz (definido al nivel de <span class="math inline">\(-6\)</span> dB), que alcance al menos 20 dB de atenuación a 60 Hz y &gt;40 dB más allá de 80 Hz. Esto implica una banda de transición bastante estrecha (de ~55 a 60 Hz) y un rechazo fuerte. Un enfoque sería probar varias ventanas:</p>
+<ul>
+<li><strong>Rectangular:</strong> probablemente no pueda dar 40 dB de rechazo (limita ~21 dB).</li>
+<li><strong>Hamming:</strong> puede dar ~53 dB de rechazo, suficiente, pero el ancho de transición <span class="math inline">\(\Delta f\)</span> será ~<span class="math inline">\(\frac{3.3}{M}\)</span> (en radianes normalizados, equivalente aprox. a <span class="math inline">\(\frac{0.26 f_s}{M}\)</span> en Hz para banda bilateral). Para <span class="math inline">\(\Delta f \approx 5\)</span> Hz con <span class="math inline">\(f_s\)</span> suficientemente grande, requerirá un <span class="math inline">\(M\)</span> elevado.</li>
+<li><strong>Blackman:</strong> daría &gt;60 dB de rechazo, pero su transición es más ancha (por ser <span class="math inline">\(12\pi/M\)</span> rad).</li>
+<li><strong>Kaiser:</strong> se puede ajustar para 40 dB con quizás menor <span class="math inline">\(M\)</span> que Hamming, porque se elige justo la atenuación requerida y minimiza ancho de transición para ese nivel.</li>
+</ul>
+<p>En el taller, se sugiere <em>calcular el orden mínimo para cada ventana</em> cumpliendo las specs y elegir la de menor orden. Esto implicaría usar fórmulas o tablas estándar (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=From%20the%20discussion%20above%20we,9%201">WindowFIRDesign.fm</a>) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>). Por ejemplo, para 40 dB de rechazo y <span class="math inline">\(\Delta f = 20\)</span> Hz (digamos entre 60 y 80 Hz), la Hamming podría necesitar <span class="math inline">\(M \approx \frac{3.3\cdot 2\pi}{(20/f_s)2\pi} = \frac{3.3 f_s}{20}\)</span> (esta es una estimación tosca usando <span class="math inline">\(\Delta\omega \approx 8\pi/M\)</span>). Si la señal es de voz muestreada a 8 kHz (caso típico, aunque aquí es biomédica a 200 Hz?), podemos obtener números específicos. En general, se podría iterar aumentando <span class="math inline">\(M\)</span> y midiendo la respuesta espectral hasta que los requisitos se satisfagan.</p>
+<p>A modo de <strong>ilustración práctica</strong>, diseñemos un filtro FIR pasa-bajos con método del ventaneo en Python, usando <code>scipy.signal.firwin</code>. Por simplicidad, tomemos <span class="math inline">\(f_s=200\)</span> Hz, <span class="math inline">\(f_c=30\)</span> Hz, y usemos ventana de Hamming:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> signal</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fs <span class="op">=</span> <span class="fl">200.0</span>  <span class="co"># Hz</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>fc <span class="op">=</span> <span class="fl">30.0</span>   <span class="co"># Hz (deseamos pasa-bajos)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">51</span>      <span class="co"># orden (se puede ajustar)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>taps <span class="op">=</span> signal.firwin(N, cutoff<span class="op">=</span>fc, window<span class="op">=</span><span class="st">'hamming'</span>, fs<span class="op">=</span>fs)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>w, H <span class="op">=</span> signal.freqz(taps, worN<span class="op">=</span><span class="dv">8000</span>, fs<span class="op">=</span>fs)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Convertir respuesta a dB:</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>H_db <span class="op">=</span> <span class="dv">20</span><span class="op">*</span>np.log10(np.<span class="bu">abs</span>(H))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Encontrar atenuación en 60 Hz:</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>idx_60 <span class="op">=</span> np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">60</span>))</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Atenuación a 60Hz: </span><span class="sc">{</span>H_db[idx_60]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>(El código anterior calcula los coeficientes FIR con ventana de Hamming y evalúa la respuesta. Se puede iterar sobre N hasta lograr &gt;40 dB en 80 Hz, etc.)</em></p>
+<p>En general, el método de ventanas es rápido y fácil de implementar. Su principal limitación es la falta de control preciso sobre las bandas: el ripple y transición vienen determinados por la elección de ventana, no exactamente por parámetros deseados (excepto en Kaiser donde hay más control). Aún así, es muy útil en procesamiento biomédico cuando queremos filtros lineales en fase y podemos permitir órdenes relativamente altos (el costo computacional suele ser menor preocupación en aplicaciones off-line, pero en tiempo real un FIR muy largo puede introducir latencia).</p>
+</section>
+<section id="diseño-de-filtros-iir-por-transformación-bilineal" class="level2">
+<h2 class="anchored" data-anchor-id="diseño-de-filtros-iir-por-transformación-bilineal">Diseño de filtros IIR por transformación bilineal</h2>
+<p>Los filtros IIR (Respuesta Infinita al Impulso) se suelen diseñar a partir de <strong>filtros analógicos prototipo</strong> utilizando transformaciones como la <strong>transformación bilineal</strong>. Este enfoque aprovecha décadas de diseños analógicos bien estudiados (Butterworth, Chebyshev, Elíptico, etc.) y los lleva al dominio digital asegurando estabilidad y correspondiendo frecuencias de interés.</p>
+<p><strong>Transformación bilineal:</strong> Es una transformación conforme que mapea el plano-<span class="math inline">\(s\)</span> (Laplace) en el plano-<span class="math inline">\(z\)</span> (Z) mediante la sustitución:</p>
+<p><span class="math display">\[ s = \frac{2}{T}\,\frac{z-1}{\,z+1\,}, \]</span></p>
+<p>donde <span class="math inline">\(T\)</span> es el periodo de muestreo (usualmente tomamos <span class="math inline">\(T=1\)</span> para frecuencias normalizadas, o usamos <span class="math inline">\(2/T\)</span> para incluir <span class="math inline">\(f_s\)</span> explícitamente) (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Image%3A%20,1%7D%7Bz%2B1%7D%7D%5Cright%29.%5C">Transformación bilineal - Wikipedia, la enciclopedia libre</a>) (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Un%20filtro%20causal%20perteneciente%20al,guardan%20su%20caracter%C3%ADstica%20de%20estabilidad">Transformación bilineal - Wikipedia, la enciclopedia libre</a>). Esta sustitución se adopta universalmente para convertir funciones de transferencia analógicas <span class="math inline">\(H_a(s)\)</span> en funciones <span class="math inline">\(H_d(z)\)</span> digitales (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Image%3A%20,1%7D%7Bz%2B1%7D%7D%5Cright%29.%5C">Transformación bilineal - Wikipedia, la enciclopedia libre</a>). La clave es que la transformación bilineal <strong>preserva la estabilidad</strong>: polos en el semiplano izquierdo (<span class="math inline">\(\Re(s)&lt;0\)</span>) mapean dentro del círculo unitario (<span class="math inline">\(|z|&lt;1\)</span>) (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Un%20filtro%20causal%20perteneciente%20al,guardan%20su%20caracter%C3%ADstica%20de%20estabilidad">Transformación bilineal - Wikipedia, la enciclopedia libre</a>). Así, un filtro analógico estable producirá un filtro digital estable (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Un%20filtro%20causal%20perteneciente%20al,guardan%20su%20caracter%C3%ADstica%20de%20estabilidad">Transformación bilineal - Wikipedia, la enciclopedia libre</a>). También mapea el eje <span class="math inline">\(j\omega\)</span> (eje imaginario <span class="math inline">\(s = j\Omega\)</span>) en la circunferencia unitaria (<span class="math inline">\(z = e^{j\omega T}\)</span>) (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Este%20m%C3%A9todo%20describe%20una%20forma,pertenecientes%20al%20plano%20z">Transformación bilineal - Wikipedia, la enciclopedia libre</a>), aunque <strong>no linealmente</strong> en frecuencia. De hecho, existe una <strong>distorsión de la respuesta frecuencial</strong> conocida como <em>warping</em>: la relación entre frecuencia analógica <span class="math inline">\(\Omega\)</span> y digital <span class="math inline">\(\omega\)</span> viene dada por <span class="math inline">\(\omega = 2 \arctan(\Omega T/2)\)</span> (y su inversa <span class="math inline">\(\Omega = \frac{2}{T}\tan(\omega/2)\)</span>) (<a href="https://es.wikipedia.org/wiki/Transformaci%C3%B3n_bilineal#:~:text=Warp%3A%20alteraci%C3%B3n%20de%20la%20respuesta,en%20frecuencia">Transformación bilineal - Wikipedia, la enciclopedia libre</a>). Esto significa que la escala de frecuencias se comprime al mapear al dominio digital, especialmente conforme <span class="math inline">\(\omega\)</span> se acerca a Nyquist (<span class="math inline">\(\pi\)</span> rad/s).</p>
+<p>Para lidiar con el <em>warping</em>, en el diseño se realiza una <strong>pre-distorsión (pre-warping)</strong> de las especificaciones. Si deseamos que una frecuencia analógica <span class="math inline">\(\Omega_p\)</span> de corte corresponda exactamente a una digital <span class="math inline">\(\omega_p\)</span>, calculamos <span class="math inline">\(\Omega_p = \frac{2}{T}\tan(\omega_p/2)\)</span>. Lo mismo para frecuencias de banda de rechazo, etc., antes de diseñar el filtro analógico. Luego aplicamos la transformación bilineal. En la práctica, las funciones auxiliares de diseño (como <code>scipy.signal.buttord</code>, <code>cheb1ord</code>, etc.) permiten ingresar especificaciones directamente en el dominio digital y hacen el prewarping internamente (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Type,has%20as%20its%20key%20parameters">11.3. Common IIR filters — Digital Signals Theory</a>) (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=ripple%20%3D%203%20%20,attenuation%20in%20the%20stop%20band">11.3. Common IIR filters — Digital Signals Theory</a>).</p>
+<p><strong>Prototipos analógicos comunes:</strong></p>
+<ul>
+<li><strong>Butterworth:</strong> Magnitud con máxima planitud en banda de paso (respuesta <em>maximally flat</em>). No presenta ondulaciones en banda de paso ni rechazo, pero la transición es la más lenta de los tipos clásicos (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=,band">11.3. Common IIR filters — Digital Signals Theory</a>). Su función de magnitud al cuadrado es <span class="math inline">\(|H(j\Omega)|^2 = \frac{1}{1 + (\frac{\Omega}{\Omega_c})^{2N}}\)</span>. Para un orden <span class="math inline">\(N\)</span>, la atenuación en rechazo aumenta gradualmente con la frecuencia. Útil cuando se quiere respuesta suave sin ripple.</li>
+<li><strong>Chebyshev Tipo I:</strong> Presenta <strong>rizado en banda de paso</strong> (ε dB de variación) pero ninguna ondulación en banda de rechazo (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=,band">11.3. Common IIR filters — Digital Signals Theory</a>). A cambio, logra una caída más abrupta que Butterworth para el mismo orden (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Type,has%20as%20its%20key%20parameters">11.3. Common IIR filters — Digital Signals Theory</a>) (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=after%20,fold">11.3. Common IIR filters — Digital Signals Theory</a>). La magnitud cumple <span class="math inline">\(|H(j\Omega)|^2 = \frac{1}{1 + \epsilon^2 T_N^2(\Omega/\Omega_c)}\)</span>, donde <span class="math inline">\(T_N\)</span> es el polinomio de Chebyshev de primer tipo (oscila entre ±1). Permite especificar ripple tolerado en pasobanda.</li>
+<li><strong>Chebyshev Tipo II:</strong> Lo opuesto: sin ripple en banda de paso, pero con ondulación controlada en banda de rechazo. También llamados filtros de Chebyshev inversos. Tienen una transición algo más lenta que los tipo I para igual orden, pero fase más lineal en pasobanda (al no tener ripple ahí).</li>
+<li><strong>Elíptico (Cauer):</strong> Permite <strong>rizado tanto en pasobanda como en rechazo</strong> (ambos controlables) (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=If%20we%20allow%20ripple%20in,can%20have%20extremely%20steep%20transitions">11.3. Common IIR filters — Digital Signals Theory</a>), logrando la caída más <strong>empinada</strong> de todas las aproximaciones para un orden dado (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Fig,distortion%20in%20the%20Elliptic%20filter">11.3. Common IIR filters — Digital Signals Theory</a>). Son los más eficientes en términos de orden, a costa de ripple en ambas bandas y mayor no linealidad de fase. Incluyen ceros de transmisión en la banda eliminada, lo que les da atenuación muy alta cerca de los bordes.</li>
+</ul>
+<p>En resumen (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=,band">11.3. Common IIR filters — Digital Signals Theory</a>): <strong>Butterworth</strong> no tiene ripple en ninguna banda (pero pendiente menor), <strong>Chebyshev I</strong> tiene ripple en paso (no en rechazo), <strong>Chebyshev II</strong> ripple en rechazo (no en paso), y <strong>Elíptico</strong> ripple en ambas, pero transición más rápida. La <strong>Figura 1</strong> ilustra las diferencias de respuesta en un ejemplo práctico.</p>
+<p>(<a href="">image</a>) <strong>Figura 1:</strong> Comparación de la respuesta en magnitud (en dB) para filtros IIR pasa-bajos diseñados con las mismas especificaciones (pasa-bajos con <span class="math inline">\(f_{p}=3.4\)</span> kHz con 1 dB de ripple en banda de paso, <span class="math inline">\(f_{s}=3.8\)</span> kHz con 30 dB de atenuación). El filtro <strong>elíptico</strong> (orden 3, línea roja) logra la transición más abrupta (caída más rápida alrededor de 3.4-3.8 kHz) a costa de presentar ondulaciones tanto en la banda de paso como en la de rechazo. El <strong>Chebyshev I</strong> (orden 3, línea naranja) exhibe ripple en la banda de paso pero no en la de rechazo, con una pendiente intermedia. El <strong>Butterworth</strong> (orden 4, línea amarilla) no tiene ripple en ninguna banda, pero requiere un orden mayor y su caída es más paulatina (transición más suave) (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=,band">11.3. Common IIR filters — Digital Signals Theory</a>) (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Fig,distortion%20in%20the%20Elliptic%20filter">11.3. Common IIR filters — Digital Signals Theory</a>). Todos cumplen con los requisitos (–1 dB a 3.4 kHz, –30 dB a 3.8 kHz), pero el orden mínimo necesario varía (Butterworth necesitó <span class="math inline">\(N=4\)</span> mientras Chebyshev I y Elíptico lograron con <span class="math inline">\(N=3\)</span>). Esto ilustra el compromiso entre pendiente de transición y ondulaciones en las distintas aproximaciones.</p>
+<p>En diseño, elegir el tipo de filtro depende de la aplicación: en bioseñales, a veces se prefiere Butterworth para evitar cualquier ripple (ej. filtrar ECG sin distorsionar amplitud de componentes clínicas), otras veces un Chebyshev o Elíptico puede ser apropiado si se necesita un filtro muy selectivo (ej. aislar una banda muy estrecha de EEG) y se puede tolerar cierta variación en la ganancia de la banda útil. La fase de los IIR no es lineal, pero si la distorsión de fase es un problema (por ejemplo, desplazamiento o deformación de picos en ECG), puede mitigarse aplicando el filtro hacia adelante y hacia atrás (filtrado por procesamiento inverso con <code>filtfilt</code> de SciPy, logrando respuesta cero-fase a costa de procesar offline) (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=signal%20therefore%20Finite%20Impulse%20Response,3"></a>). En muchos casos, se pueden usar filtros IIR en tiempo real y lograr correcciones de fase si es necesario mediante técnicas de compensación o filtrado bidireccional.</p>
+<p><strong>Diseño por especificaciones:</strong> Las funciones <code>buttord</code>, <code>cheb1ord</code>, <code>cheb2ord</code>, <code>ellipord</code> de Python/MATLAB calculan el orden mínimo y frecuencia de corte necesaria para cumplir especificaciones dadas (paso, rechazo, ripple). Luego <code>butter</code>, <code>cheby1/2</code>, <code>ellip</code> generan los coeficientes. En el taller, se plantea diseñar un pasa-bajos IIR para voz (ej. telefónica: <span class="math inline">\(f_s=8\)</span> kHz, <span class="math inline">\(f_p=3.4\)</span> kHz, <span class="math inline">\(f_s=3.8\)</span> kHz, ripple 1 dB, atenuación 30 dB). Un proceso típico sería: usar <code>ellipord</code> para obtener el orden mínimo elíptico, <code>cheb1ord</code> para Chebyshev I, etc., comparar órdenes y elegir uno. En nuestro ejemplo de la Figura 1, ya vimos cómo Butterworth requería orden 4 frente a 3 de Chebyshev/Elíptico para la misma tarea, lo cual es común (Butterworth suele necesitar más orden para specs estrictas). Generalmente, <strong>Elíptico da el menor orden</strong>, seguido por Chebyshev, luego Butterworth (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Fig,distortion%20in%20the%20Elliptic%20filter">11.3. Common IIR filters — Digital Signals Theory</a>). Sin embargo, a veces se evita Elíptico si un ripple en rechazo muy bajo es crítico (porque incluso la pequeña ondulación en banda eliminada puede ser indeseable para ciertas mediciones sensibles, aunque en la mayoría de casos biomédicos 30 dB de atenuación es suficiente sin importar un leve ripple residual).</p>
+<p><strong>Implementación en Python:</strong> A continuación se ilustra cómo diseñar un filtro Chebyshev Tipo I con SciPy para cumplir especificaciones de voz:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> cheb1ord, cheby1, freqz</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>fs <span class="op">=</span> <span class="fl">8000.0</span>  <span class="co"># Hz</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>fp <span class="op">=</span> <span class="fl">3400.0</span>  <span class="co"># Hz pasabanda</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>fsb <span class="op">=</span> <span class="fl">3800.0</span> <span class="co"># Hz stopband</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>rp <span class="op">=</span> <span class="fl">1.0</span>     <span class="co"># dB ripple paso</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>rs <span class="op">=</span> <span class="fl">30.0</span>    <span class="co"># dB atenuacion rechazo</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>N, Wn <span class="op">=</span> cheb1ord(fp, fsb, rp, rs, fs<span class="op">=</span>fs)  <span class="co"># orden y frecuencia crítica</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>b, a <span class="op">=</span> cheby1(N, rp, Wn, btype<span class="op">=</span><span class="st">'low'</span>, fs<span class="op">=</span>fs)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>w, h <span class="op">=</span> freqz(b, a, worN<span class="op">=</span><span class="dv">1024</span>, fs<span class="op">=</span>fs)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Verificar desempeño:</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>H_db <span class="op">=</span> <span class="dv">20</span><span class="op">*</span>np.log10(np.<span class="bu">abs</span>(h))</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Orden Chebyshev I = </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Ganancia a 3.4kHz = </span><span class="sc">{</span>H_db[np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">3400</span>))]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Atenuación a 3.8kHz = </span><span class="sc">{</span>H_db[np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">3800</span>))]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>(Este código calcula el orden mínimo y coeficientes de un Chebyshev I, luego evalúa la ganancia en 3.4 kHz y 3.8 kHz para verificar que esté cerca de –1 dB y –30 dB respectivamente.)</em></p>
+<p>El resultado confirmaría el cumplimiento de especificaciones con el filtro diseñado. Del mismo modo podríamos probar <code>ellipord/ellip</code> y <code>buttord/butter</code>. Vale notar que los diseños IIR generalmente no tienen control explícito de fase lineal (la fase es no lineal e importa evaluar el impacto en la señal; a veces, se realizan calibraciones o se aplica filtrado hacia atrás como mencionado para obtener fase cero).</p>
+</section>
+<section id="validación-espectral-y-aplicaciones-en-señales-biomédicas" class="level2">
+<h2 class="anchored" data-anchor-id="validación-espectral-y-aplicaciones-en-señales-biomédicas">Validación espectral y aplicaciones en señales biomédicas</h2>
+<p>Una vez diseñado un filtro (FIR o IIR), es crucial <strong>validar su respuesta en frecuencia</strong> para asegurarse de que cumple con los requisitos. Esto implica computar <span class="math inline">\(H(e^{j\omega})\)</span> – típicamente mediante <code>freqz</code> – y verificar ganancias en las bandas de paso (p.ej. pérdida de inserción o ripple) y bandas de rechazo (atenuación mínima). También se puede aplicar el filtro a señales de prueba:</p>
+<ul>
+<li><strong>Impulso unitario:</strong> la salida debe ser <span class="math inline">\(h[n]\)</span> (sirve para obtener la respuesta al impulso directamente).</li>
+<li><strong>Escalón unitario:</strong> la salida debe aproximarse a la respuesta al escalón (integral de <span class="math inline">\(h[n]\)</span>), útil para verificar estabilidad (un filtro pasaaltos, por ej., a entrada escalón debería asentarse a un valor constante, indicando que DC fue removido pero no inestabilidad creciente).</li>
+<li><strong>Señal senoidal a frecuencias críticas:</strong> por ejemplo, inyectar una senoide en la frecuencia de corte para ver si sale atenuada a ~-3 dB o -6 dB según definición; inyectar una senoide en banda eliminada para confirmar fuerte atenuación.</li>
+</ul>
+<p>En contexto biomédico, se suele validar con señales reales. Por ejemplo, si diseñamos un filtro para eliminar deriva de línea base en ECG, podemos probarlo con una señal ECG con deriva artificial y comprobar que efectivamente la elimina sin distorsionar el complejo QRS.</p>
+<p>(<a href="">image</a>) <strong>Figura 2:</strong> Ejemplo de filtrado de un segmento de señal ECG con un filtro pasoalto para remover la deriva de línea base. En <strong>naranja</strong> se muestra el ECG original contaminado con una deriva lenta (simulada como una componente de muy baja frecuencia que causa que la línea base oscile). En <strong>amarillo</strong> se muestra la señal tras aplicar un filtro pasaaltos Butterworth de 4° orden con <span class="math inline">\(f_c \approx 0.5\)</span> Hz (aplicado con filtrado hacia adelante y atrás para lograr fase cero). Se observa que la señal filtrada se centra alrededor de cero voltios, eliminando las variaciones lentas de la línea base, mientras preserva las características importantes del ECG (picos QRS, ondas P y T) (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=wander%2C%20powerline%20interference%2C%20electromyo%02graphic%20,pass%20filter%20of%20an%20appropriate"></a>). Este proceso mejora la calidad de la señal para análisis posterior (por ejemplo, facilitando la detección de eventos cardiacos), sin introducir distorsión apreciable en la forma de onda rápida del ECG.</p>
+<p>Otro ejemplo es la eliminación de interferencia de red: un filtro notch diseñado como en secciones previas se puede aplicar a una señal EEG a la que deliberadamente se le suma un seno de 50 Hz; la validación consistiría en ver el espectro antes y después (verificando que la línea de 50 Hz desaparece tras filtrar) y que la actividad EEG en otras bandas permanece intacta.</p>
+<p>En el diseño de filtros FIR e IIR para voz o bioseñales, a veces se comparan métodos. Por ejemplo, en el taller se pide diseñar tanto un FIR por ventana como un IIR por transformación bilineal para ciertas especificaciones. <strong>Comparar la respuesta espectral</strong> es instructivo: un FIR puede requerir mayor orden para lograr la misma nitidez de corte que un IIR, pero tendrá fase lineal; el IIR logrará la especificación con menos coeficientes, pero introducirá dispersión de fase. Dependiendo de la aplicación, uno u otro puede ser preferible. Estudios en filtrado de ECG han encontrado, por ejemplo, que filtros IIR y FIR bien diseñados pueden ambos remover el ruido de línea base efectivamente; los IIR (como filtros Butterworth pasaaltos) pueden ser implementados en tiempo real con pocas operaciones (<a href="https://www.dsprelated.com/showthread/comp.dsp/58988-2.php#:~:text=comp.dsp%20,notch%20and%20back">comp.dsp | How to write a NotchFilter procedure| page 2</a>), mientras que FIR largos podrían introducir retardo si no se aplican con técnicas especiales. Sin embargo, los FIR lineales en fase aseguran que características como la amplitud del ST o la morfología de la onda P no se deformen ni se desplacen temporalmente, lo cual es crítico en ciertos análisis diagnósticos.</p>
+<p>En resumen, la validación espectral (y temporal) de los filtros diseñados garantiza que el filtro funcione como esperado en las señales biomédicas objetivo. Se recomienda siempre verificar <strong>ganancia en banda pasante</strong> (por ej., asegurarse de que un filtro pasa-bajos no atenúe significativamente componentes importantes de la señal, salvo el ripple permitido) y <strong>atenuación en banda eliminada</strong> (asegurarse de que el ruido o interferencia objetivo realmente se reduce a niveles aceptables). Con herramientas como Python/Matlab, esta validación se realiza fácilmente visualizando la respuesta en frecuencia (como en las Figuras 1 y 2) y realizando pruebas con señales sintéticas o reales.</p>
+</section>
+<section id="conclusiones" class="level2">
+<h2 class="anchored" data-anchor-id="conclusiones">Conclusiones</h2>
+<p>Este reporte abordó los fundamentos teóricos necesarios para analizar y diseñar sistemas discretos aplicados a señales biomédicas. Se revisó la transformada Z y su papel en caracterizar señales y sistemas LTI, destacando la importancia de la región de convergencia, polos, ceros, causalidad y estabilidad (<a href="https://dsp.stackexchange.com/questions/53152/bibo-stability-in-z-domain#:~:text=As%20explained%20above%2C%20the%20ROC,by%20two%20or%20more%20poles">z transform - BIBO Stability in Z-domain - Signal Processing Stack Exchange</a>). También se discutió cómo interpretar y construir diagramas de bloques a partir de ecuaciones en diferencias, algo útil para implementar filtros digitalmente. En la parte de diseño, se cubrieron dos enfoques contrastantes: <strong>filtros FIR por método de ventanas</strong>, sencillos y con fase lineal (deseable en biomédica), y <strong>filtros IIR por transformación bilineal</strong> a partir de prototipos analógicos (eficientes en orden, aunque con fase no lineal). Se compararon los principales tipos de aproximaciones analógicas (Butterworth, Chebyshev I/II, Elíptico) resaltando sus ventajas y compromisos (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=,band">11.3. Common IIR filters — Digital Signals Theory</a>).</p>
+<p>A lo largo del documento, se enfatizó la aplicación en señales reales: eliminar deriva de línea base con pasaaltos, suprimir interferencia de red con filtros notch, limitar el ancho de banda de voz o EEG con pasabajos, etc., todo soportado por referencias académicas y ejemplos de código. En la práctica, el ingeniero biomédico debe decidir el tipo de filtro según los requisitos clínicos: por ejemplo, ¿es más importante no distorsionar la forma de onda (fase lineal) o tener un filtro muy agudo (menor orden)? Este tipo de decisiones se facilita con la comprensión profunda de los conceptos aquí explicados.</p>
+<p>Con este marco teórico, se está en capacidad de abordar el taller propuesto: calcular transformadas Z y ROC de señales, analizar sistemas LTI (impulso, estabilidad, salida a entradas dadas), dibujar sus polos, ceros y estructuras, así como diseñar filtros FIR e IIR que satisfagan especificaciones dadas, especialmente dentro del contexto de procesamiento de señales biomédicas donde la fidelidad y eficacia del filtrado impactan directamente la calidad de la información diagnóstica obtenida.</p>
+<p><strong>Referencias:</strong> Las referencias provistas en el texto (ej.【23】,【17】,【40】) corresponden a fuentes que respaldan y complementan los puntos discutidos, incluyendo textos de procesamiento digital de señales, artículos de investigación en filtrado de ECG/EEG, y documentación de funciones de diseño de filtros. Estas fuentes ofrecen mayor detalle para el lector interesado en profundizar en aspectos específicos. En particular, se destacan obras clásicas como Oppenheim &amp; Schafer en diseño FIR (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>), y recursos modernos como libros abiertos de señales y sistemas (<a href="https://es.wikipedia.org/wiki/Transformada_Z#:~:text=una%20se%C3%B1al%20tiene%20una%20suma,n%7D%7D%20es%20absolutamente%20sumable">Transformada Z - Wikipedia, la enciclopedia libre</a>) y tutoriales de SciPy (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Type,has%20as%20its%20key%20parameters">11.3. Common IIR filters — Digital Signals Theory</a>) que enriquecen la comprensión teórica y práctica del procesamiento de señales biomédicas.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
