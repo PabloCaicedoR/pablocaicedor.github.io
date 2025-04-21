@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.7.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Ph.D.&nbsp;Pablo Eduardo Caicedo R.">
-<meta name="description" content="Sitio de la asignatura Sistemas y Señales Biomédicoss en la Escuela Colombiana de Ingeniería">
+<meta name="author" content="Jenny Carolina Castiblanco Sánchez">
+<meta name="author" content="Pablo Eduardo Caicedo Rodríguez”">
+<meta name="dcterms.date" content="2025-04-21">
 
-<title>Sistemas y Señales Biomédicos – PECR Knowledge Hub</title>
+<title>Taller3: Análisis y diseños de filtros – PECR Knowledge Hub</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -25,23 +26,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-985aa47af68dae11cd4d235c71fb941e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-44524390c5afc6d4700f511aa67cab8a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-985aa47af68dae11cd4d235c71fb941e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-44524390c5afc6d4700f511aa67cab8a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -56,47 +57,76 @@ ul.task-list li input[type="checkbox"] {
   ],
   "show-item-context": false,
   "language": {
-    "search-no-results-text": "Sin resultados",
-    "search-matching-documents-text": "documentos encontrados",
-    "search-copy-link-title": "Copiar el enlace en la búsqueda",
-    "search-hide-matches-text": "Ocultar resultados adicionales",
-    "search-more-match-text": "resultado adicional en este documento",
-    "search-more-matches-text": "resultados adicionales en este documento",
-    "search-clear-button-title": "Borrar",
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
     "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancelar",
-    "search-submit-button-title": "Enviar",
-    "search-label": "Buscar"
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-<link rel="stylesheet" href="../recursos/estilos/styles_site.css">
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../recursos/estilos/styles_site.css">
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="nav-fixed fullcontent quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a href="../index.html" class="navbar-brand navbar-brand-logo">
-    <img src=".././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo">
     </a>
   </div>
-            <div id="quarto-search" class="" title="Buscar"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Navegación de palanca" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="../index.html"> 
+    <a class="nav-link" href="../../../index.html"> 
 <span class="menu-text">Principal</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../about.html"> 
+    <a class="nav-link" href="../../../about.html"> 
 <span class="menu-text">Acerca de mi</span></a>
   </li>  
 </ul>
@@ -110,45 +140,34 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-    </div>
+    
 <!-- main -->
-<main class="content page-columns page-full" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Sistemas y Señales Biomédicos</h1>
+<h1 class="title">Taller3: Análisis y diseños de filtros</h1>
 </div>
 
-<div>
-  <div class="description">
-    Sitio de la asignatura Sistemas y Señales Biomédicoss en la Escuela Colombiana de Ingeniería
-  </div>
-</div>
 
 
 <div class="quarto-title-meta">
 
     <div>
-    <div class="quarto-title-meta-heading">Autor/a</div>
+    <div class="quarto-title-meta-heading">Authors</div>
     <div class="quarto-title-meta-contents">
-             <p>Ph.D.&nbsp;Pablo Eduardo Caicedo R. </p>
+             <p>Jenny Carolina Castiblanco Sánchez </p>
+             <p>Pablo Eduardo Caicedo Rodríguez” </p>
           </div>
   </div>
     
     <div>
-    <div class="quarto-title-meta-heading">Fecha de publicación</div>
+    <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">20 de enero de 2025</p>
+      <p class="date">April 21, 2025</p>
     </div>
   </div>
   
-    <div>
-    <div class="quarto-title-meta-heading">Fecha de modificación</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date-modified">20 de enero de 2025</p>
-    </div>
-  </div>
     
   </div>
   
@@ -157,261 +176,87 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="introducción" class="level1">
-<h1>Introducción</h1>
-<p>El estudio del procesamiento de señales es fundamental en la ingeniería biomédica debido a la amplia variedad de aplicaciones que tiene en el análisis, interpretación y mejora de datos biomédicos. A continuación, se presenta una justificación estructurada de su relevancia:</p>
-<p><strong>Naturaleza de las señales biomédicas</strong>
-Las señales biomédicas, como las señales electrocardiográficas (ECG), electromiográficas (EMG), electroencefalográficas (EEG), o incluso imágenes médicas (resonancias magnéticas o tomografías), son complejas y están afectadas por ruido y artefactos.
-El procesamiento de señales permite extraer información útil, filtrar interferencias y maximizar la calidad de los datos obtenidos.</p>
-<p><strong>Diagnóstico y monitoreo</strong>
-Las señales biomédicas son esenciales para el diagnóstico de enfermedades y el monitoreo continuo de pacientes. Por ejemplo, el procesamiento de un ECG ayuda a detectar arritmias, mientras que el análisis de un EEG puede identificar epilepsia o trastornos del sueño.
-En entornos de cuidado intensivo, el procesamiento en tiempo real de señales vitales garantiza decisiones clínicas rápidas y precisas.</p>
-<p><strong>Optimización de dispositivos biomédicos</strong>
-El diseño de dispositivos biomédicos como marcapasos, desfibriladores implantables y prótesis inteligentes requiere algoritmos avanzados de procesamiento de señales para interpretar datos en tiempo real y responder adecuadamente a las necesidades del paciente.</p>
-<p><strong>Avances en tecnología médica</strong>
-Tecnologías emergentes como el análisis de datos en telemedicina, dispositivos portátiles (wearables) y sistemas de salud móvil (mHealth) dependen del procesamiento de señales para garantizar la precisión y la utilidad de la información presentada.</p>
-<p><strong>Integración con otras disciplinas</strong>
-El procesamiento de señales se combina con inteligencia artificial y aprendizaje automático para desarrollar modelos predictivos, clasificar patrones patológicos y personalizar tratamientos.</p>
-<p><strong>Investigación en fisiología y biomecánica</strong>
-El análisis avanzado de señales contribuye a la comprensión profunda de procesos fisiológicos complejos, como la dinámica del corazón, el cerebro o el sistema musculoesquelético.</p>
-<p><strong>Educación y competencias profesionales</strong>
-La formación en procesamiento de señales biomédicas dota a los futuros ingenieros de herramientas matemáticas y computacionales para enfrentar problemas del mundo real, desarrollar soluciones innovadoras y avanzar en el campo de la ingeniería biomédica.</p>
-<p>El curso está dividido en 5 partes:
-1. Introducción al procesado de señales.
-2. Conceptos de señales contínuas &amp; discretas.
-3. Muestreo.
-4. Extracción de características de una señal.
-5. Filtraje de señales.</p>
+<section id="profesores" class="level1">
+<h1>Profesores</h1>
+<p>Jenny Carolina Castiblanco Sánchez</p>
+<p>Pablo Eduardo Caicedo Rodríguez</p>
 </section>
-<section id="material-del-curso" class="level1">
-<h1>Material del Curso</h1>
-<section id="presentaciones" class="level2">
-<h2 class="anchored" data-anchor-id="presentaciones">Presentaciones</h2>
+<section id="descripción" class="level1">
+<h1>Descripción</h1>
+<p>A través de este taller se reforzarán los conocimientos en:</p>
 <ul>
-<li><a href="../presentaciones/SYSB/Lect001_Presentacion.html">Presentación del curso</a></li>
-<li><a href="../presentaciones/SYSB/Lect002_Intro_SYSB.html">Introducción</a></li>
-<li><a href="../presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html">Clasificacion de sañales</a></li>
-<li><a href="../presentaciones/SYSB/Lect004_Intro_SennalesNotables.html">Señales Notables 1/2</a></li>
-<li><a href="../presentaciones/SYSB/Lect005_Intro_SennalesNotables.html">Señales Notables 2/2</a></li>
-<li><a href="../presentaciones/SYSB/Lect006_SignalAdquisition.html">Adquisición y Muestreo</a></li>
-<li><a href="../presentaciones/SYSB/Lect007_DigitalFilters.html">Filtros Digitales</a></li>
-<li><a href="../presentaciones/SYSB/Lect008_FrequencyContent.html">Contenido Frecuencial</a></li>
-<li><a href="../presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html">Transformada Z</a></li>
+<li>Transformada Z</li>
+<li>Diseño, análisis e implementación de filtros digitales FIR e IIR</li>
 </ul>
 </section>
-<section id="datos" class="level2">
-<h2 class="anchored" data-anchor-id="datos">Datos</h2>
+<section id="procedimiento" class="level1">
+<h1>Procedimiento</h1>
+<p>Explique detalladamente el procedimiento para cada uno de los puntos enunciados a continuación.</p>
+<ol type="1">
+<li><p><strong>Transformada Z y Región de Convergencia</strong><br>
+Determine la transformada Z y dibuje la ROC de las siguientes señales:</p>
 <ul>
-<li><a href="../presentaciones/PSIM/Asist001_SourcesData.html">Data Sources</a></li>
-</ul>
-</section>
-<section id="códigos" class="level2">
-<h2 class="anchored" data-anchor-id="códigos">Códigos</h2>
-</section>
-<section id="laboratorios" class="level2">
-<h2 class="anchored" data-anchor-id="laboratorios">Laboratorios</h2>
+<li><span class="math inline">\(x\left[n\right] = =\begin{cases}\displaystyle \left(\frac{1}{3}\right)^{n}, &amp; n \ge 0,\\[6pt]\displaystyle \left(\frac{1}{2}\right)^{-n}, &amp; n &lt; 0.\end{cases}\)</span></li>
+<li><span class="math inline">\(x\left[n\right]=\begin{cases}\displaystyle \left(\frac{1}{3}\right)^{n}, &amp; n \ge 5,\\[6pt]0, &amp; n &lt; 5.\end{cases}\)</span></li>
+</ul></li>
+<li><p><strong>Respuesta del Sistema</strong></p>
+<p>Determine la respuesta del sistema</p>
+<p><span class="math display">\[
+y\left[n\right] \;=\; \frac{5}{6}\,y\left[n-1\right]\;-\;\frac{1}{6}\,y\left[n-2\right]\;+\;x\left[n\right]
+\]</span></p>
+<p>A la señal de entrada</p>
+<p><span class="math display">\[
+x\left[n\right] \;=\; \delta\left[n\right]\;-\;\frac{1}{3}\,\delta\left[n-1\right]
+\]</span></p></li>
+<li><p><strong>Respuesta del Sistema</strong><br>
+Una señal de entrada ( <span class="math inline">\(x[n] = 3^{n}u[-n]\)</span> ) es aplicada a un sistema LTI discreto con respuesta al impulso ( <span class="math inline">\(h[n] = \left(0.5\right)^{n}u[n]\)</span> ).</p>
 <ul>
-<li><a href="../laboratorios/SYSB/eval001_ConductaEntrada.html"><strong>LAB01:</strong> Código python, estadística, y números complejos.</a></li>
-<li><a href="../laboratorios/SYSB/lab02_Introduccion_Proc_Sennales.html"><strong>LAB02:</strong> El electrocardiograma. Fundamentos Teóricos.</a></li>
-<li><a href="../laboratorios/SYSB/lab03_Pre_Proc_Sennales.html"><strong>LAB03:</strong> Análisis de información base del dataset (Demografía y estadística inicial)</a></li>
-<li><a href="../laboratorios/SYSB/Lab4_2025_1.zip"><strong>LAB04:</strong> Convolución</a></li>
-<li><a href="../laboratorios/SYSB/lab05_DetectordeArritmias.html"><strong>Lab05:</strong> Modelo estadístico para la clasificación de arritmias</a></li>
-</ul>
-</section>
-<section id="grupos-2025-1" class="level2">
-<h2 class="anchored" data-anchor-id="grupos-2025-1">Grupos 2025-1</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 14%">
-<col style="width: 35%">
-<col style="width: 44%">
-<col style="width: 5%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>ID Estudiante</th>
-<th>Nombre</th>
-<th>Correo Electrónico</th>
-<th>Grupo</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>&nbsp;1000098844</td>
-<td>CRISTIAN STIVEN CAPERA CERQUERA</td>
-<td>cristian.capera-c@mail.escuelaing.edu.co</td>
-<td>A</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000044331</td>
-<td>MARIA ALEJANDRA URIBE RODRIGUEZ</td>
-<td>maria.uribe-r@mail.escuelaing.edu.co</td>
-<td>A</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000098887</td>
-<td>NICOLE JULIANA AYURE MATAMOROS</td>
-<td>nicole.ayure-m@mail.escuelaing.edu.co</td>
-<td>A</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000097259</td>
-<td>JENNIFER SOFIA SANCHEZ RAMOS</td>
-<td>jennifer.sanchez-r@mail.escuelaing.edu.co</td>
-<td>B</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000097273</td>
-<td>MARIA JOSE PIÑEROS ACUÑA</td>
-<td>maria.pineros-a@mail.escuelaing.edu.co</td>
-<td>B</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000097287</td>
-<td>MARÍA JOSÉ HERNÁNDEZ GUERRA</td>
-<td>maria.hguerra@mail.escuelaing.edu.co</td>
-<td>B</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000099348</td>
-<td>JAIME LEONARDO CALDERÓN BETANCURT</td>
-<td>jaime.calderon-b@mail.escuelaing.edu.co</td>
-<td>C</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000098221</td>
-<td>LAURA CAMILA REYES MUÑOZ</td>
-<td>laura.reyes-m@mail.escuelaing.edu.co</td>
-<td>C</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000045047</td>
-<td>DANIEL FELIPE BRU MENESES</td>
-<td>daniel.bru@mail.escuelaing.edu.co</td>
-<td>D</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000053815</td>
-<td>KEVIN DANIEL BEJARANO OSORIO</td>
-<td>kevin.bejarano@mail.escuelaing.edu.co</td>
-<td>D</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000046321</td>
-<td>SANTIAGO ACUÑA MONCADA</td>
-<td>santiago.acuna@mail.escuelaing.edu.co</td>
-<td>D</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000095641</td>
-<td>ANA SOFIA GRANADA LEIVA</td>
-<td>ana.granada-l@mail.escuelaing.edu.co</td>
-<td>E</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000092619</td>
-<td>LUISA FERNANDA PEREZ SALGADO</td>
-<td>luisa.perez-s@mail.escuelaing.edu.co</td>
-<td>E</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000094974</td>
-<td>MARIA FERNANDA GOMEZ CUBIDES</td>
-<td>maria.gcubides@mail.escuelaing.edu.co</td>
-<td>F</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000095693</td>
-<td>MARÍA PAULA CORTES AVILA</td>
-<td>maria.cortes-a@mail.escuelaing.edu.co</td>
-<td>F</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000053831</td>
-<td>LUISA LORETTA VERGARA ROMERO</td>
-<td>luisa.vergara-r@mail.escuelaing.edu.co</td>
-<td>G</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000095027</td>
-<td>PAULA MELISSA MARTINEZ BARRERA</td>
-<td>paula.martinez-b@mail.escuelaing.edu.co</td>
-<td>G</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000095101</td>
-<td>SANTIAGO PATIÑO MEJIA</td>
-<td>santiago.pmejia@mail.escuelaing.edu.co</td>
-<td>G</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000098222</td>
-<td>JULIANA MAYORGA AVILA</td>
-<td>juliana.mayorga-a@mail.escuelaing.edu.co</td>
-<td>H</td>
-</tr>
-<tr class="even">
-<td>&nbsp;1000099556</td>
-<td>MARIANA FRANCO CARO</td>
-<td>mariana.franco-c@mail.escuelaing.edu.co</td>
-<td>H</td>
-</tr>
-<tr class="odd">
-<td>&nbsp;1000098162</td>
-<td>MARÍA PAULA GÓMEZ NIÑO</td>
-<td>maria.gomez-n@mail.escuelaing.edu.co</td>
-<td>I</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="talleres-examenes-anteriores" class="level2">
-<h2 class="anchored" data-anchor-id="talleres-examenes-anteriores">Talleres &amp; Examenes Anteriores</h2>
+<li>Determine la función de transferencia del sistema.</li>
+<li>¿El sistema es estable?</li>
+<li>Encuentre la señal de salida del sistema.</li>
+</ul></li>
+<li><p><strong>Análisis de Filtro</strong><br>
+Considere el filtro</p>
+<p><span class="math display">\[y\left[n\right] \;=\; b\,x\left[n\right]\;-\;0.65\,y\left[n-1\right]\]</span></p>
 <ul>
-<li><a href="../recursos/talleres/SYSB/SYSB202501_TallerRepasoIntroSennales.html">Taller1: Introduccion al procesamiento de señales</a></li>
-<li><a href="../recursos/talleres/SYSB/Taller02_SYSB.pdf">Taller2: Sistemas LTI, Convolución, Series de FOURIER</a></li>
-<li><a href="../recursos/talleres/SYSB/Taller3_2025_1.html">Taller3: Análisis y diseños de filtros</a></li>
-<li><a href="../recursos/talleres/Examen_SYSBD_ParcI_2025_1_A.pdf">Primer Parcial 2025-1 A</a></li>
-<li><a href="../recursos/talleres/Examen_SYSBD_ParcI_2025_1_B.pdf">Primer Parcial 2025-1 B</a></li>
-</ul>
-</section>
-</section>
-<section id="evaluaciones" class="level1">
-<h1>Evaluaciones</h1>
-<ul>
-<li>Examen parcial 1 (15%)</li>
-<li>Examen parcial 2 (15%)</li>
-<li>Examen final (20%)</li>
-<li>Laboratorios (30%)</li>
-<li>Proyecto Final (20%)</li>
-</ul>
-</section>
-<section id="horarios-de-clase" class="level1 page-columns page-full">
-<h1>Horarios de clase</h1>
-<section id="clases" class="level2">
-<h2 class="anchored" data-anchor-id="clases">Clases</h2>
-<ul>
-<li><strong>Lunes:</strong> 10:00am-11:30am. F204.<br>
+<li>Determine (b) de modo que <span class="math inline">\(\lvert H\left[0\right] \lvert \, = \, 0\)</span><br>
 </li>
-<li><strong>Jueves:</strong> 10:00am-11:30am. F206.</li>
-</ul>
-</section>
-<section id="laboratorio" class="level2">
-<h2 class="anchored" data-anchor-id="laboratorio">Laboratorio</h2>
+<li>Dibuje en el plano (z) el diagrama de polos y ceros. ¿El sistema es estable?<br>
+</li>
+<li>Grafique el diagrama de bloques.<br>
+</li>
+<li>¿Qué tipo de filtro es?</li>
+</ul></li>
+<li><p><strong>Diseño de Filtro Analógico Muestreado</strong><br>
+La salida de un sistema LTI está determinada por la ecuación del sistema.</p>
+<p><span class="math display">\[
+y\left[n\right] \;=\; x\left[n\right]\;-\;a\,y\left[n-1\right]
+\]</span><br>
+Teniendo en cuenta la función de transferencia, se desea diseñar un filtro con frecuencia de corte de 60 Hz para una señal analógica muestreada a 5 kHz.</p>
 <ul>
-<li><strong>Martes:</strong> 10:00am-11:30am. I1-308.</li>
-</ul>
-</section>
-<section id="atención-a-estudiantes" class="level2 page-columns page-full">
-<h2 class="anchored" data-anchor-id="atención-a-estudiantes">Atención a estudiantes</h2>
-<p>Grupo 80:</p>
-<p>Grupo 81:</p>
+<li><p>¿Qué valor debe tener la variable (a)?<br>
+</p></li>
+<li><p>¿Qué tipo de filtro se obtiene?</p></li>
+</ul></li>
+</ol>
+<!-- -->
+<ol start="6" type="1">
+<li><strong>Diseñar y simular filtros digitales para señales empleando PYTHON.</strong>
+<ul>
+<li><p>Diseñar, simular y analizar un filtro pasbajos FIR por el método de ventaneo, con frecuencia de corte de 55Hz a los 6dB, atenuación mínima en 60Hz de 20 dB y atenuación mayor de 40 dB por encima de 80Hz.</p>
+<ul>
+<li><p>Determinar el mínimo orden del filtro requerido para las siguientes ventanas: Rectangular, triangular, Hann, Hamming, Blackman, Kayser.</p></li>
+<li><p>De los filtros analizados, seleccione el de menor orden que cumpla con las características de diseño.</p></li>
+</ul></li>
+<li><p>Diseñar y simular filtros digitales IIR para señales de voz empleando Matlab, analizando las diferentes opciones: Butterworth, Chebyshev, Elíptico.</p>
+<ul>
+<li><p>Diseñar, simular y analizar un filtro pasabajos IIR por el método de transformación de filtros analógicos empleando la transformación bilineal, con las siguientes características: Frecuencia de muestreo, 8 kHz; frecuencia de corte de 3.4 kHz; rizado en la banda de paso, 1 dB; frecuencia de rechazo, 3.8 kHz; atenuación en la banda de rechazo, 30 dB; orden del filtro, mínimo.</p></li>
+<li><p>Diseñar, simular y analizar un filtro pasaltos IIR por el método de transformación de filtros analógicos empleando la transformación bilineal, con las siguientes características: Frecuencia de muestreo, 8 kHz; frecuencia de corte de 300 Hz; rizado en la banda de paso, 1 dB; frecuencia de rechazo, 60 Hz; atenuación en la banda de rechazo, 30 dB; orden del filtro, mínimo.</p></li>
+</ul></li>
+</ul></li>
+</ol>
 
 
-
-<div class="no-row-height column-margin column-container"><div class="">
-<p><img src="../recursos/imagenes/generales/Escuela_Rosario_logo.png" class="img-fluid"></p>
-</div></div></section>
 </section>
 
 </main> <!-- /main -->
@@ -440,12 +285,12 @@ La formación en procesamiento de señales biomédicas dota a los futuros ingeni
       // flash "checked"
       button.classList.add('code-copy-button-checked');
       var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copiado");
+      button.setAttribute("title", "Copied!");
       let tooltip;
       if (window.bootstrap) {
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copiado");
+        button.setAttribute("data-bs-title", "Copied!");
         tooltip = new bootstrap.Tooltip(button, 
           { trigger: "manual", 
             customClass: "code-copy-button-tooltip",
