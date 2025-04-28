@@ -73,6 +73,8 @@ from scipy.stats import chi2
 
 from scipy.spatial.transform import Rotation as R
 
+from scipy.spatial import ConvexHull
+
 path_ecg = "../../data"
 
 
@@ -505,6 +507,7 @@ plt.show()
 - Convertir ejes locales a globales. Utilizando el cuaternio generado por el XSens.
 - Calcular la magnitud del vector de aceleración global y la agregar al DataFrame.
 - Calcular la magnitud del vector de velocidad angular global y la agregar al DataFrame.
+- Seleccionar 20 segundos de información (eliminar información inicial y final)
 
 :::
 
@@ -522,19 +525,19 @@ plt.figure(figsize=(10, 8))
 plt.plot(
     dataEyeOpen["Time"],
     dataEyeOpen["Acc_X_global"],
-    'r',
+    "r",
     label=f"Aceleración en X. RMS: {calcular_rms(dataEyeOpen['Acc_X_global']):.2f}",
 )
 plt.plot(
     dataEyeOpen["Time"],
     dataEyeOpen["Acc_Y_global"],
-    'g',
+    "g",
     label=f"Aceleración en Y. RMS: {calcular_rms(dataEyeOpen['Acc_Y_global']):.2f}",
 )
 plt.plot(
     dataEyeOpen["Time"],
     dataEyeOpen["Acc_Z_global"],
-    'b',
+    "b",
     label=f"Aceleración en Z. RMS: {calcular_rms(dataEyeOpen['Acc_Z_global']):.2f}",
 )
 plt.grid(True)
@@ -543,6 +546,10 @@ plt.title("Aceleración Global en los ejes N, Y y -g")
 plt.xlabel("Tiempo (s)")
 plt.ylabel("Aceleración (g)")
 plt.show()
+
+dataDualTask = select_mid_segment(dataDualTask)
+dataEyeClosed = select_mid_segment(dataEyeClosed)
+dataEyeOpen = select_mid_segment(dataEyeOpen)
 ```
 
 :::
@@ -612,12 +619,73 @@ plot_imu_frame(axis_length=1.0)
 
 1. Raíz cuadrática media (RMS) de la magnitud de la aceleración o de la velocidad angular @calcagni_smartphone_2025.
 2. Adaptación de la longitud de la trayectoria @zhou_novel_2021.
+3. Area de de la elipse de oscilación (ellipse sway area), típicamente cubriendo el 95% de los datos presentados.
 
 :::
 
-## Extracción de características
+## Extraccio de características
 
+:::: {.columns}
 
+::: {.column width="45%"}
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: Path Trajectory
+
+fig = plt.figure(figsize=(10, 6))
+plt.plot(
+    np.arange(0, 2000, 1, dtype=np.float64),  # dataDualTask["Time"],
+    np.cumsum(dataDualTask["Acc_Global_Mag"]),
+    label=f"Dual Task. ",
+    alpha=0.8,
+)
+plt.plot(
+    np.arange(0, 2001, 1, dtype=np.float64),  # dataEyeOpen["Time"],
+    np.cumsum(dataEyeOpen["Acc_Global_Mag"]),
+    label=f"Eyes Open.",
+    alpha=0.8,
+)
+plt.plot(
+    np.arange(0, 2000, 1, dtype=np.float64),  # dataEyeClosed["Time"],
+    np.cumsum(dataEyeClosed["Acc_Global_Mag"]),
+    label=f"Eyes Closed.",
+    alpha=0.8,
+)
+
+plt.xlabel("Time (s)")
+plt.ylabel("Global Acceleration Magnitude")
+plt.title(rf"Comparison of Global Acceleration Path Trajectoryy.")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+```
+
+:::
+
+::: {.column width="45%"}
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Area de la elipse
+
+areaAcc_eo, a, b, angle = ellipse_sway_area(
+    dataEyeOpen["Acc_X_global"],
+    dataEyeOpen["Acc_Y_global"],
+    confidence=0.95,
+    plot=True,
+)
+
+```
+
+:::
+::::
 
 ## Extracción de características
 
@@ -696,6 +764,55 @@ areaAcc_eo, a, b, angle = ellipse_sway_area(
 |        RMS GYR X    |      8,68E-08 |      6,18E-07  |      8,52E-07 |              7,12      |          9,82          |
 |        PATH TRAJ    |       0,0025  |       0,0025   |       0,0031  |              1,00      |          1,24          |
 |     AREA_ELIPSE_95% |      5,61E-11 |      8,30E-11  |      6,55E-12 |              1,48      |          0,12          |
+
+## Extracción de características (propuesta)
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: Convex Hull
+
+# Crear figura
+plt.figure(figsize=(8, 6))
+
+# Diccionario para recorrer cada dataset con su nombre
+datasets = {
+    "Dual Task": dataDualTask,
+    "Eyes Closed": dataEyeClosed,
+    "Eyes Open": dataEyeOpen,
+}
+
+# Colores para cada grupo
+colores = {"Dual Task": "blue", "Eyes Closed": "green", "Eyes Open": "orange"}
+
+# Dibujar convex hulls
+for nombre, data in datasets.items():
+    puntos = data[["Acc_X_global", "Acc_Y_global"]].dropna().values
+    hull = ConvexHull(puntos)
+    area = hull.volume  # En 2D, 'volume' devuelve el área
+
+    # Dibujar vértices del hull
+    for simplex in hull.simplices:
+        plt.plot(puntos[simplex, 0], puntos[simplex, 1], colores[nombre])
+
+    # Agregar puntos de dispersión (opcional para contexto)
+    plt.scatter(puntos[:, 0], puntos[:, 1], s=5, alpha=0.1, color=colores[nombre])
+
+    # Agregar a la leyenda
+    plt.plot([], [], color=colores[nombre], label=f"{nombre} (Area: {area:.3f})")
+
+# Configuración del gráfico
+plt.xlabel("Global Acc X")
+plt.ylabel("Global Acc Y")
+plt.title(rf"Convex Hull of Global Acceleration (X vs Y).")
+plt.legend()
+plt.grid(True)
+plt.axis("equal")
+plt.tight_layout()
+plt.show()
+
+```
 
 ## Referencias
 
