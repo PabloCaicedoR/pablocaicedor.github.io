@@ -499,3 +499,616 @@ Find:
 - Application to real biosignal filtering problems
 
 ---
+
+## Filter Design
+
+::: {.callout-important title="Notch Filter"}
+A common issue in biosignal processing is removing power‐line interference (50/60 Hz) from, for example, EEG or ECG signals. A simple digital filter to eliminate 60 Hz interference (assuming a sampling frequency $f_s = 5000$ Hz) is to place complex‐conjugate zeros at
+
+$$
+z = e^{\pm j 2\pi\frac{60}{5000}}.
+$$
+
+The resulting transfer function can be written as
+
+$$
+H(z) = 1 \;-\; 2\cos\!\Bigl(2\pi\frac{60}{5000}\Bigr)\,z^{-1} \;+\; z^{-2}.
+$$
+
+This $H(z)$ has zeros at $e^{\pm j2\pi(60/5000)}$ that precisely cancel the 60 Hz component, thereby implementing a notch filter. Moreover, it is a second‐order FIR filter with symmetric coefficients, which grants it linear phase (important to avoid waveform distortion).
+:::
+
+## Filter Design
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: Filter design I
+
+def design_filter(zeros=None, poles=None, gain=1.0):
+    """
+    Diseña un filtro digital a partir de ceros y/o polos y una ganancia.
+
+    Parámetros:
+    - zeros: lista de ceros (raíces del numerador), o None para no incluir
+    - poles: lista de polos (raíces del denominador), o None para no incluir
+    - gain: ganancia escalar del filtro
+
+    Devuelve:
+    - b: coeficientes del numerador
+    - a: coeficientes del denominador
+    """
+    # Si no se pasan ceros, asumimos un FIR trivial (b = [gain])
+    if zeros:
+        b = gain * np.poly(zeros)
+    else:
+        b = np.array([gain], dtype=float)
+
+    # Si no se pasan polos, asumimos sistema FIR (a = [1])
+    if poles:
+        a = np.poly(poles)
+    else:
+        a = np.array([1.0], dtype=float)
+
+    return b, a
+
+```
+
+## Filter Design
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: Filter design II
+
+def gaussian(x, mu, sigma, A):
+    """
+    Genera una función gaussiana.
+
+    Parámetros:
+    - x: array de tiempos
+    - mu: posición central de la gaussiana
+    - sigma: desviación estándar
+    - A: amplitud
+    """
+    return A * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+
+```
+
+## Filter Design
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: Filter Design III 
+
+def simulate_ecg(duration=10.0, fs=500, heart_rate=60):
+    """
+    Simula un ECG sintético basado en la superposición de ondas gaussianas.
+
+    Parámetros:
+    - duration: duración de la señal en segundos
+    - fs: frecuencia de muestreo en Hz
+    - heart_rate: frecuencia cardiaca en latidos por minuto
+
+    Devuelve:
+    - t: vector de tiempos
+    - ecg: señal simulada de ECG en mV
+    """
+    dt = 1 / fs
+    t = np.arange(0, duration, dt)
+    rr = 60 / heart_rate  # intervalo RR en segundos
+
+    # Inicializar señal
+    ecg = np.zeros_like(t)
+
+    # Parámetros de las ondas (posiciones relativas en segundos)
+    # P wave
+    p_amp, p_dur, p_delay = 0.25, 0.09, 0.16
+    # Q wave
+    q_amp, q_dur, q_delay = -0.05, 0.066, 0.166
+    # R wave
+    r_amp, r_dur, r_delay = 1.6, 0.1, 0.166
+    # S wave
+    s_amp, s_dur, s_delay = -0.25, 0.066, 0.19
+    # T wave
+    t_amp, t_dur, t_delay = 0.35, 0.142, 0.36
+
+    # Generar cada latido
+    for beat_start in np.arange(0, duration, rr):
+        mask = (t >= beat_start) & (t < beat_start + rr)
+        tb = t[mask] - beat_start
+        ecg[mask] += gaussian(tb, p_delay, p_dur / 2, p_amp)
+        ecg[mask] += gaussian(tb, q_delay, q_dur / 2, q_amp)
+        ecg[mask] += gaussian(tb, r_delay, r_dur / 2, r_amp)
+        ecg[mask] += gaussian(tb, s_delay, s_dur / 2, s_amp)
+        ecg[mask] += gaussian(tb, t_delay, t_dur / 2, t_amp)
+
+    return t, ecg+0.1*np.cos(2*np.pi*60*t)
+
+```
+
+## Filter Design
+
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+#| label: Filter design IV
+
+# Parámetros de simulación
+DURATION = 10    # segundos
+FS = 500         # Hz
+HR = 70          # latidos por minuto
+
+# Generar señal
+t, ecg_signal = simulate_ecg(duration=DURATION, fs=FS, heart_rate=HR)
+
+# Graficar resultado
+plt.figure(figsize=(12, 4))
+plt.plot(t, ecg_signal, linewidth=1)
+plt.title(f'Señal de ECG sintética ({HR} bpm)')
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Amplitud (mV)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+```
+
+## Filter Design
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Filter design V
+
+n = len(ecg_signal)
+yf = np.fft.fft(ecg_signal)
+xf = np.fft.fftfreq(n, 1/fs)[:n//2]
+plt.plot(xf, 2.0/n * np.abs(yf[0:n//2]))
+plt.grid()
+plt.show()
+
+```
+
+## Filter Design
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Filter design VI
+
+fc = 60
+b,a =design_filter(zeros=[np.exp(1j*2*np.pi*fc/fs), np.exp(-1j*2*np.pi*fc/fs)])
+print(a)
+print(b)
+
+w, h = sig.freqz(a, b, worN=8000)
+plt.plot(w/np.pi*fs/2, 20*np.log10(abs(h)))
+plt.grid()
+plt.xlabel('Frequency (Hz)')
+
+```
+
+## Filter Design
+
+::: {.callout-important title="FIR filters"}
+
+FIR filters (Finite Impulse Response) are widely used in biomedical processing because they can be designed to have linear phase response, avoiding phase distortion in the filtered signal (which is useful for preserving the morphology of ECG waves, for example).
+
+:::
+
+## Filter Design
+
+::: {.callout-important title="Filter Design Process"}
+
+1. Defining the desired ideal frequency response $H_d(e^{j\omega})$.
+2. Obtaining the ideal impulse response $h_d[n]$ as the inverse Fourier transform of $H_d$.
+3. Truncating $h_d[n]$ (which is usually infinite or very long) with a window function $w[n]$ to obtain a realizable FIR filter
+
+   $$
+   h[n] = h_d[n]\,w[n].
+   $$
+
+:::
+
+## Filter Design
+
+You obtain $h_d[n]$ as the inverse discrete–time Fourier transform of your ideal frequency response $H_d(e^{j\omega})$.  For a low-pass filter with cutoff $\omega_c$,
+
+$$
+H_d(e^{j\omega}) = 
+\begin{cases}
+1, & |\omega|\le\omega_c,\\
+0, & \text{otherwise}.
+\end{cases}
+$$
+
+By definition of the inverse DTFT,
+
+$$
+h_d[n] \;=\; \frac{1}{2\pi}\int_{-\pi}^{\pi} H_d(e^{j\omega})\,e^{j\omega n}\,d\omega
+\;=\;\frac{1}{2\pi}\int_{-\omega_c}^{\omega_c} e^{j\omega n}\,d\omega.
+$$
+
+## Filter Design
+
+Carry out the integral in two cases:
+
+1. **For $n\neq 0$:**
+
+   $$
+   h_d[n]
+   =\frac{1}{2\pi}\,\frac{e^{j\omega n}}{j\,n}\Biggr|_{-\omega_c}^{\omega_c}
+   =\frac{1}{2\pi}\,\frac{e^{j\omega_c n}-e^{-j\omega_c n}}{j\,n}
+   =\frac{\sin(\omega_c\,n)}{\pi\,n}.
+   $$
+2. **For $n=0$:**
+
+   $$
+   h_d[0]
+   =\frac{1}{2\pi}\int_{-\omega_c}^{\omega_c} 1\,d\omega
+   =\frac{2\,\omega_c}{2\pi}
+   =\frac{\omega_c}{\pi}.
+   $$
+
+Putting both together,
+
+$$
+h_d[n]
+=\begin{cases}
+\dfrac{\sin(\omega_c\,n)}{\pi\,n}, & n\neq 0,\\[1em]
+\dfrac{\omega_c}{\pi},                & n=0.
+\end{cases}
+$$
+
+---
+
+## Relating to sampling frequency
+
+If your cutoff is specified in Hz, $f_c$, and sampling rate is $f_s$, then
+
+$$
+\omega_c = 2\pi\,\frac{f_c}{f_s},
+$$
+
+so you can write
+
+$$
+h_d[n]
+=\frac{\sin\!\bigl(2\pi \frac{f_c}{f_s}\,n\bigr)}{\pi\,n}
+=\;2\;\frac{f_c}{f_s}\;\frac{\sin\!\bigl(2\pi \frac{f_c}{f_s}\,n\bigr)}{2\pi \frac{f_c}{f_s}\,n}
+=2\frac{f_c}{f_s}\,\mathrm{sinc}\!\Bigl(2\frac{f_c}{f_s}\,n\Bigr),
+$$
+
+where we define the normalized sinc as $\mathrm{sinc}(x)=\frac{\sin(\pi x)}{\pi x}$.
+
+---
+
+## Key takeaway
+
+* **$h_d[n]$** is exactly the inverse‐DTFT of the ideal (“brick‐wall”) frequency specification.
+* It produces a **sinc**-shaped impulse response of infinite length.
+* Truncation (with a window) makes it realizable as a finite-length FIR.
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Design filters VI A
+#| fig-align: center
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 1) Filter specifications
+fs = 1000.0          # Sampling frequency (Hz)
+fc = 100.0           # Cutoff frequency (Hz)
+M = 51               # Length of the impulse response (odd for symmetry)
+
+# 2) Define the sample indices centered around zero
+n = np.arange(-(M-1)//2, (M-1)//2 + 1)
+
+# 3) Compute the continuous-time cutoff in radians
+omega_c = 2 * np.pi * fc / fs
+
+# 4) Compute the ideal impulse response h_d[n]
+#    h_d[0] = omega_c / pi
+#    h_d[n] = sin(omega_c * n) / (pi * n)  for n != 0
+hd = np.where(
+    n == 0,
+    omega_c / np.pi,
+    np.sin(omega_c * n) / (np.pi * n)
+)
+
+# 5) Plot h_d[n]
+plt.figure(figsize=(8, 4))
+plt.stem(n, hd, basefmt=' ')
+plt.title('Ideal Impulse Response $h_d[n]$ of a Low-Pass Brick-Wall Filter')
+plt.xlabel('n')
+plt.ylabel('$h_d[n]$')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+```
+
+## Filter Design
+
+The typical characteristics of classic windows  are:
+
+* **Rectangular**: narrowest main lobe (width ≈ 4π/M rad) but highest sidelobes (first sidelobe ≈ –13 dB, stop-band attenuation ≈ 21 dB). It gives the steepest transition for a given filter order, at the expense of poorer stop-band rejection.
+
+* **Bartlett (triangular)**: somewhat wider main lobe (≈ 8π/M), sidelobes ≈ –25 dB.
+
+* **Hann**: main lobe ≈ 8π/M, sidelobes ≈ –31 dB (better rejection than rectangular but smoother transitions).
+
+* **Hamming**: main lobe ≈ 8π/M, sidelobes ≈ –41 dB (minimum stop-band attenuation ≈ 53 dB). Very popular for its good compromise between transition width and stop-band attenuation.
+
+* **Blackman**: wider main lobe (≈ 12π/M) but very low sidelobes (≈ –57 dB, attenuation ≈ 74 dB).
+
+* **Kaiser**: allows selection of a parameter β to control sidelobe attenuation, offering flexibility. Approximately, to achieve A dB of attenuation,
+
+  $$
+    \beta \approx 0.1102\,(A - 8.7)\quad(\text{for }A>50),
+  $$
+
+  and the normalized transition width Δω relates to the order M and β by
+
+  $$
+    M \approx \frac{A - 8}{2.285\,\Delta\omega}
+  $$
+
+ These formulas stem from Kaiser’s approximations and help in sizing the filter.
+
+
+## Windows Forms
+
+::: {.panel-tabset}
+
+## Time
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Design filter VII 
+
+from scipy.signal.windows import (
+    boxcar,       # Rectangular
+    bartlett,    # Triangular
+    hann,        # Hann
+    hamming,     # Hamming
+    blackman,    # Blackman
+    kaiser       # Kaiser
+)
+
+# Parameters
+M = 64               # window length
+beta = 8.6           # Kaiser parameter for moderate sidelobe attenuation
+nfft = 512           # FFT length for frequency response
+fs = 1.0             # normalized sampling rate
+
+# Generate windows
+windows = {
+    'Rectangular': boxcar(M),
+    'Bartlett':    bartlett(M),
+    'Hann':        hann(M),
+    'Hamming':     hamming(M),
+    'Blackman':    blackman(M),
+    f'Kaiser (β={beta})': kaiser(M, beta)
+}
+
+# Time-domain plot
+plt.figure(figsize=(8, 4))
+for name, w in windows.items():
+    plt.plot(np.arange(M), w, label=name)
+plt.title('Window Functions — Time Domain')
+plt.xlabel('Sample index n')
+plt.ylabel('Amplitude')
+plt.legend(loc='upper right')
+plt.grid(True)
+plt.tight_layout()
+
+```
+
+## Frequency
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: Design filter VIII 
+
+# Frequency-domain plot
+plt.figure(figsize=(8, 4))
+for name, w in windows.items():
+    # Compute normalized frequency response
+    W = np.fft.fft(w, nfft)
+    W_mag = 20 * np.log10(np.abs(W) / np.max(np.abs(W)))
+    freqs = np.fft.fftfreq(nfft, d=1/fs)
+    # Only plot 0 ≤ f ≤ 0.5 (normalized Nyquist)
+    idx = np.logical_and(freqs >= 0, freqs <= 0.5)
+    plt.plot(freqs[idx], W_mag[idx], label=name)
+plt.title('Window Functions — Frequency Response')
+plt.xlabel('Normalized Frequency (cycles/sample)')
+plt.ylabel('Magnitude (dB)')
+plt.ylim(-100, 5)
+plt.legend(loc='upper right')
+plt.grid(True)
+plt.tight_layout()
+
+plt.show()
+
+```
+
+## Code
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Design filter IX
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal.windows import (
+    boxcar,       # Rectangular
+    bartlett,    # Triangular
+    hann,        # Hann
+    hamming,     # Hamming
+    blackman,    # Blackman
+    kaiser       # Kaiser
+)
+
+# Parameters
+M = 64               # window length
+beta = 8.6           # Kaiser parameter for moderate sidelobe attenuation
+nfft = 512           # FFT length for frequency response
+fs = 1.0             # normalized sampling rate
+
+# Generate windows
+windows = {
+    'Rectangular': boxcar(M),
+    'Bartlett':    bartlett(M),
+    'Hann':        hann(M),
+    'Hamming':     hamming(M),
+    'Blackman':    blackman(M),
+    f'Kaiser (β={beta})': kaiser(M, beta)
+}
+
+# Time-domain plot
+plt.figure(figsize=(8, 4))
+for name, w in windows.items():
+    plt.plot(np.arange(M), w, label=name)
+plt.title('Window Functions — Time Domain')
+plt.xlabel('Sample index n')
+plt.ylabel('Amplitude')
+plt.legend(loc='upper right')
+plt.grid(True)
+plt.tight_layout()
+
+# Frequency-domain plot
+plt.figure(figsize=(8, 4))
+for name, w in windows.items():
+    # Compute normalized frequency response
+    W = np.fft.fft(w, nfft)
+    W_mag = 20 * np.log10(np.abs(W) / np.max(np.abs(W)))
+    freqs = np.fft.fftfreq(nfft, d=1/fs)
+    # Only plot 0 ≤ f ≤ 0.5 (normalized Nyquist)
+    idx = np.logical_and(freqs >= 0, freqs <= 0.5)
+    plt.plot(freqs[idx], W_mag[idx], label=name)
+plt.title('Window Functions — Frequency Response')
+plt.xlabel('Normalized Frequency (cycles/sample)')
+plt.ylabel('Magnitude (dB)')
+plt.ylim(-100, 5)
+plt.legend(loc='upper right')
+plt.grid(True)
+plt.tight_layout()
+
+plt.show()
+
+
+```
+
+:::
+
+## Filter Design
+
+::: {.panel-tabset}
+
+## Result
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: true
+#| label: filter design X
+#| fig-align: center
+
+N = 101
+fc = 30
+
+t, ecg_signal = simulate_ecg(duration=DURATION, fs=FS, heart_rate=HR)
+
+# 2. Compute the ideal impulse response h_d[n] of a low-pass filter
+n = np.arange(N)
+M = (N - 1) / 2
+# Using the normalized sinc: sinc(x) = sin(pi*x)/(pi*x)
+h_d = (2 * fc / FS) * np.sinc(2 * fc * (n - M) / FS)
+
+# 3. Choose a window w[n] (here: Hamming) and truncate
+w = np.hamming(N)
+h = h_d * w
+
+# 4. Normalize to ensure unity gain at DC
+h /= np.sum(h)
+
+# 6. Filter it (only allowed library call)
+y = sig.lfilter(h, 1.0, ecg_signal)
+
+# 7. Plot input vs. output
+plt.figure(figsize=(8, 4))
+plt.plot(t, ecg_signal, label='Original signal')
+plt.plot(t, y, label='Filtered signal', linewidth=2)
+plt.xlabel('Time [s]')
+plt.ylabel('Amplitude')
+plt.title('Low-pass FIR (window method) – Cutoff 100 Hz')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+```
+
+## Code
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Filter design XI
+
+N = 101
+fc = 30
+
+# 2. Compute the ideal impulse response h_d[n] of a low-pass filter
+n = np.arange(N)
+M = (N - 1) / 2
+# Using the normalized sinc: sinc(x) = sin(pi*x)/(pi*x)
+h_d = (2 * fc / FS) * np.sinc(2 * fc * (n - M) / FS)
+
+# 3. Choose a window w[n] (here: Hamming) and truncate
+w = np.hamming(N)
+h = h_d * w
+
+# 4. Normalize to ensure unity gain at DC
+h /= np.sum(h)
+
+# 6. Filter it (only allowed library call)
+y = sig.lfilter(h, 1.0, ecg_signal)
+
+# 7. Plot input vs. output
+plt.figure(figsize=(8, 4))
+plt.plot(t, ecg_signal, label='Original signal')
+plt.plot(t, y, label='Filtered signal', linewidth=2)
+plt.xlabel('Time [s]')
+plt.ylabel('Amplitude')
+plt.title('Low-pass FIR (window method) – Cutoff 100 Hz')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+```
+
+:::
+
+
