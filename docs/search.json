@@ -5332,5 +5332,201 @@
     "title": "Sistemas y Señales Biomédicos",
     "section": "Windows Forms",
     "text": "Windows Forms\n\nTimeFrequencyCode\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n(-100.0, 5.0)\n\n\n\n\n\n\n\n\n\n\n\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.signal.windows import (\n    boxcar,       # Rectangular\n    bartlett,    # Triangular\n    hann,        # Hann\n    hamming,     # Hamming\n    blackman,    # Blackman\n    kaiser       # Kaiser\n)\n\n# Parameters\nM = 64               # window length\nbeta = 8.6           # Kaiser parameter for moderate sidelobe attenuation\nnfft = 512           # FFT length for frequency response\nfs = 1.0             # normalized sampling rate\n\n# Generate windows\nwindows = {\n    'Rectangular': boxcar(M),\n    'Bartlett':    bartlett(M),\n    'Hann':        hann(M),\n    'Hamming':     hamming(M),\n    'Blackman':    blackman(M),\n    f'Kaiser (β={beta})': kaiser(M, beta)\n}\n\n# Time-domain plot\nplt.figure(figsize=(8, 4))\nfor name, w in windows.items():\n    plt.plot(np.arange(M), w, label=name)\nplt.title('Window Functions — Time Domain')\nplt.xlabel('Sample index n')\nplt.ylabel('Amplitude')\nplt.legend(loc='upper right')\nplt.grid(True)\nplt.tight_layout()\n\n# Frequency-domain plot\nplt.figure(figsize=(8, 4))\nfor name, w in windows.items():\n    # Compute normalized frequency response\n    W = np.fft.fft(w, nfft)\n    W_mag = 20 * np.log10(np.abs(W) / np.max(np.abs(W)))\n    freqs = np.fft.fftfreq(nfft, d=1/fs)\n    # Only plot 0 ≤ f ≤ 0.5 (normalized Nyquist)\n    idx = np.logical_and(freqs &gt;= 0, freqs &lt;= 0.5)\n    plt.plot(freqs[idx], W_mag[idx], label=name)\nplt.title('Window Functions — Frequency Response')\nplt.xlabel('Normalized Frequency (cycles/sample)')\nplt.ylabel('Magnitude (dB)')\nplt.ylim(-100, 5)\nplt.legend(loc='upper right')\nplt.grid(True)\nplt.tight_layout()\n\nplt.show()"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#introduction-iir-filter-design-strategy",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#introduction-iir-filter-design-strategy",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Introduction: IIR Filter Design Strategy",
+    "text": "Introduction: IIR Filter Design Strategy\n\nGoal: Design digital Infinite Impulse Response (IIR) filters.\nApproach: Leverage well-established theory and techniques from analog filter design.\nMethod:\n\nDesign a suitable analog filter prototype \\(H(s)\\).\nTransform this analog design into a digital filter \\(H(z)\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---laplace-transform",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---laplace-transform",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 0: The Analog Domain - Laplace Transform",
+    "text": "Step 0: The Analog Domain - Laplace Transform\n\nContext: Continuous-time signals and Linear Time-Invariant (LTI) systems.\nTool: The Laplace Transform converts differential equations (time domain) to algebraic equations (s-domain).\nTransfer Function \\(H(s)\\): Represents the system in the s-domain. \\[H(s) = \\frac{Y(s)}{X(s)}\\] where \\(s = \\sigma + j\\Omega\\) is the complex frequency (\\(\\Omega\\) = analog angular frequency)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---s-plane-analysis",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---s-plane-analysis",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 0: The Analog Domain - s-Plane Analysis",
+    "text": "Step 0: The Analog Domain - s-Plane Analysis\n\ns-Plane: Complex plane where \\(H(s)\\) is analyzed.\nPoles & Zeros: Roots of the denominator & numerator of \\(H(s)\\), respectively. Their locations determine filter behavior.\nFrequency Response: Determined by \\(H(j\\Omega)\\) (evaluating \\(H(s)\\) on the imaginary axis).\nStability: For a causal system to be stable, all poles must be in the Left-Half Plane (LHP), i.e., \\(\\text{Re}\\{s\\} &lt; 0\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---filter-prototypes",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---filter-prototypes",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 0: The Analog Domain - Filter Prototypes",
+    "text": "Step 0: The Analog Domain - Filter Prototypes\n\nStandardized, well-understood analog filter approximations:\n\nButterworth: Maximally flat passband.\nChebyshev Type I: Equiripple passband, monotonic stopband.\nChebyshev Type II: Monotonic passband, equiripple stopband.\nElliptic (Cauer): Equiripple in both passband and stopband (sharpest transition for a given order).\n\nDesign usually starts with a normalized low-pass prototype."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#the-bridge-analog-to-digital-mapping",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#the-bridge-analog-to-digital-mapping",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "The Bridge: Analog-to-Digital Mapping",
+    "text": "The Bridge: Analog-to-Digital Mapping\n\nCore Task: Convert the analog filter \\(H(s)\\) (s-plane) into a digital filter \\(H(z)\\) (z-plane).\nNeed a mapping that relates the continuous frequency \\(\\Omega\\) to the discrete frequency \\(\\omega\\).\nCrucially, the stable region (LHP in s-plane) should map to the stable region (inside the unit circle in z-plane)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-digital-filter-specifications",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-digital-filter-specifications",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 1: Digital Filter Specifications",
+    "text": "Step 1: Digital Filter Specifications\n\nDefine the desired characteristics of the digital filter:\n\nCritical Frequencies:\n\nPassband edge: \\(\\omega_p\\)\nStopband edge: \\(\\omega_s\\)\n(Normalized digital angular frequencies, e.g., \\(0 \\le \\omega \\le \\pi\\))\n\nTolerances:\n\nMax. passband ripple/attenuation: \\(A_p\\) (dB) or \\(\\delta_p\\)\nMin. stopband attenuation: \\(A_s\\) (dB) or \\(\\delta_s\\)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-transformation-methods---overview",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-transformation-methods---overview",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 2: Transformation Methods - Overview",
+    "text": "Step 2: Transformation Methods - Overview\n\nMathematical mappings from the s-plane to the z-plane.\nTwo primary methods:\n\nImpulse Invariance\nBilinear Transformation"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-method-1---impulse-invariance",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-method-1---impulse-invariance",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 2: Method 1 - Impulse Invariance",
+    "text": "Step 2: Method 1 - Impulse Invariance\n\nConcept: Match the impulse response: \\(h_{digital}[n] \\approx T \\cdot h_{analog}(nT)\\).\nMapping: Maps s-plane pole \\(s_k\\) to z-plane pole \\(z_k = e^{s_k T}\\).\n\nUses partial fraction expansion of \\(H(s)\\).\n\nPros: Preserves impulse response shape.\nCons: Suffers from frequency aliasing if \\(H(j\\Omega)\\) is not bandlimited below Nyquist frequency (\\(F_s/2\\)). Best for low-pass/band-pass filters."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-method-2---bilinear-transformation",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-2-method-2---bilinear-transformation",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 2: Method 2 - Bilinear Transformation",
+    "text": "Step 2: Method 2 - Bilinear Transformation\n\nConcept: An algebraic substitution mapping the \\(j\\Omega\\) axis onto the unit circle.\nMapping Formula: \\[s = \\frac{2}{T} \\frac{1 - z^{-1}}{1 + z^{-1}}\\] (T = sampling period, often set to 2 for simplicity during derivation).\nPros:\n\nNo aliasing: Maps entire \\(j\\Omega\\) axis to the unit circle (\\(-\\pi \\le \\omega \\le \\pi\\)).\nPreserves stability: Maps LHP (stable s-region) to inside the unit circle (stable z-region).\n\nCons: Introduces non-linear frequency warping."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#understanding-frequency-warping-bilinear",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#understanding-frequency-warping-bilinear",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Understanding Frequency Warping (Bilinear)",
+    "text": "Understanding Frequency Warping (Bilinear)\n\nThe relationship between analog (\\(\\Omega\\)) and digital (\\(\\omega\\)) frequencies is non-linear: \\[\\Omega = \\frac{2}{T} \\tan\\left(\\frac{\\omega}{2}\\right)\\] or equivalently: \\[\\omega = 2 \\arctan\\left(\\frac{\\Omega T}{2}\\right)\\]\nThis compresses the infinite analog frequency axis onto the finite digital frequency range \\([-\\pi, \\pi]\\).\nThe mapping is non-uniform, most distorted near \\(\\omega = \\pm \\pi\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-3-frequency-pre-warping-bilinear-only",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-3-frequency-pre-warping-bilinear-only",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 3: Frequency Pre-warping (Bilinear Only)",
+    "text": "Step 3: Frequency Pre-warping (Bilinear Only)\n\nProblem: Frequency warping distorts the locations of \\(\\omega_p\\) and \\(\\omega_s\\).\nSolution: Pre-warp the digital specifications (\\(\\omega_p, \\omega_s\\)) into corresponding analog frequencies (\\(\\Omega_p, \\Omega_s\\)) before designing the analog filter.\nFormula: Use the warping relationship: \\[\\Omega_p = \\frac{2}{T} \\tan\\left(\\frac{\\omega_p}{2}\\right)\\] \\[\\Omega_s = \\frac{2}{T} \\tan\\left(\\frac{\\omega_s}{2}\\right)\\]\nUse these \\(\\Omega_p, \\Omega_s\\) values for the analog design step."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-4-analog-prototype-design-workflow",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-4-analog-prototype-design-workflow",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 4: Analog Prototype Design Workflow",
+    "text": "Step 4: Analog Prototype Design Workflow\n\nSelect Prototype: Choose Butterworth, Chebyshev, Elliptic based on specs (ripple, transition width) using the (pre-warped) \\(\\Omega_p, \\Omega_s, A_p, A_s\\).\nDetermine Order (N) & Cutoff (\\(\\Omega_c\\)): Calculate required analog filter order and cutoff frequency using prototype-specific formulas.\nFind Normalized LP \\(H_{LP}(s)\\): Obtain the transfer function for the normalized low-pass prototype.\nFrequency Transformation (Analog): If needed, transform \\(H_{LP}(s)\\) to target type (HP, BP, BS) using analog transformations.\n\nResult: The final analog filter transfer function \\(H_a(s)\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-5-apply-digital-transformation",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-5-apply-digital-transformation",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 5: Apply Digital Transformation",
+    "text": "Step 5: Apply Digital Transformation\n\nConvert the designed analog filter \\(H_a(s)\\) to the digital domain \\(H(z)\\):\n\nIf Impulse Invariance: Use partial fractions and the \\(s_k \\rightarrow e^{s_k T}\\) mapping.\nIf Bilinear Transformation: Substitute \\(s = \\frac{2}{T} \\frac{1 - z^{-1}}{1 + z^{-1}}\\) into \\(H_a(s)\\) and simplify algebraically.\n\nResult: The digital filter transfer function: \\[H(z) = \\frac{\\sum_{k=0}^{M} b_k z^{-k}}{1 + \\sum_{k=1}^{N} a_k z^{-k}}\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-6-realization-implementation",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-6-realization-implementation",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 6: Realization (Implementation)",
+    "text": "Step 6: Realization (Implementation)\n\nThe transfer function \\(H(z)\\) corresponds directly to a difference equation: \\[y[n] = \\sum_{k=0}^{M} b_k x[n-k] - \\sum_{k=1}^{N} a_k y[n-k]\\]\n\\(x[n]\\): Input sequence\n\\(y[n]\\): Output sequence\n\\(b_k, a_k\\): Filter coefficients derived from \\(H(z)\\).\nThe feedback term (sum involving \\(y[n-k]\\)) makes the impulse response potentially infinite (IIR)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary-iir-design-process",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary-iir-design-process",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Summary: IIR Design Process",
+    "text": "Summary: IIR Design Process\n\nDefine Digital Specs (\\(\\omega_p, \\omega_s, A_p, A_s\\)).\nSelect Transformation (e.g., Bilinear).\nPre-warp Frequencies (if Bilinear: \\(\\omega \\rightarrow \\Omega\\)).\nDesign Analog Filter \\(H_a(s)\\) (using prototypes & transformations).\nTransform to Digital \\(H(z)\\) (apply Bilinear or Impulse Invariance).\nRealize as Difference Equation for Implementation."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#steps-2-4-finding-order-designing-conceptual",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#steps-2-4-finding-order-designing-conceptual",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Steps 2-4: Finding Order & Designing (Conceptual)",
+    "text": "Steps 2-4: Finding Order & Designing (Conceptual)\n\nTransformation: Bilinear Transform is implicitly used by many scipy.signal functions for IIR design.\nFrequency Pre-warping: Handled internally by Scipy when given digital frequency specs.\nAnalog Design: Scipy calculates the required analog prototype order and parameters based on the (internally pre-warped) specs.\nGoal: Find filter order \\(N\\) and digital cutoff frequency \\(W_n\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#steps-2-4-finding-order-wn-python---butterworth-example",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#steps-2-4-finding-order-wn-python---butterworth-example",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Steps 2-4: Finding Order & Wn (Python - Butterworth Example)",
+    "text": "Steps 2-4: Finding Order & Wn (Python - Butterworth Example)\n\nUse scipy.signal.buttord to find the minimum order and cutoff frequency for a digital Butterworth filter meeting the specs.\n\n# --- Continued from previous code block ---\n\n# Find the minimum order and cutoff frequency\nN, Wn = signal.buttord(wp, ws, gpass, gstop, analog=False)\n\nprint(f\"\\nMinimum Filter Order (N): {N}\")\n# Wn is the digital cutoff freq (normalized) for butter function\nprint(f\"Butterworth Natural Frequency (Wn): {Wn:.3f} (pi rad/sample)\")\n\nanalog=False specifies we want parameters for a digital filter.\nWn is the digital cutoff frequency (scalar for LP/HP, tuple for BP/BS) required by the butter function. It’s often close to wp."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-5-designing-the-digital-filter-python---butterworth",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-5-designing-the-digital-filter-python---butterworth",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 5: Designing the Digital Filter (Python - Butterworth)",
+    "text": "Step 5: Designing the Digital Filter (Python - Butterworth)\n\nUse scipy.signal.butter (or cheby1, cheby2, ellip) to get the filter coefficients \\(b\\) (numerator) and \\(a\\) (denominator) of \\(H(z)\\).\n\n# --- Continued from previous code block ---\n\n# Design the digital Butterworth filter\n# btype='low' for lowpass\nb, a = signal.butter(N, Wn, btype='low', analog=False, output='ba')\n\nprint(\"\\nFilter Coefficients:\")\nprint(f\"Numerator (b): {np.round(b, 5)}\")\nprint(f\"Denominator (a): {np.round(a, 5)}\")\n# H(z) = (b[0] + b[1]z^-1 + ...)/(a[0] + a[1]z^-1 + ...)\n# Note: a[0] is usually 1 after normalization\n\noutput='ba' gives numerator/denominator coefficients. Other options: 'sos' (second-order sections - numerically better), 'zpk' (zeros, poles, gain)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#visualizing-frequency-response-python",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#visualizing-frequency-response-python",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Visualizing Frequency Response (Python)",
+    "text": "Visualizing Frequency Response (Python)\n\nCalculate the frequency response using scipy.signal.freqz.\nPlot magnitude (in dB) and phase.\n\n# --- Continued from previous code block ---\n\n# Calculate frequency response\nw, h = signal.freqz(b, a, worN=8000, fs=fs) # Use fs for physical freq axis\n\n# Plot Magnitude Response\nplt.figure(figsize=(10, 6))\nplt.subplot(2, 1, 1)\nplt.plot(w, 20 * np.log10(abs(h)))\nplt.title('Digital Butterworth Filter Frequency Response')\nplt.ylabel('Amplitude [dB]')\nplt.grid(True)\nplt.axvline(fp, color='green', linestyle='--', label=f'fp={fp}Hz') # Passband edge\nplt.axvline(fs_stop, color='red', linestyle='--', label=f'fs={fs_stop}Hz') # Stopband edge\nplt.axhline(-gpass, color='green', linestyle=':', label=f'-{gpass}dB')\nplt.axhline(-gstop, color='red', linestyle=':', label=f'-{gstop}dB')\nplt.legend()\nplt.xlim(0, fs/2)\nplt.ylim(-60, 5) # Adjust ylim as needed\n\n# Plot Phase Response\nplt.subplot(2, 1, 2)\nangles = np.unwrap(np.angle(h))\nplt.plot(w, np.degrees(angles))\nplt.xlabel('Frequency [Hz]')\nplt.ylabel('Angle [degrees]')\nplt.grid(True)\nplt.xlim(0, fs / 2)\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-6-realization-filtering-python-example",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-6-realization-filtering-python-example",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 6: Realization & Filtering (Python Example)",
+    "text": "Step 6: Realization & Filtering (Python Example)\n\nThe coefficients b, a define the difference equation.\nUse scipy.signal.lfilter to apply the filter to a signal.\n\n# --- Create a sample signal ---\nT = 1.0 # seconds\nn_samples = int(T * fs)\nt = np.linspace(0, T, n_samples, endpoint=False)\n\n# Signal: Sine wave inside passband + sine wave inside stopband\nsig_pass = 0.8 * np.sin(2 * np.pi * fp/2 * t) # 500 Hz\nsig_stop = 0.4 * np.sin(2 * np.pi * (fs_stop + 500) * t) # 2000 Hz\nsignal_in = sig_pass + sig_stop\n\n# --- Apply the filter ---\nfiltered_signal = signal.lfilter(b, a, signal_in)\n\n# --- Plot signals ---\nplt.figure(figsize=(10, 5))\nplt.plot(t, signal_in, label='Input Signal', alpha=0.7)\nplt.plot(t, filtered_signal, label='Filtered Signal', linewidth=2)\nplt.title('Filtering Example')\nplt.xlabel('Time [sec]')\nplt.ylabel('Amplitude')\nplt.legend()\nplt.grid(True)\nplt.ylim(-1.5, 1.5)\nplt.show()\n\n# Observe: The 500Hz component passes, the 2000Hz component is attenuated."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary-iir-design-process-with-scipy",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#summary-iir-design-process-with-scipy",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Summary: IIR Design Process (with Scipy)",
+    "text": "Summary: IIR Design Process (with Scipy)\n\nDefine Digital Specs (\\(f_p, f_s, gpass, gstop, F_s\\)). Normalize frequencies (\\(W_p, W_s\\)).\nSelect Filter Type (e.g., Butterworth) & find order/cutoff using buttord (digital).\nDesign Filter to get coefficients (\\(b, a\\)) using butter (digital).\nAnalyze Frequency Response using freqz.\nImplement/Apply Filter using lfilter (uses the difference equation implicitly).\n\n\nScipy handles the underlying analog prototype mapping, pre-warping, and bilinear transformation internally."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#introduction-iir-filter-design-strategy-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#introduction-iir-filter-design-strategy-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Introduction: IIR Filter Design Strategy",
+    "text": "Introduction: IIR Filter Design Strategy\n\nGoal: Design digital Infinite Impulse Response (IIR) filters.\nApproach: Leverage well-established theory and techniques from analog filter design.\nMethod:\n\nDefine digital specifications.\n(Conceptually) Design a suitable analog filter prototype \\(H(s)\\).\n(Conceptually) Transform \\(H(s)\\) into a digital filter \\(H(z)\\).\n\nPractice (Code): Use libraries like scipy.signal that often encapsulate steps 2 & 3."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---laplace-transform-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---laplace-transform-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 0: The Analog Domain - Laplace Transform",
+    "text": "Step 0: The Analog Domain - Laplace Transform\n\nContext: Continuous-time signals and Linear Time-Invariant (LTI) systems.\nTool: The Laplace Transform converts differential equations (time domain) to algebraic equations (s-domain).\nTransfer Function \\(H(s)\\): Represents the system in the s-domain. \\[H(s) = \\frac{Y(s)}{X(s)}\\] where \\(s = \\sigma + j\\Omega\\) is the complex frequency (\\(\\Omega\\) = analog angular frequency)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---s-plane-analysis-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---s-plane-analysis-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 0: The Analog Domain - s-Plane Analysis",
+    "text": "Step 0: The Analog Domain - s-Plane Analysis\n\ns-Plane: Complex plane where \\(H(s)\\) is analyzed.\nPoles & Zeros: Roots of the denominator & numerator of \\(H(s)\\). Determine filter behavior.\nFrequency Response: \\(H(j\\Omega)\\).\nStability: All poles must be in the Left-Half Plane (LHP) (\\(\\text{Re}\\{s\\} &lt; 0\\))."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---filter-prototypes-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-0-the-analog-domain---filter-prototypes-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 0: The Analog Domain - Filter Prototypes",
+    "text": "Step 0: The Analog Domain - Filter Prototypes\n\nStandardized analog filter approximations:\n\nButterworth: Maximally flat passband.\nChebyshev I/II: Equiripple passband/stopband.\nElliptic (Cauer): Equiripple passband & stopband (sharpest transition).\n\nThese form the basis for many IIR digital filter designs."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#the-bridge-analog-to-digital-mapping-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#the-bridge-analog-to-digital-mapping-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "The Bridge: Analog-to-Digital Mapping",
+    "text": "The Bridge: Analog-to-Digital Mapping\n\nCore Task: Convert \\(H(s)\\) (s-plane) \\(\\rightarrow\\) \\(H(z)\\) (z-plane).\nRelates continuous frequency \\(\\Omega\\) to discrete frequency \\(\\omega\\).\nStable LHP (s-plane) \\(\\rightarrow\\) Stable interior of unit circle (z-plane).\nCommon Method: Bilinear Transformation (preserves stability, avoids aliasing, but warps frequency)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-digital-filter-specifications-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-digital-filter-specifications-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 1: Digital Filter Specifications",
+    "text": "Step 1: Digital Filter Specifications\n\nDefine the desired characteristics of the digital filter:\n\nSampling Frequency: \\(F_s\\) (Hz)\nCritical Frequencies (Digital):\n\nPassband edge: \\(f_p\\) (Hz) \\(\\implies \\omega_p = 2\\pi f_p / F_s\\) (radians/sample)\nStopband edge: \\(f_s\\) (Hz) \\(\\implies \\omega_s = 2\\pi f_s / F_s\\) (radians/sample)\nNote: Scipy often uses frequencies normalized to Nyquist: \\(W_p = f_p / (F_s/2)\\), \\(W_s = f_s / (F_s/2)\\)\n\nTolerances:\n\nMax. passband ripple/attenuation: \\(A_p\\) or gpass (dB)\nMin. stopband attenuation: \\(A_s\\) or gstop (dB)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-example-specifications-python",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#step-1-example-specifications-python",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Step 1: Example Specifications (Python)",
+    "text": "Step 1: Example Specifications (Python)\nimport numpy as np\nfrom scipy import signal\nimport matplotlib.pyplot as plt\n\n# Filter Specifications\nfs = 10000  # Sampling frequency (Hz)\nfp = 1000   # Passband edge frequency (Hz)\nfs_stop = 1500 # Stopband edge frequency (Hz)\ngpass = 1    # Passband ripple (dB) - max loss\ngstop = 40   # Stopband attenuation (dB) - min attenuation\n\n# Normalize frequencies to Nyquist frequency (fs/2)\nwp = fp / (fs / 2)\nws = fs_stop / (fs / 2)\n\nprint(f\"Sampling Frequency: {fs} Hz\")\nprint(f\"Normalized Passband Edge: {wp:.3f} (pi rad/sample)\")\nprint(f\"Normalized Stopband Edge: {ws:.3f} (pi rad/sample)\")\nprint(f\"Max Passband Loss: {gpass} dB\")\nprint(f\"Min Stopband Attenuation: {gstop} dB\")"
   }
 ]

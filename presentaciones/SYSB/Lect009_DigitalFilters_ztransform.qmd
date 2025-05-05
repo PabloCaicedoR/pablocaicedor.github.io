@@ -1112,3 +1112,385 @@ plt.show()
 :::
 
 
+## Introduction: IIR Filter Design Strategy
+
+* **Goal:** Design digital Infinite Impulse Response (IIR) filters.
+* **Approach:** Leverage well-established theory and techniques from *analog filter design*.
+* **Method:**
+    1.  Design a suitable analog filter prototype $H(s)$.
+    2.  Transform this analog design into a digital filter $H(z)$.
+
+---
+
+## Step 0: The Analog Domain - Laplace Transform
+
+* **Context:** Continuous-time signals and Linear Time-Invariant (LTI) systems.
+* **Tool:** The **Laplace Transform** converts differential equations (time domain) to algebraic equations (s-domain).
+* **Transfer Function $H(s)$:** Represents the system in the s-domain.
+    $$H(s) = \frac{Y(s)}{X(s)}$$
+    where $s = \sigma + j\Omega$ is the complex frequency ($\Omega$ = analog angular frequency).
+
+---
+
+## Step 0: The Analog Domain - s-Plane Analysis
+
+* **s-Plane:** Complex plane where $H(s)$ is analyzed.
+* **Poles & Zeros:** Roots of the denominator & numerator of $H(s)$, respectively. Their locations determine filter behavior.
+* **Frequency Response:** Determined by $H(j\Omega)$ (evaluating $H(s)$ on the imaginary axis).
+* **Stability:** For a causal system to be stable, all poles must be in the **Left-Half Plane (LHP)**, i.e., $\text{Re}\{s\} < 0$.
+
+---
+
+## Step 0: The Analog Domain - Filter Prototypes
+
+* Standardized, well-understood analog filter approximations:
+    * **Butterworth:** Maximally flat passband.
+    * **Chebyshev Type I:** Equiripple passband, monotonic stopband.
+    * **Chebyshev Type II:** Monotonic passband, equiripple stopband.
+    * **Elliptic (Cauer):** Equiripple in both passband and stopband (sharpest transition for a given order).
+* Design usually starts with a normalized low-pass prototype.
+
+---
+
+## The Bridge: Analog-to-Digital Mapping
+
+* **Core Task:** Convert the analog filter $H(s)$ (s-plane) into a digital filter $H(z)$ (z-plane).
+* Need a mapping that relates the continuous frequency $\Omega$ to the discrete frequency $\omega$.
+* Crucially, the stable region (LHP in s-plane) should map to the stable region (inside the unit circle in z-plane).
+
+---
+
+## Step 1: Digital Filter Specifications
+
+* Define the desired characteristics of the *digital* filter:
+    * **Critical Frequencies:**
+        * Passband edge: $\omega_p$
+        * Stopband edge: $\omega_s$
+        * (Normalized digital angular frequencies, e.g., $0 \le \omega \le \pi$)
+    * **Tolerances:**
+        * Max. passband ripple/attenuation: $A_p$ (dB) or $\delta_p$
+        * Min. stopband attenuation: $A_s$ (dB) or $\delta_s$
+
+---
+
+## Step 2: Transformation Methods - Overview
+
+* Mathematical mappings from the s-plane to the z-plane.
+* Two primary methods:
+    1.  **Impulse Invariance**
+    2.  **Bilinear Transformation**
+
+---
+
+## Step 2: Method 1 - Impulse Invariance
+
+* **Concept:** Match the impulse response: $h_{digital}[n] \approx T \cdot h_{analog}(nT)$.
+* **Mapping:** Maps s-plane pole $s_k$ to z-plane pole $z_k = e^{s_k T}$.
+    * Uses partial fraction expansion of $H(s)$.
+* **Pros:** Preserves impulse response shape.
+* **Cons:** Suffers from **frequency aliasing** if $H(j\Omega)$ is not bandlimited below Nyquist frequency ($F_s/2$). Best for low-pass/band-pass filters.
+
+---
+
+## Step 2: Method 2 - Bilinear Transformation
+
+* **Concept:** An algebraic substitution mapping the $j\Omega$ axis onto the unit circle.
+* **Mapping Formula:**
+    $$s = \frac{2}{T} \frac{1 - z^{-1}}{1 + z^{-1}}$$
+    (T = sampling period, often set to 2 for simplicity during derivation).
+* **Pros:**
+    * **No aliasing:** Maps entire $j\Omega$ axis to the unit circle ($-\pi \le \omega \le \pi$).
+    * **Preserves stability:** Maps LHP (stable s-region) to inside the unit circle (stable z-region).
+* **Cons:** Introduces **non-linear frequency warping**.
+
+---
+
+## Understanding Frequency Warping (Bilinear)
+
+* The relationship between analog ($\Omega$) and digital ($\omega$) frequencies is non-linear:
+    $$\Omega = \frac{2}{T} \tan\left(\frac{\omega}{2}\right)$$
+    or equivalently:
+    $$\omega = 2 \arctan\left(\frac{\Omega T}{2}\right)$$
+* This compresses the infinite analog frequency axis onto the finite digital frequency range $[-\pi, \pi]$.
+* The mapping is non-uniform, most distorted near $\omega = \pm \pi$.
+
+---
+
+## Step 3: Frequency Pre-warping (Bilinear Only)
+
+* **Problem:** Frequency warping distorts the locations of $\omega_p$ and $\omega_s$.
+* **Solution:** Pre-warp the *digital* specifications ($\omega_p, \omega_s$) into corresponding *analog* frequencies ($\Omega_p, \Omega_s$) *before* designing the analog filter.
+* **Formula:** Use the warping relationship:
+    $$\Omega_p = \frac{2}{T} \tan\left(\frac{\omega_p}{2}\right)$$   $$\Omega_s = \frac{2}{T} \tan\left(\frac{\omega_s}{2}\right)$$
+* Use these $\Omega_p, \Omega_s$ values for the analog design step.
+
+---
+
+## Step 4: Analog Prototype Design Workflow
+
+1.  **Select Prototype:** Choose Butterworth, Chebyshev, Elliptic based on specs (ripple, transition width) using the (pre-warped) $\Omega_p, \Omega_s, A_p, A_s$.
+2.  **Determine Order (N) & Cutoff ($\Omega_c$):** Calculate required analog filter order and cutoff frequency using prototype-specific formulas.
+3.  **Find Normalized LP $H_{LP}(s)$:** Obtain the transfer function for the normalized low-pass prototype.
+4.  **Frequency Transformation (Analog):** If needed, transform $H_{LP}(s)$ to target type (HP, BP, BS) using analog transformations.
+    * **Result:** The final analog filter transfer function $H_a(s)$.
+
+---
+
+## Step 5: Apply Digital Transformation
+
+* Convert the designed analog filter $H_a(s)$ to the digital domain $H(z)$:
+    * **If Impulse Invariance:** Use partial fractions and the $s_k \rightarrow e^{s_k T}$ mapping.
+    * **If Bilinear Transformation:** Substitute $s = \frac{2}{T} \frac{1 - z^{-1}}{1 + z^{-1}}$ into $H_a(s)$ and simplify algebraically.
+* **Result:** The digital filter transfer function:
+    $$H(z) = \frac{\sum_{k=0}^{M} b_k z^{-k}}{1 + \sum_{k=1}^{N} a_k z^{-k}}$$
+
+---
+
+## Step 6: Realization (Implementation)
+
+* The transfer function $H(z)$ corresponds directly to a **difference equation**:
+    $$y[n] = \sum_{k=0}^{M} b_k x[n-k] - \sum_{k=1}^{N} a_k y[n-k]$$
+* $x[n]$: Input sequence
+* $y[n]$: Output sequence
+* $b_k, a_k$: Filter coefficients derived from $H(z)$.
+* The feedback term (sum involving $y[n-k]$) makes the impulse response potentially infinite (IIR).
+
+---
+
+## Summary: IIR Design Process
+
+1.  **Define** Digital Specs ($\omega_p, \omega_s, A_p, A_s$).
+2.  **Select** Transformation (e.g., Bilinear).
+3.  **Pre-warp** Frequencies (if Bilinear: $\omega \rightarrow \Omega$).
+4.  **Design** Analog Filter $H_a(s)$ (using prototypes & transformations).
+5.  **Transform** to Digital $H(z)$ (apply Bilinear or Impulse Invariance).
+6.  **Realize** as Difference Equation for Implementation.
+
+
+## Introduction: IIR Filter Design Strategy
+
+* **Goal:** Design digital Infinite Impulse Response (IIR) filters.
+* **Approach:** Leverage well-established theory and techniques from *analog filter design*.
+* **Method:**
+    1.  Define digital specifications.
+    2.  (Conceptually) Design a suitable analog filter prototype $H(s)$.
+    3.  (Conceptually) Transform $H(s)$ into a digital filter $H(z)$.
+* **Practice (Code):** Use libraries like `scipy.signal` that often encapsulate steps 2 & 3.
+
+---
+
+## Step 0: The Analog Domain - Laplace Transform
+
+* **Context:** Continuous-time signals and Linear Time-Invariant (LTI) systems.
+* **Tool:** The **Laplace Transform** converts differential equations (time domain) to algebraic equations (s-domain).
+* **Transfer Function $H(s)$:** Represents the system in the s-domain.
+    $$H(s) = \frac{Y(s)}{X(s)}$$
+    where $s = \sigma + j\Omega$ is the complex frequency ($\Omega$ = analog angular frequency).
+
+---
+
+## Step 0: The Analog Domain - s-Plane Analysis
+
+* **s-Plane:** Complex plane where $H(s)$ is analyzed.
+* **Poles & Zeros:** Roots of the denominator & numerator of $H(s)$. Determine filter behavior.
+* **Frequency Response:** $H(j\Omega)$.
+* **Stability:** All poles must be in the **Left-Half Plane (LHP)** ($\text{Re}\{s\} < 0$).
+
+---
+
+## Step 0: The Analog Domain - Filter Prototypes
+
+* Standardized analog filter approximations:
+    * **Butterworth:** Maximally flat passband.
+    * **Chebyshev I/II:** Equiripple passband/stopband.
+    * **Elliptic (Cauer):** Equiripple passband & stopband (sharpest transition).
+* These form the basis for many IIR digital filter designs.
+
+---
+
+## The Bridge: Analog-to-Digital Mapping
+
+* **Core Task:** Convert $H(s)$ (s-plane) $\rightarrow$ $H(z)$ (z-plane).
+* Relates continuous frequency $\Omega$ to discrete frequency $\omega$.
+* Stable LHP (s-plane) $\rightarrow$ Stable interior of unit circle (z-plane).
+* **Common Method:** Bilinear Transformation (preserves stability, avoids aliasing, but warps frequency).
+
+---
+
+## Step 1: Digital Filter Specifications
+
+* Define the desired characteristics of the *digital* filter:
+    * **Sampling Frequency:** $F_s$ (Hz)
+    * **Critical Frequencies (Digital):**
+        * Passband edge: $f_p$ (Hz) $\implies \omega_p = 2\pi f_p / F_s$ (radians/sample)
+        * Stopband edge: $f_s$ (Hz) $\implies \omega_s = 2\pi f_s / F_s$ (radians/sample)
+        * *Note: Scipy often uses frequencies normalized to Nyquist:* $W_p = f_p / (F_s/2)$, $W_s = f_s / (F_s/2)$
+    * **Tolerances:**
+        * Max. passband ripple/attenuation: $A_p$ or `gpass` (dB)
+        * Min. stopband attenuation: $A_s$ or `gstop` (dB)
+
+---
+
+## Step 1: Example Specifications (Python)
+
+```python
+import numpy as np
+from scipy import signal
+import matplotlib.pyplot as plt
+
+# Filter Specifications
+fs = 10000  # Sampling frequency (Hz)
+fp = 1000   # Passband edge frequency (Hz)
+fs_stop = 1500 # Stopband edge frequency (Hz)
+gpass = 1    # Passband ripple (dB) - max loss
+gstop = 40   # Stopband attenuation (dB) - min attenuation
+
+# Normalize frequencies to Nyquist frequency (fs/2)
+wp = fp / (fs / 2)
+ws = fs_stop / (fs / 2)
+
+print(f"Sampling Frequency: {fs} Hz")
+print(f"Normalized Passband Edge: {wp:.3f} (pi rad/sample)")
+print(f"Normalized Stopband Edge: {ws:.3f} (pi rad/sample)")
+print(f"Max Passband Loss: {gpass} dB")
+print(f"Min Stopband Attenuation: {gstop} dB")
+```
+
+---
+
+## Steps 2-4: Finding Order & Designing (Conceptual)
+
+* **Transformation:** Bilinear Transform is implicitly used by many `scipy.signal` functions for IIR design.
+* **Frequency Pre-warping:** Handled internally by Scipy when given digital frequency specs.
+* **Analog Design:** Scipy calculates the required analog prototype order and parameters based on the (internally pre-warped) specs.
+* **Goal:** Find filter order $N$ and digital cutoff frequency $W_n$.
+
+---
+
+## Steps 2-4: Finding Order & Wn (Python - Butterworth Example)
+
+* Use `scipy.signal.buttord` to find the minimum order and cutoff frequency for a digital Butterworth filter meeting the specs.
+
+```python
+# --- Continued from previous code block ---
+
+# Find the minimum order and cutoff frequency
+N, Wn = signal.buttord(wp, ws, gpass, gstop, analog=False)
+
+print(f"\nMinimum Filter Order (N): {N}")
+# Wn is the digital cutoff freq (normalized) for butter function
+print(f"Butterworth Natural Frequency (Wn): {Wn:.3f} (pi rad/sample)")
+```
+* `analog=False` specifies we want parameters for a *digital* filter.
+* `Wn` is the digital cutoff frequency (scalar for LP/HP, tuple for BP/BS) required by the `butter` function. It's often close to `wp`.
+
+---
+
+## Step 5: Designing the Digital Filter (Python - Butterworth)
+
+* Use `scipy.signal.butter` (or `cheby1`, `cheby2`, `ellip`) to get the filter coefficients $b$ (numerator) and $a$ (denominator) of $H(z)$.
+
+```python
+# --- Continued from previous code block ---
+
+# Design the digital Butterworth filter
+# btype='low' for lowpass
+b, a = signal.butter(N, Wn, btype='low', analog=False, output='ba')
+
+print("\nFilter Coefficients:")
+print(f"Numerator (b): {np.round(b, 5)}")
+print(f"Denominator (a): {np.round(a, 5)}")
+# H(z) = (b[0] + b[1]z^-1 + ...)/(a[0] + a[1]z^-1 + ...)
+# Note: a[0] is usually 1 after normalization
+```
+* `output='ba'` gives numerator/denominator coefficients. Other options: `'sos'` (second-order sections - numerically better), `'zpk'` (zeros, poles, gain).
+
+---
+
+## Visualizing Frequency Response (Python)
+
+* Calculate the frequency response using `scipy.signal.freqz`.
+* Plot magnitude (in dB) and phase.
+
+```python
+# --- Continued from previous code block ---
+
+# Calculate frequency response
+w, h = signal.freqz(b, a, worN=8000, fs=fs) # Use fs for physical freq axis
+
+# Plot Magnitude Response
+plt.figure(figsize=(10, 6))
+plt.subplot(2, 1, 1)
+plt.plot(w, 20 * np.log10(abs(h)))
+plt.title('Digital Butterworth Filter Frequency Response')
+plt.ylabel('Amplitude [dB]')
+plt.grid(True)
+plt.axvline(fp, color='green', linestyle='--', label=f'fp={fp}Hz') # Passband edge
+plt.axvline(fs_stop, color='red', linestyle='--', label=f'fs={fs_stop}Hz') # Stopband edge
+plt.axhline(-gpass, color='green', linestyle=':', label=f'-{gpass}dB')
+plt.axhline(-gstop, color='red', linestyle=':', label=f'-{gstop}dB')
+plt.legend()
+plt.xlim(0, fs/2)
+plt.ylim(-60, 5) # Adjust ylim as needed
+
+# Plot Phase Response
+plt.subplot(2, 1, 2)
+angles = np.unwrap(np.angle(h))
+plt.plot(w, np.degrees(angles))
+plt.xlabel('Frequency [Hz]')
+plt.ylabel('Angle [degrees]')
+plt.grid(True)
+plt.xlim(0, fs / 2)
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## Step 6: Realization & Filtering (Python Example)
+
+* The coefficients `b`, `a` define the difference equation.
+* Use `scipy.signal.lfilter` to apply the filter to a signal.
+
+```python
+# --- Create a sample signal ---
+T = 1.0 # seconds
+n_samples = int(T * fs)
+t = np.linspace(0, T, n_samples, endpoint=False)
+
+# Signal: Sine wave inside passband + sine wave inside stopband
+sig_pass = 0.8 * np.sin(2 * np.pi * fp/2 * t) # 500 Hz
+sig_stop = 0.4 * np.sin(2 * np.pi * (fs_stop + 500) * t) # 2000 Hz
+signal_in = sig_pass + sig_stop
+
+# --- Apply the filter ---
+filtered_signal = signal.lfilter(b, a, signal_in)
+
+# --- Plot signals ---
+plt.figure(figsize=(10, 5))
+plt.plot(t, signal_in, label='Input Signal', alpha=0.7)
+plt.plot(t, filtered_signal, label='Filtered Signal', linewidth=2)
+plt.title('Filtering Example')
+plt.xlabel('Time [sec]')
+plt.ylabel('Amplitude')
+plt.legend()
+plt.grid(True)
+plt.ylim(-1.5, 1.5)
+plt.show()
+
+# Observe: The 500Hz component passes, the 2000Hz component is attenuated.
+```
+
+---
+
+## Summary: IIR Design Process (with Scipy)
+
+1.  **Define** Digital Specs ($f_p, f_s, gpass, gstop, F_s$). Normalize frequencies ($W_p, W_s$).
+2.  **Select** Filter Type (e.g., Butterworth) & find order/cutoff using `buttord` (digital).
+3.  **Design** Filter to get coefficients ($b, a$) using `butter` (digital).
+4.  **Analyze** Frequency Response using `freqz`.
+5.  **Implement/Apply** Filter using `lfilter` (uses the difference equation implicitly).
+* *Scipy handles the underlying analog prototype mapping, pre-warping, and bilinear transformation internally.*
+
+---
