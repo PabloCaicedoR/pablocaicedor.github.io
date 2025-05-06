@@ -1236,6 +1236,366 @@ plt.show()
 
 ---
 
+
+## Analog Filter Design: Overview
+
+Designing an analog filter translates desired signal filtering characteristics into a physical electronic circuit.
+
+**Key Stages:**
+
+1.  Define Specifications
+2.  Choose an Approximation Method
+3.  Determine Filter Order
+4.  Find Normalized Low-Pass Prototype (Conceptual)
+5.  Denormalize & Transform (Conceptual)
+6.  Synthesize the Circuit
+7.  Component Selection & Simulation
+
+We'll illustrate steps 1, 3, and aspects of 4/5 using Python's `scipy.signal`.
+
+---
+
+## 1. Define Filter Specifications
+
+This is the most crucial first step.
+
+* **Type:** Low-Pass (LPF), High-Pass (HPF), Band-Pass (BPF), Band-Stop (BSF).
+* **Critical Frequencies (Analog, $\Omega$ in rad/s or $f$ in Hz):**
+    * Cutoff ($\Omega_c, f_c$)
+    * Passband Edge(s) ($\Omega_p, f_p$)
+    * Stopband Edge(s) ($\Omega_s, f_s$)
+* **Attenuation Levels (dB):**
+    * Max. Passband Attenuation/Ripple ($A_{max}$ or `gpass`)
+    * Min. Stopband Attenuation ($A_{min}$ or `gstop`)
+* **Phase Response:** Linear phase (e.g., Bessel) or not critical.
+* **Impedance:** Source/Load matching.
+
+---
+
+## 1. Specifications: Python Example (Low-Pass)
+
+Let's define specs for an analog low-pass filter.
+Frequencies for analog filters in `scipy` are typically in rad/s.
+
+```python
+import numpy as np
+from scipy import signal
+import matplotlib.pyplot as plt
+
+# Specifications for an ANALOG Low-Pass Filter
+fp_hz = 1000  # Passband edge frequency in Hz
+fs_hz = 1500  # Stopband edge frequency in Hz
+gpass_db = 1.0  # Max loss in passband (dB)
+gstop_db = 40.0 # Min attenuation in stopband (dB)
+
+# Convert Hz to rad/s for Scipy analog functions
+Wp_rads = 2 * np.pi * fp_hz # Passband edge in rad/s
+Ws_rads = 2 * np.pi * fs_hz # Stopband edge in rad/s
+
+print(f"Passband edge: {Wp_rads:.2f} rad/s ({fp_hz} Hz)")
+print(f"Stopband edge: {Ws_rads:.2f} rad/s ({fs_hz} Hz)")
+print(f"Max Passband Loss: {gpass_db} dB")
+print(f"Min Stopband Attenuation: {gstop_db} dB")
+```
+
+---
+
+## 2. Choose an Approximation Method (Filter Family)
+
+Select based on trade-offs (roll-off, ripple, phase).
+
+* **Butterworth:** Maximally flat passband, smooth roll-off.
+* **Chebyshev Type I:** Steeper roll-off than Butterworth, passband ripple.
+* **Chebyshev Type II:** Steeper roll-off, stopband ripple, flat passband.
+* **Elliptic (Cauer):** Steepest roll-off, ripple in both bands.
+* **Bessel-Thomson:** Best phase linearity (constant group delay), slowest roll-off.
+
+*For our Python examples, we'll use Butterworth.*
+
+---
+
+## Butterworth Filter Fundamentals
+
+The Butterworth filter is maximally flat in the passband.
+
+The normalized prototype has a cutoff frequency $\omega_c = 1$ rad/s.
+
+Poles are placed on the unit circle in the $s$-plane at angles:
+$$s_k = e^{j\pi\frac{2k + n - 1}{2n}}, \quad k = 1,2,\ldots,n.$$
+
+The Butterworth polynomial of order $n$ is:
+$$B_n(s) = \prod_{k=1}^{n} (s - s_k).$$
+
+---
+
+## Normalized Lowpass (LP) Transfer Function
+
+The normalized $n$th-order lowpass prototype is:
+$$H_{LP}(s) = \frac{1}{B_n(s)} = \frac{1}{\prod_{k=1}^n (s - s_k)}.$$
+This yields a cutoff at $|H_{LP}(j1)| = 1/\sqrt{2}$ (the –3 dB point).
+
+---
+
+## Normalized Highpass (HP) Transfer Function
+
+Apply the frequency transformation $s \to 1/s$ and multiply by $s^n$:
+$$H_{HP}(s) = H_{LP}(1/s)\,s^n = \frac{s^n}{B_n(1/s)} = \frac{s^n}{\prod_{k=1}^n (1/s - s_k)} = \frac{\prod_{k=1}^n(-s_k)\;s^n}{\prod_{k=1}^n(s - s_k^{-1})}.$$
+This prototype has a normalized cutoff at $\omega=1$ rad/s in the highpass sense.
+
+---
+
+## Normalized Bandpass (BP) Transfer Function
+
+Use the bandpass transformation:
+$$s \to \frac{s^2 + \Omega_0^2}{B\,s},$$
+where $\Omega_0 = \sqrt{\omega_1\omega_2}$ and $B = \omega_2 - \omega_1$.
+
+For a normalized prototype, we set $\Omega_0 = 1$, $B = 1$, giving:
+$$H_{BP}(s) = H_{LP}\left(\frac{s^2 + 1}{s}\right) = \frac{(s)^n}{\prod_{k=1}^n\left(\frac{s^2 + 1}{s} - s_k\right)} = \frac{s^n}{\prod_{k=1}^n\left(s^2 + 1 - s\,s_k\right)}.$$
+
+---
+
+## Normalized Bandstop (BS) Transfer Function
+
+Use the bandstop transformation:
+$$s \to \frac{s}{\frac{s^2 + 1}{s}} = \frac{s^2}{s^2 + 1},$$
+or equivalently $s \to (B\,s)/(s^2 + \Omega_0^2)$ with $B=1$, $\Omega_0=1$. Then:
+$$H_{BS}(s) = H_{LP}\left(\frac{s}{s^2 + 1}\right) = \frac{1}{B_n\left(\frac{s}{s^2+1}\right)} = \frac{1}{\prod_{k=1}^n\left(\frac{s}{s^2+1} - s_k\right)} = \frac{(s^2+1)^n}{\prod_{k=1}^n\left(s - s_k(s^2+1)\right)} = \frac{(s^2+1)^n}{\prod_{k=1}^n\left(s - s_ks^2 - s_k\right)}.$$
+
+
+---
+
+## 3. Determine the Filter Order (N)
+
+Estimating the filter order ($N$) is a crucial first step in analog filter design after defining specifications. The order determines the filter's complexity and steepness of its frequency response roll-off.
+
+These equations are for **Butterworth** filters. The calculated $N$ is a real number and must be rounded up to the next integer.
+
+**Common Variables:**
+* $N$: Filter order (integer, result of formula is rounded up).
+* $A_{min}$: Minimum stopband attenuation (dB, positive value, e.g., 40 dB).
+* $A_{max}$: Maximum passband attenuation/ripple (dB, positive value, e.g., 1 dB).
+* $\log_{10}$: Base-10 logarithm.
+* All $\Omega$ values are angular frequencies in rad/s.
+
+---
+
+## Butterworth Low-Pass (LP) Filter Order
+
+$$N \ge \frac{\log_{10}\left(\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\right)}{2 \log_{10}\left(\frac{\Omega_s}{\Omega_p}\right)}$$
+
+**Explanation of LP-Specific Variables:**
+* $\Omega_p$: Passband edge angular frequency. The frequency up to which signals pass with at most $A_{max}$ attenuation.
+* $\Omega_s$: Stopband edge angular frequency. The frequency from which signals are attenuated by at least $A_{min}$.
+* For a low-pass filter, $\Omega_s > \Omega_p$. The term $\frac{\Omega_s}{\Omega_p}$ is the transition ratio.
+
+---
+
+## Butterworth High-Pass (HP) Filter Order
+
+$$N \ge \frac{\log_{10}\left(\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\right)}{2 \log_{10}\left(\frac{\Omega_p}{\Omega_s}\right)}$$
+
+**Explanation of HP-Specific Variables:**
+* $\Omega_p$: Passband edge angular frequency. The frequency from which signals pass with at most $A_{max}$ attenuation.
+* $\Omega_s$: Stopband edge angular frequency. The frequency down to which signals are attenuated by at least $A_{min}$.
+* For a high-pass filter, $\Omega_p > \Omega_s$. The term $\frac{\Omega_p}{\Omega_s}$ is the transition ratio (inverted compared to LP to keep it >1 for the logarithm).
+
+---
+
+## Butterworth Band-Pass (BP) Filter Order
+
+The order $N_{BP}$ is the same as an equivalent Low-Pass Prototype.
+$$N_{BP} \ge \frac{\log_{10}\left(\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\right)}{2 \log_{10}\left(\Omega_{s,LP_equiv}\right)}$$
+
+**Explanation of BP-Specific Variables:**
+* $\Omega_{p1}, \Omega_{p2}$: Passband edge angular frequencies ($\Omega_{p1} < \Omega_{p2}$).
+* $\Omega_{s1}, \Omega_{s2}$: Stopband edge angular frequencies ($\Omega_{s1} < \Omega_{p1}$ and $\Omega_{s2} > \Omega_{p2}$).
+* $\Omega_0 = \sqrt{\Omega_{p1}\Omega_{p2}}$: Geometric center frequency of the passband.
+* $B = \Omega_{p2} - \Omega_{p1}$: Bandwidth of the passband.
+* $\Omega_{s,LP_equiv} = \min\left( \left| \frac{\Omega_{s1}^2 - \Omega_0^2}{\Omega_{s1} B} \right|, \left| \frac{\Omega_{s2}^2 - \Omega_0^2}{\Omega_{s2} B} \right| \right)$
+    * This $\Omega_{s,LP_equiv}$ is the stopband edge of an equivalent low-pass prototype whose passband edge is normalized to 1 rad/s. It represents the more stringent of the two possible transitions from the passband edges to the stopband edges.
+
+---
+
+## Butterworth Band-Stop (BS) Filter Order
+
+The order $N_{BS}$ is the same as an equivalent Low-Pass Prototype.
+$$N_{BS} \ge \frac{\log_{10}\left(\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\right)}{2 \log_{10}\left(\Omega_{trans,LP_equiv}\right)}$$
+
+**Explanation of BS-Specific Variables:**
+* $\Omega_{s1}, \Omega_{s2}$: Stopband edge angular frequencies defining the rejected band ($\Omega_{s1} < \Omega_{s2}$). $A_{min}$ is the attenuation in this band.
+* $\Omega_{p1}, \Omega_{p2}$: Passband edge angular frequencies outside the stopband ($\Omega_{p1} < \Omega_{s1}$ and $\Omega_{p2} > \Omega_{s2}$). $A_{max}$ is the ripple in these passbands.
+* $\Omega_0 = \sqrt{\Omega_{s1}\Omega_{s2}}$: Geometric center frequency of the stopband.
+* $B = \Omega_{s2} - \Omega_{s1}$: Bandwidth of the stopband.
+* $\Omega_{p,LP_i} = \left| \frac{\Omega_{pi} B}{\Omega_{pi}^2 - \Omega_0^2} \right|$ for $i=1$ (using $\Omega_{p1}$) and $i=2$ (using $\Omega_{p2}$).
+    * These are the passband edges of an equivalent low-pass prototype whose stopband edge is normalized to 1 rad/s.
+* $\Omega_{trans,LP_equiv} = \frac{1}{\min(\Omega_{p,LP1}, \Omega_{p,LP2})}$
+    * This is the effective transition ratio (stopband edge / passband edge) for the equivalent low-pass prototype.
+
+
+---
+
+## 3. Determine the Filter Order (N)
+
+Calculated based on specs and chosen filter type. `scipy.signal.buttord` (and similar for other types) can find this for analog filters.
+
+```python
+# --- Continued from previous Python block ---
+
+# Determine minimum order N and natural frequency Wn for Butterworth
+# analog=True is crucial here!
+N, Wn_buttord = signal.buttord(Wp_rads, Ws_rads, gpass_db, gstop_db, analog=True)
+
+print(f"\nRequired Butterworth Filter Order (N): {N}")
+# Wn_buttord is the natural frequency (cutoff) in rad/s
+# For Butterworth, this Wn is the -3dB cutoff frequency
+print(f"Butterworth Natural Frequency (Wn_buttord): {Wn_buttord:.2f} rad/s")
+```
+* `Wn_buttord` is the natural angular frequency ($\Omega_n$) for the filter. For Butterworth, this is the -3dB cutoff frequency $\Omega_c$.
+
+---
+
+## 4 & 5. Obtain Analog Filter Transfer Function $H_a(s)$
+
+Conceptually: Find normalized LP prototype $\rightarrow$ Denormalize $\rightarrow$ Transform.
+
+`scipy.signal` functions like `butter`, `cheby1`, etc., (with `analog=True`) perform these steps internally to give the final analog filter transfer function $H_a(s)$.
+
+$H_a(s)$ can be represented as:
+1.  Numerator ($b$) and Denominator ($a$) coefficients: $H_a(s) = \frac{b_0 s^M + b_1 s^{M-1} + \dots + b_M}{a_0 s^N + a_1 s^{N-1} + \dots + a_N}$
+2.  Zeros ($z$), Poles ($p$), and Gain ($k$): $H_a(s) = k \frac{\prod (s-z_i)}{\prod (s-p_j)}$
+
+---
+
+## 4 & 5. Python: Design $H_a(s)$ (Butterworth LPF)
+
+Using `signal.butter` with `analog=True`. The `Wn` parameter here should be the cutoff frequency $\Omega_c$. For `buttord`, the returned `Wn_buttord` is exactly this $\Omega_c$.
+
+```python
+# --- Continued from previous Python block ---
+
+# Design the ANALOG Butterworth filter
+# Use N and Wn_buttord from buttord
+# output='ba' gives numerator/denominator coefficients
+b_analog, a_analog = signal.butter(N, Wn_buttord, btype='low', analog=True, output='ba')
+
+print("\nAnalog Filter Coefficients (Numerator b, Denominator a):")
+print(f"b_analog = {np.round(b_analog, 5)}")
+print(f"a_analog = {np.round(a_analog, 5)}")
+
+# Alternatively, get Zeros, Poles, Gain (ZPK)
+z_analog, p_analog, k_analog = signal.butter(N, Wn_buttord, btype='low', analog=True, output='zpk')
+print("\nAnalog Filter Zeros, Poles, Gain (ZPK):")
+print(f"Zeros (z_analog) = {z_analog}") # Will be empty for LP Butterworth
+print(f"Poles (p_analog) = {p_analog}")
+print(f"Gain (k_analog) = {k_analog:.2f}")
+```
+
+---
+
+## Visualizing Analog Frequency Response (Python)
+
+Use `scipy.signal.freqs` to compute the frequency response of an analog filter given its $b,a$ coefficients.
+
+```python
+# --- Continued from previous Python block ---
+
+# Frequencies for plotting (in rad/s)
+w_plot_rads = np.linspace(0.1, 2 * Ws_rads, 2000) # Up to twice stopband edge
+
+# Calculate frequency response H(s) for s = j*w
+w_response, h_response = signal.freqs(b_analog, a_analog, worN=w_plot_rads)
+
+# Convert to Hz for plotting convenience if desired
+w_plot_hz = w_response / (2 * np.pi)
+
+plt.figure(figsize=(10, 6))
+plt.subplot(2, 1, 1)
+plt.plot(w_plot_hz, 20 * np.log10(np.abs(h_response)))
+plt.title(f'Analog Butterworth LPF (Order N={N}) Frequency Response')
+plt.ylabel('Magnitude [dB]')
+plt.grid(True, which='both', axis='both')
+plt.axvline(fp_hz, color='green', linestyle='--', label=f'fp={fp_hz} Hz')
+plt.axvline(fs_hz, color='red', linestyle='--', label=f'fs={fs_hz} Hz')
+plt.axhline(-gpass_db, color='green', linestyle=':', label=f'-{gpass_db}dB')
+plt.axhline(-gstop_db, color='red', linestyle=':', label=f'-{gstop_db}dB')
+plt.legend()
+# Set x-axis to log scale for better visualization over wide frequency range
+plt.xscale('log')
+plt.xlim(fp_hz/10, fs_hz*5) # Adjust xlim as needed
+plt.ylim(-60, 5) # Adjust ylim as needed
+
+plt.subplot(2, 1, 2)
+plt.plot(w_plot_hz, np.angle(h_response, deg=True))
+plt.xlabel('Frequency [Hz]')
+plt.ylabel('Phase [degrees]')
+plt.grid(True, which='both', axis='both')
+plt.xscale('log')
+plt.xlim(fp_hz/10, fs_hz*5) # Adjust xlim as needed
+
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## 6. Synthesize the Circuit (Realization)
+
+Convert the mathematical $H_a(s)$ into a physical electronic circuit.
+*This step is **not** done by `scipy.signal`. It requires circuit design knowledge.*
+
+* **Passive Filters:**
+    * Resistors (R), Inductors (L), Capacitors (C).
+    * Commonly "ladder" structures.
+    * Inductors can be bulky/non-ideal, especially at low frequencies.
+* **Active Filters:**
+    * Op-Amps, Resistors (R), Capacitors (C) (avoids inductors).
+    * Can provide gain, easy to cascade.
+    * Requires power. Limited by op-amp performance.
+    * Common topologies: Sallen-Key, Multiple Feedback (MFB), State-Variable/Biquad.
+    * Higher-order filters are often cascaded 2nd-order sections.
+
+---
+
+## 7. Component Selection and Simulation
+
+* **Component Values:** Choose standard, available component values (R, C, L, Op-Amps) that are close to calculated ideals.
+* **Tolerances:** Account for component variations.
+* **Non-Idealities:** Consider real-world behavior of components.
+* **Circuit Simulation (Essential):**
+    * Use SPICE-based simulators (LTspice, QUCS, PSpice, etc.).
+    * Verify performance against specifications.
+    * Iterate on design and component values as needed.
+
+*This is also outside the scope of `scipy.signal` but critical for hardware implementation.*
+
+---
+
+## Tools for Analog Filter Design
+
+* **Mathematical Software:**
+    * **Python with `scipy.signal`:** Excellent for determining filter parameters ($N, \Omega_c$) and transfer functions ($b,a$ or $z,p,k$), and plotting responses.
+    * MATLAB (Signal Processing Toolbox), Octave.
+* **Filter Design Calculators/Software:**
+    * Texas Instruments FilterPro™, Analog Devices Filter Wizard®.
+    * Online calculators and dedicated filter design suites.
+* **Circuit Simulators:**
+    * LTspice, QUCS, PSpice, NI Multisim™, Keysight ADS.
+* **Filter Design Handbooks:**
+    * Classic texts (e.g., by Van Valkenburg, Zverev) provide theory, tables, and formulas.
+
+---
+
+## Conclusion -- For Analog Filter Design
+
+Analog filter design is a multi-step process:
+
+1.  **Specs $\rightarrow$ Theory $\rightarrow$ Math ($H_a(s)$) $\rightarrow$ Circuit $\rightarrow$ Verification.**
+2.  `scipy.signal` in Python is a powerful tool for the mathematical parts: determining order, calculating transfer function coefficients/poles/zeros, and analyzing frequency response for various analog filter prototypes.
+3.  Realizing the physical circuit requires additional circuit design knowledge and simulation tools.
+
+---
+
 ## Step 5: Apply Digital Transformation
 
 * Convert the designed analog filter $H_a(s)$ to the digital domain $H(z)$:
@@ -1266,56 +1626,6 @@ plt.show()
 5.  **Transform** to Digital $H(z)$ (apply Bilinear or Impulse Invariance).
 6.  **Realize** as Difference Equation for Implementation.
 
-
-## Introduction: IIR Filter Design Strategy
-
-* **Goal:** Design digital Infinite Impulse Response (IIR) filters.
-* **Approach:** Leverage well-established theory and techniques from *analog filter design*.
-* **Method:**
-    1.  Define digital specifications.
-    2.  (Conceptually) Design a suitable analog filter prototype $H(s)$.
-    3.  (Conceptually) Transform $H(s)$ into a digital filter $H(z)$.
-* **Practice (Code):** Use libraries like `scipy.signal` that often encapsulate steps 2 & 3.
-
----
-
-## Step 0: The Analog Domain - Laplace Transform
-
-* **Context:** Continuous-time signals and Linear Time-Invariant (LTI) systems.
-* **Tool:** The **Laplace Transform** converts differential equations (time domain) to algebraic equations (s-domain).
-* **Transfer Function $H(s)$:** Represents the system in the s-domain.
-    $$H(s) = \frac{Y(s)}{X(s)}$$
-    where $s = \sigma + j\Omega$ is the complex frequency ($\Omega$ = analog angular frequency).
-
----
-
-## Step 0: The Analog Domain - s-Plane Analysis
-
-* **s-Plane:** Complex plane where $H(s)$ is analyzed.
-* **Poles & Zeros:** Roots of the denominator & numerator of $H(s)$. Determine filter behavior.
-* **Frequency Response:** $H(j\Omega)$.
-* **Stability:** All poles must be in the **Left-Half Plane (LHP)** ($\text{Re}\{s\} < 0$).
-
----
-
-## Step 0: The Analog Domain - Filter Prototypes
-
-* Standardized analog filter approximations:
-    * **Butterworth:** Maximally flat passband.
-    * **Chebyshev I/II:** Equiripple passband/stopband.
-    * **Elliptic (Cauer):** Equiripple passband & stopband (sharpest transition).
-* These form the basis for many IIR digital filter designs.
-
----
-
-## The Bridge: Analog-to-Digital Mapping
-
-* **Core Task:** Convert $H(s)$ (s-plane) $\rightarrow$ $H(z)$ (z-plane).
-* Relates continuous frequency $\Omega$ to discrete frequency $\omega$.
-* Stable LHP (s-plane) $\rightarrow$ Stable interior of unit circle (z-plane).
-* **Common Method:** Bilinear Transformation (preserves stability, avoids aliasing, but warps frequency).
-
----
 
 ## Step 1: Digital Filter Specifications
 

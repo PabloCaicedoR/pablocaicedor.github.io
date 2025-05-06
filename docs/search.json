@@ -3077,7 +3077,7 @@
     "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#conclusion",
     "title": "Sistemas y Señales Biomédicos",
     "section": "Conclusion",
-    "text": "Conclusion\n\nThe Z-transform is crucial for analyzing and processing biomedical signals.\nIt enables:\n\nStability analysis (Region of Convergence)\nFiltering and feature extraction (EEG, ECG, EMG signals)\nEfficient signal convolution\n\nThe inverse Z-transform reconstructs signals for further analysis.\nUnderstanding the Z-transform helps in filter design, denoising, and feature extraction in biomedical applications."
+    "text": "Conclusion\nAnalog filter design is a multi-step process:\n\nSpecs \\(\\rightarrow\\) Theory \\(\\rightarrow\\) Math (\\(H_a(s)\\)) \\(\\rightarrow\\) Circuit \\(\\rightarrow\\) Verification.\nscipy.signal in Python is a powerful tool for the mathematical parts: determining order, calculating transfer function coefficients/poles/zeros, and analyzing frequency response for various analog filter prototypes.\nRealizing the physical circuit requires additional circuit design knowledge and simulation tools."
   },
   {
     "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#references",
@@ -5528,5 +5528,159 @@
     "title": "Sistemas y Señales Biomédicos",
     "section": "Step 1: Example Specifications (Python)",
     "text": "Step 1: Example Specifications (Python)\nimport numpy as np\nfrom scipy import signal\nimport matplotlib.pyplot as plt\n\n# Filter Specifications\nfs = 10000  # Sampling frequency (Hz)\nfp = 1000   # Passband edge frequency (Hz)\nfs_stop = 1500 # Stopband edge frequency (Hz)\ngpass = 1    # Passband ripple (dB) - max loss\ngstop = 40   # Stopband attenuation (dB) - min attenuation\n\n# Normalize frequencies to Nyquist frequency (fs/2)\nwp = fp / (fs / 2)\nws = fs_stop / (fs / 2)\n\nprint(f\"Sampling Frequency: {fs} Hz\")\nprint(f\"Normalized Passband Edge: {wp:.3f} (pi rad/sample)\")\nprint(f\"Normalized Stopband Edge: {ws:.3f} (pi rad/sample)\")\nprint(f\"Max Passband Loss: {gpass} dB\")\nprint(f\"Min Stopband Attenuation: {gstop} dB\")"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#analog-filter-design-overview",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#analog-filter-design-overview",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Analog Filter Design: Overview",
+    "text": "Analog Filter Design: Overview\nDesigning an analog filter translates desired signal filtering characteristics into a physical electronic circuit.\nKey Stages:\n\nDefine Specifications\nChoose an Approximation Method\nDetermine Filter Order\nFind Normalized Low-Pass Prototype (Conceptual)\nDenormalize & Transform (Conceptual)\nSynthesize the Circuit\nComponent Selection & Simulation\n\nWe’ll illustrate steps 1, 3, and aspects of 4/5 using Python’s scipy.signal."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#define-filter-specifications",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#define-filter-specifications",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "1. Define Filter Specifications",
+    "text": "1. Define Filter Specifications\nThis is the most crucial first step.\n\nType: Low-Pass (LPF), High-Pass (HPF), Band-Pass (BPF), Band-Stop (BSF).\nCritical Frequencies (Analog, \\(\\Omega\\) in rad/s or \\(f\\) in Hz):\n\nCutoff (\\(\\Omega_c, f_c\\))\nPassband Edge(s) (\\(\\Omega_p, f_p\\))\nStopband Edge(s) (\\(\\Omega_s, f_s\\))\n\nAttenuation Levels (dB):\n\nMax. Passband Attenuation/Ripple (\\(A_{max}\\) or gpass)\nMin. Stopband Attenuation (\\(A_{min}\\) or gstop)\n\nPhase Response: Linear phase (e.g., Bessel) or not critical.\nImpedance: Source/Load matching."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#specifications-python-example-low-pass",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#specifications-python-example-low-pass",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "1. Specifications: Python Example (Low-Pass)",
+    "text": "1. Specifications: Python Example (Low-Pass)\nLet’s define specs for an analog low-pass filter. Frequencies for analog filters in scipy are typically in rad/s.\nimport numpy as np\nfrom scipy import signal\nimport matplotlib.pyplot as plt\n\n# Specifications for an ANALOG Low-Pass Filter\nfp_hz = 1000  # Passband edge frequency in Hz\nfs_hz = 1500  # Stopband edge frequency in Hz\ngpass_db = 1.0  # Max loss in passband (dB)\ngstop_db = 40.0 # Min attenuation in stopband (dB)\n\n# Convert Hz to rad/s for Scipy analog functions\nWp_rads = 2 * np.pi * fp_hz # Passband edge in rad/s\nWs_rads = 2 * np.pi * fs_hz # Stopband edge in rad/s\n\nprint(f\"Passband edge: {Wp_rads:.2f} rad/s ({fp_hz} Hz)\")\nprint(f\"Stopband edge: {Ws_rads:.2f} rad/s ({fs_hz} Hz)\")\nprint(f\"Max Passband Loss: {gpass_db} dB\")\nprint(f\"Min Stopband Attenuation: {gstop_db} dB\")"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#choose-an-approximation-method-filter-family",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#choose-an-approximation-method-filter-family",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "2. Choose an Approximation Method (Filter Family)",
+    "text": "2. Choose an Approximation Method (Filter Family)\nSelect based on trade-offs (roll-off, ripple, phase).\n\nButterworth: Maximally flat passband, smooth roll-off.\nChebyshev Type I: Steeper roll-off than Butterworth, passband ripple.\nChebyshev Type II: Steeper roll-off, stopband ripple, flat passband.\nElliptic (Cauer): Steepest roll-off, ripple in both bands.\nBessel-Thomson: Best phase linearity (constant group delay), slowest roll-off.\n\nFor our Python examples, we’ll use Butterworth."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "3. Determine the Filter Order (N)",
+    "text": "3. Determine the Filter Order (N)\nEstimating the filter order (\\(N\\)) is a crucial first step in analog filter design after defining specifications. The order determines the filter’s complexity and steepness of its frequency response roll-off.\nThese equations are for Butterworth filters. The calculated \\(N\\) is a real number and must be rounded up to the next integer.\nCommon Variables: * \\(N\\): Filter order (integer, result of formula is rounded up). * \\(A_{min}\\): Minimum stopband attenuation (dB, positive value, e.g., 40 dB). * \\(A_{max}\\): Maximum passband attenuation/ripple (dB, positive value, e.g., 1 dB). * \\(\\log_{10}\\): Base-10 logarithm. * All \\(\\Omega\\) values are angular frequencies in rad/s."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#obtain-analog-filter-transfer-function-h_as",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#obtain-analog-filter-transfer-function-h_as",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "4 & 5. Obtain Analog Filter Transfer Function \\(H_a(s)\\)",
+    "text": "4 & 5. Obtain Analog Filter Transfer Function \\(H_a(s)\\)\nConceptually: Find normalized LP prototype \\(\\rightarrow\\) Denormalize \\(\\rightarrow\\) Transform.\nscipy.signal functions like butter, cheby1, etc., (with analog=True) perform these steps internally to give the final analog filter transfer function \\(H_a(s)\\).\n\\(H_a(s)\\) can be represented as: 1. Numerator (\\(b\\)) and Denominator (\\(a\\)) coefficients: \\(H_a(s) = \\frac{b_0 s^M + b_1 s^{M-1} + \\dots + b_M}{a_0 s^N + a_1 s^{N-1} + \\dots + a_N}\\) 2. Zeros (\\(z\\)), Poles (\\(p\\)), and Gain (\\(k\\)): \\(H_a(s) = k \\frac{\\prod (s-z_i)}{\\prod (s-p_j)}\\)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#python-design-h_as-butterworth-lpf",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#python-design-h_as-butterworth-lpf",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "4 & 5. Python: Design \\(H_a(s)\\) (Butterworth LPF)",
+    "text": "4 & 5. Python: Design \\(H_a(s)\\) (Butterworth LPF)\nUsing signal.butter with analog=True. The Wn parameter here should be the cutoff frequency \\(\\Omega_c\\). For buttord, the returned Wn_buttord is exactly this \\(\\Omega_c\\).\n# --- Continued from previous Python block ---\n\n# Design the ANALOG Butterworth filter\n# Use N and Wn_buttord from buttord\n# output='ba' gives numerator/denominator coefficients\nb_analog, a_analog = signal.butter(N, Wn_buttord, btype='low', analog=True, output='ba')\n\nprint(\"\\nAnalog Filter Coefficients (Numerator b, Denominator a):\")\nprint(f\"b_analog = {np.round(b_analog, 5)}\")\nprint(f\"a_analog = {np.round(a_analog, 5)}\")\n\n# Alternatively, get Zeros, Poles, Gain (ZPK)\nz_analog, p_analog, k_analog = signal.butter(N, Wn_buttord, btype='low', analog=True, output='zpk')\nprint(\"\\nAnalog Filter Zeros, Poles, Gain (ZPK):\")\nprint(f\"Zeros (z_analog) = {z_analog}\") # Will be empty for LP Butterworth\nprint(f\"Poles (p_analog) = {p_analog}\")\nprint(f\"Gain (k_analog) = {k_analog:.2f}\")"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#visualizing-analog-frequency-response-python",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#visualizing-analog-frequency-response-python",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Visualizing Analog Frequency Response (Python)",
+    "text": "Visualizing Analog Frequency Response (Python)\nUse scipy.signal.freqs to compute the frequency response of an analog filter given its \\(b,a\\) coefficients.\n# --- Continued from previous Python block ---\n\n# Frequencies for plotting (in rad/s)\nw_plot_rads = np.linspace(0.1, 2 * Ws_rads, 2000) # Up to twice stopband edge\n\n# Calculate frequency response H(s) for s = j*w\nw_response, h_response = signal.freqs(b_analog, a_analog, worN=w_plot_rads)\n\n# Convert to Hz for plotting convenience if desired\nw_plot_hz = w_response / (2 * np.pi)\n\nplt.figure(figsize=(10, 6))\nplt.subplot(2, 1, 1)\nplt.plot(w_plot_hz, 20 * np.log10(np.abs(h_response)))\nplt.title(f'Analog Butterworth LPF (Order N={N}) Frequency Response')\nplt.ylabel('Magnitude [dB]')\nplt.grid(True, which='both', axis='both')\nplt.axvline(fp_hz, color='green', linestyle='--', label=f'fp={fp_hz} Hz')\nplt.axvline(fs_hz, color='red', linestyle='--', label=f'fs={fs_hz} Hz')\nplt.axhline(-gpass_db, color='green', linestyle=':', label=f'-{gpass_db}dB')\nplt.axhline(-gstop_db, color='red', linestyle=':', label=f'-{gstop_db}dB')\nplt.legend()\n# Set x-axis to log scale for better visualization over wide frequency range\nplt.xscale('log')\nplt.xlim(fp_hz/10, fs_hz*5) # Adjust xlim as needed\nplt.ylim(-60, 5) # Adjust ylim as needed\n\nplt.subplot(2, 1, 2)\nplt.plot(w_plot_hz, np.angle(h_response, deg=True))\nplt.xlabel('Frequency [Hz]')\nplt.ylabel('Phase [degrees]')\nplt.grid(True, which='both', axis='both')\nplt.xscale('log')\nplt.xlim(fp_hz/10, fs_hz*5) # Adjust xlim as needed\n\nplt.tight_layout()\nplt.show()"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#synthesize-the-circuit-realization",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#synthesize-the-circuit-realization",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "6. Synthesize the Circuit (Realization)",
+    "text": "6. Synthesize the Circuit (Realization)\nConvert the mathematical \\(H_a(s)\\) into a physical electronic circuit. This step is not done by scipy.signal. It requires circuit design knowledge.\n\nPassive Filters:\n\nResistors (R), Inductors (L), Capacitors (C).\nCommonly “ladder” structures.\nInductors can be bulky/non-ideal, especially at low frequencies.\n\nActive Filters:\n\nOp-Amps, Resistors (R), Capacitors (C) (avoids inductors).\nCan provide gain, easy to cascade.\nRequires power. Limited by op-amp performance.\nCommon topologies: Sallen-Key, Multiple Feedback (MFB), State-Variable/Biquad.\nHigher-order filters are often cascaded 2nd-order sections."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#component-selection-and-simulation",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#component-selection-and-simulation",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "7. Component Selection and Simulation",
+    "text": "7. Component Selection and Simulation\n\nComponent Values: Choose standard, available component values (R, C, L, Op-Amps) that are close to calculated ideals.\nTolerances: Account for component variations.\nNon-Idealities: Consider real-world behavior of components.\nCircuit Simulation (Essential):\n\nUse SPICE-based simulators (LTspice, QUCS, PSpice, etc.).\nVerify performance against specifications.\nIterate on design and component values as needed.\n\n\nThis is also outside the scope of scipy.signal but critical for hardware implementation."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#tools-for-analog-filter-design",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#tools-for-analog-filter-design",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Tools for Analog Filter Design",
+    "text": "Tools for Analog Filter Design\n\nMathematical Software:\n\nPython with scipy.signal: Excellent for determining filter parameters (\\(N, \\Omega_c\\)) and transfer functions (\\(b,a\\) or \\(z,p,k\\)), and plotting responses.\nMATLAB (Signal Processing Toolbox), Octave.\n\nFilter Design Calculators/Software:\n\nTexas Instruments FilterPro™, Analog Devices Filter Wizard®.\nOnline calculators and dedicated filter design suites.\n\nCircuit Simulators:\n\nLTspice, QUCS, PSpice, NI Multisim™, Keysight ADS.\n\nFilter Design Handbooks:\n\nClassic texts (e.g., by Van Valkenburg, Zverev) provide theory, tables, and formulas."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-low-pass-lp-filter-order",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-low-pass-lp-filter-order",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Butterworth Low-Pass (LP) Filter Order",
+    "text": "Butterworth Low-Pass (LP) Filter Order\n\\[N \\ge \\frac{\\log_{10}\\left(\\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\\right)}{2 \\log_{10}\\left(\\frac{\\Omega_s}{\\Omega_p}\\right)}\\]\nExplanation of LP-Specific Variables: * \\(\\Omega_p\\): Passband edge angular frequency. The frequency up to which signals pass with at most \\(A_{max}\\) attenuation. * \\(\\Omega_s\\): Stopband edge angular frequency. The frequency from which signals are attenuated by at least \\(A_{min}\\). * For a low-pass filter, \\(\\Omega_s &gt; \\Omega_p\\). The term \\(\\frac{\\Omega_s}{\\Omega_p}\\) is the transition ratio."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-high-pass-hp-filter-order",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-high-pass-hp-filter-order",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Butterworth High-Pass (HP) Filter Order",
+    "text": "Butterworth High-Pass (HP) Filter Order\n\\[N \\ge \\frac{\\log_{10}\\left(\\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\\right)}{2 \\log_{10}\\left(\\frac{\\Omega_p}{\\Omega_s}\\right)}\\]\nExplanation of HP-Specific Variables: * \\(\\Omega_p\\): Passband edge angular frequency. The frequency from which signals pass with at most \\(A_{max}\\) attenuation. * \\(\\Omega_s\\): Stopband edge angular frequency. The frequency down to which signals are attenuated by at least \\(A_{min}\\). * For a high-pass filter, \\(\\Omega_p &gt; \\Omega_s\\). The term \\(\\frac{\\Omega_p}{\\Omega_s}\\) is the transition ratio (inverted compared to LP to keep it &gt;1 for the logarithm)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-band-pass-bp-filter-order",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-band-pass-bp-filter-order",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Butterworth Band-Pass (BP) Filter Order",
+    "text": "Butterworth Band-Pass (BP) Filter Order\nThe order \\(N_{BP}\\) is the same as an equivalent Low-Pass Prototype. \\[N_{BP} \\ge \\frac{\\log_{10}\\left(\\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\\right)}{2 \\log_{10}\\left(\\Omega_{s,LP_equiv}\\right)}\\]\nExplanation of BP-Specific Variables: * \\(\\Omega_{p1}, \\Omega_{p2}\\): Passband edge angular frequencies (\\(\\Omega_{p1} &lt; \\Omega_{p2}\\)). * \\(\\Omega_{s1}, \\Omega_{s2}\\): Stopband edge angular frequencies (\\(\\Omega_{s1} &lt; \\Omega_{p1}\\) and \\(\\Omega_{s2} &gt; \\Omega_{p2}\\)). * \\(\\Omega_0 = \\sqrt{\\Omega_{p1}\\Omega_{p2}}\\): Geometric center frequency of the passband. * \\(B = \\Omega_{p2} - \\Omega_{p1}\\): Bandwidth of the passband. * \\(\\Omega_{s,LP_equiv} = \\min\\left( \\left| \\frac{\\Omega_{s1}^2 - \\Omega_0^2}{\\Omega_{s1} B} \\right|, \\left| \\frac{\\Omega_{s2}^2 - \\Omega_0^2}{\\Omega_{s2} B} \\right| \\right)\\) * This \\(\\Omega_{s,LP_equiv}\\) is the stopband edge of an equivalent low-pass prototype whose passband edge is normalized to 1 rad/s. It represents the more stringent of the two possible transitions from the passband edges to the stopband edges."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-band-stop-bs-filter-order",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-band-stop-bs-filter-order",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Butterworth Band-Stop (BS) Filter Order",
+    "text": "Butterworth Band-Stop (BS) Filter Order\nThe order \\(N_{BS}\\) is the same as an equivalent Low-Pass Prototype. \\[N_{BS} \\ge \\frac{\\log_{10}\\left(\\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\\right)}{2 \\log_{10}\\left(\\Omega_{trans,LP_equiv}\\right)}\\]\nExplanation of BS-Specific Variables: * \\(\\Omega_{s1}, \\Omega_{s2}\\): Stopband edge angular frequencies defining the rejected band (\\(\\Omega_{s1} &lt; \\Omega_{s2}\\)). \\(A_{min}\\) is the attenuation in this band. * \\(\\Omega_{p1}, \\Omega_{p2}\\): Passband edge angular frequencies outside the stopband (\\(\\Omega_{p1} &lt; \\Omega_{s1}\\) and \\(\\Omega_{p2} &gt; \\Omega_{s2}\\)). \\(A_{max}\\) is the ripple in these passbands. * \\(\\Omega_0 = \\sqrt{\\Omega_{s1}\\Omega_{s2}}\\): Geometric center frequency of the stopband. * \\(B = \\Omega_{s2} - \\Omega_{s1}\\): Bandwidth of the stopband. * \\(\\Omega_{p,LP_i} = \\left| \\frac{\\Omega_{pi} B}{\\Omega_{pi}^2 - \\Omega_0^2} \\right|\\) for \\(i=1\\) (using \\(\\Omega_{p1}\\)) and \\(i=2\\) (using \\(\\Omega_{p2}\\)). * These are the passband edges of an equivalent low-pass prototype whose stopband edge is normalized to 1 rad/s. * \\(\\Omega_{trans,LP_equiv} = \\frac{1}{\\min(\\Omega_{p,LP1}, \\Omega_{p,LP2})}\\) * This is the effective transition ratio (stopband edge / passband edge) for the equivalent low-pass prototype."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "3. Determine the Filter Order (N)",
+    "text": "3. Determine the Filter Order (N)\nCalculated based on specs and chosen filter type. scipy.signal.buttord (and similar for other types) can find this for analog filters.\n# --- Continued from previous Python block ---\n\n# Determine minimum order N and natural frequency Wn for Butterworth\n# analog=True is crucial here!\nN, Wn_buttord = signal.buttord(Wp_rads, Ws_rads, gpass_db, gstop_db, analog=True)\n\nprint(f\"\\nRequired Butterworth Filter Order (N): {N}\")\n# Wn_buttord is the natural frequency (cutoff) in rad/s\n# For Butterworth, this Wn is the -3dB cutoff frequency\nprint(f\"Butterworth Natural Frequency (Wn_buttord): {Wn_buttord:.2f} rad/s\")\n\nWn_buttord is the natural angular frequency (\\(\\Omega_n\\)) for the filter. For Butterworth, this is the -3dB cutoff frequency \\(\\Omega_c\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-filter-fundamentals",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#butterworth-filter-fundamentals",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Butterworth Filter Fundamentals",
+    "text": "Butterworth Filter Fundamentals\nThe Butterworth filter is maximally flat in the passband.\nThe normalized prototype has a cutoff frequency \\(\\omega_c = 1\\) rad/s.\nPoles are placed on the unit circle in the \\(s\\)-plane at angles: \\[s_k = e^{j\\pi\\frac{2k + n - 1}{2n}}, \\quad k = 1,2,\\ldots,n.\\]\nThe Butterworth polynomial of order \\(n\\) is: \\[B_n(s) = \\prod_{k=1}^{n} (s - s_k).\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-lp-transfer-function",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-lp-transfer-function",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Lowpass (LP) Transfer Function",
+    "text": "Normalized Lowpass (LP) Transfer Function\nThe normalized \\(n\\)th-order lowpass prototype is: \\[H_{LP}(s) = \\frac{1}{B_n(s)} = \\frac{1}{\\prod_{k=1}^n (s - s_k)}.\\] This yields a cutoff at \\(|H_{LP}(j1)| = 1/\\sqrt{2}\\) (the –3 dB point)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-highpass-hp-transfer-function",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-highpass-hp-transfer-function",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Highpass (HP) Transfer Function",
+    "text": "Normalized Highpass (HP) Transfer Function\nApply the frequency transformation \\(s \\to 1/s\\) and multiply by \\(s^n\\): \\[H_{HP}(s) = H_{LP}(1/s)\\,s^n = \\frac{s^n}{B_n(1/s)} = \\frac{s^n}{\\prod_{k=1}^n (1/s - s_k)} = \\frac{\\prod_{k=1}^n(-s_k)\\;s^n}{\\prod_{k=1}^n(s - s_k^{-1})}.\\] This prototype has a normalized cutoff at \\(\\omega=1\\) rad/s in the highpass sense."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-bandpass-bp-transfer-function",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-bandpass-bp-transfer-function",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Bandpass (BP) Transfer Function",
+    "text": "Normalized Bandpass (BP) Transfer Function\nUse the bandpass transformation: \\[s \\to \\frac{s^2 + \\Omega_0^2}{B\\,s},\\] where \\(\\Omega_0 = \\sqrt{\\omega_1\\omega_2}\\) and \\(B = \\omega_2 - \\omega_1\\).\nFor a normalized prototype, we set \\(\\Omega_0 = 1\\), \\(B = 1\\), giving: \\[H_{BP}(s) = H_{LP}\\left(\\frac{s^2 + 1}{s}\\right) = \\frac{(s)^n}{\\prod_{k=1}^n\\left(\\frac{s^2 + 1}{s} - s_k\\right)} = \\frac{s^n}{\\prod_{k=1}^n\\left(s^2 + 1 - s\\,s_k\\right)}.\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-bandstop-bs-transfer-function",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-bandstop-bs-transfer-function",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Bandstop (BS) Transfer Function",
+    "text": "Normalized Bandstop (BS) Transfer Function\nUse the bandstop transformation: \\[s \\to \\frac{s}{\\frac{s^2 + 1}{s}} = \\frac{s^2}{s^2 + 1},\\] or equivalently \\(s \\to (B\\,s)/(s^2 + \\Omega_0^2)\\) with \\(B=1\\), \\(\\Omega_0=1\\). Then: \\[H_{BS}(s) = H_{LP}\\left(\\frac{s}{s^2 + 1}\\right) = \\frac{1}{B_n\\left(\\frac{s}{s^2+1}\\right)} = \\frac{1}{\\prod_{k=1}^n\\left(\\frac{s}{s^2+1} - s_k\\right)} = \\frac{(s^2+1)^n}{\\prod_{k=1}^n\\left(s - s_k(s^2+1)\\right)} = \\frac{(s^2+1)^n}{\\prod_{k=1}^n\\left(s - s_ks^2 - s_k\\right)}.\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#conclusion-for-analog-filter-design",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#conclusion-for-analog-filter-design",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Conclusion – For Analog Filter Design",
+    "text": "Conclusion – For Analog Filter Design\nAnalog filter design is a multi-step process:\n\nSpecs \\(\\rightarrow\\) Theory \\(\\rightarrow\\) Math (\\(H_a(s)\\)) \\(\\rightarrow\\) Circuit \\(\\rightarrow\\) Verification.\nscipy.signal in Python is a powerful tool for the mathematical parts: determining order, calculating transfer function coefficients/poles/zeros, and analyzing frequency response for various analog filter prototypes.\nRealizing the physical circuit requires additional circuit design knowledge and simulation tools."
   }
 ]
