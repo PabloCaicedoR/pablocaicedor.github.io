@@ -1452,7 +1452,7 @@ $$N_{BS} \ge \frac{\log_{10}\left(\frac{10^{A_{min}/10}-1}{10^{A_{max}/10}-1}\ri
 
 ---
 
-## 3. Determine the Filter Order (N)
+## 3. Determine the Filter Order (N) \& Denormalization
 
 Calculated based on specs and chosen filter type. `scipy.signal.buttord` (and similar for other types) can find this for analog filters.
 
@@ -1469,6 +1469,49 @@ print(f"\nRequired Butterworth Filter Order (N): {N}")
 print(f"Butterworth Natural Frequency (Wn_buttord): {Wn_buttord:.2f} rad/s")
 ```
 * `Wn_buttord` is the natural angular frequency ($\Omega_n$) for the filter. For Butterworth, this is the -3dB cutoff frequency $\Omega_c$.
+
+---
+
+## 3. Determine the Filter Order (N) \& Denormalization
+
+### Normalized Lowpass to Denormalized Lowpass
+
+- **Goal:** Transform a normalized LP ($\omega_c = 1$) to a denormalized LP with cutoff $\Omega_c$.
+- **Transformation:** Replace $s_{norm}$ with $s / \Omega_c$.
+$$s_{norm} \to \frac{s}{\Omega_c}$$
+- **Denormalized Transfer Function:**
+$$H_{LP}(s) = H_{norm}\left(\frac{s}{\Omega_c}\right)$$
+
+## Normalized Lowpass to Denormalized Highpass
+
+- **Goal:** Transform a normalized LP ($\omega_c = 1$) to a denormalized HP with cutoff $\Omega_c$.
+- **Transformation:** Replace $s_{norm}$ with $\Omega_c / s$.
+$$s_{norm} \to \frac{\Omega_c}{s}$$
+- **Denormalized Transfer Function:**
+$$H_{HP}(s) = H_{norm}\left(\frac{\Omega_c}{s}\right)$$
+
+## Normalized Lowpass to Denormalized Bandpass
+
+- **Goal:** Transform a normalized LP ($\omega_c = 1$) to a denormalized BP with center frequency $\Omega_0$ and bandwidth $B$.
+- **Transformation:** Replace $s_{norm}$ with $\frac{s^2 + \Omega_0^2}{B s}$.
+$$s_{norm} \to \frac{s^2 + \Omega_0^2}{B s}$$
+- **Parameters:**
+    - $\Omega_0 = \sqrt{\Omega_1 \Omega_2}$ (geometric mean)
+    - $B = \Omega_2 - \Omega_1$ (bandwidth)
+    ($\Omega_1, \Omega_2$ are the desired band edges in rad/s)
+- **Denormalized Transfer Function:**
+$$H_{BP}(s) = H_{norm}\left(\frac{s^2 + \Omega_0^2}{B s}\right)$$
+
+## Normalized Lowpass to Denormalized Bandstop
+
+- **Goal:** Transform a normalized LP ($\omega_c = 1$) to a denormalized BS with center frequency $\Omega_0$ and bandwidth $B$.
+- **Transformation:** Replace $s_{norm}$ with $\frac{B s}{s^2 + \Omega_0^2}$.
+$$s_{norm} \to \frac{B s}{s^2 + \Omega_0^2}$$
+- **Parameters:**
+    - $\Omega_0 = \sqrt{\Omega_1 \Omega_2}$
+    - $B = \Omega_2 - \Omega_1$
+- **Denormalized Transfer Function:**
+$$H_{BS}(s) = H_{norm}\left(\frac{B s}{s^2 + \Omega_0^2}\right)$$
 
 ---
 
@@ -1822,6 +1865,6 @@ plt.show()
 
 ---
 
-# Final Final
+# Final Final. 
 
 ---

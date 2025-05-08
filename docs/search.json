@@ -5682,5 +5682,40 @@
     "title": "Sistemas y Señales Biomédicos",
     "section": "Conclusion – For Analog Filter Design",
     "text": "Conclusion – For Analog Filter Design\nAnalog filter design is a multi-step process:\n\nSpecs \\(\\rightarrow\\) Theory \\(\\rightarrow\\) Math (\\(H_a(s)\\)) \\(\\rightarrow\\) Circuit \\(\\rightarrow\\) Verification.\nscipy.signal in Python is a powerful tool for the mathematical parts: determining order, calculating transfer function coefficients/poles/zeros, and analyzing frequency response for various analog filter prototypes.\nRealizing the physical circuit requires additional circuit design knowledge and simulation tools."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n-denormalization",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n-denormalization",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "3. Determine the Filter Order (N) & Denormalization",
+    "text": "3. Determine the Filter Order (N) & Denormalization\nCalculated based on specs and chosen filter type. scipy.signal.buttord (and similar for other types) can find this for analog filters.\n# --- Continued from previous Python block ---\n\n# Determine minimum order N and natural frequency Wn for Butterworth\n# analog=True is crucial here!\nN, Wn_buttord = signal.buttord(Wp_rads, Ws_rads, gpass_db, gstop_db, analog=True)\n\nprint(f\"\\nRequired Butterworth Filter Order (N): {N}\")\n# Wn_buttord is the natural frequency (cutoff) in rad/s\n# For Butterworth, this Wn is the -3dB cutoff frequency\nprint(f\"Butterworth Natural Frequency (Wn_buttord): {Wn_buttord:.2f} rad/s\")\n\nWn_buttord is the natural angular frequency (\\(\\Omega_n\\)) for the filter. For Butterworth, this is the -3dB cutoff frequency \\(\\Omega_c\\)."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n-denormalization-1",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#determine-the-filter-order-n-denormalization-1",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "3. Determine the Filter Order (N) & Denormalization",
+    "text": "3. Determine the Filter Order (N) & Denormalization\nNormalized Lowpass to Denormalized Lowpass\n\nGoal: Transform a normalized LP (\\(\\omega_c = 1\\)) to a denormalized LP with cutoff \\(\\Omega_c\\).\nTransformation: Replace \\(s_{norm}\\) with \\(s / \\Omega_c\\). \\[s_{norm} \\to \\frac{s}{\\Omega_c}\\]\nDenormalized Transfer Function: \\[H_{LP}(s) = H_{norm}\\left(\\frac{s}{\\Omega_c}\\right)\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-to-denormalized-highpass",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-to-denormalized-highpass",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Lowpass to Denormalized Highpass",
+    "text": "Normalized Lowpass to Denormalized Highpass\n\nGoal: Transform a normalized LP (\\(\\omega_c = 1\\)) to a denormalized HP with cutoff \\(\\Omega_c\\).\nTransformation: Replace \\(s_{norm}\\) with \\(\\Omega_c / s\\). \\[s_{norm} \\to \\frac{\\Omega_c}{s}\\]\nDenormalized Transfer Function: \\[H_{HP}(s) = H_{norm}\\left(\\frac{\\Omega_c}{s}\\right)\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-to-denormalized-bandpass",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-to-denormalized-bandpass",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Lowpass to Denormalized Bandpass",
+    "text": "Normalized Lowpass to Denormalized Bandpass\n\nGoal: Transform a normalized LP (\\(\\omega_c = 1\\)) to a denormalized BP with center frequency \\(\\Omega_0\\) and bandwidth \\(B\\).\nTransformation: Replace \\(s_{norm}\\) with \\(\\frac{s^2 + \\Omega_0^2}{B s}\\). \\[s_{norm} \\to \\frac{s^2 + \\Omega_0^2}{B s}\\]\nParameters:\n\n\\(\\Omega_0 = \\sqrt{\\Omega_1 \\Omega_2}\\) (geometric mean)\n\\(B = \\Omega_2 - \\Omega_1\\) (bandwidth) (\\(\\Omega_1, \\Omega_2\\) are the desired band edges in rad/s)\n\nDenormalized Transfer Function: \\[H_{BP}(s) = H_{norm}\\left(\\frac{s^2 + \\Omega_0^2}{B s}\\right)\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-to-denormalized-bandstop",
+    "href": "presentaciones/SYSB/Lect009_DigitalFilters_ztransform.html#normalized-lowpass-to-denormalized-bandstop",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Normalized Lowpass to Denormalized Bandstop",
+    "text": "Normalized Lowpass to Denormalized Bandstop\n\nGoal: Transform a normalized LP (\\(\\omega_c = 1\\)) to a denormalized BS with center frequency \\(\\Omega_0\\) and bandwidth \\(B\\).\nTransformation: Replace \\(s_{norm}\\) with \\(\\frac{B s}{s^2 + \\Omega_0^2}\\). \\[s_{norm} \\to \\frac{B s}{s^2 + \\Omega_0^2}\\]\nParameters:\n\n\\(\\Omega_0 = \\sqrt{\\Omega_1 \\Omega_2}\\)\n\\(B = \\Omega_2 - \\Omega_1\\)\n\nDenormalized Transfer Function: \\[H_{BS}(s) = H_{norm}\\left(\\frac{B s}{s^2 + \\Omega_0^2}\\right)\\]"
   }
 ]
