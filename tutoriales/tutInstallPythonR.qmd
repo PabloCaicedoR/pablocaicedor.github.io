@@ -1,0 +1,208 @@
+---
+title: "Instalación de Python 3.12 en Ubuntu (WSL)"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo R."
+image: "../recursos/imagenes/tutoriales/taylor_expansion/taylor_expansion.jpg"
+---
+
+# 0 Instalación de Debian en WSL
+
+Antes de compilar Python, es necesario disponer de Debian corriendo bajo WSL2 en Windows 11. Sigue estos pasos:
+
+1. **Verificar requisitos**:
+   - Windows 11 (build 22000 o superior).
+   - Virtualización habilitada en BIOS/UEFI (Intel VT-x o AMD SVM).
+   - Permisos de administrador en Windows.
+
+2. **Habilitar WSL y plataforma de máquina virtual**:
+
+    Abre PowerShell como administrador y ejecuta:
+    ```powershell
+    wsl --install
+    ```
+    - Esto activa las características “Virtual Machine Platform” y “Windows Subsystem for Linux”.
+    - Descarga e instala Ubuntu por defecto (puedes ignorar o desinstalar luego).
+    - Reinicia el equipo si se solicita.
+
+3. **Instalar Debian**:
+
+    - **Vía PowerShell**:
+      ```powershell
+      wsl --install -d Ubuntu
+      ```
+    - **O desde Microsoft Store**:
+      1. Abre Microsoft Store.
+      2. Busca "Debian GNU/Linux" y pulsa **Instalar**.
+
+
+5. **Primer arranque de Ubuntu**:
+    1. Abre Debian desde el menú Inicio o Windows Terminal.
+    2. Crea tu usuario y contraseña de Linux.
+
+6. **Actualizar paquetes del sistema**:
+
+    ```bash
+    sudo apt update && sudo apt upgrade -y
+    ```
+
+# 1 Prerrequisitos
+
+Antes de comenzar, asegúrate de contar con:
+
+- Debian en WSL2 sobre Windows 11.
+- Conexión a Internet.
+- Permisos de sudo en la distribución Debian.
+
+# 2 Actualizar repositorios e instalar dependencias de compilación
+
+Ejecuta los siguientes comandos para actualizar el sistema e instalar las bibliotecas necesarias para compilar Python desde el código fuente:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  build-essential \
+  libssl-dev \
+  zlib1g-dev \
+  libncurses5-dev libncursesw5-dev \
+  libreadline-dev \
+  libsqlite3-dev \
+  libgdbm-dev libdb5.3-dev \
+  libbz2-dev \
+  libexpat1-dev \
+  liblzma-dev \
+  tk-dev \
+  dirmngr \
+  gnupg \
+  apt-transport-https \
+  ca-certificates \
+  software-properties-common wget \
+  libxml2-dev \
+  libharfbuzz-dev \
+  libfribidi-dev \
+  libcurl4-openssl-dev \
+  libmagick++-dev \
+  cmake\
+  wget
+```
+
+# 7 Instalación de la versión más reciente de R
+
+Para instalar la versión más reciente de R en Debian bajo WSL2, sigue estos pasos:
+
+2. **Agregar la clave y el repositorio oficial de CRAN**:
+```bash
+wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+```
+
+3. **Instalar R**:
+```bash
+sudo apt update
+sudo apt install -y r-base r-base-dev r-recommend
+```
+
+4. **Verificar la instalación**:
+```bash
+R --version    # Debe mostrar la versión de R recién instalada
+sudo R
+install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx", "rstatix"))
+```
+# 3 Descargar y extraer Python 3.12
+
+Descarga el código fuente de Python 3.12 y descomprímelo en `/usr/src`:
+
+```bash
+cd /usr/src
+sudo wget https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz
+sudo tar -xzf Python-3.12.11.tgz
+cd Python-3.12.11
+```
+
+# 4 Configurar, compilar e instalar
+
+1. Configura la compilación con optimizaciones y el instalador de pip integrado:
+
+    ```bash
+    sudo ./configure --enable-optimizations --with-ensurepip=install
+    ```
+
+2. Compila utilizando todos los núcleos disponibles:
+
+    ```bash
+    sudo make -j "$(nproc)"
+    ```
+
+3. Instala Python 3.12 sin sobrescribir la versión del sistema por defecto:
+
+    ```bash
+    sudo make altinstall
+    ```
+
+> Los ejecutables quedarán en `/usr/local/bin/python3.12` y `/usr/local/bin/pip3.12`.
+
+# 5 Verificación de la instalación
+
+Comprueba las versiones instaladas:
+
+```bash
+/usr/local/bin/python3.12 --version   # Debe mostrar Python 3.12.0
+/usr/local/bin/pip3.12 --version      # Debe mostrar la versión de pip correspondiente
+```
+
+# 6 Crear y activar un entorno virtual
+
+1. Crea un directorio de trabajo (opcional):
+
+    ```bash
+    mkdir -p ~/proyectos
+    cd ~/proyectos
+    ```
+
+2. Crea un entorno virtual con Python 3.12:
+
+    ```bash
+    /usr/local/bin/python3.12 -m venv mienv
+    ```
+
+3. Activa el entorno:
+
+    ```bash
+    source mienv/bin/activate
+    ```
+
+4. Verifica que `python` y `pip` apunten a la versión 3.12:
+
+    ```bash
+    python --version   # Python 3.12.0
+    pip --version      # pip x.y.z
+    ```
+
+Para desactivar el entorno, ejecuta:
+
+```bash
+deactivate
+```
+# 8 Instalación de la versión más reciente de CUDA
+
+Para habilitar aceleración GPU en tu Debian bajo WSL2, instala CUDA siguiendo estos pasos:
+
+1. **Obtener el kit de repositorio CUDA de NVIDIA**:
+```bash
+wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
+sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
+wget https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda-repo-wsl-ubuntu-12-9-local_12.9.1-1_amd64.deb
+sudo dpkg -i cuda-repo-wsl-ubuntu-12-9-local_12.9.1-1_amd64.deb
+sudo cp /var/cuda-repo-wsl-ubuntu-12-9-local/cuda-*-keyring.gpg /usr/share/keyrings/
+sudo apt-get update
+sudo apt-get -y install zlib1g cuda-toolkit-12-9 nvidia-cuda-toolkit nvidia-cudnn
+
+```
+
+3. **Verificar la instalación**:
+```bash
+# Verifica la versión de nvcc
+nvcc --version
+# Verifica que la GPU sea detectada
+nvidia-smi
+```
