@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.27">
+<meta name="generator" content="quarto-1.7.32">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Pablo Eduardo Caicedo Rodríguez”">
-<meta name="dcterms.date" content="2025-04-28">
+<meta name="dcterms.date" content="2025-06-27">
 
 <title>Taller3: Análisis y diseños de filtros – PECR Knowledge Hub</title>
 <style>
@@ -73,10 +73,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-985aa47af68dae11cd4d235c71fb941e.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-44524390c5afc6d4700f511aa67cab8a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-4c12540dc54698881b635b728b99f59c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -197,7 +197,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 28, 2025</p>
+      <p class="date">June 27, 2025</p>
     </div>
   </div>
   
@@ -236,7 +236,7 @@ window.Quarto = {
 <p><strong>Diagramas de bloques:</strong> Un LTI puede implementarse mediante sumas, retardos (<span class="math inline">\(z^{-1}\)</span> representa un retardo de 1 muestra) y multiplicaciones por constantes. El diagrama de bloques representa visualmente la ecuación en diferencias. Por ejemplo, para un filtro IIR de segundo orden:</p>
 <p><span class="math display">\[y[n] = -a_1 y[n-1] - a_2 y[n-2] + b_0 x[n] + b_1 x[n-1] + b_2 x[n-2],\]</span></p>
 <p>el diagrama en forma <strong>Directa II</strong> combinaría los términos en una estructura canónica con dos bloques de retardo en la rama de realimentación y avance, sumadores para combinar las ramas, y coeficientes <span class="math inline">\(a_i\)</span>, <span class="math inline">\(b_i\)</span>. Cada polo corresponde a un lazo de realimentación (coeficientes <span class="math inline">\(a_i\)</span>) y cada cero a una ramificación hacia la entrada (coeficientes <span class="math inline">\(b_i\)</span>). Dibujar estos diagramas ayuda a entender la estructura interna, pero en este reporte nos enfocaremos más en el análisis matemático. Cabe destacar que <strong>el tipo de filtro (pasa-bajos, pasa-altos, etc.) puede inferirse</strong> de <span class="math inline">\(H(z)\)</span>: por ejemplo, si <span class="math inline">\(H(e^{j\omega})\)</span> (respuesta en frecuencia) atenúa bajas frecuencias y deja pasar altas, es pasa-altos. Un método práctico es evaluar <span class="math inline">\(H(z)\)</span> en <span class="math inline">\(z=e^{j0}\)</span> (DC, <span class="math inline">\(\omega=0\)</span>) y en <span class="math inline">\(z=e^{j\pi}\)</span> (Nyquist, <span class="math inline">\(\omega=\pi\)</span>): si <span class="math inline">\(|H(e^{j0})|=0\)</span> y <span class="math inline">\(|H(e^{j\pi})|\approx 1\)</span>, es pasa-altos; al revés sería pasa-bajos. Los <strong>ceros en</strong> <span class="math inline">\(z=1\)</span> anulan <span class="math inline">\(\omega=0\)</span> (eliminan DC), típicos en pasa-altos (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=wander%2C%20powerline%20interference%2C%20electromyo%02graphic%20,pass%20filter%20of%20an%20appropriate"></a>), mientras <strong>ceros en</strong> <span class="math inline">\(z=-1\)</span> anulan <span class="math inline">\(\omega=\pi\)</span> (eliminan la componente de Nyquist, típicos en pasa-bajos). Por su parte, <strong>polos cercanos a</strong> <span class="math inline">\(z=1\)</span> refuerzan respuesta en bajas frecuencias; polos cercanos a <span class="math inline">\(z=-1\)</span> refuerzan la alta frecuencia <span class="math inline">\(\pi\)</span>. Así, el diagrama polo-cero brinda intuición: ceros sobre la circunferencia unitaria en cierto ángulo <span class="math inline">\(\theta_0\)</span> causan una <strong>notch</strong> (anulación) en la frecuencia <span class="math inline">\(\omega=\theta_0\)</span>, mientras polos cerca de la unidad en <span class="math inline">\(\theta_0\)</span> generan picos (potenciales resonancias) alrededor de esa frecuencia.</p>
-<p><strong>Ejemplo (Filtro notch 60 Hz):</strong> Un problema común en bioseñales es eliminar la interferencia de la red eléctrica (50/60 Hz) sobre, por ejemplo, EEG o ECG. Un filtro digital sencillo para eliminar 60 Hz (asumiendo frecuencia de muestreo <span class="math inline">\(f_s=5000\)</span> Hz) es colocar <strong>polos conjugados en</strong> <span class="math inline">\(z = e^{\pm j 2\pi(60/5000)}\)</span>. La función de transferencia resultante puede ser:</p>
+<p><strong>Ejemplo (Filtro notch 60 Hz):</strong> Un problema común en bioseñales es eliminar la interferencia de la red eléctrica (50/60 Hz) sobre, por ejemplo, EEG o ECG. Un filtro digital sencillo para eliminar 60 Hz (asumiendo frecuencia de muestreo <span class="math inline">\(f_s=5000\)</span> Hz) es colocar <strong>ceros conjugados en</strong> <span class="math inline">\(z = e^{\pm j 2\pi(60/5000)}\)</span>. La función de transferencia resultante puede ser:</p>
 <p><span class="math display">\[H(z) = 1 - 2\cos(2\pi\frac{60}{5000})\,z^{-1} + z^{-2}.\]</span></p>
 <p>Este <span class="math inline">\(H(z)\)</span> tiene ceros en <span class="math inline">\(e^{\pm j2\pi(60/5000)}\)</span> que anulan exactamente la componente de 60 Hz, implementando un filtro <em>notch</em>. Además, es un filtro FIR (orden 2) con coeficientes simétricos, lo que le da fase lineal (importante para no deformar la forma de onda). ¿Es estable? Sí, al ser FIR no hay polos fuera del origen (solo polos en 0, con módulo 0). ¿Es causal? Sí, depende solo de muestras presentes y pasadas de la señal (<span class="math inline">\(x[n]\)</span>, <span class="math inline">\(x[n-1]\)</span>, <span class="math inline">\(x[n-2]\)</span>). ¿Qué tipo de filtro es? Es un <strong>rechaza-banda estrecho</strong> centrado en 60 Hz (deja pasar el resto, pero rechaza esa frecuencia). En aplicaciones, este notch suele atenuar ruido de red sin distorsionar significativamente las señales de interés (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=Hz,The%20chapter"></a>).</p>
 </section>
