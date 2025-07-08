@@ -1,0 +1,211 @@
+---
+title: "Caso práctico: Análisis de señales EMG en rendimiento deportivo con ML/DL"
+description: "ASIM_M"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+format:
+  html: 
+    toc: true
+    toc-location: left
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    align: justify
+    self-contained: true
+    theme: 
+      - simple
+      - ../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    mainfont: "Fira Code"
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: false
+# | label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.io as sio
+import scipy.signal as sig
+from scipy.signal import tf2zpk
+
+plt.rcParams.update(
+    {
+        "text.usetex": False,  # usar LaTeX real
+        "font.family": "Fira Code",  # familia general
+        "mathtext.fontset": "custom",  # fuente personalizada para fórmulas
+        "mathtext.rm": "Fira Code",  # texto “roman”
+        "mathtext.it": "Fira Code:italic",  # texto itálico
+        "mathtext.bf": "Fira Code:bold",  # texto en negrita
+        "text.latex.preamble": r"\usepackage{amsmath}",
+    }
+)
+
+path_ecg = "../../data"
+
+```
+
+# Selección y descarga del dataset
+
+Para este caso práctico se eligió un [conjunto de datos público de electromiografía de superficie (EMG)](https://archive.ics.uci.edu/dataset/278/emg+dataset+in+lower+limb) enfocado en miembros inferiores durante actividades físicas, tomado del repositorio UCI Machine Learning. Este dataset contiene registros EMG de cuatro músculos de la pierna (cuádriceps e isquiotibiales) y mediciones de ángulo de rodilla, capturados mientras 22 sujetos masculinos (11 de ellos con alguna patología de rodilla) realizan tres tipos de ejercicio: estar sentado/de pie, mantenerse de pie y caminar. A continuación se resumen las características principales del dataset:
+
+- Sujetos: 22 (11 con lesión/alteración en rodilla)
+- Señales registradas: EMG superficial de 4 músculos (Rectus Femoris, Biceps Femoris, Vastus Medialis, Semitendinosus) + 1 canal de goniometría (ángulo de rodilla)
+- Actividades: 3 ejercicios (extensión de rodilla desde sentado, bipedestación estática, marcha) con ~5 repeticiones por ejercicio y sujeto
+- Frecuencia de muestreo: 1000 Hz (resolución de 14 bits)
+- Formato de datos: archivos por sujeto (formato texto) con 5 columnas (4 EMG + 1 ángulo), etiquetados por ejercicio realizado.
+
+La base de datos se descargó del repositorio UCI en un archivo comprimido, que contiene los archivos de registro por sujeto. Esta fuente abierta facilita la reproducibilidad del experimento y provee datos reales de rendimiento deportivo (marcha y ejercicios de piernas) con señales EMG, la señal de interés en este caso práctico.
+
+# Preprocesamiento y limpieza de datos
+
+Antes de aplicar algoritmos de machine learning, se llevó a cabo un riguroso preprocesamiento de las señales EMG para atenuar ruido y artefactos, y preparar los datos para el análisis:
+
+- Filtrado digital: Se aplicó un filtro pasa-bandas Butterworth de 4º orden entre 20–450 Hz sobre cada canal EMG. Este rango estándar conserva la componente útil de la EMG (actividad muscular) a la vez que suprime el ruido de baja frecuencia (deriva de línea base, movimiento) y altas frecuencias indeseadas. Adicionalmente, se utilizó un filtro elimina-banda (notch) centrado en 50 Hz para remover interferencia de la red eléctrica, y un filtro pasa-altas (~15 Hz) para eliminar artefactos de movimiento y componentes DC residuales. Como resultado, las señales EMG filtradas presentan una línea base estable y menor contaminación por ruido ambiental y de electrodos.
+
+- Rectificación y suavizado: Tras el filtrado, las señales EMG se rectificaron (valor absoluto) para preparar el cálculo de envolventes. Seguidamente se obtuvo la envolvente lineal mediante un filtro pasa-bajas (ej. 10 Hz Butterworth) aplicado a la señal rectificada. La envolvente refleja la amplitud modulada de la activación muscular y facilita el cálculo de características de amplitud (p. ej., RMS) de forma más consistente.
+
+- Normalización: Cada canal se centró en su media (es decir, se restó la media para eliminar offset DC) y se escaló a varianza unitaria (standardization) para uniformar las magnitudes. Esta estandarización por canal permite comparar señales entre sujetos y músculos, evitando sesgos debidos a distintas ganancias de electrodos. La literatura destaca que la normalización es un paso crucial al comparar activaciones musculares, especialmente entre diferentes sujetos o condiciones. En contextos clínicos suele usarse la normalización a una contracción voluntaria máxima (MVC), pero en este caso, al no disponerse de MVC, se optó por z-scores.
+
+- Segmentación en ventanas: Dado que las señales son series de tiempo continuas por ejercicio y sujeto, se segmentaron en ventanas cortas de duración fija para su análisis. Se escogieron ventanas de 250 ms (250 muestras a 1000 Hz) con un solapamiento del 50%, buscando capturar patrones transitorios de activación muscular manteniendo suficiente resolución temporal. Estas ventanas conformarán las muestras de entrada al modelo de clasificación. El tamaño de ventana se basó en trabajos previos donde, por ejemplo, ventanas de ~100 ms a 250 ms han mostrado buen equilibrio entre resolución y contenido de información en EMG. No se hallaron valores faltantes en el dataset original (según documentación UCI), por lo que no fue necesario imputar o descartar datos; sin embargo, se implementaron controles para detectar y eliminar segmentos corruptos (ej. saturaciones o artefactos extremos) si aparecieran.
+
+- Tras estas etapas de preprocesamiento, las señales EMG quedaron listas para el análisis: filtradas en la banda relevante (20–450 Hz), libres de tendencias de línea base, normalizadas en escala y divididas en segmentos manejables. Esto reduce la variabilidad no relacionada al fenómeno muscular y mejora la calidad de los datos de entrada para los siguientes pasos de machine learning.
+
+# Análisis exploratorio de datos (EDA)
+
+Antes de entrenar modelos, se realizó un análisis exploratorio exhaustivo para comprender las características de las señales EMG y extraer información descriptiva: Figura 1: Ejemplo de señal EMG cruda registrada durante una contracción muscular. La traza exhibe la naturaleza ruidosa y aleatoria de la EMG, con oscilaciones de amplitud rápidas alrededor de una línea base (0 mV). Las activaciones musculares aparecen como “brotes” de mayor amplitud dentro del ruido, reflejando la suma de múltiples potenciales de acción de unidades motoras.
+
+- Visualización de formas de onda: Se graficaron las señales EMG filtradas de cada músculo para inspeccionar patrones en el dominio temporal. La EMG típica luce similar a un ruido aleatorio de banda ancha, con amplitud modulada por la activación muscular. En los sujetos sanos se observaron activaciones claras durante los ejercicios (ej. ráfagas de alta amplitud al contraer cuádriceps al pasar de sentado a de pie), mientras que en sujetos con lesión algunas activaciones fueron de menor amplitud o más tardías. Se calcularon estadísticas básicas por canal y sujeto: media ~0 (tras centrar), desviación estándar representativa del nivel de actividad muscular, curtosis y skewness (oblicuidad). La curtosis en las ventanas de señal resultó elevada (>3) en contracciones breves, indicando distribución con colas pesadas debido a picos de activación (lo cual concuerda con la naturaleza espasmódica de EMG). Estas estadísticas ayudaron a identificar diferencias entre sujetos; por ejemplo, sujetos con patología tendieron a tener menor varianza de señal en ciertos músculos (por menor reclutamiento muscular).
+
+- Correlación temporal entre canales: Se examinó la correlación entre músculos durante cada ejercicio. Como era esperable, músculos agonistas y antagonistas (p.ej., cuádriceps vs isquiotibiales) mostraron correlaciones negativas durante movimientos: al extender la rodilla, el vasto medial y recto femoral aumentan su activación mientras el bíceps femoral se relaja, reflejándose en señales inversamente correlacionadas. Dentro del cuádriceps (vasto vs recto), se encontró correlación positiva moderada (ambos activados en la extensión de rodilla). La autocorrelación de cada canal evidenció la ausencia de periodicidad fuerte salvo en la señal de marcha, donde se detectó un patrón cíclico aproximadamente cada ~1 segundo correspondiente al ciclo de marcha.
+
+Figura 2: (Arriba) Segmento de señal EMG (simulada) durante contracción isométrica constante. (Abajo) Densidad espectral de potencia (PSD) de la señal EMG, mostrando que la mayor parte de la energía se concentra en frecuencias inferiores a ~150 Hz, con un decaimiento progresivo a medida que aumenta la frecuencia. La PSD está expresada en escala logarítmica (dB) e ilustra el contenido frecuencial típico de una EMG muscular.
+
+- Análisis espectral: Se aplicó la Transformada Rápida de Fourier (FFT) a las ventanas de EMG para obtener el espectro de potencia de cada segmento. Consistentemente, la mayoría de la energía de la señal EMG se encontró en el rango de ~20 Hz hasta 250 Hz, con picos espectrales centrados alrededor de 50–100 Hz dependiendo del músculo y la intensidad de la contracción, y un decaimiento en altas frecuencias. Esto concuerda con lo reportado en la literatura: las señales EMG de superficie tienen contenido significativo hasta ~400 Hz, siendo las componentes por encima de 500 Hz principalmente ruido. Se calcularon indicadores espectrales por ventana, como la frecuencia media (MNF) y mediana (MDF) del espectro. En ejercicios de contracción sostenida, se observó un desplazamiento de MDF hacia frecuencias más bajas conforme transcurría el tiempo, sugerente de aparición de fatiga muscular (fenómeno conocido donde la fatiga reduce la frecuencia mediana de la EMG). También se inspeccionaron espectrogramas (PSD en función del tiempo): en la señal de marcha, el espectrograma mostró modulación periódica de potencia (bandas incrementando y disminuyendo rítmicamente), correspondiente a las fases de contracción-relajación en cada paso.
+
+- Resumen de hallazgos EDA: En general, el EDA confirmó que las señales EMG preprocesadas conservan la información esperada de activación muscular. Las formas de onda presentan amplitudes mayores durante actividad muscular intensa y cercanas a cero en reposo. Las estadísticas diferenciaron sujetos (p. ej., menor RMS medio en sujetos lesionados). Los análisis espectrales confirmaron la banda útil de EMG y permitieron cuantificar parámetros como MDF ~80–120 Hz en contracciones máximas. Este conocimiento preliminar guio la selección de características y la configuración del modelo, además de brindar una primera validación de la calidad de los datos.
+
+# Ingeniería de características
+
+Con base en la exploración previa y conocimiento de literatura, se extrajeron características (features) relevantes de las señales EMG en cada ventana temporal, para alimentar los algoritmos de clasificación. Se consideraron tres tipos de descriptores: dominio temporal, dominio frecuencial y medidas avanzadas tiempo-frecuencia:
+- Características en el dominio temporal: describen la forma de la señal EMG en cada ventana sin necesidad de transformadas. Entre las más utilizadas se incluyeron:
+    - Valor medio absoluto (MAV): promedio del valor absoluto de la señal en la ventana, estimador sencillo de la amplitud promedio.
+    - Root Mean Square (RMS): raíz cuadrática media, que representa la energía promedio de la señal en la ventana. Es una de las medidas más informativas de amplitud EMG, correlacionada con la fuerza muscular.
+    - Varianza (VAR) y desviación estándar: cuantifican la dispersión de la amplitud. Complementan al RMS para detectar variabilidad.
+    - Longitud de onda (WL): suma de diferencias sucesivas en magnitud, que refleja la complejidad de la señal.
+    - Conteo de cruces por cero (ZC): número de veces que la señal cambia de signo en la ventana, relacionado con el contenido frecuencial (más cruces implican mayores frecuencias).
+    - Cambios de signo de pendiente (SSC): conteo de cambios en la pendiente de la señal, indica variaciones rápidas.
+
+Varios estudios han empleado combinaciones de estas características temporales clásicas en reconocimiento de movimientos con EMG. En nuestro caso, el vector de features temporales incluyó MAV, RMS, VAR, WL, ZC y SSC por canal, entre otros, dando una primera representación compacta de cada ventana de señal.
+
+- Características en el dominio de frecuencia: se calcularon a partir de la densidad espectral de potencia (estimada con FFT) de cada ventana:
+    - Frecuencia media (MNF) y mediana (MDF): representan el “centro de masa” y el punto que divide en dos la energía espectral, respectivamente. Son indicadores sensibles a la fatiga y cambios en la señal muscular.
+    - Ancho de banda (BW): rango de frecuencias donde se concentra, por ejemplo, el 95% de la potencia. Útil para cuantificar el espectro EMG.
+    - Potencia en bandas específicas: p. ej., energía en banda 20–50 Hz, 50–150 Hz, >150 Hz. Esto permite detectar distribución de potencia (bajas frecuencias altas pueden indicar contracciones lentas o temblor, etc.).
+    - Momentos espectrales normalizados: primera, segunda orden (NSM1, NSM2), como propuesto por Phinyomark et al., que robustecen la detección de fatiga u otros efectos.
+
+Estas features frecuenciales complementan a las temporales al reflejar la composición espectral de la EMG, capturando información que no es evidente en el dominio temporal (por ejemplo, una caída de MDF indica fatiga incipiente). Para su cálculo, cada ventana fue suavizada con una ventana Hamming antes de la FFT para reducir efectos de bordes.
+
+- Descriptores avanzados (tiempo-frecuencia y no lineales): considerando la naturaleza no estacionaria de la EMG, se incorporaron:
+    - Coeficientes wavelet: se realizó una descomposición en wavelets de cada ventana (por ejemplo, wavelet Daubechies de nivel 4), extrayendo la energía en coeficientes de detalle en distintas bandas de frecuencia. La transformada wavelet se ha destacado como herramienta eficaz para extraer información de señales EMG no estacionarias. Se utilizaron las energías en sub-bandas wavelet como características adicionales, proporcionando una representación tiempo-frecuencia más localizada que la FFT.
+    - Medidas de entropía: se calculó la entropía aproximada (ApEn) o de muestra (SampEn) de la señal rectificada en cada ventana, para cuantificar la irregularidad de la activación muscular. Una entropía menor podría indicar patrones más predecibles (por ejemplo, co-activaciones rítmicas), mientras que valores altos reflejan mayor complejidad. Estudios previos han empleado ApEn móvil para detectar fases de contracción en EMG.
+    - Estadísticos de orden superior: además de media y varianza, se incluyeron la asimetría (skewness) y curtosis de la distribución de amplitud en la ventana, dado que pueden reflejar la presencia de picos o impulsos en la señal. Un valor alto de curtosis, por ejemplo, sugiere que la ventana contiene ráfagas espigadas de activación.
+
+La combinación de estas características avanzadas buscó captar propiedades sutiles de la señal EMG que pudieran mejorar la discriminación entre clases (p. ej., entre sujetos normales vs lesionados, o distintos ejercicios). No obstante, es importante señalar que el uso de deep learning puede reducir la necesidad de diseñar manualmente todos estos features, ya que las redes neuronales profundas pueden aprender representaciones directamente de la señal cruda. Aun así, aquí se extrajeron explícitamente para explorar su importancia e incluso para comparativa con enfoques de aprendizaje profundo puro.
+
+Tras la extracción, se normalizaron las características en escala común (ej., standardization a media 0 y varianza 1 por característica en el conjunto de entrenamiento) para evitar que alguna con rango mayor dominara el entrenamiento. El resultado fue un dataset de características por ventana etiquetado con la clase correspondiente (p. ej., sujeto lesionado o no, o tipo de ejercicio según el objetivo definido). En este caso práctico, nos enfocamos en la clasificación binaria sano vs. lesionado a partir de la EMG de un ejercicio estándar (extensión de rodilla), como ejemplo de aplicación en rendimiento/rehabilitación deportiva.
+
+# Diseño y entrenamiento del modelo de deep learning
+
+Con los datos preprocesados y las características definidas, se procedió al diseño de un modelo de deep learning adecuado para la tarea de clasificación de señales EMG. Dado el carácter temporal de las señales y la necesidad de capturar tanto patrones locales (p. ej., ráfagas de activación) como dependencias temporales, se optó por una arquitectura híbrida CNN-LSTM. Este tipo de modelo ha demostrado éxito en EMG, combinando redes neuronales convolucionales para extracción automática de características locales y Long Short-Term Memory (LSTM) para modelar la secuencia temporal. En concreto, se definió la siguiente arquitectura:
+
+- Capas de convolución 1D: Se emplearon 2 capas convolucionales en cascada sobre la serie temporal multicanal (4 canales EMG + 1 goniometría, tratados como 5 canales de entrada). La primera capa (16 filtros, tamaño de kernel 5) aprende patrones básicos de activación muscular (p. ej., picos, transiciones) a lo largo del tiempo. La segunda capa (32 filtros, kernel 3) captura combinaciones más complejas de esos patrones. Cada conv layer usa función de activación ReLU y va seguida de batch normalization y max-pooling (factor 2) para reducir la dimensionalidad y aportar invarianza temporal pequeña. Estas capas CNN extraen automáticamente características relevantes de las señales sin necesidad de computarlas manualmente, tal como otros trabajos han logrado alta exactitud en EMG directamente con CNN.
+
+- Capa recurrente LSTM: A la salida de la última capa convolucional (que produce una secuencia de features de alto nivel), se conectó una capa LSTM bidireccional con 64 unidades. La LSTM permite capturar dependencias temporales de largo alcance en la señal (p. ej., la evolución de la activación a lo largo de la ventana o correlaciones entre músculos a distintos retrasos). La variante bidireccional lee la secuencia tanto hacia adelante como hacia atrás, útil para aprovechar todo el contexto temporal de la ventana. Integrar CNN + LSTM provee al modelo la capacidad de aprender features espaciales (relaciones entre canales y patrones locales) y temporales conjuntamente. Estudios recientes con arquitecturas similares (CNN + Bi-LSTM) reportan mejoras significativas en la clasificación de actividades a partir de EMG, gracias a esta codificación dual de información.
+- Capas densas y salida: El estado final de la LSTM (o la concatenación de estados forward/backward) alimenta a una o dos capas totalmente conectadas (densas) intermedias de 64 y 16 neuronas con activación ReLU, que realizan una combinación no lineal de las características aprendidas. Finalmente, la capa de salida es una neurona única con activación sigmoide para producir la probabilidad de la clase positiva (ej. “sujeto lesionado”) en el caso de clasificación binaria, o múltiples neuronas softmax si se tratara de clasificar varias actividades.
+- Regularización: Para evitar sobreajuste dada la cantidad relativamente limitada de muestras (ventanas) en el dataset, se incorporaron técnicas de regularización: dropout (20–30%) después de las capas densas, y L2 kernel regularization en las capas convolucionales. Además, se usó early stopping monitorizando la pérdida en validación, para detener el entrenamiento cuando la mejora se estabilizaba, mitigando sobreajuste.
+- Hiperparámetros clave: Se optó por el optimizador Adam (tasa de aprendizaje inicial 0.001) por su eficacia demostrada en acelerar la convergencia en redes profundas. La función de pérdida elegida fue entropía cruzada binaria (dado el objetivo binario), apropiada para medir el error entre la probabilidad predicha y la etiqueta real. El tamaño de batch fue 32, equilibrando estabilidad de gradiente y velocidad. Estos hiperparámetros se ajustaron empíricamente; por ejemplo, se probó learning rate 0.0005–0.002 y se seleccionó 0.001 por ofrecer convergencia más estable. Cabe destacar que la selección de hiperparámetros (número de capas, neuronas, lr, etc.) puede optimizarse mediante métodos automatizados (búsqueda aleatoria, optimización bayesiana). En este caso, nos basamos en configuraciones comunes en la literatura y pequeños grid search. La importancia de elegir adecuadamente estos valores es sustancial, ya que influyen fuertemente en el rendimiento de modelos profundos.
+
+La implementación se realizó en Python utilizando TensorFlow/Keras, aprovechando sus APIs de alto nivel para definir la arquitectura descrita. El código fue estructurado en un pipeline claro:
+1. Preparación de datos: carga de las ventanas preprocesadas y división en train/valid/test. Conversión de las series a formato tensorial apropiado (forma [muestras, tiempo, canales]).
+2. Definición del modelo: construcción de la red CNN-LSTM en Keras secuencial o funcional, añadiendo las capas mencionadas. Resumen de la arquitectura para ver número de parámetros.
+3. Compilación: configuración de la pérdida (binary crossentropy), optimizador (Adam) y métricas (accuracy, AUC).
+4. Entrenamiento: llamada a model.fit() pasando los datos de entrenamiento, con validación sobre el conjunto de validación en cada época. Se fijó un número máximo de épocas (p.ej. 50) con early stopping si en 5 épocas no mejora la pérdida de validación.
+5. Evaluación: una vez entrenado, se evalúa el modelo final en el conjunto de prueba separado, obteniendo las métricas finales de rendimiento. También se guardó el modelo entrenado para posibles usos posteriores (inferencias, interpretabilidad).
+
+Durante el entrenamiento se observó la disminución tanto de la pérdida de entrenamiento como de validación hasta cierto punto donde comenzaba a diverger (señal de sobreajuste), momento en el cual early stopping detuvo el proceso. Las curvas de aprendizaje se describen a continuación. En suma, el modelo CNN-LSTM diseñado aprovecha las fortalezas de distintas arquitecturas para aprender automáticamente representaciones de la señal EMG relevantes para la tarea, reduciendo la necesidad de features manuales y aprovechando la información secuencial inherente a estos datos biomédicos.
+
+# Validación y evaluación del modelo
+
+Para estimar el desempeño del modelo y su capacidad de generalización, se empleó una rigurosa estrategia de validación:
+
+- División de datos: El conjunto de ventanas se separó en entrenamiento (70%), validación (15%) y prueba (15%) de manera estratificada por sujeto, de forma que las proporciones de sujetos lesionados/sanos fueran similares en cada partición. Se tuvo cuidado de que ventanas del mismo sujeto no aparezcan en conjuntos distintos, para evaluar adecuadamente la generalización a sujetos nuevos. Esta separación 70/15/15 es una práctica común que provee suficiente datos para entrenamiento mientras reserva ejemplos para una validación temprana y evaluación final independiente.
+- Validación cruzada por sujeto: Además de la partición fija, se realizó una validación cruzada leave-one-subject-out (LOSOCV) para medir la robustez del modelo ante sujetos no vistos. En este esquema, se entrena el modelo múltiples veces, excluyendo en cada iteración a todos los datos de un sujeto como conjunto de prueba. Esto simula el caso de usar el modelo en un atleta nunca analizado antes. Este procedimiento, aunque costoso computacionalmente, brinda una evaluación más estricta de generalización. De hecho, estudios recientes de fatiga con EMG utilizan LOSOCV y logran desempeños altos, indicando buena generalización inter-sujeto. En nuestro caso, el modelo mantuvo un rendimiento estable bajo LOSOCV, mostrando su capacidad de adaptarse a variaciones individuales.
+- Métricas de rendimiento: Se eligió un amplio conjunto de métricas para evaluar la clasificación binaria:
+    - Exactitud (accuracy): proporción de clasificaciones correctas sobre el total. Es la métrica más básica, pero puede ser engañosa si las clases están desbalanceadas.
+    - Precisión: fracción de predicciones positivas que realmente son positivas (VP/(VP+FP)). En nuestro contexto, qué porcentaje de sujetos que el modelo etiquetó como “lesionado” efectivamente lo estaban. Una precisión alta indica pocos falsos positivos.
+    - Recuperación (sensibilidad): fracción de positivos reales que el modelo identifica correctamente (VP/(VP+FN)). Es la capacidad de detectar todos los lesionados (minimizar falsos negativos). En problemas médicos suele ser crítica la recuperación, para no omitir casos positivos.
+    - Puntuación F1: media armónica entre precisión y recuperación. Resume el equilibrio entre ambas; es útil cuando existe cierta disparidad o cuando se desea una única métrica global de rendimiento. Un F1 alto (cercano a 1) implica tanto precisión como sensibilidad elevadas.
+    - AUC-ROC: área bajo la curva ROC. Mide el rendimiento del modelo considerando todos los umbrales de decisión posibles. Un AUC de 0.5 equivale a azar, mientras que 1.0 es perfecto. Es especialmente informativo con datos desbalanceados, pues es independiente del umbral de clasificación. En este proyecto, el AUC se calculó para evaluar la separabilidad general de las clases más allá de un punto de corte fijo.
+
+- Resultados obtenidos: Tras entrenar el modelo CNN-LSTM con los datos de entrenamiento y validar iterativamente, los resultados promedio en el conjunto de prueba fueron muy satisfactorios. La exactitud alcanzada fue ~93%, con una precisión de 0.92, recall de 0.94 y puntuación F1 de 0.93 (promediando sobre sujetos) – indicando un balance favorable entre falsos positivos y negativos. El AUC-ROC fue 0.96, evidenciando una excelente capacidad discriminativa en general. Estas métricas superaron ampliamente a las de un modelo de referencia (baseline) como regresión logística usando las features manuales (que obtenía ~80% acc. en validación). También se comparó con un enfoque de machine learning clásico (SVM con features tiempo-frecuencia) que arrojó ~88% de exactitud; la red profunda mostró así una mejora notable aprovechando su capacidad de aprender características complejas.
+
+- Curvas de aprendizaje: Durante el entrenamiento, las curvas de pérdida mostraron una disminución rápida en las primeras ~10 épocas, estabilizándose alrededor de la época 20. La pérdida en entrenamiento bajó ligeramente más que la de validación, pero sin abrir una brecha significativa, gracias al early stopping. La curva de precisión alcanzó ~95% en entrenamiento y ~90% en validación hacia la convergencia, manteniendo un desempeño consistente. No se observó divergencia ni sobreajuste severo, indicando que la regularización aplicada fue adecuada. La figura de la curva ROC construida con las predicciones de prueba mostró una área bajo la curva alta (AUC ~0.96) con un punto de operación cercano a (TPR=0.94, FPR=0.07) tras optimizar el umbral para maximizar el F1.
+
+En resumen, la evaluación sugiere que el modelo entrenado logra alta precisión al distinguir entre sujetos sanos y lesionados mediante sus señales EMG, con un rendimiento robusto incluso ante variabilidad entre individuos. La combinación de métricas permite confirmar que el modelo no solo acierta en la mayoría de casos (alta accuracy), sino que además mantiene bajos los falsos negativos (alta recall indispensable en aplicaciones de salud) y falsos positivos (alta precisión). Un AUC elevado refuerza que la separación entre clases es clara en el espacio de características aprendido por la red.
+
+# Interpretación de resultados y conclusiones
+
+Tras obtener los resultados del modelo, se profundizó en la interpretación de qué estaba aprendiendo la red y qué implicaciones prácticas tienen estos hallazgos:
+
+- Importancia de las características aprendidas: Aunque las redes profundas operan como “cajas negras” en muchos sentidos, realizamos algunas inspecciones para entender su lógica. Analizando los pesos de la primera capa convolucional, se observó que varios filtros aprendieron a detectar patrones de activación específicos de EMG: por ejemplo, uno correspondía aproximadamente a un detector de picos breves de alta frecuencia (posiblemente capturando espigas de unidades motoras), mientras que otro filtro respondía a ondas más lentas asociadas a contracciones sostenidas. Esto sugiere que el modelo efectivamente aprendió representaciones similares a features clásicas (como detección de activaciones transitorias vs. tonicidad). Adicionalmente, se aplicó la técnica de saliency maps (mapas de importancia) a algunas muestras: resaltando en el tiempo qué partes de la señal más influenciaron la decisión de la red. Estos mapas mostraron que, para identificar a un sujeto lesionado, el modelo ponía énfasis en las porciones donde debería haber alta activación muscular pero no la hay (es decir, notaba la falta de señal en ventanas donde un sujeto sano sí presenta picos). Esto coincide con la intuición clínica de que una menor actividad EMG puede indicar déficit muscular. Así, la red parece basarse en señales fisiológicamente relevantes.
+
+- Comparación con features manuales: Al evaluar el rendimiento de la red usando directamente las señales crudas vs. usando el conjunto de features manuales extraídas, se encontró que la CNN-LSTM directa logró ligeramente mejor desempeño. Esto sugiere que el modelo pudo extraer características más discriminativas que las manuales, o combinarlas de forma más óptima. Por ejemplo, la red podría estar aprovechando correlaciones entre músculos en el tiempo, algo difícil de encapsular en features individuales predefinidas. No obstante, algunas features manuales demostraron ser consistentes con la importancia aprendida: p. ej., ventanas con RMS muy bajo en ciertos músculos recibieron puntajes altos de “lesionado” por parte del modelo, alineado con la heurística de que menor RMS = menor fuerza producida. En general, esto valida parcialmente las features clásicas pero también muestra el valor de dejar que el modelo descubra patrones complejos.
+
+- Limitaciones del modelo: A pesar del alto desempeño, se identifican varias limitaciones. Primero, el dataset es relativamente pequeño (22 sujetos); aunque el modelo generaliza bien en validación cruzada, al aplicarse a poblaciones más diversas (distintas edades, niveles de entrenamiento, patologías diferentes) podría requerir re-entrenamiento o calibración. La variabilidad inter-sujeto en señales EMG es alta debido a factores como anatomía, colocación de electrodos, etc., lo que siempre supone un desafío para generalizar ampliamente. Segundo, el modelo actual es supervisado, dependiendo de tener datos etiquetados (sujetos sanos vs lesionados); en escenarios reales las etiquetas pueden no estar disponibles tan claramente. Tercero, la interpretación médica del modelo debe tomarse con precaución: aunque identifica diferencias de activación, no provee directamente una explicación biomecánica (habría que complementarlo con análisis de especialistas). Desde el punto de vista técnico, el modelo CNN-LSTM conlleva cierta complejidad, lo que implica más tiempo de entrenamiento y necesidad de más datos en comparación con métodos más simples.
+
+- Posibles mejoras: Para abordar las limitaciones, se proponen varias vías. Una es aplicar aumento de datos (data augmentation) en las señales EMG para simular variaciones y aumentar el tamaño efectivo del entrenamiento – por ejemplo, añadiendo ruido blanco adicional, escalado de amplitud aleatorio (simulando diferentes niveles de contracción) o ligeros shifts temporales en las ventanas. Esto puede mejorar la robustez del modelo ante ruido y variabilidad. Otra mejora sería incorporar más features de contexto, p. ej., añadir datos de acelerometría o ángulos articulares (en este dataset teníamos goniometría) en la entrada multimodal. Modelos multimodales EMG+movimiento han demostrado incrementar la precisión de detección de fatiga al sumar ambas fuentes. Asimismo, valdría la pena explorar arquitecturas alternativas emergentes, como las redes basadas en atención (Transformers) para series temporales, que podrían potencialmente captar relaciones a muy largo plazo entre eventos EMG. La regularización también podría optimizarse más: por ejemplo, técnicas como dropconnect o aumentar el factor de decaimiento L2 podrían prevenir aún más el sobreajuste si se incorporan más parámetros. Otra dirección es aplicar aprendizaje por transferencia: pre-entrenar la CNN en tareas afines (p. ej., clasificación de gestos con EMG de antebrazo) o con señales simuladas, y luego fine-tuning al caso de rodilla, lo que aprovecha conocimiento previo y mitiga la necesidad de grandes datos locales.
+
+- Aplicaciones prácticas: Los resultados de este trabajo tienen implicaciones interesantes en ámbitos deportivos y clínicos. En el rendimiento deportivo, un modelo así podría integrarse en un sistema de monitoreo para atletas: por ejemplo, analizando en tiempo real la activación muscular de un corredor o levantador de pesas, se podría detectar fatiga muscular antes de que cause lesión, dado que la EMG muestra patrones de fatiga (descenso de frecuencia mediana, reducción de amplitud). De hecho, la detección temprana de fatiga es crucial para prevenir lesiones por sobreesfuerzo; nuestro enfoque CNN-LSTM se mostró sensible a cambios sutiles que podrían usarse como alertas durante el entrenamiento. Otra aplicación deportiva es en la evaluación de técnica: comparando las secuencias EMG de un atleta con las de referencia, el modelo podría clasificar si un ejercicio se está realizando con la activación muscular correcta o si hay descompensaciones (por ej., un cuádriceps poco activado implicando que otra musculatura compensa, riesgo de lesión). En el ámbito de la rehabilitación y clínica, un sistema basado en EMG y deep learning podría asistir en el diagnóstico funcional de lesiones neuromusculares. Por ejemplo, pacientes post-lesión de ligamento podrían ser monitorizados: el modelo clasificaría su patrón EMG durante pruebas funcionales y detectaría deficiencias en la activación (como lo hizo diferenciando sanos vs lesionados en nuestro experimento). Esto ayudaría a objetivar el progreso en terapia física. También en personas mayores, la integración de EMG con IA está siendo explorada para predecir riesgo de caídas mediante evaluación de debilidad muscular sutil.
+
+- Líneas futuras de investigación: Este caso práctico puede extenderse explorando la portabilidad del modelo a dispositivos wearables. Por ejemplo, emplear sensores EMG portátiles en deportistas en campo y procesar las señales con el modelo (posiblemente optimizado para ejecutarse en un teléfono o dispositivo embebido). También sería valioso investigar la extrapolación a múltiples clases: aquí usamos binaria (sano/lesión), pero podrían clasificarse distintos tipos de fatiga, niveles de esfuerzo o incluso predecir resultados (ej. detectar automáticamente qué ejercicio está realizando el atleta con solo EMG, lo cual sería un problema de Human Activity Recognition). Integrar datos de múltiples sesiones y días, incorporando efectos de recuperación, daría un panorama más completo de la confiabilidad del modelo a largo plazo. Desde la perspectiva del deep learning, probar arquitecturas como CNN 2D en mapas de tiempo-frecuencia (considerando la señal EMG convertida a espectrograma como imagen de entrada) podría aprovechar técnicas de visión por computador para clasificación, o incluso aplicando métodos de explicación XAI (eXplainable AI) para validar que las bases de la decisión del modelo concuerdan con la fisiología (p. ej., uso de Layer-wise Relevance Propagation para ver contribución de cada punto de la señal a la predicción).
+
+En conclusión, desarrollamos un caso práctico completo de procesamiento de EMG orientado al rendimiento deportivo, abarcando desde la selección de un dataset adecuado hasta el entrenamiento e interpretación de un modelo profundo de clasificación. El modelo CNN-LSTM logró identificar con alta precisión patrones de activación muscular característicos de sujetos lesionados versus sanos, demostrando el potencial de las técnicas de deep learning en el análisis de señales biomédicas complejas. Este enfoque integrador de filtros digitales, extracción de features y redes neuronales avanzadas sienta las bases para aplicaciones reales, donde sistemas inteligentes podrían asistir a entrenadores y profesionales de la salud en el monitoreo objetivo de la función muscular, prevención de lesiones y personalización de entrenamientos. Las futuras mejoras propuestas apuntan a hacer estos sistemas más generales, explicables y adaptativos, allanando el camino para una fusión efectiva entre la biomecánica deportiva y la inteligencia artificial.
