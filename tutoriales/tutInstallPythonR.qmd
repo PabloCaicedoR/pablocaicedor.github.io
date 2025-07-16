@@ -64,28 +64,22 @@ Antes de compilar Python, es necesario disponer de Ubuntu corriendo bajo WSL2 en
       2. Busca "Ubuntu" y pulsa **Instalar**.
 
 
-5. **Primer arranque de Ubuntu**:
+4. **Primer arranque de Ubuntu**:
     1. Abre Ubuntu desde el menú Inicio o Windows Terminal.
         ```powershell
         wsl -d Ubuntu
         ```
     2. Crea tu usuario y contraseña de Linux.
 
-6. **Actualizar paquetes del sistema**:
+5. **Actualizar paquetes del sistema**:
 
     ```bash
     sudo apt update && sudo apt upgrade -y
     ```
 
-# 1 Prerrequisitos
+# Instalación de R y Python
 
-Antes de comenzar, asegúrate de contar con:
-
-- Ubuntu en WSL2 sobre Windows 11.
-- Conexión a Internet.
-- Permisos de sudo en la distribución Ubuntu.
-
-# 2 Actualizar repositorios e instalar dependencias de compilación
+## 1. Actualizar repositorios e instalar dependencias de compilación
 
 Ejecuta los siguientes comandos para actualizar el sistema e instalar las bibliotecas necesarias para compilar Python desde el código fuente:
 
@@ -117,31 +111,31 @@ sudo apt install -y \
   wget
 ```
 
-# 7 Instalación de la versión más reciente de R
+## 2 Instalación de la versión más reciente de R
 
 Para instalar la versión más reciente de R en Ubuntu bajo WSL2, sigue estos pasos:
 
-2. **Agregar la clave y el repositorio oficial de CRAN**:
+### 1. **Agregar la clave y el repositorio oficial de CRAN**:
 ```bash
 wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
 sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
 ```
 
-3. **Instalar R**:
+### 2. **Instalar R**:
 ```bash
 sudo apt update
 sudo apt install -y r-base r-base-dev r-recommended
 ```
 
-4. **Verificar la instalación**:
+### 3. **Verificar la instalación**:
 ```bash
 R --version    # Debe mostrar la versión de R recién instalada
 sudo R
 install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx", "rstatix", "languageserver"))
 ```
-# 3 Descargar y extraer Python 3.12
+## 3 Descargar y extraer Python 3.13
 
-Descarga el código fuente de Python 3.13 y descomprímelo en `/usr/src`:
+### 1. Descarga el código fuente de Python 3.13 y descomprímelo en `/usr/src`:
 
 ```bash
 cd /usr/src
@@ -150,29 +144,27 @@ sudo tar -xzf Python-3.13.5.tgz
 cd Python-3.13.5
 ```
 
-# 4 Configurar, compilar e instalar
-
-1. Configura la compilación con optimizaciones y el instalador de pip integrado:
+### 2. Configura la compilación con optimizaciones y el instalador de pip integrado:
 
     ```bash
     sudo ./configure --enable-optimizations --with-ensurepip=install
     ```
 
-2. Compila utilizando todos los núcleos disponibles:
+### 3. Compila utilizando todos los núcleos disponibles:
 
     ```bash
     sudo make -j "$(nproc)"
     ```
 
-3. Instala Python 3.12 sin sobrescribir la versión del sistema por defecto:
+### 4. Instala Python 3.12 sin sobrescribir la versión del sistema por defecto:
 
     ```bash
     sudo make altinstall
     ```
 
-> Los ejecutables quedarán en `/usr/local/bin/python3.13` y `/usr/local/bin/pip3.13`.
+Los ejecutables quedarán en `/usr/local/bin/python3.13` y `/usr/local/bin/pip3.13`.
 
-# 5 Verificación de la instalación
+### 5. Verificación de la instalación
 
 Comprueba las versiones instaladas:
 
@@ -181,44 +173,44 @@ Comprueba las versiones instaladas:
 /usr/local/bin/pip3.13 --version      # Debe mostrar la versión de pip correspondiente
 ```
 
-# 6 Crear y activar un entorno virtual
+### 6. Crear y activar un entorno virtual
 
-1. Crea un directorio de trabajo (opcional):
+#### 1. Crea un directorio de trabajo
 
     ```bash
     mkdir -p ~/proyectos
     cd ~/proyectos
     ```
 
-2. Crea un entorno virtual con Python 3.13:
+#### 2. Crea un entorno virtual (mienv) con Python 3.13:
 
     ```bash
     /usr/local/bin/python3.13 -m venv mienv
     ```
 
-3. Activa el entorno:
+#### 3. Activa el entorno:
 
     ```bash
     source mienv/bin/activate
     ```
 
-4. Verifica que `python` y `pip` apunten a la versión 3.13:
+#### 4. Verifica que `python` y `pip` apunten a la versión 3.13:
 
     ```bash
     python --version   # Python 3.13.5
     pip --version      # pip x.y.z
     ```
 
-Para desactivar el entorno, ejecuta:
+#### 5. desactivar el entorno, ejecuta:
 
 ```bash
 deactivate
 ```
-# 8 Instalación de la versión más reciente de CUDA
+# 3. Instalación de CUDA
 
 Para habilitar aceleración GPU en tu Ubuntu bajo WSL2, instala CUDA siguiendo estos pasos:
 
-1. **Obtener el kit de repositorio CUDA de NVIDIA**:
+## 1. **Obtener el kit de repositorio CUDA de NVIDIA**:
 ```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
 sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
@@ -230,7 +222,7 @@ sudo apt-get -y install zlib1g cuda-toolkit-12-9 nvidia-cuda-toolkit nvidia-cudn
 
 ```
 
-3. **Verificar la instalación**:
+## 2. **Verificar la instalación**:
 ```bash
 # Verifica la versión de nvcc
 nvcc --version
@@ -296,6 +288,23 @@ conda update -n base -c defaults conda -y
 ```bash
 conda --version
 # Deberías ver algo como: conda 23.x.x
+```
+# Instalación de Texlive (LATEX)
+
+```bash
+sudo apt update
+sudo apt install texlive-full
+```
+
+# Instalación de Quarto
+
+```bash
+
+sudo apt update
+wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.32/quarto-1.7.32-linux-amd64.deb
+sudo dpkg -i quarto-1.7.32-linux-amd64.deb
+sudo apt-get install -f
+
 ```
 
 ---
