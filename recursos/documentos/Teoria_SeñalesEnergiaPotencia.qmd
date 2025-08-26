@@ -1,0 +1,19 @@
+---
+title: "Taller3: Análisis y diseños de filtros"
+author: 
+    - Pablo Eduardo Caicedo Rodríguez"
+date: today
+format: html
+---
+
+¿Por qué distinguir entre señales de energía y señales de potencia en procesamiento de señales?
+
+-   El conjunto matemático adecuado.Las señales de energía pertenecen a $L^{2}$ con norma finita $\lVert x\rVert_{2}=\sqrt{E}$, lo que habilita resultados como Parseval/Plancherel (p. ej., $\int_{-\infty}^{\infty}\lvert x(t)\rvert^{2},dt=\tfrac{1}{2\pi}\int_{-\infty}^{\infty}\lvert X(\omega)\rvert^{2},d\omega$). Las señales de potencia suelen requerir promedios temporales y estadísticas de segundo orden en lugar de normas finitas.
+-   El análisis espectral difiere. En señales de energía, el objeto natural es la transformada de Fourier $X(\omega)$ y la energía se concentra en $\lvert X(\omega)\rvert^{2}$. En señales de potencia (p. ej., periódicas o estacionarias), el objeto clave es la densidad espectral de potencia (PSD) $S_{X}(\omega)$, obtenida a partir de la autocorrelación $R_{X}(\tau)$ vía Wiener–Khinchin: $S_{X}(\omega)=\mathcal{F}{R_{X}(\tau)}$.
+-   Las métricas de desempeño dependen de la clase. La relación señal-ruido se formula como SNR de energía $\mathrm{SNR}=E_{s}/E_{n}$ para pulsos/transitorios y como SNR de potencia $\mathrm{SNR}=P_{s}/P_{n}$ para procesos de larga duración o estacionarios. Usar la métrica incorrecta sesga el diseño de detectores/estimadores.
+-   Diseño y evaluación de filtros. Para señales de energía, la detección óptima usa filtros casados que maximizan la energía de salida. Para señales de potencia/estacionarias, se modela el ruido mediante la PSD (p. ej., filtrado de Wiener) y se evalúa la potencia o varianza de salida.
+-   Muestreo, ventanas y práctica con DFT/FFT. Señales de energía: se integra la energía en el intervalo observado e interprete $\lvert X[k]\rvert^{2}$ como distribución de energía por bins de la DFT. Señales de potencia: se estima la PSD con periodogramas/Welch; $S_{X}(\omega)$ tiene unidades de potencia por Hz y se promedia entre ventanas para reducir varianza.
+-   Modelado de bioseñales reales. Muchos estallidos/transitorios biomédicos (ráfagas de EMG, potenciales evocados) se comportan como señales de energía; componentes cuasi-periódicos o estacionarios de larga duración (fundamental del ECG en reposo, respiración en minutos) se comportan como señales de potencia. Modelarlas correctamente guía la extracción de rasgos (envolventes basadas en energía vs. bandas de PSD).
+-   Argumentos de convergencia y estabilidad. Demostraciones de convergencia para estimadores y cotas de estabilidad para sistemas suelen asumir energía finita o potencia promedio finita; clasificar mal invalida esas garantías.
+-   Unidades e interpretación. Los espectros de energía se relacionan con $\lvert X(\omega)\rvert^{2}$ (su integral total da $E$). La PSD integra a potencia promedio: $\tfrac{1}{2\pi}\int_{-\infty}^{\infty}S_{X}(\omega),d\omega=P$.
+-   Regla rápida. Si la señal se extingue o es estrictamente acotada en tiempo y $\int\lvert x\rvert^{2}$ es finita, trátela como energía; si persiste indefinidamente con promedio bien definido, trátela como potencia y use $R_{X}(\tau)$/$S_{X}(\omega)$.

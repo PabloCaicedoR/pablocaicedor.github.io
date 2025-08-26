@@ -398,84 +398,7 @@ plt.show()
 
 ```
 
-## Signal Classification - Energy vs Power Signals
 
-Definitions. For a signal $x(t)$ (continuous-time, CT) or $x[n]$ (discrete-time, DT):
-
-- Energy: $E=\int_{-\infty}^{\infty}\lvert x(t)\rvert^2,dt$ (CT), $\quad E=\sum_{n=-\infty}^{\infty}\lvert x[n]\rvert^2$ (DT).
-
-- Average power: $P=\lim_{T\to\infty}\dfrac{1}{2T}\int_{-T}^{T}\lvert x(t)\rvert^2,dt$ (CT), $\quad P=\lim_{N\to\infty}\dfrac{1}{2N+1}\sum_{n=-N}^{N}\lvert x[n]\rvert^2$ (DT).
-
-- Energy signal: $0<E<\infty$ and $P=0$ (e.g., $x_E(t)=e^{-a t}u(t)$, $a>0$, with $E=\tfrac{1}{2a}$).
-
-- Power signal: $0<P<\infty$ and $E=\infty$ (e.g., $x_P(t)=\cos(2\pi f_0 t)$, with $P=\tfrac{1}{2}$).
-
-```{python}
-# | echo: false
-# | eval: true
-# | output: true
-# | label: energyPower
-# | fig-align: center
-# | dpi: 120
-
-# --- Parameters and time grids ---
-a = 1.0  # decay rate for energy signal
-f0 = 5.0  # Hz for power signal
-fs = 2000  # sampling for plotting/estimation
-
-# Energy signal: simulate on [0, T_E] with T_E large enough for decay
-T_E = 8.0
-tE = np.linspace(0, T_E, int(fs * T_E), endpoint=False)
-xE = np.exp(-a * tE)  # x_E(t) = e^{-a t} u(t)
-E_num = np.trapz(xE**2, tE)  # numerical energy ≈ \int_0^\infty e^{-2at} dt = 1/(2a)
-
-# Power signal: simulate over many periods to estimate time-average power
-T_P = 4.0  # seconds (many periods at f0=5 Hz)
-tP = np.linspace(0, T_P, int(fs * T_P), endpoint=False)
-xP = np.cos(2 * np.pi * f0 * tP)
-# Numerical average power ≈ (1/T) \int_0^T |x(t)|^2 dt
-P_num = np.trapz(xP**2, tP) / (tP[-1] - tP[0])
-
-# --- Plot ---
-fig, axes = plt.subplots(2, 1, figsize=(9, 5), sharex=False)
-
-# Energy signal
-axes[0].plot(tE, xE, lw=1.6)
-axes[0].set_title(r"Energy signal: $x_E(t)=e^{-a t}u(t)$ with $a=1$")
-axes[0].set_ylabel("Amplitude")
-axes[0].grid(alpha=0.3)
-axes[0].text(
-    0.02,
-    0.85,
-    rf"$E=\int_0^\infty e^{{-2 a t}}\,dt=\tfrac{{1}}{{2a}}=\tfrac{{1}}{{2}}$"
-    + "\n"
-    + rf"Numerical: $E\approx{E_num:.3f}$",
-    transform=axes[0].transAxes,
-    fontsize=10,
-    bbox=dict(boxstyle="round", alpha=0.1),
-)
-
-# Power signal
-axes[1].plot(tP, xP, lw=1.4)
-axes[1].set_title(r"Power signal: $x_P(t)=\cos(2\pi f_0 t)$ with $f_0=5$ Hz")
-axes[1].set_xlabel(r"Time $t$ [s]")
-axes[1].set_ylabel("Amplitude")
-axes[1].grid(alpha=0.3)
-axes[1].text(
-    0.02,
-    0.85,
-    r"$P=\lim_{T\to\infty}\frac{1}{2T}\int_{-T}^{T}\cos^2(2\pi f_0 t)\,dt=\tfrac{1}{2}$"
-    + "\n"
-    + rf"Finite-window estimate: $P\approx{P_num:.3f}$",
-    transform=axes[1].transAxes,
-    fontsize=10,
-    bbox=dict(boxstyle="round", alpha=0.1),
-)
-
-plt.tight_layout()
-plt.show()
-
-```
 
 ## Signal Classification - Even/Odd
 
@@ -626,6 +549,85 @@ axs[2].legend(fontsize=12)
 axs[2].grid(True)
 
 # Adjust layout
+plt.tight_layout()
+plt.show()
+
+```
+
+## Signal Classification - Energy vs Power Signals
+
+Definitions. For a signal $x(t)$ (continuous-time, CT) or $x[n]$ (discrete-time, DT):
+
+- Energy: $E=\int_{-\infty}^{\infty}\lvert x(t)\rvert^2,dt$ (CT), $\quad E=\sum_{n=-\infty}^{\infty}\lvert x[n]\rvert^2$ (DT).
+
+- Average power: $P=\lim_{T\to\infty}\dfrac{1}{2T}\int_{-T}^{T}\lvert x(t)\rvert^2,dt$ (CT), $\quad P=\lim_{N\to\infty}\dfrac{1}{2N+1}\sum_{n=-N}^{N}\lvert x[n]\rvert^2$ (DT).
+
+- Energy signal: $0<E<\infty$ and $P=0$ (e.g., $x_E(t)=e^{-a t}u(t)$, $a>0$, with $E=\tfrac{1}{2a}$).
+
+- Power signal: $0<P<\infty$ and $E=\infty$ (e.g., $x_P(t)=\cos(2\pi f_0 t)$, with $P=\tfrac{1}{2}$).
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: energyPower
+# | fig-align: center
+# | dpi: 120
+
+# --- Parameters and time grids ---
+a = 1.0  # decay rate for energy signal
+f0 = 5.0  # Hz for power signal
+fs = 2000  # sampling for plotting/estimation
+
+# Energy signal: simulate on [0, T_E] with T_E large enough for decay
+T_E = 8.0
+tE = np.linspace(0, T_E, int(fs * T_E), endpoint=False)
+xE = np.exp(-a * tE)  # x_E(t) = e^{-a t} u(t)
+E_num = np.trapz(xE**2, tE)  # numerical energy ≈ \int_0^\infty e^{-2at} dt = 1/(2a)
+
+# Power signal: simulate over many periods to estimate time-average power
+T_P = 4.0  # seconds (many periods at f0=5 Hz)
+tP = np.linspace(0, T_P, int(fs * T_P), endpoint=False)
+xP = np.cos(2 * np.pi * f0 * tP)
+# Numerical average power ≈ (1/T) \int_0^T |x(t)|^2 dt
+P_num = np.trapz(xP**2, tP) / (tP[-1] - tP[0])
+
+# --- Plot ---
+fig, axes = plt.subplots(2, 1, figsize=(9, 5), sharex=False)
+
+# Energy signal
+axes[0].plot(tE, xE, lw=1.6)
+axes[0].set_title(r"Energy signal: $x_E(t)=e^{-a t}u(t)$ with $a=1$")
+axes[0].set_ylabel("Amplitude")
+axes[0].grid(alpha=0.3)
+axes[0].text(
+    0.02,
+    0.85,
+    rf"$E=\int_0^\infty e^{{-2 a t}}\,dt=\tfrac{{1}}{{2a}}=\tfrac{{1}}{{2}}$"
+    + "\n"
+    + rf"Numerical: $E\approx{E_num:.3f}$",
+    transform=axes[0].transAxes,
+    fontsize=10,
+    bbox=dict(boxstyle="round", alpha=0.1),
+)
+
+# Power signal
+axes[1].plot(tP, xP, lw=1.4)
+axes[1].set_title(r"Power signal: $x_P(t)=\cos(2\pi f_0 t)$ with $f_0=5$ Hz")
+axes[1].set_xlabel(r"Time $t$ [s]")
+axes[1].set_ylabel("Amplitude")
+axes[1].grid(alpha=0.3)
+axes[1].text(
+    0.02,
+    0.85,
+    r"$P=\lim_{T\to\infty}\frac{1}{2T}\int_{-T}^{T}\cos^2(2\pi f_0 t)\,dt=\tfrac{1}{2}$"
+    + "\n"
+    + rf"Finite-window estimate: $P\approx{P_num:.3f}$",
+    transform=axes[1].transAxes,
+    fontsize=10,
+    bbox=dict(boxstyle="round", alpha=0.1),
+)
+
 plt.tight_layout()
 plt.show()
 
