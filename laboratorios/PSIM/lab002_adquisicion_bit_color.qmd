@@ -1,0 +1,296 @@
+---
+title: "Procesado de Señales e Imágenes Médicas"
+description: "PSIM"
+subtitle: "Laboratorio 002: Adquisición de imágenes, profundidad de Bit y Espacios de Color"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+
+# **Laboratorio 002: Adquisición de Imágenes — Profundidad de bit y espacios de color**
+
+## **Resultados de aprendizaje**
+
+Al finalizar, el estudiante será capaz de:
+1. Explicar la relación entre la profundidad de bit $b$, los niveles representables $L=2^{b}$ y el paso de cuantización $\Delta$ en una imagen digital.
+2. Adquirir y documentar imágenes bajo condiciones controladas para analizar rango dinámico, histogramas y artefactos de cuantización (banding, posterización).
+3. Convertir imágenes RGB a espacios HSV, CIE L\*a\*b\* y Y’CrCb (formato OpenCV) e interpretar la semántica de canales e histogramas.
+4. Cuantizar imágenes a distintas profundidades de bit y evaluar distorsión con $\mathrm{MSE}$; discutir perceptualmente los cambios.
+5. Justificar la elección de espacio de color según la tarea (robustez a iluminación, segmentación, compresión) con evidencia cualitativa y cuantitativa.
+
+---
+
+## **Conceptos clave (conciso)**
+
+- **Cuantización.** Para una señal $x\in[X_{\min},X_{\max}]$, la cuantización uniforme escalar con $b$ bits tiene $L=2^{b}$ niveles y paso $\Delta=\dfrac{X_{\max}-X_{\min}}{L}$. El error de cuantización $e=x-\hat{x}\in[-\Delta/2,\Delta/2]$ (mid-tread).
+- **Rango dinámico.** En $b$ bits sin signo: $[0,\,2^{b}-1]$ (en 8 bits: $[0,255]$).
+- **Espacios de color (OpenCV).**  
+  - **BGR** (lectura por defecto en OpenCV).  
+  - **HSV:** `cv2.COLOR_BGR2HSV` (H en [0,179] para uint8).  
+  - **Lab:** `cv2.COLOR_BGR2LAB` (uint8: $L^\*\in[0,255]$, $a^\*,b^\*\approx[0,255]$ con 128 ≈ neutro).  
+  - **YCrCb:** `cv2.COLOR_BGR2YCrCb` (orden de cromas: **Y, Cr, Cb**).
+
+> ::: {.callout-warning}
+> OpenCV trabaja en **BGR** (no RGB) cuando lee/escribe imágenes con `cv2.imread` y `cv2.imwrite`. Para mostrar correctamente en archivos guardados, no es necesario convertir a RGB; sin embargo, documente siempre el orden de canales.
+> :::
+
+---
+
+## **Materiales**
+
+- Cámara de teléfono u ordenador. Fijar **ISO**, **tiempo de exposición** y **balance de blancos**. Preferir **PNG/TIFF** (sin pérdidas); si es posible, capturar **RAW+JPEG**.
+- Escena estática con colores saturados y neutros (p. ej., cuadrícula de color y rampa en escala de grises en un monitor). Iluminación difusa y estable.
+- Python 3.12 con: `opencv-python` y `numpy`. **No use** otras librerías de imagen/visualización.
+
+---
+
+## **Protocolo de adquisición (documentar en el informe)**
+
+1. **Montaje de escena (iluminación constante).** Fondo neutro; evitar brillos especulares.  
+2. **Conjunto A (referencia, 8 bits sin pérdidas).** Guardar una imagen nítida y bien expuesta en PNG/TIFF.  
+3. **Conjunto B (bracketing de exposición).** ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.  
+
+::: {.callout-warning}
+Mantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB confunden los análisis de profundidad de bit y espacio de color.
+:::
+
+---
+
+## **Actividad 1 — Exploración inicial y chequeos**
+
+1. Cargar la **imagen de referencia**. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.  
+2. Estimar el **uso efectivo de bits** contando valores distintos por canal.
+3. Cuente cuantos pixeles hay, por cada canal y nivel del canal 
+
+```{python}
+#| echo: false
+#| eval: false
+import os
+import cv2
+import numpy as np
+
+# >>> Reemplace con su ruta:
+path = "data/referencia.png"
+assert os.path.exists(path), f"No existe el archivo: {path}"
+
+img = cv2.imread(path, cv2.IMREAD_COLOR)  # BGR, uint8
+h, w, c = img.shape
+print("Shape:", (h, w, c), "dtype:", img.dtype)
+
+# Conteo de valores únicos por canal
+for ch, name in zip(cv2.split(img), ["B","G","R"]):
+    uniq = np.unique(ch)
+    print(f"{name}: valores únicos = {len(uniq)}  (min={int(uniq.min())}, max={int(uniq.max())})")
+
+# Función para dibujar un histograma por canal con OpenCV (sin matplotlib)
+def hist_image(u8_channel, size=(512,256), color=(255,255,255)):
+    hist = cv2.calcHist([u8_channel],[0],None,[256],[0,256]).flatten()
+    hist = cv2.normalize(hist, None, alpha=0, beta=size[1], norm_type=cv2.NORM_MINMAX).astype(int)
+    canvas = np.zeros((size[1], size[0], 3), dtype=np.uint8)
+    bin_w = size[0] // 256
+    for x in range(1,256):
+        cv2.line(canvas,
+                 (bin_w*(x-1), size[1]-hist[x-1]),
+                 (bin_w*x,     size[1]-hist[x]),
+                 color, 1, lineType=cv2.LINE_AA)
+    return canvas
+
+os.makedirs("figs", exist_ok=True)
+# Guardar también la referencia
+cv2.imwrite("figs/referencia.png", img)
+print("Guardados: figs/referencia.png, figs/hist_B.png, figs/hist_G.png, figs/hist_R.png")
+```
+---
+
+## **Actividad 2 — Reducción de profundidad de bit y calidad (MSE)**
+
+
+-Explique que es el error cuadrático medio (MSE, por sus siglas en inglés) y la relación señal a rudio pico (PSNR, por sus siglas en inglés), Cuantice la **imagen BGR de referencia** a $b\in\{1,2,\dots,7\}$ bits (por canal). Para cada $b$:
+
+- Calcule $\mathrm{MSE}$ y $\mathrm{PSNR}$ respecto a la referencia ($b=8).
+- Genere y guarde la imagen cuantizada y un **mapa de error** visual (colormap).
+
+```{python}
+#| echo: false
+#| eval: false
+import os
+import cv2
+import numpy as np
+
+def quantize_u8(u8, b):
+    """Cuantización uniforme por canal a b bits (uint8)."""
+    assert u8.dtype == np.uint8 and 1 <= b <= 7
+    shift = 8 - b
+    q = (u8 >> shift) << shift
+    if shift > 0:
+        q = np.clip(q + (1 << (shift-1)), 0, 255).astype(np.uint8)  # centrar niveles
+    return q
+
+def mse_u8(x, y):
+    return float(np.mean((x.astype(np.float32) - y.astype(np.float32))**2))
+
+os.makedirs("figs/quant", exist_ok=True)
+mse_table = []
+for b in range(1, 8):
+    qimg = quantize_u8(img, b)
+    err  = cv2.absdiff(img, qimg)
+    # Mapa de error como calor (usar norma por pixel -> escala de grises -> colormap)
+    err_gray = cv2.cvtColor(err, cv2.COLOR_BGR2GRAY)
+    err_gray = cv2.normalize(err_gray, None, 0, 255, cv2.NORM_MINMAX)
+    err_color = cv2.applyColorMap(err_gray.astype(np.uint8), cv2.COLORMAP_JET)
+
+    cv2.imwrite(f"figs/quant/q_b{b}.png", qimg)
+    cv2.imwrite(f"figs/quant/err_b{b}.png", err_color)
+    mse_val = mse_u8(img, qimg)
+    mse_table.append((b, mse_val))
+
+print("MSE por bit-depth:")
+for b, v in mse_table:
+    print(f"b={b}: MSE={v:.2f}")
+print("Imágenes guardadas en figs/quant/")
+```
+---
+
+## **Actividad 3 — Transformaciones de espacio de color y semántica de canales**
+
+1. Convertir la imagen de referencia a **HSV**, **Lab** y **YCrCb** (OpenCV).  
+2. Cuantizar **solo un canal** a $b\in\{2,4\}$ (mantener los otros en 8 bits), revertir a BGR y guardar resultados.  
+3. Comparar perceptualmente artefactos entre cuantizar luminancia (Y) y crominancias (Cr/Cb), y entre canales de HSV/Lab.
+
+```{python}
+#| echo: false
+#| eval: false
+import os
+import cv2
+import numpy as np
+
+def quantize_channel_in_space(img_bgr, space="HSV", channel=2, b=2):
+    if space == "HSV":
+        sp = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    elif space == "LAB":
+        sp = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
+    elif space == "YCrCb":
+        sp = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2YCrCb)
+    else:
+        raise ValueError("Espacio no soportado: use 'HSV', 'LAB' o 'YCrCb'.")
+
+    qsp = sp.copy()
+    shift = 8 - b
+    ch = qsp[..., channel]
+    ch_q = (ch >> shift) << shift
+    if shift > 0:
+        ch_q = np.clip(ch_q + (1 << (shift-1)), 0, 255).astype(np.uint8)
+    qsp[..., channel] = ch_q
+
+    if space == "HSV":
+        out = cv2.cvtColor(qsp, cv2.COLOR_HSV2BGR)
+    elif space == "LAB":
+        out = cv2.cvtColor(qsp, cv2.COLOR_LAB2BGR)
+    else: # YCrCb
+        out = cv2.cvtColor(qsp, cv2.COLOR_YCrCb2BGR)
+    return out
+
+os.makedirs("figs/space", exist_ok=True)
+
+# Ejemplos: V@2 bits (HSV), a*@4 bits (Lab), Cb@2 bits (YCrCb: canal 2 es Cb)
+out_hsv_v2  = quantize_channel_in_space(img, "HSV",   channel=2, b=2)   # canal 2: V
+out_lab_a4  = quantize_channel_in_space(img, "LAB",   channel=1, b=4)   # canal 1: a*
+out_ycc_cb2 = quantize_channel_in_space(img, "YCrCb", channel=2, b=2)   # canal 2: Cb
+
+cv2.imwrite("figs/space/HSV_V_b2.png", out_hsv_v2)
+cv2.imwrite("figs/space/LAB_a_b4.png", out_lab_a4)
+cv2.imwrite("figs/space/YCrCb_Cb_b2.png", out_ycc_cb2)
+
+print("Guardados ejemplos en figs/space/")
+```
+
+---
+
+## **Entregables**
+
+1. **Informe Quarto** (HTML/PDF) con:
+   - Protocolo de adquisición, metadatos y fotos de la escena.  
+   - Resultados de Actividades 1–3 (figuras, histogramas, tablas).  
+   - Tabla que resuma **qué espacio/canal** soporta mayor cuantización con artefactos mínimos (justifique).  
+   - Tabla con MSE vs. $b$ (sin PSNR).  
+2. **Carpeta reproducible** con código e imágenes originales (preferir PNG/TIFF).
+
+---
+
+## **Rúbrica de evaluación para exposiciones orales (10 minutos)**
+
+**Formato:** 10 minutos de presentación + 2–3 minutos de preguntas. Puntuación total: **100 puntos**.
+
+| Criterio | Peso | Excelente (A) (7puntos) | Bueno (B) (5puntos) | A mejorar (C) (3puntos) | Insuficiente (D/E) (0puntos)|
+|---|---:|---|---|---|---|
+| **Estructura y narrativa** | 15 | Objetivo, método y resultados se articulan con coherencia; introducción y cierre precisos en tiempo. | Secuencia mayormente clara con leves transiciones débiles. | Orden irregular; faltan transiciones clave. | Desorganizada; propósito no se comprende. |
+| **Rigor técnico** | 25 | Definiciones y ecuaciones ($L=2^{b}$, $\Delta$, $\mathrm{MSE}$) correctas; supuestos declarados y validados. | Menores imprecisiones sin afectar conclusiones. | Varias imprecisiones o supuestos no justificados. | Errores conceptuales graves o confusión sostenida. |
+| **Metodología y adquisición** | 15 | Parámetros de cámara controlados; protocolo replicable; evidencia fotográfica clara. | Control adecuado con una omisión menor. | Control parcial; documentación incompleta. | Sin control de variables; documentación escasa. |
+| **Análisis y resultados** | 20 | Comparaciones entre espacios (HSV/Lab/YCrCb) con figuras pertinentes; conclusiones sustentadas. | Análisis correcto pero poco profundo o con pocas figuras. | Análisis superficial; conclusiones poco justificadas. | Sin análisis; afirmaciones sin evidencia. |
+| **Visualización** | 10 | Figuras legibles, ejes/leyendas correctas (en imágenes generadas con OpenCV); mapas de error bien presentados. | Visualización adecuada con detalles mejorables. | Gráficos confusos o mal rotulados. | Visualizaciones ausentes o incorrectas. |
+| **Gestión del tiempo** | 10 | Culmina en 9–10 min; distribuye tiempo equilibradamente. | Leve desviación (±1 min). | Desviación moderada (±2 min). | Desviación severa (>±2 min) o no concluye. |
+| **Claridad y comunicación** | 5 | Lenguaje técnico claro, voz y ritmo adecuados, contacto visual. | Generalmente claro con momentos de ambigüedad. | Dificultades frecuentes de expresión. | Incomprensible o lectura de diapositivas. |
+
+**Recomendaciones de preparación (no evaluadas, pero sugeridas):**
+- Ensayar con cronómetro (marcas en 3–6–9 min).  
+- Limitar texto por diapositiva; priorizar comparativas claras (antes/después, por espacio y por $b$).  
+- Anticipar dos preguntas técnicas (supuestos y limitaciones).
