@@ -1,0 +1,400 @@
+---
+title: "Procesamiento de Señales e Imagenes"
+description: "PSIM -- 101849"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    mainfont: "Fira Code"
+---
+
+## Portada
+
+**Procesamiento de Señales e Imágenes (PSIM)**
+Una introducción para 10.º–11.º: ver, escuchar y entender el mundo con datos.
+
+::: {.notes}
+Guion: Hoy haremos un recorrido sin fórmulas. Veremos cómo los celulares, videojuegos y la medicina usan señales (sonidos, pulsos, datos) e imágenes (fotos, rayos X) para tomar decisiones. Primero ideas clave; luego, una mini-práctica que se ejecuta aquí mismo.
+:::
+
+## Propósito del taller
+
+* Explorar qué es una **señal** (por ejemplo: audio, ritmo cardiaco, acelerómetro) y qué es una **imagen** (fotografía, rayos X).
+* Comprender, con ejemplos cotidianos, cómo se **limpia**, **analiza** y **transforma** la información para tomar mejores decisiones.
+* Probar una actividad práctica donde generamos y mejoramos **una señal** y **una imagen** con código visible y simple.
+
+::: {.notes}
+Guion: Piensa en señales como “series de valores en el tiempo” y en imágenes como “tableros de píxeles”. Vamos a mejorarlas con filtros muy simples y a visualizar qué cambia. Sin jerga: solo intuición y resultados.
+:::
+
+## Enfoques didácticos sugeridos (K-12)
+
+* **Aprendizaje por indagación (modelo 5E)** con recursos de NASA eClips (guías con actividades alineadas a estándares). Ver “Educator Guides” en NASA eClips.
+  [https://nasaeclips.arc.nasa.gov/resources/guides](https://nasaeclips.arc.nasa.gov/resources/guides)
+* **Simulaciones interactivas** para construir intuiciones sobre ondas (PhET: *Sound Waves*, *Wave on a String*, *Waves Intro*).
+  [https://phet.colorado.edu/en/simulations/sound-waves](https://phet.colorado.edu/en/simulations/sound-waves)
+  [https://phet.colorado.edu/en/simulation/wave-on-a-string](https://phet.colorado.edu/en/simulation/wave-on-a-string)
+  [https://phet.colorado.edu/en/simulations/waves-intro](https://phet.colorado.edu/en/simulations/waves-intro)
+* **Narrativa visual del color** (Khan Academy – Pixar in a Box) para introducir píxeles y RGB de forma accesible.
+  [https://www.khanacademy.org/computing/pixar/color](https://www.khanacademy.org/computing/pixar/color)
+* **Vinculación con la ingeniería** (IEEE TryEngineering; iniciativas K-12 de la IEEE Signal Processing Society).
+  [https://tryengineering.org/resource/lesson-plan/graphics-calculating-color/](https://tryengineering.org/resource/lesson-plan/graphics-calculating-color/)
+  [https://signalprocessingsociety.org/community-involvement/k-12-outreach-initiatives](https://signalprocessingsociety.org/community-involvement/k-12-outreach-initiatives)
+
+::: {.notes}
+Guion: Estas fuentes están pensadas para secundaria. Úsalas como apoyo visual y para extender el taller fuera del aula. Si un enlace cambia, busca por el título en el sitio oficial.
+:::
+
+## Teoría básica (sin matemáticas)
+
+**Señales (idea simple):**
+
+* Son datos que cambian en el tiempo (voz, música, pasos, pulso).
+* Podemos observarlas **en el tiempo** (cómo suben y bajan) o **por componentes** (graves/agudos en audio).
+* A veces tienen **ruido** y usamos “filtros” para suavizar.
+
+**Imágenes (idea simple):**
+
+* Son rejillas de puntos (**píxeles**).
+* Cada píxel tiene intensidad y, si es a color, combinaciones de **rojo, verde y azul (RGB)**.
+* Podemos **difuminar** (suavizar), **resaltar bordes** o **cambiar colores** para destacar detalles.
+
+::: {.notes}
+Guion: Una señal es como una historia en el tiempo; una imagen es como un mosaico. Filtros = reglas simples que cambian la historia o el mosaico para ver mejor lo importante.
+:::
+
+## Señales e imágenes en la vida diaria
+
+:::: {.columns}
+
+::: {.column width="45%"}
+**Señales**
+
+* Música y podcast (volumen, graves/agudos).
+* Sensores del teléfono (pasos, giros, aceleración).
+* Salud: pulso, respiración.
+
+**¿Qué hacemos?**
+Suavizar ruidos, detectar patrones (por ejemplo, picos).
+:::
+
+::: {.column width="45%"}
+**Imágenes**
+
+* Fotos con filtros (contraste, nitidez).
+* Mapas de calor del clima.
+* Salud: rayos X, ultrasonido.
+
+**¿Qué hacemos?**
+Enfocar detalles, marcar bordes, ajustar colores.
+:::
+::::
+
+::: {.notes}
+Guion: Relaciona cada ejemplo con una acción: suavizar, resaltar, medir. Conecta con su día a día para facilitar la comprensión.
+:::
+
+## Demo 1 — Una señal con y sin ruido (matplotlib)
+
+```{python}
+#| echo: true
+#| fig-cap: "Señal sintética: original con ruido vs. versión suavizada (promedio móvil)."
+#| fig-width: 9
+#| fig-height: 4
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7)
+fs = 200              # 'muestras por segundo'
+t = np.linspace(0, 2, fs*2, endpoint=False)
+signal_clean = 0.7*np.sin(2*np.pi*5*t) + 0.3*np.sin(2*np.pi*7*t)  # mezcla de tonos
+noise = 0.35*rng.normal(size=t.size)
+signal_noisy = signal_clean + noise
+
+# Suavizado sencillo: promedio móvil
+def moving_average(x, w=7):
+    w = max(1, int(w))
+    k = np.ones(w)/w
+    return np.convolve(x, k, mode='same')
+
+smooth = moving_average(signal_noisy, w=9)
+
+plt.figure()
+plt.plot(t, signal_noisy, lw=1, label='Con ruido')
+plt.plot(t, smooth, lw=2, label='Suavizada (w=9)')
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Amplitud (relativa)')
+plt.legend()
+plt.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+Guion: La línea delgada es la señal con ruido; la gruesa es la suavizada. Mensaje: un filtro simple ya mejora la lectura. Pregunta: ¿qué perderíamos si suavizamos “demasiado”?
+:::
+
+## Demo 2 — Mirar un “filtro” como imagen (seaborn)
+
+```{python}
+#| echo: true
+#| fig-cap: "Cómo ‘se ve’ un filtro: difuminado (promedio 3×3) vs. detección de bordes (Sobel-X)."
+#| fig-width: 8
+#| fig-height: 3.8
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+
+blur3 = np.ones((3,3))/9.0
+sobel_x = np.array([[-1,0,1],
+                    [-2,0,2],
+                    [-1,0,1]])
+
+fig, ax = plt.subplots(1,2)
+sns.heatmap(blur3, annot=True, fmt=".2f", cbar=False, ax=ax[0])
+ax[0].set_title("Promedio 3×3 (suaviza)")
+sns.heatmap(sobel_x, annot=True, fmt=".0f", cbar=False, ax=ax[1])
+ax[1].set_title("Sobel-X (resalta bordes verticales)")
+plt.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+Guion: Cada cuadrito es un “peso”. El promedio reparte por igual (difumina). Sobel resalta cambios bruscos (bordes). Esta intuición sirve para imágenes y también para señales.
+:::
+
+## Demo 3 — Una imagen sintética y sus bordes (matplotlib)
+
+```{python}
+#| echo: true
+#| fig-cap: "Imagen original, versión suavizada y bordes detectados."
+#| fig-width: 10
+#| fig-height: 3.8
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Imagen sintética (tablero + círculo) con ruido
+H, W = 128, 128
+yy, xx = np.indices((H, W))
+checker = (((yy//8) + (xx//8)) % 2)*180
+circle = ((yy - 64)**2 + (xx - 64)**2) < (28**2)
+img = checker.copy().astype(float)
+img[circle] = 240
+rng = np.random.default_rng(5)
+img_noisy = img + rng.normal(0, 12, size=img.shape)
+img_noisy = np.clip(img_noisy, 0, 255)
+
+# Convolución 2D (padding simple) con kernel promedio 3x3
+kernel = np.ones((3,3))/9.0
+pad = 1
+padded = np.pad(img_noisy, pad_width=pad, mode='edge')
+blur = np.zeros_like(img_noisy)
+for i in range(H):
+    for j in range(W):
+        region = padded[i:i+3, j:j+3]
+        blur[i, j] = np.sum(region * kernel)
+
+# Detección de bordes (Sobel)
+sx = np.array([[-1,0,1],
+               [-2,0,2],
+               [-1,0,1]])
+sy = np.array([[-1,-2,-1],
+               [ 0, 0, 0],
+               [ 1, 2, 1]])
+
+def conv2(img, k):
+    pad = k.shape[0]//2
+    p = np.pad(img, pad, mode='edge')
+    out = np.zeros_like(img, dtype=float)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            out[i,j] = np.sum(p[i:i+k.shape[0], j:j+k.shape[1]] * k)
+    return out
+
+gx = conv2(blur, sx)
+gy = conv2(blur, sy)
+edges = np.hypot(gx, gy)
+edges = edges / (edges.max() + 1e-9) * 255
+
+fig, axs = plt.subplots(1,3)
+axs[0].imshow(img_noisy, cmap='gray', vmin=0, vmax=255)
+axs[0].set_title("Original con ruido")
+axs[1].imshow(blur, cmap='gray', vmin=0, vmax=255)
+axs[1].set_title("Suavizada")
+axs[2].imshow(edges, cmap='gray', vmin=0, vmax=255)
+axs[2].set_title("Bordes")
+for a in axs: a.axis('off')
+plt.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+Guion: Primero suavizamos para reducir ruido; luego buscamos bordes (límites). Pregunta: ¿dónde ven los bordes más claros? ¿Qué pasaría si el ruido fuera mayor?
+:::
+
+## Actividad práctica (se ejecuta al compilar)
+
+**Reto:** Ajusta un par de variables, vuelve a compilar y observa cómo cambian **la señal** y **la imagen**. La intención es **mejorar la claridad** sin “pasarte”: si suavizas demasiado, pierdes detalle.
+
+```{python}
+#| echo: true
+#| fig-cap: "Ajusta las variables y recompila: compara resultados."
+#| fig-width: 10
+#| fig-height: 6
+import numpy as np
+import matplotlib.pyplot as plt
+
+# === Parámetros que puedes cambiar ===
+win = 13           # tamaño del promedio móvil para la señal (prueba 5, 9, 13, 21)
+kimg = 5           # tamaño del kernel cuadrado para suavizar la imagen (prueba 3, 5, 7)
+
+# --- Señal ---
+rng = np.random.default_rng(123)
+fs = 200
+t = np.linspace(0, 2, fs*2, endpoint=False)
+signal_clean = 0.6*np.sin(2*np.pi*4*t) + 0.2*np.sin(2*np.pi*11*t)
+noise = 0.45*rng.normal(size=t.size)
+x = signal_clean + noise
+
+def moving_average(x, w=7):
+    k = np.ones(max(1,int(w)))/max(1,int(w))
+    return np.convolve(x, k, mode='same')
+
+xs = moving_average(x, win)
+
+# --- Imagen ---
+H, W = 120, 120
+yy, xx = np.indices((H, W))
+rect = ((yy>30)&(yy<90)&(xx>45)&(xx<75))*220
+grad = (xx/xx.max())*180
+img = grad.copy()
+img[rect>0] = 240
+img += rng.normal(0, 15, size=img.shape)
+img = np.clip(img, 0, 255)
+
+# Kernel promedio kimg×kimg
+k = max(3, int(kimg))
+if k % 2 == 0: k += 1
+ker = np.ones((k,k))/ (k*k)
+pad = k//2
+p = np.pad(img, pad, mode='edge')
+blur = np.zeros_like(img)
+for i in range(H):
+    for j in range(W):
+        blur[i,j] = np.sum(p[i:i+k, j:j+k] * ker)
+
+# Figuras
+fig = plt.figure(figsize=(10,6))
+gs = fig.add_gridspec(2,2)
+
+ax1 = fig.add_subplot(gs[0, :])
+ax1.plot(t, x, lw=1, label='Con ruido')
+ax1.plot(t, xs, lw=2, label=f'Suavizada (w={win})')
+ax1.set_title("Señal: antes vs. después")
+ax1.set_xlabel("Tiempo (s)"); ax1.set_ylabel("Amplitud (relativa)")
+ax1.legend()
+
+ax2 = fig.add_subplot(gs[1, 0])
+ax2.imshow(img, cmap='gray', vmin=0, vmax=255)
+ax2.set_title("Imagen ruidosa")
+ax2.axis('off')
+
+ax3 = fig.add_subplot(gs[1, 1])
+ax3.imshow(blur, cmap='gray', vmin=0, vmax=255)
+ax3.set_title(f"Imagen suavizada (kernel {k}×{k})")
+ax3.axis('off')
+
+plt.tight_layout()
+plt.show()
+```
+
+**Instrucciones para el aula (rápidas):**
+
+1. Cambia `win` (señal) y `kimg` (imagen) en el bloque anterior.
+2. Vuelve a **compilar/renderizar**.
+3. En parejas, respondan:
+
+   * ¿Qué valor “mejor equilibra” claridad y detalle en la señal?
+   * ¿Qué valor “mejor equilibra” claridad y detalle en la imagen?
+   * ¿En qué casos suavizar **demasiado** es un problema?
+
+::: {.notes}
+Guion: Verifica que cambien `win` y `kimg` y recompilen. Pide que describan con sus palabras qué mejora. Recalca la idea de “compromiso”: más suavizado = menos ruido, pero también menos detalle.
+:::
+
+## Cierre (ideas clave)
+
+* Señales: historias en el tiempo; Imágenes: mosaicos de píxeles.
+* Filtros simples ayudan a **ver mejor**: suavizar, resaltar bordes, ajustar color.
+* **Exceso** de suavizado borra detalles; **insuficiente** deja ruido.
+* La intuición visual es el primer paso antes de técnicas avanzadas.
+
+::: {.notes}
+Guion: Si entienden estas intuiciones, luego las fórmulas tendrán sentido. Lo importante es saber qué queremos mejorar y qué estamos dispuestos a perder.
+:::
+
+## Recursos y fuentes (K-12, sin matemáticas)
+
+* **PhET (Universidad de Colorado)**: *Sound Waves*, *Wave on a String*, *Waves Intro* — simuladores interactivos para ondas y sonido.
+  [https://phet.colorado.edu/en/simulations/sound-waves](https://phet.colorado.edu/en/simulations/sound-waves)
+  [https://phet.colorado.edu/en/simulation/wave-on-a-string](https://phet.colorado.edu/en/simulation/wave-on-a-string)
+  [https://phet.colorado.edu/en/simulations/waves-intro](https://phet.colorado.edu/en/simulations/waves-intro)
+* **Khan Academy (Pixar in a Box)**: ciencia del color, espacio de color y contraste para explicar píxeles y RGB.
+  [https://www.khanacademy.org/computing/pixar/color](https://www.khanacademy.org/computing/pixar/color)
+* **IEEE TryEngineering**: lecciones y actividades preuniversitarias sobre color y representación digital.
+  [https://tryengineering.org/resource/lesson-plan/graphics-calculating-color/](https://tryengineering.org/resource/lesson-plan/graphics-calculating-color/)
+* **IEEE Signal Processing Society (K-12 Outreach)**: iniciativas y materiales de divulgación para escuelas.
+  [https://signalprocessingsociety.org/community-involvement/k-12-outreach-initiatives](https://signalprocessingsociety.org/community-involvement/k-12-outreach-initiatives)
+* **NASA eClips (Educator Guides)**: actividades con enfoque 5E y recursos visuales.
+  [https://nasaeclips.arc.nasa.gov/resources/guides](https://nasaeclips.arc.nasa.gov/resources/guides)
+
+::: {.notes}
+Guion: Muestra un simulador PhET si hay conexión. Recomienda Pixar in a Box para color y píxeles. Usa TryEngineering/NASA para actividades 5E.
+:::
+
+## Guion narrativo (para la docencia)
+
+* **Inicio:** conectar con su mundo: “música con filtros”, “mejores fotos en el móvil”, “pruebas médicas por imágenes”.
+* **Exploración:** definir sin fórmulas qué es señal e imagen con ejemplos cercanos.
+* **Demostraciones:** una señal ruidosa y una imagen con ruido; mostrar mejoras con filtros simples.
+* **Actividad:** manipular `win` y `kimg`, recompilar, comparar resultados y justificar elecciones.
+* **Cierre:** “no hay magia: hay decisiones” (equilibrio entre ruido y detalle).
+* **Extensión:** visitar PhET o Khan Academy para profundizar en casa.
+
+::: {.notes}
+Guion: Habla despacio, usa analogías. Invita a describir con palabras antes de mirar el código. Cierra con: “¿qué otro problema de su entorno mejorarían con estas ideas?”
+:::
+
+---
+
+<!-- ### Auto-chequeo (calidad)
+
+* ✅ YAML exacto y compatible con **revealjs**.
+* ✅ Compila y genera figuras **al renderizar** (matplotlib y seaborn).
+* ✅ Nivel adecuado 10.º–11.º, **sin ecuaciones ni jerga avanzada**.
+* ✅ Actividad práctica ejecutable en Quarto (ajustar variables y recompilar).
+* ✅ Máximo **2 columnas** con el bloque requerido (45% + 45%).
+* ✅ No se incluyen “objetivos” ni “tiempos”.
+
+### Dos mejoras posibles
+
+1. **Dinámica adicional:** mini-debate por equipos: cada grupo defiende por qué su combinación de `win` y `kimg` es la “mejor” para un caso (música vs. rayos X simulados), argumentando el compromiso ruido-detalle.
+2. **Recurso interactivo opcional:** si el entorno lo permite, añadir *widgets* (p. ej., `ipywidgets`) para ajustar `win`/`kimg` con deslizadores y observar cambios sin recompilar. (Usar solo si están disponibles en el ambiente de Quarto.) -->
