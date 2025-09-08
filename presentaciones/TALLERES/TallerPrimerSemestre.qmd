@@ -485,6 +485,10 @@ Guion: resaltar que la mitad de las aplicaciones impacta directamente en salud y
 - Generación de algoritmos de clasificación de intención de movimiento
 - Monitorización de terapias de rehabilitación.
 
+## Invitación
+
+![Invitación](../../recursos/imagenes/Talleres/cartel.png)
+
 # Parte IV: ¡Tu Turno! Laboratorio Digital
 
 
@@ -504,6 +508,180 @@ Vamos a usar este mismo documento como nuestro **cuaderno de laboratorio digital
 :::
 
 ---
+
+## Misión 1: ¡De Números a Dibujos! 📝
+
+**Objetivo:** Comprender que las imágenes son, en el fondo, solo listas de números e instrucciones.
+
+**Materiales:** Una hoja de papel cuadriculado y un lápiz.
+
+**Instrucciones (Parte A - La Imagen Misteriosa):**
+
+En una hoja resalta los números pares y los primos permitiendo ver el mensaje secreto.
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: matrix
+# | fig-align: center
+
+"""
+Matrix 15x15 with two letters:
+- "I" drawn using EVEN numbers.
+- "B" drawn using PRIME numbers.
+- Background filled with ODD COMPOSITE numbers to visually "hide" the letters.
+
+Reproducible and self-contained.
+"""
+
+import numpy as np
+
+rng = np.random.default_rng(42)
+
+
+# --- helpers ---
+def is_prime(n: int) -> bool:
+    if n < 2:
+        return False
+    if n % 2 == 0:
+        return n == 2
+    d = 3
+    while d * d <= n:
+        if n % d == 0:
+            return False
+        d += 2
+    return True
+
+
+# pools
+even_pool = np.array([n for n in range(2, 100) if n % 2 == 0])
+prime_pool = np.array([n for n in range(2, 100) if is_prime(n)])
+# odd composite numbers (not prime, not even, >1)
+oddcomp_pool = np.array([n for n in range(3, 100, 2) if not is_prime(n)])
+
+# --- canvas ---
+H, W = 15, 15
+M = rng.choice(oddcomp_pool, size=(H, W))  # background: odd composite
+
+
+# Coordinate helper (row, col) with 0-based indexing
+def put(vals, coords):
+    """Place random values from `vals` at integer coordinates `coords`."""
+    rr, cc = zip(*coords)
+    M[tuple(rr), tuple(cc)] = rng.choice(vals, size=len(coords))
+
+
+# --- draw "I" with even numbers (left side) ---
+# Use a simple blocky "I": top bar, vertical stem, bottom bar
+top_row, bottom_row = 2, 12  # keep margins
+left_col, right_col = 1, 3
+stem_col = 2
+
+I_coords = []
+# top bar
+I_coords += [(top_row, c) for c in range(left_col, right_col + 1)]
+# bottom bar
+I_coords += [(bottom_row, c) for c in range(left_col, right_col + 1)]
+# vertical stem
+I_coords += [(r, stem_col) for r in range(top_row, bottom_row + 1)]
+
+put(even_pool, I_coords)
+
+# --- draw "B" with primes (right side) ---
+# Spine + two bowls (top and bottom) approximated with block pixels
+spine_col = 10
+right_edge = 12
+top, mid, bot = 2, 7, 12
+
+B_coords = []
+# vertical spine
+B_coords += [(r, spine_col) for r in range(top, bot + 1)]
+# top horizontal
+B_coords += [(top, c) for c in range(spine_col, right_edge + 1)]
+# mid horizontal (waist)
+B_coords += [(mid, c) for c in range(spine_col, right_edge)]
+# bottom horizontal
+B_coords += [(bot, c) for c in range(spine_col, right_edge + 1)]
+# right edges of bowls
+B_coords += [(r, right_edge) for r in range(top + 1, mid)]
+B_coords += [(r, right_edge) for r in range(mid + 1, bot)]
+
+put(prime_pool, B_coords)
+
+
+# --- sanity checks (optional) ---
+def all_in_pool(vals, coords):
+    rr, cc = zip(*coords)
+    flat = M[tuple(rr), tuple(cc)].ravel().tolist()
+    return all(v in vals for v in flat)
+
+
+assert all_in_pool(set(even_pool.tolist()), I_coords), "I must be even numbers"
+assert all_in_pool(set(prime_pool.tolist()), B_coords), "B must be primes"
+
+# Background should be odd composite (not even, not prime)
+for r in range(H):
+    for c in range(W):
+        if (r, c) in I_coords or (r, c) in B_coords:
+            continue
+        v = M[r, c]
+        assert v % 2 == 1 and not is_prime(v), "Background must be odd composite"
+
+# --- pretty print ---
+np.set_printoptions(linewidth=200, formatter={"int": lambda x: f"{x:02d}"})
+# print(M)
+
+
+# --- Función para identificar primos ---
+def is_prime(n: int) -> bool:
+    if n < 2:
+        return False
+    if n == 2:
+        return True
+    if n % 2 == 0:
+        return False
+    for i in range(3, int(n**0.5) + 1, 2):
+        if n % i == 0:
+            return False
+    return True
+
+
+# # Crear matriz aleatoria 15x15 con números entre 1 y 100
+# np.random.seed(42)
+# M = np.random.randint(1, 100, (15, 5))
+
+# Máscaras lógicas
+mask_even = M % 2 == 0  # pares
+mask_prime = np.vectorize(is_prime)(M)  # primos
+
+# --- Visualización ---
+fig, ax = plt.subplots(figsize=(10, 6.7))
+ax.matshow(np.ones_like(M), cmap="gray_r")  # fondo gris claro
+
+# Mostrar números
+for i in range(M.shape[0]):
+    for j in range(M.shape[1]):
+        val = M[i, j]
+        color = "black"
+        weight = "normal"
+        if mask_even[i, j]:
+            color = "black"
+            weight = "normal"
+        if mask_prime[i, j]:
+            color = "black"
+            weight = "normal"
+        ax.text(
+            j, i, f"{val:2d}", va="center", ha="center", color=color, fontweight=weight
+        )
+
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_title("Matriz 15x15", fontsize=36)
+plt.show()
+
+```
+
 
 ## Misión 2: ¡De Números a Dibujos! 📝
 
@@ -530,16 +708,6 @@ Vamos a usar este mismo documento como nuestro **cuaderno de laboratorio digital
     -   Fila 6: Columnas 3, 6
     -   Fila 7: Columnas 4, 5
 4.  Aléjate un poco... ¿Qué imagen has creado?
-
-## ¡Lo Lograron! {background-color="#006400"}
-
-<br>
-<br>
-
-
-::: {.notes}
-¡Felicidades! Tómense un momento para ver lo que han logrado. No solo vieron una presentación, sino que **hicieron** el trabajo de un ingeniero biomédico. Tomaron datos crudos e inutilizables —una señal ruidosa y una imagen sin detalles claros— y los transformaron en información clara y útil. ¡Acaban de dar el primer paso en un campo que salva vidas!
-:::
 
 ---
 
@@ -652,20 +820,11 @@ plt.show()
 
 ---
 
+# ¡Lo Lograron! {background-color="#006400" title-block-banner-color blue}
 
-## ¿Por Qué Importa? El Futuro de la Medicina
-
-Lo que hicieron hoy es la base para:
-
--   **Inteligencia Artificial** que diagnostica enfermedades.
--   **Robots cirujanos** de alta precisión.
--   **Medicamentos personalizados** para cada paciente.
--   **Monitores de salud** en nuestros relojes y celulares.
-
-El futuro de la salud se está construyendo con código, y ustedes ya saben cómo empezar.
 
 ::: {.notes}
-Lo que hicieron hoy a pequeña escala es la base de la medicina del futuro. Estos mismos principios de limpieza de señales y mejora de imágenes son el primer paso para todo: para que la Inteligencia Artificial pueda diagnosticar enfermedades, para guiar a los robots en cirugías de alta precisión y para crear medicamentos personalizados para cada paciente. El futuro de la salud se está construyendo con código, y ustedes ya saben cómo empezar.
+¡Felicidades! Tómense un momento para ver lo que han logrado. No solo vieron una presentación, sino que **hicieron** el trabajo de un ingeniero biomédico. Tomaron datos crudos e inutilizables —una señal ruidosa y una imagen sin detalles claros— y los transformaron en información clara y útil. ¡Acaban de dar el primer paso en un campo que salva vidas!
 :::
 
 ---
