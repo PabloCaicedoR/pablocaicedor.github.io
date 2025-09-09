@@ -1,0 +1,288 @@
+---
+title: "Chuleta Quarto. (Cheatsheet)"
+author: 
+    - Pablo Eduardo Caicedo Rodríguez"
+date: today
+format: html
+---
+
+## 1) Esqueleto YAML para Reveal.js
+
+```yaml
+---
+title: "Mi presentación"
+author: "Pablo"
+format:
+  revealjs:
+    theme: simple
+    transition: slide
+    slide-number: true   # número de diapositiva
+    progress: true       # barra de progreso
+    controls: true       # flechas de navegación
+    hash: true           # hash en la URL
+    incremental: false   # listas no incrementales por defecto
+jupyter: python3          # kernel de Jupyter a usar
+execute:
+  echo: false            # oculta código por defecto
+---
+```
+
+> **Tip:** Activa listas incrementales globalmente con `incremental: true` o por bloque (ver §2).
+
+---
+
+## 2) Diapositivas y listas incrementales
+
+* Cualquier encabezado `##` crea una diapositiva.
+* Para listas que aparecen punto a punto:
+
+```markdown
+- Uno
+- Dos
+- Tres
+{.incremental}
+```
+
+* Columnas simples:
+
+```markdown
+::: columns
+::: column
+**Columna A**
+:::
+::: column
+**Columna B**
+:::
+:::
+```
+
+---
+
+## 3) Chunks `{python}` con opciones (#|)
+
+````markdown
+```{python}
+#| echo: false         # oculta el código en este bloque
+#| fig-width: 7        # ancho en pulgadas
+#| fig-height: 4       # alto en pulgadas
+#| label: fig-seno     # id único (prefijo fig- para figura)
+#| fig-cap: "Señal senoidal"
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 2*np.pi, 200)
+y = np.sin(2*x)
+plt.plot(x, y)
+plt.xlabel("Tiempo (s)")
+plt.ylabel("Amplitud")
+plt.grid(True)
+plt.show()
+````
+
+````
+
+> **Regla de oro:** Las **opciones del chunk van arriba** como comentarios `#|` (sin sangrías extra).
+
+---
+
+## 4) Figuras (imagen de archivo y de código)
+
+**Imagen desde archivo con caption e ID:**
+
+```markdown
+![ECG de ejemplo](img/ecg.png){#fig-ecg}
+
+Como se ve en @fig-ecg, ...
+````
+
+**Figura generada por código** (véase el bloque §3): referencia con `@fig-seno`.
+
+---
+
+## 5) Tablas (markdown y desde Python)
+
+**Tabla Markdown con caption e ID:**
+
+```markdown
+| A | B |
+|---|---|
+| 1 | 2 |
+| 3 | 4 |
+
+: Tabla simple {#tbl-simple}
+
+Ver @tbl-simple.
+```
+
+**Tabla desde Python (pandas) con caption e ID:**
+
+````markdown
+```{python}
+#| label: tbl-datos
+#| tbl-cap: "Muestra de datos"
+import pandas as pd
+pd.DataFrame({"A": [1,3], "B": [2,4]})
+````
+
+En @tbl-datos se observa...
+
+````
+
+---
+
+## 6) Referencias cruzadas (cross‑refs)
+
+- **Figuras:** `#fig-...` → `@fig-...`
+- **Tablas:** `#tbl-...` → `@tbl-...`
+- **Secciones:** añade ID al título y usa `@sec-...` (requiere `number-sections: true` si quieres numeración visible).
+
+```markdown
+## Introducción {#sec-intro}
+
+Más detalles en @sec-intro.
+````
+
+* **Subfiguras / Subtablas:** usa `fig-subcap:` o `tbl-subcap:` con listas y `layout-ncol` para paneles.
+
+---
+
+## 7) Callouts (notas tipo Tip/Warning)
+
+```markdown
+::: {.callout-tip}
+## Truco
+Usa `#| fig-cap` y `#| tbl-cap` para que se numeren y puedas referenciar.
+:::
+
+::: {.callout-warning collapse="true"}
+## ¡Ojo!
+Los IDs deben ser **únicos** y en minúsculas.
+:::
+```
+
+> Puedes darles un **ID** y referenciarlos (p. ej. `::: {#tip-ejecucion .callout-tip}` → `@tip-ejecucion`).
+
+---
+
+## 8) Notas del presentador (Reveal.js)
+
+En cada diapositiva, añade un bloque `.notes`:
+
+```markdown
+::: {.notes}
+Recordar mencionar sampling rate y Nyquist.
+:::
+```
+
+Se ven en la **vista de presentador** y opcionalmente para el público si habilitas `show-notes: true` en `format: revealjs`.
+
+---
+
+## 9) Diseño útil en Reveal.js (rápidos)
+
+* `slide-number: true`, `progress: true`, `controls: true`, `hash: true`.
+* `output-location: fragment` para que la **salida del código** aparezca por pasos.
+* `code-line-numbers: "3-6|1-2,7-9"` para resaltar/animar líneas de código.
+* `transition: slide | fade | zoom | convex | concave`.
+
+---
+
+## 10) Errores comunes a evitar
+
+1. **YAML mal indentado** o con tabulaciones → usa **espacios**.
+2. Usar `slideNumber` en vez de `slide-number` → en Quarto es **kebab‑case**.
+3. Olvidar el prefijo correcto del ID: `fig-`, `tbl-`, `sec-`, `lst-`, `tip-`/`wrn-`/etc.
+4. Poner `#|` opciones **después** del código → deben ir **antes**.
+5. No tener **Jupyter** instalado en el Python que usa Quarto → instala en ese entorno (`python -m pip install jupyter ipykernel`).
+6. Referenciar algo sin caption/label → añade `fig-cap`/`tbl-cap` y `label`.
+
+---
+
+## 11) Ejemplo mínimo end‑to‑end (copiar/pegar)
+
+````markdown
+---
+title: "Demo Reveal.js + Python"
+format:
+  revealjs:
+    theme: simple
+    transition: slide
+    slide-number: true
+    progress: true
+    controls: true
+    hash: true
+jupyter: python3
+execute:
+  echo: false
+---
+
+## Portada
+
+Bienvenidos. Ver @sec-plot.
+
+## Señal senoidal {#sec-plot}
+
+Texto. Ver @fig-seno y @tbl-datos.
+
+```{python}
+#| label: fig-seno
+#| fig-cap: "Señal senoidal"
+#| fig-width: 7
+#| fig-height: 4
+import numpy as np, matplotlib.pyplot as plt
+x = np.linspace(0, 2*np.pi, 200)
+plt.plot(x, np.sin(2*x))
+plt.xlabel("t"); plt.ylabel("sin(2t)"); plt.grid(True); plt.show()
+````
+
+```{python}
+#| label: tbl-datos
+#| tbl-cap: "Muestra de 5 puntos"
+import pandas as pd
+pd.DataFrame({"t": x[:5], "y": np.sin(2*x[:5])})
+```
+
+\::: {.callout-note}
+
+## Nota
+
+Este slide tiene **notas del presentador** abajo.
+\:::
+
+\::: {.notes}
+Recordar explicar frecuencia angular (sin fórmulas), sampling y aliasing con ejemplos cotidianos.
+\:::
+
+````
+
+---
+
+## 12) Snippets rápidos
+
+**Lista incremental en una sola diapositiva**
+```markdown
+- A
+- B
+- C
+{.incremental}
+````
+
+**Salida de código como fragmento**
+
+```yaml
+format:
+  revealjs:
+    output-location: fragment
+```
+
+**Resaltar líneas de código**
+
+```yaml
+format:
+  revealjs:
+    code-line-numbers: "1-3|5|7-9"
+```
+
+---
+
+¿Quieres que lo adapte a tu plantilla (logo, footer, colores de EscuelaIng, notas estándar, etc.)? Dame tu `_quarto.yml` y lo integramos.
