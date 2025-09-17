@@ -1,0 +1,136 @@
+---
+title: "Sampling and quantization"
+author: 
+    - Pablo Eduardo Caicedo Rodríguez"
+date: today
+format: html
+---
+
+# Study Guide (Quarto HTML, headless)
+
+## Overview
+
+This guide recaps essentials of sampling and quantization for biomedical acquisition chains. Emphasis is on concrete design choices for \$f\_s\$, anti-alias cutoff, bit depth \$b\$, and input range, with clinical mini-cases. Primary/secondary sources: Oppenheim 2e (ISBN: 978-0138147570), Shannon 1949 (DOI: 10.1109/JRPROC.1949.232969), Jayant & Noll (ISBN: 0-13-211913-7), Webster MI 4e (ISBN: 978-0471676003).
+
+## 1) Concise theory recap
+
+* **Nyquist**: \$f\_s\ge 2B\$ where \$B\$ is the highest significant frequency (Shannon 1949).
+* **Sampling model**: \$T\_s=1/f\_s\$, \$x\_s(t)=\sum\_{n}x(nT\_s),\delta(t-nT\_s)\$ (Oppenheim 2e).
+* **Anti-aliasing**: analog LPF with \$f\_c\<f\_s/2\$ plus guard band (Oppenheim 2e).
+* **Quantizer**: uniform, range $\[V\_{\min},V\_{\max}]\$, step \$\Delta=\dfrac{V\_{\max}-V\_{\min}}{2^b}\$ (Oppenheim 2e).
+* **Noise model**: \$\sigma\_q^2=\dfrac{\Delta^2}{12}\$; full-scale sine \$\mathrm{SNR}\_{\mathrm{dB}}\approx 6.02,b+1.76\$ (Jayant & Noll).
+* **Companding** (telemetry): \$\mu\$-law/\$A\$-law to emphasize small amplitudes before quantization (Jayant & Noll; ITU-T G.711).
+
+## 2) Worked clinical example A — ECG bedside monitor
+
+**Goal**: Choose \$f\_s\$, \$f\_c\$, \$b\$, and input range for diagnostic ECG.
+
+* **Bandwidth**: adopt \$B\approx 150\ \mathrm{Hz}\$ (Webster MI 4e).
+* **Sampling**: choose \$f\_s=500\ \mathrm{Hz}\$ to satisfy \$f\_s\ge 2B\$ with guard (Shannon 1949).
+* **Anti-alias**: set \$f\_c\approx 175\ \mathrm{Hz}\$ (transition to \$f\_s/2=250\ \mathrm{Hz}\$).
+* **Range**: \$\pm 5\ \mathrm{mV}\$ to cover tall QRS and baseline drift after high-pass.
+* **Bits**: \$b=12\$ is common; compute \$\Delta\$ and SNR below.
+
+```{python}
+#| echo: true
+#| fig-cap: "ECG: step size and ideal quantization SNR for b=10..16 bits, ±5 mV range."
+import numpy as np
+import matplotlib.pyplot as plt
+
+Vmin, Vmax = -5e-3, 5e-3
+rng = Vmax - Vmin
+bits = np.arange(10, 17)
+Delta = rng / (2**bits)
+snr_db = 6.02*bits + 1.76  # full-scale sine (Jayant & Noll)
+
+print(f"12-bit Δ = {Delta[bits.tolist().index(12)]:.3e} V ≈ {Delta[bits.tolist().index(12)]*1e6:.2f} μV")
+print(f"Ideal 12-bit SNR ≈ {snr_db[bits.tolist().index(12)]:.1f} dB")
+
+plt.figure(figsize=(6,4))
+plt.semilogy(bits, Delta*1e6, marker='o')
+plt.xlabel("Bit depth b")
+plt.ylabel("Δ (μV)")
+plt.title("ECG step size vs. bit depth (±5 mV)")
+plt.grid(True, which="both")
+plt.tight_layout()
+```
+
+**Interpretation**
+
+* \$b=12\$ ⇒ \$\Delta\approx 2.44\ \mu\mathrm{V}\$; ideal SNR \$\approx 74\ \mathrm{dB}\$ (Oppenheim 2e; Jayant & Noll).
+* Meets diagnostic needs when analog noise \$<\Delta\$ and front-end avoids clipping (Webster MI 4e).
+
+## 3) Worked clinical example B — EEG for sleep staging
+
+**Goal**: Retain spindles/K-complexes without aliasing while maximizing sensitivity.
+
+* **Bandwidth**: EEG of interest \$\approx 0.5\text{–}35\ \mathrm{Hz}\$; use \$B=40\ \mathrm{Hz}\$ (Webster MI 4e).
+* **Sampling**: pick \$f\_s=256\ \mathrm{Hz}\$ (multiple of 2 for decimation) ensuring \$f\_s\ge 2B\$ (Shannon 1949).
+* **Anti-alias**: \$f\_c\approx 100\ \mathrm{Hz}\$ (ample guard to \$f\_s/2=128\ \mathrm{Hz}\$).
+* **Range/bits**: EEG tens of \$\mu\$V ⇒ prefer \$b\ge 16\$ with programmable gain to use full-scale.
+
+```{python}
+#| echo: true
+#| fig-cap: "EEG: effect of clipping vs. conservative gain (synthetic 15 μV wave)."
+import numpy as np
+import matplotlib.pyplot as plt
+
+fs = 256
+t = np.arange(0, 2, 1/fs)
+x = 15e-6*np.sin(2*np.pi*10*t)  # 10 Hz alpha-like
+gain_clip = 400000  # too high => clips ±1 V ADC
+gain_safe = 200000  # safe
+
+adc_fs = 1.0  # ±1 V full-scale
+y_clip = np.clip(gain_clip*x, -adc_fs, adc_fs)
+y_safe = np.clip(gain_safe*x, -adc_fs, adc_fs)
+
+plt.figure(figsize=(6,4))
+plt.plot(t[:400], y_clip[:400], label="Clipping")
+plt.plot(t[:400], y_safe[:400], label="Safe gain")
+plt.xlabel("Time (s)")
+plt.ylabel("ADC input (V)")
+plt.title("Clipping risk from aggressive gain (EEG)")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+```
+
+**Takeaways**
+
+* Use sufficient gain to exploit full-scale but verify headroom for artifacts.
+* Clipping breaks linearity assumptions and corrupts morphology (Oppenheim 2e; Webster MI 4e).
+
+## 4) Four formative checks (with solutions)
+
+1. **Design**: A PPG sensor needs \$B=25\ \mathrm{Hz}\$. Pick a safe \$f\_s\$ and justify.
+
+   * *Solution*: \$f\_s\ge 2B=50\$; choose \$f\_s=200\ \mathrm{Hz}\$ for guard and digital processing overhead (Shannon 1949).
+2. **Quantization**: For $\[V\_{\min},V\_{\max}]=\[-2,2]\ \mathrm{V}\$ and \$b=10\$, compute \$\Delta\$.
+
+   * *Solution*: \$\Delta=\dfrac{4}{1024}=3.90625\ \mathrm{mV}\$ (Oppenheim 2e).
+3. **Noise**: With \$\Delta=1\ \mathrm{mV}\$, what is \$\sigma\_q^2\$?
+
+   * *Solution*: \$\sigma\_q^2=\dfrac{(1\ \mathrm{mV})^2}{12}\approx 0.0833\ \mu\mathrm{V}^2\$ (Oppenheim 2e).
+4. **SNR sizing**: Target \$72\ \mathrm{dB}\$ for a full-scale sine. Minimum \$b\$?
+
+   * *Solution*: \$b\approx\frac{72-1.76}{6.02}\approx 11.7\Rightarrow 12\$ bits (Jayant & Noll).
+
+## 5) Design checklist (print-friendly)
+
+* **Bandwidth \$B\$**: Specify clinically required content (e.g., ECG 0.05–150 Hz; EEG 0.5–35 Hz).
+* **Sampling \$f\_s\$**: Choose \$\ge 2B\$ with guard (e.g., ×3–5 margin) and convenience for integer decimation.
+* **Anti-alias LPF**: Set \$f\_c\<f\_s/2\$; allow sufficient transition; verify analog order and tolerances.
+* **Input range**: Size $\[V\_{\min},V\_{\max}]\$ from front-end gain so typical peaks approach full-scale without clipping.
+* **Bit depth \$b\$**: Use SNR \$\approx 6.02b+1.76\$ to meet noise targets; consider analog noise and electrode motion.
+* **Telemetry**: For constrained links, consider \$\mu\$-law/\$A\$-law; document compander/expander alignment (G.711).
+* **Validation**: Bench test with synthetic and recorded signals; check aliasing, clipping, and effective number of bits (ENOB).
+
+## References (IDs included)
+
+* Oppenheim, A. V., Willsky, A. S., Nawab, S. H., *Signals and Systems*, 2nd ed., Prentice Hall, **ISBN: 978-0138147570**.
+* Shannon, C. E., *Proc. IRE*, 37(1), 1949, “Communication in the presence of noise,” **DOI: 10.1109/JRPROC.1949.232969**.
+* Nyquist, H., *Trans. AIEE*, 47, 1928, “Certain topics in telegraph transmission theory,” **DOI: 10.1109/T-AIEE.1928.5055024**.
+* Jayant, N. S., Noll, P., *Digital Coding of Waveforms*, Prentice-Hall, 1984, **ISBN: 0-13-211913-7**.
+* Webster, J. G. (ed.), *Medical Instrumentation: Application and Design*, 4th ed., Wiley, **ISBN: 978-0471676003**.
+* ITU-T Recommendation **G.711**: Pulse Code Modulation (PCM) of voice frequencies (identifier: G.711).

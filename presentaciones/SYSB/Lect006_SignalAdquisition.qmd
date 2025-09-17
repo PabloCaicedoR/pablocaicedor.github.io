@@ -561,3 +561,166 @@ plt.show()
 ```
 
 :::
+
+---
+
+## Slide 1 — Course framing
+
+**Practical Sampling & Quantization for Biomedical Signals**
+
+* Focus: sampling, aliasing, reconstruction, quantization, SNR, range, companding
+* Clinical touchstones: ECG, EEG, EMG, PPG
+* Constraints: ≤7 lines/slide, Python plots only, no Fourier content
+* Primary source: Oppenheim, Willsky, Nawab, *Signals and Systems*, 2nd ed. (ISBN: 978-0138147570)
+* Secondary: Shannon (DOI: 10.1109/JRPROC.1949.232969), Nyquist (DOI: 10.1109/T-AIEE.1928.5055024), Jayant & Noll (ISBN: 0-13-211913-7)
+
+---
+
+## Slide 2 — Sampling model & Nyquist (with ECG example)
+
+\::: columns
+\::: {.column width=45%}
+**Model**
+
+* Sample period: \$T\_s=1/f\_s\$ (Oppenheim 2e, ISBN: 978-0138147570)
+* Impulse train view: \$x\_s(t)=\sum\_{n=-\infty}^{\infty}x(nT\_s),\delta(t-nT\_s)\$ (Oppenheim 2e)
+* Bandlimit \$B\$ ⇒ **Nyquist**: \$f\_s\ge 2B\$ (Shannon 1949, DOI above)
+  \:::
+  \::: {.column width=45%}
+  **Clinical tie-in (ECG)**
+* Diagnostic ECG bandwidth \$B\approx 150\ \mathrm{Hz}\$ ⇒ pick \$f\_s=500\ \mathrm{Hz}\$ for margin
+* Rationale: \$f\_s\ge 2B\$ + antialias margin improves filter realizability (Shannon 1949; Webster MI 4e, ISBN: 978-0471676003)
+  \:::
+  \:::
+
+---
+
+## Slide 3 — Aliasing & anti-alias filtering (with EMG example)
+
+\::: columns
+\::: {.column width=45%}
+**Aliasing**
+
+* Frequencies above \$f\_s/2\$ fold into baseband as false low-frequency content (Oppenheim 2e)
+* Prevent by pre-sampling low-pass: \$f\_c< f\_s/2\$ with transition guard band
+  \:::
+  \::: {.column width=45%}
+  **Clinical tie-in (EMG)**
+* Surface EMG has content up to \$\sim 500\text{–}1000\ \mathrm{Hz}\$
+* Example: choose \$f\_s=2\ \mathrm{kHz}\$, \$f\_c\approx 800\ \mathrm{Hz}\$ to limit folding (Webster MI 4e, ISBN above)
+  \:::
+  \:::
+
+---
+
+## Slide 4 — Discrete-time reconstruction (conceptual)
+
+* Goal: recover a continuous-time \$y(t)\$ consistent with samples \$x\[n]\$
+* Ideal: band-limited interpolation + smoothing LPF (conceptual; no Fourier used)
+* Practical DAC: zero-order hold followed by analog smoothing LPF (Oppenheim 2e)
+* **Clinical tie-in (PPG)**: reconstruct smooth pulsatile waveform for heart-rate variability after downlink
+
+---
+
+## Slide 5 — Uniform quantization & step size \$\Delta\$ (with ECG example)
+
+\::: columns
+\::: {.column width=45%}
+**Definitions**
+
+* ADC input range $\[V\_{\min},V\_{\max}]\$, bit depth \$b\$
+* Step size: $\Delta=\frac{V\_{\max}-V\_{\min}}{2^{b}} \quad\text{(Oppenheim 2e)}$
+  \:::
+  \::: {.column width=45%}
+  **Clinical tie-in (ECG)**
+* Example: \$\pm 5\ \mathrm{mV}\$ input, \$b=12\$ ⇒ \$\Delta=\frac{10\ \mathrm{mV}}{4096}\approx 2.44\ \mu\mathrm{V}\$
+* Small \$\Delta\$ captures low-amplitude ST-segment changes (Webster MI 4e)
+  \:::
+  \:::
+
+---
+
+## Slide 6 — Quantization noise & SNR vs. bits
+
+\::: columns
+\::: {.column width=45%}
+**Uniform noise model**
+
+* Noise power: $\sigma\_q^2=\frac{\Delta^2}{12} \quad\text{(Oppenheim 2e)}$
+* Full-scale sinusoid SNR: $\mathrm{SNR}\_{\mathrm{dB}}\approx 6.02\,b + 1.76 \quad\text{(Jayant & Noll, ISBN: 0-13-211913-7)}$
+  \:::
+  \::: {.column width=45%}
+  **Clinical tie-in**
+* 12-bit ⇒ \$\mathrm{SNR}\approx 6.02\cdot 12+1.76\approx 74\ \mathrm{dB}\$
+* EEG (tens of \$\mu\$V): often benefits from \$b\ge 16\$ plus low-noise analog front-end (Webster MI 4e)
+  \:::
+  \:::
+
+---
+
+## Slide 7 — Input range, gain, and clipping
+
+* Set front-end gain so expected peaks approach full-scale **without** saturation
+* Clipping distorts morphology and invalidates \$SNR\$ assumptions (Oppenheim 2e)
+* **Clinical tie-in (EMG)**: \$\pm 5\ \mathrm{mV}\$ at skin ⇒ gain \$\approx 1000\$ to map to \$\pm 5\ \mathrm{V}\$ ADC; motion bursts can clip ⇒ add headroom (Webster MI 4e)
+* Use limiter or wider range if artifacts are frequent
+
+---
+
+## Slide 8 — Brief companding (telemetry)
+
+\::: columns
+\::: {.column width=45%}
+**Idea**
+
+* Nonlinear mapping to emphasize low amplitudes before quantization/transmission
+* \$\mu\$-law: \$F(x)=\operatorname{sgn}(x)\frac{\ln(1+\mu |x|)}{\ln(1+\mu)}\$, \$|x|\le 1\$ (Jayant & Noll)
+* Typical parameters: \$\mu=255\$ (North America), \$A=87.6\$ (Europe)
+  \:::
+  \::: {.column width=45%}
+  **Clinical tie-in**
+* Low-bandwidth telemetry of voice/biomedical waveforms: preserves small ECG/PPG fluctuations at cost of large-signal fidelity
+* Standards context: ITU-T G.711 \$\mu\$-law/\$A\$-law PCM (identifier: G.711)
+  \:::
+  \:::
+
+---
+
+## Slide 9 — Plot: SNR vs. bit depth (formula-based)
+
+* Deterministic illustration from \$b=6\ldots 20\$ using \$6.02,b+1.76\$
+* Use when sizing ADC resolution given noise floor and clinical SNR target
+* **Assumption**: full-scale sinusoid; real biometrics may deviate (Jayant & Noll)
+* See code cell (matplotlib only)
+
+```{python}
+#| echo: true
+#| fig-cap: "SNR(dB) versus ADC bit depth using SNR ≈ 6.02 b + 1.76 (Jayant & Noll, ISBN: 0-13-211913-7)."
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(7)  # determinism (even though not used)
+b = np.arange(6, 21)
+snr_db = 6.02*b + 1.76
+
+plt.figure(figsize=(6,4))
+plt.plot(b, snr_db, marker='o')
+plt.xlabel("Bit depth b")
+plt.ylabel("SNR (dB)")
+plt.title("Quantization-limited SNR vs. bits")
+plt.grid(True)
+plt.tight_layout()
+```
+
+---
+
+## Slide 10 — References (IDs included)
+
+* Oppenheim, A. V., Willsky, A. S., Nawab, S. H., *Signals and Systems*, 2nd ed., Prentice Hall, **ISBN: 978-0138147570**.
+* Shannon, C. E., “Communication in the presence of noise,” *Proc. IRE*, 37(1), 1949, **DOI: 10.1109/JRPROC.1949.232969**.
+* Nyquist, H., “Certain topics in telegraph transmission theory,” *Trans. AIEE*, 47, 1928, **DOI: 10.1109/T-AIEE.1928.5055024**.
+* Jayant, N. S., Noll, P., *Digital Coding of Waveforms*, Prentice-Hall, 1984, **ISBN: 0-13-211913-7**.
+* Webster, J. G. (ed.), *Medical Instrumentation: Application and Design*, 4th ed., Wiley, **ISBN: 978-0471676003**.
+* ITU-T Recommendation **G.711**: Pulse Code Modulation (PCM) of voice frequencies (identifier: G.711).
+
+---
