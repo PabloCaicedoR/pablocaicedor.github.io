@@ -349,6 +349,216 @@ An analog-to-digital converter (ADC) is a device that converts a continuous-time
 -  **Quantization** then maps this continuous-amplitude signal to a finite set of discrete values, making it fully digital.
   
 
+## Quantization in DSP: Purpose and Context
+
+* Quantization maps continuous amplitudes to a finite set of levels to enable digital representation.
+* In acquisition chains: anti-alias filter → sampling → **ADC quantization**.
+* Quantization introduces an error that behaves like noise under standard assumptions.
+* Biomedical relevance: ECG, EEG, EMG, and PPG require appropriate bit depth, gain, and dynamic range to preserve diagnostically relevant features.
+
+---
+
+## Uniform Quantizer: Definitions
+
+* Input range: $\left[V\_{\min},,V\_{\max}\right]$, bit depth $b$, levels $L=2^b$, step size (LSB)
+
+  $$
+  \Delta=\frac{V_{\max}-V_{\min}}{L}.
+  $$
+* **Mid-tread (round-to-nearest)**: $Q(x)=\Delta,\mathrm{round}!\big(x/\Delta\big)$.
+* **Mid-rise (truncate + half-step)**: $Q(x)=\Delta\big(\lfloor x/\Delta\rfloor+\tfrac12\big)$.
+* Overload/clipping outside $\left[V\_{\min},V\_{\max}\right]$: $\tilde{x}=V\_{\max}$ or $V\_{\min}$.
+
+---
+
+## Decision Thresholds and Codebook
+
+* Decision thresholds at $k\Delta$; reconstruction levels at:
+
+  * $k\Delta$ (mid-tread), or
+  * $(k+\tfrac12)\Delta$ (mid-rise).
+* Practical note: choose mid-tread for rounding semantics; mid-rise for deterministic staircase without zero level.
+
+---
+
+## Quantization Error: Model and Power
+
+* Error $e=x-Q(x)$. Under high-resolution assumptions (no clipping, sufficiently dense input):
+
+  * $e=x-Q(x)\sim\mathcal{U}\left[-\tfrac{\Delta}{2},\tfrac{\Delta}{2}\right]$, $\mathbb{E}\left[e\right]=0$, $\mathrm{Var}(e)=\Delta^2/12$.
+* For a full-scale sinusoid:
+
+  $$
+  \mathrm{SNR}_{\mathrm{dB}}\approx 6.02\,b + 1.76.
+  $$
+* With RMS usage fraction $\rho$ of full scale (FS):
+
+  $$
+  \mathrm{SNR}_{\mathrm{dB}}\approx 6.02\,b + 1.76 + 20\log_{10}(\rho).
+  $$
+
+---
+
+## Effective Number of Bits (ENOB)
+
+* From a measured in-band SNR (RMS, same bandwidth):
+
+  $$
+  \mathrm{ENOB}\approx\frac{\mathrm{SNR}_{\mathrm{dB}}-1.76}{6.02}.
+  $$
+* Use ENOB to compare real converters (including clock jitter, distortion) against ideal $b$.
+
+---
+
+## Input Range, Analog Gain, and Clipping
+
+* Analog gain $G$ maps input to ADC: $x\_{\text{ADC}}=G,x\_{\text{in}}$.
+* Input-referred LSB: $\Delta\_{\text{in}}=\Delta/G$.
+* Design goals:
+
+  1. Avoid overload for rare peaks; 2) Use a large fraction of FS (e.g., $50$–$80%$) to improve SNR.
+
+---
+
+## Biomedical Example: ECG Acquisition
+
+* Suppose electrode-level ECG peaks $\approx \pm 5,\mathrm{mV}$. Choose $G=200$ so $\pm 5,\mathrm{mV}\mapsto \pm 1,\mathrm{V}$ at ADC ($V\_{\min,\max}=\pm 1,\mathrm{V}$).
+* With $b=12$:
+
+  * $\Delta=\dfrac{2,\mathrm{V}}{2^{12}}\approx 0.488,\mathrm{mV}$ (ADC domain).
+  * $\Delta\_{\text{in}}=\Delta/G\approx 2.44,\mu\mathrm{V}$.
+  * Input-referred noise RMS $\sigma\_q=\Delta\_{\text{in}}/\sqrt{12}\approx 0.704,\mu\mathrm{V}\_{\mathrm{RMS}}$.
+* If $\rho\approx 0.5$, then $\mathrm{SNR}\approx 6.02\cdot 12 + 1.76 - 6 \approx 68,\mathrm{dB}$ → typically adequate for diagnostic ECG.
+
+---
+
+## Non-Uniform Quantization and Companding (Brief)
+
+* For highly non-uniform amplitude distributions, companding allocates effective resolution to small amplitudes.
+* $\mu$-law (telephony):
+
+  $$
+  y=\mathrm{sgn}(x)\,\frac{\ln\big(1+\mu |x|/X_{\max}\big)}{\ln(1+\mu)},\quad \mu\approx 255.
+  $$
+* In biomedicine, primary acquisition usually remains linear; companding is more relevant to low-bit-rate telemetry or storage.
+
+---
+
+## Dither: When and Why
+
+* Add small white noise (RMS $\approx \Delta/2$) before quantization to decorrelate error, eliminate bias/patterning at low levels, and linearize averages.
+* Slight SNR penalty but improved fidelity for low-level features (e.g., EEG baselines).
+
+---
+
+## Practical Design Checklist
+
+* Choose $b$ to exceed clinical SNR requirements by $10$–$20,\mathrm{dB}$.
+* Set $G$ so typical peaks use $50$–$80%$ FS; verify worst-case spikes do not clip.
+* Full noise budget: electrode + amplifier + ADC quantization + clock jitter (for high $f$).
+* Validate with calibrated sources and report ENOB over the intended bandwidth.
+
+---
+
+## Python Demo: ECG Quantization at Multiple Bit Depths
+
+```{python}
+#| echo: true
+#| warning: false
+# Synthetic ECG, quantization at 8/10/12 bits, SNR and plots
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+fs = 360.0
+T = 5.0
+t = np.arange(0, T, 1/fs)
+
+def g(t, mu, sigma, A):
+    return A*np.exp(-0.5*((t-mu)/sigma)**2)
+
+def ecg_template(t):
+    P = g(t, 0.20, 0.045,  0.10)
+    Q = g(t, 0.36, 0.010, -0.25)
+    R = g(t, 0.40, 0.012,  1.00)
+    S = g(t, 0.44, 0.016, -0.35)
+    Tn= g(t, 0.70, 0.080,  0.30)
+    return P + Q + R + S + Tn
+
+hr = 60.0
+RR = 60.0/hr
+ecg_mV = np.zeros_like(t)
+for k in range(int(np.ceil(T/RR))):
+    ecg_mV += ecg_template(t - k*RR)
+
+wander = 0.05*np.sin(2*np.pi*0.3*t)
+noise  = 0.02*np.random.randn(len(t))
+ecg_mV = ecg_mV + wander + noise
+
+G = 200.0
+Vfs = 1.0
+Vmin, Vmax = -Vfs, Vfs
+x_adc = (ecg_mV/1000.0)*G  # mV -> V and gain
+
+def quantize_uniform(x, bits, Vmin, Vmax, mid_tread=True):
+    x_clip = np.clip(x, Vmin, Vmax)
+    L = 2**bits
+    Delta = (Vmax - Vmin)/L
+    if mid_tread:
+        y = Delta*np.round(x_clip/Delta)
+    else:
+        y = Delta*(np.floor(x_clip/Delta) + 0.5)
+    y = np.clip(y, Vmin, Vmax)
+    return y, Delta
+
+def snr_db(x, y):
+    e = x - y
+    x_ac = x - np.mean(x)
+    e_ac = e - np.mean(e)
+    Px = np.mean(x_ac**2)
+    Pe = np.mean(e_ac**2)
+    return 10*np.log10(Px/Pe), e
+
+bits_list = [8, 10, 12]
+results = {}
+for b in bits_list:
+    y_adc, Delta = quantize_uniform(x_adc, b, Vmin, Vmax, mid_tread=True)
+    snr, e = snr_db(x_adc, y_adc)
+    results[b] = dict(y_adc=y_adc, Delta=Delta, snr_db=snr, err=e)
+
+print("Summary (ADC domain):")
+for b in bits_list:
+    print(f"{b:2d}-bit -> LSB Δ = {results[b]['Delta']*1e3:.3f} mV, Measured SNR ≈ {results[b]['snr_db']:5.1f} dB")
+
+Delta_in = results[12]["Delta"]/G
+sigma_q_in = Delta_in/np.sqrt(12)
+print(f"\nInput-referred (12-bit): Δ_in = {Delta_in*1e6:.3f} µV, σ_q ≈ {sigma_q_in*1e6:.3f} µV RMS")
+
+# Plot 1: original vs quantized (10-bit)
+b_plot = 10
+idx = (t >= 1.5) & (t <= 2.7)
+plt.figure()
+plt.title(f"ECG (ADC input) vs. {b_plot}-bit quantized")
+plt.plot(t[idx], x_adc[idx], label="Original (ADC input)")
+plt.plot(t[idx], results[b_plot]["y_adc"][idx], label=f"{b_plot}-bit")
+plt.xlabel("Time [s]")
+plt.ylabel("Amplitude [V]")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plot 2: quantization error histogram (8-bit)
+b_err = 8
+plt.figure()
+plt.title(f"Quantization error histogram ({b_err}-bit)")
+plt.hist(results[b_err]["err"], bins=80, density=True)
+plt.xlabel("Error [V]")
+plt.ylabel("PDF estimate")
+plt.grid(True)
+plt.show()
+```
+
 ## Analog to digital convertion
 
 To explain the analog-to-digital conversion process, we will assume that the input signal is a cosine wave with frequency $F$, angular frequency $\Omega$ and amplitude $a$.
@@ -564,163 +774,3 @@ plt.show()
 
 ---
 
-## Slide 1 — Course framing
-
-**Practical Sampling & Quantization for Biomedical Signals**
-
-* Focus: sampling, aliasing, reconstruction, quantization, SNR, range, companding
-* Clinical touchstones: ECG, EEG, EMG, PPG
-* Constraints: ≤7 lines/slide, Python plots only, no Fourier content
-* Primary source: Oppenheim, Willsky, Nawab, *Signals and Systems*, 2nd ed. (ISBN: 978-0138147570)
-* Secondary: Shannon (DOI: 10.1109/JRPROC.1949.232969), Nyquist (DOI: 10.1109/T-AIEE.1928.5055024), Jayant & Noll (ISBN: 0-13-211913-7)
-
----
-
-## Slide 2 — Sampling model & Nyquist (with ECG example)
-
-\::: columns
-\::: {.column width=45%}
-**Model**
-
-* Sample period: \$T\_s=1/f\_s\$ (Oppenheim 2e, ISBN: 978-0138147570)
-* Impulse train view: \$x\_s(t)=\sum\_{n=-\infty}^{\infty}x(nT\_s),\delta(t-nT\_s)\$ (Oppenheim 2e)
-* Bandlimit \$B\$ ⇒ **Nyquist**: \$f\_s\ge 2B\$ (Shannon 1949, DOI above)
-  \:::
-  \::: {.column width=45%}
-  **Clinical tie-in (ECG)**
-* Diagnostic ECG bandwidth \$B\approx 150\ \mathrm{Hz}\$ ⇒ pick \$f\_s=500\ \mathrm{Hz}\$ for margin
-* Rationale: \$f\_s\ge 2B\$ + antialias margin improves filter realizability (Shannon 1949; Webster MI 4e, ISBN: 978-0471676003)
-  \:::
-  \:::
-
----
-
-## Slide 3 — Aliasing & anti-alias filtering (with EMG example)
-
-\::: columns
-\::: {.column width=45%}
-**Aliasing**
-
-* Frequencies above \$f\_s/2\$ fold into baseband as false low-frequency content (Oppenheim 2e)
-* Prevent by pre-sampling low-pass: \$f\_c< f\_s/2\$ with transition guard band
-  \:::
-  \::: {.column width=45%}
-  **Clinical tie-in (EMG)**
-* Surface EMG has content up to \$\sim 500\text{–}1000\ \mathrm{Hz}\$
-* Example: choose \$f\_s=2\ \mathrm{kHz}\$, \$f\_c\approx 800\ \mathrm{Hz}\$ to limit folding (Webster MI 4e, ISBN above)
-  \:::
-  \:::
-
----
-
-## Slide 4 — Discrete-time reconstruction (conceptual)
-
-* Goal: recover a continuous-time \$y(t)\$ consistent with samples \$x\[n]\$
-* Ideal: band-limited interpolation + smoothing LPF (conceptual; no Fourier used)
-* Practical DAC: zero-order hold followed by analog smoothing LPF (Oppenheim 2e)
-* **Clinical tie-in (PPG)**: reconstruct smooth pulsatile waveform for heart-rate variability after downlink
-
----
-
-## Slide 5 — Uniform quantization & step size \$\Delta\$ (with ECG example)
-
-\::: columns
-\::: {.column width=45%}
-**Definitions**
-
-* ADC input range $\[V\_{\min},V\_{\max}]\$, bit depth \$b\$
-* Step size: $\Delta=\frac{V\_{\max}-V\_{\min}}{2^{b}} \quad\text{(Oppenheim 2e)}$
-  \:::
-  \::: {.column width=45%}
-  **Clinical tie-in (ECG)**
-* Example: \$\pm 5\ \mathrm{mV}\$ input, \$b=12\$ ⇒ \$\Delta=\frac{10\ \mathrm{mV}}{4096}\approx 2.44\ \mu\mathrm{V}\$
-* Small \$\Delta\$ captures low-amplitude ST-segment changes (Webster MI 4e)
-  \:::
-  \:::
-
----
-
-## Slide 6 — Quantization noise & SNR vs. bits
-
-\::: columns
-\::: {.column width=45%}
-**Uniform noise model**
-
-* Noise power: $\sigma\_q^2=\frac{\Delta^2}{12} \quad\text{(Oppenheim 2e)}$
-* Full-scale sinusoid SNR: $\mathrm{SNR}\_{\mathrm{dB}}\approx 6.02\,b + 1.76 \quad\text{(Jayant & Noll, ISBN: 0-13-211913-7)}$
-  \:::
-  \::: {.column width=45%}
-  **Clinical tie-in**
-* 12-bit ⇒ \$\mathrm{SNR}\approx 6.02\cdot 12+1.76\approx 74\ \mathrm{dB}\$
-* EEG (tens of \$\mu\$V): often benefits from \$b\ge 16\$ plus low-noise analog front-end (Webster MI 4e)
-  \:::
-  \:::
-
----
-
-## Slide 7 — Input range, gain, and clipping
-
-* Set front-end gain so expected peaks approach full-scale **without** saturation
-* Clipping distorts morphology and invalidates \$SNR\$ assumptions (Oppenheim 2e)
-* **Clinical tie-in (EMG)**: \$\pm 5\ \mathrm{mV}\$ at skin ⇒ gain \$\approx 1000\$ to map to \$\pm 5\ \mathrm{V}\$ ADC; motion bursts can clip ⇒ add headroom (Webster MI 4e)
-* Use limiter or wider range if artifacts are frequent
-
----
-
-## Slide 8 — Brief companding (telemetry)
-
-\::: columns
-\::: {.column width=45%}
-**Idea**
-
-* Nonlinear mapping to emphasize low amplitudes before quantization/transmission
-* \$\mu\$-law: \$F(x)=\operatorname{sgn}(x)\frac{\ln(1+\mu |x|)}{\ln(1+\mu)}\$, \$|x|\le 1\$ (Jayant & Noll)
-* Typical parameters: \$\mu=255\$ (North America), \$A=87.6\$ (Europe)
-  \:::
-  \::: {.column width=45%}
-  **Clinical tie-in**
-* Low-bandwidth telemetry of voice/biomedical waveforms: preserves small ECG/PPG fluctuations at cost of large-signal fidelity
-* Standards context: ITU-T G.711 \$\mu\$-law/\$A\$-law PCM (identifier: G.711)
-  \:::
-  \:::
-
----
-
-## Slide 9 — Plot: SNR vs. bit depth (formula-based)
-
-* Deterministic illustration from \$b=6\ldots 20\$ using \$6.02,b+1.76\$
-* Use when sizing ADC resolution given noise floor and clinical SNR target
-* **Assumption**: full-scale sinusoid; real biometrics may deviate (Jayant & Noll)
-* See code cell (matplotlib only)
-
-```{python}
-#| echo: true
-#| fig-cap: "SNR(dB) versus ADC bit depth using SNR ≈ 6.02 b + 1.76 (Jayant & Noll, ISBN: 0-13-211913-7)."
-import numpy as np
-import matplotlib.pyplot as plt
-
-np.random.seed(7)  # determinism (even though not used)
-b = np.arange(6, 21)
-snr_db = 6.02*b + 1.76
-
-plt.figure(figsize=(6,4))
-plt.plot(b, snr_db, marker='o')
-plt.xlabel("Bit depth b")
-plt.ylabel("SNR (dB)")
-plt.title("Quantization-limited SNR vs. bits")
-plt.grid(True)
-plt.tight_layout()
-```
-
----
-
-## Slide 10 — References (IDs included)
-
-* Oppenheim, A. V., Willsky, A. S., Nawab, S. H., *Signals and Systems*, 2nd ed., Prentice Hall, **ISBN: 978-0138147570**.
-* Shannon, C. E., “Communication in the presence of noise,” *Proc. IRE*, 37(1), 1949, **DOI: 10.1109/JRPROC.1949.232969**.
-* Nyquist, H., “Certain topics in telegraph transmission theory,” *Trans. AIEE*, 47, 1928, **DOI: 10.1109/T-AIEE.1928.5055024**.
-* Jayant, N. S., Noll, P., *Digital Coding of Waveforms*, Prentice-Hall, 1984, **ISBN: 0-13-211913-7**.
-* Webster, J. G. (ed.), *Medical Instrumentation: Application and Design*, 4th ed., Wiley, **ISBN: 978-0471676003**.
-* ITU-T Recommendation **G.711**: Pulse Code Modulation (PCM) of voice frequencies (identifier: G.711).
-
----

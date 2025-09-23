@@ -1,0 +1,229 @@
+---
+title: "Quantization"
+author: 
+    - Pablo Eduardo Caicedo Rodríguez"
+date: today
+format: html
+---
+
+# Quantization in Digital Signal Processing (with a Biomedical Example)
+
+## 1. Purpose and big picture
+
+Quantization maps a continuous-amplitude signal to a finite set of discrete levels so that it can be represented by digits. After anti-alias filtering and sampling, an analog-to-digital converter (ADC) applies quantization. This process introduces an error that acts like noise under standard conditions; understanding its magnitude is essential to sizing bit depth, gain, and dynamic range in biomedical systems (ECG, EEG, EMG, PPG).
+
+## 2. Uniform quantizer model
+
+Let the ADC input range be $\left[V\_{\min},,V\_{\max}\right]$ with $b$ bits and $L=2^b$ levels. The step size (LSB) is
+
+$$
+\Delta=\frac{V_{\max}-V_{\min}}{L}.
+$$
+
+Two common realizations:
+
+* **Mid-tread (rounding)**: $Q(x)=\Delta,\mathrm{round}\left(\frac{x}{\Delta}\right)$ for $x\in(V\_{\min},V\_{\max})$.
+* **Mid-rise (truncate with half-step offset)**: $Q(x)=\Delta!\left(\left\lfloor\frac{x}{\Delta}\right\rfloor+\tfrac12\right)$.
+
+Outside $\left[V\_{\min},V\_{\max}\right]$, **overload/clipping** occurs: $\tilde{x}=Q(x)=V\_{\max}$ if $x>V\_{\max}$ and $\tilde{x}=V\_{\min}$ if $x\<V\_{\min}$.
+
+**Codebook and decision thresholds**: Decision thresholds lie at $k\Delta$ and reconstruction levels at either $k\Delta$ (mid-tread) or $(k+\tfrac12)\Delta$ (mid-rise).
+
+## 3. Quantization error and its statistics
+
+Define the **quantization error** $e=x-Q(x)$. Under the **high-resolution assumptions** (signal varies slowly relative to $\Delta$, input well distributed within the range, and no overload), the error is modeled as white, signal-independent, and uniformly distributed on $\left[-\frac{\Delta}{2},\frac{\Delta}{2}\right]$:
+
+* Mean: $\mathbb{E}\left[e\right]=0$.
+* Variance (power): $\sigma\_e^2=\dfrac{\Delta^2}{12}$.
+* RMS: $\sigma\_e=\dfrac{\Delta}{\sqrt{12}}$.
+
+For a full-scale sinusoid, the **theoretical SNR** is
+
+$$
+\mathrm{SNR}_{\mathrm{dB}}\approx 6.02\,b + 1.76.
+$$
+
+If the signal uses only a fraction $\rho$ ($0<\rho\le 1$) of full scale (FS) in RMS, then
+
+$$
+\mathrm{SNR}_{\mathrm{dB}} \approx 6.02\,b + 1.76 + 20\log_{10}(\rho).
+$$
+
+**Effective Number of Bits (ENOB)** from a measured in-band SNR:
+
+$$
+\mathrm{ENOB} \approx \frac{\mathrm{SNR}_{\mathrm{dB}}-1.76}{6.02}.
+$$
+
+## 4. Input range, gain, and clipping
+
+Front-end analog gain $G$ maps a biomedical signal $x\_{\text{in}}$ to the ADC: $x\_{\text{ADC}}=G,x\_{\text{in}}$. The **input-referred LSB** is
+
+$$
+\Delta_{\text{in}}=\frac{\Delta}{G}.
+$$
+
+Choose $G$ to:
+
+1. avoid overload for rare peaks, and 2) maximize FS utilization to improve SNR. Poor gain wastes bits (small $\rho$) or clips clinically relevant transients (e.g., ECG pacer spikes).
+
+## 5. Biomedical example: ECG acquisition
+
+Suppose a resting ECG has peak amplitudes around $\pm 5,\text{mV}$ at the electrodes. We design the analog front end so that $\pm 5,\text{mV}$ maps to $\pm 1,\text{V}$ at the ADC, i.e., $G=200$. Use a $b=12$-bit ADC over $\left[-1,\text{V},,1,\text{V}\right]$:
+
+* ADC LSB: $\Delta = \dfrac{2,\text{V}}{2^{12}} \approx 0.488,\text{mV}$ (at the ADC input).
+* **Input-referred LSB**: $\Delta\_{\text{in}}=\dfrac{0.488,\text{mV}}{200}\approx 2.44,\mu\text{V}$.
+* **Input-referred quantization-noise RMS**: $\dfrac{\Delta\_{\text{in}}}{\sqrt{12}}\approx 0.704,\mu\text{V}\_{\mathrm{RMS}}$.
+
+If the ECG uses $\rho=0.5$ of full scale (typical margin against clipping), the **quantization-limited SNR** is approximately
+
+$$
+\mathrm{SNR}_{\mathrm{dB}} \approx 6.02\times 12 + 1.76 + 20\log_{10}(0.5) \approx 74.0 - 6.0 \approx 68\,\text{dB}.
+$$
+
+This is usually below amplifier and electrode noise constraints, so 12 bits are adequate for diagnostic ECG in this setting. If the chain is quieter (e.g., invasive potentials), higher bit depth or larger $G$ may be justified.
+
+## 6. Non-uniform quantization and companding (brief)
+
+When the amplitude distribution is strongly non-uniform, **companding** transforms $x$ before uniform quantization to allocate more levels where the signal spends more time. Classical laws:
+
+* **$\mu$-law**: $y=\mathrm{sgn}(x),\dfrac{\ln(1+\mu |x|/X\_{\max})}{\ln(1+\mu)}$, $\mu\approx 255$ (telephony).
+* **$A$-law**: piecewise logarithmic with parameter $A$ (Europe).
+
+Companding is common in speech/audio telemetry; in biomedicine it is less standard for primary acquisition, but can help in low-bit-rate wireless monitoring where dynamic range is wide (e.g., PPG with motion).
+
+## 7. Dither (optional but practical)
+
+Adding small white noise (RMS $\approx \Delta/2$) **before** quantization decorrelates the error from the signal, eliminating patterning and bias at low amplitudes. This linearizes averages at the cost of a small SNR penalty. Dither can be beneficial for low-level EEG/EMG features and precise baseline estimates.
+
+## 8. Practical checklist
+
+* Choose $b$ so that $\mathrm{SNR}\_{\mathrm{dB}}$ exceeds clinical SNR needs by margin (10–20 dB).
+* Set $G$ so typical peaks use $50$–$80%$ FS; verify pacer spikes and motion spikes do not clip.
+* Budget noise: electrode + amplifier + ADC quantization; the largest non-white source often dominates.
+* Validate with a **calibrated source** (sinusoidal and biomedical-like waveforms) and measure in-band SNR/ENOB.
+
+---
+
+## 9. Python demonstration: ECG quantization, SNR, and error statistics
+
+```{python}
+#| echo: true
+#| warning: false
+# Synthetic ECG, uniform quantization at multiple bit depths, SNR and plots
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+# --- 1) Build a simple ECG template (P-QRS-T) using Gaussians ---
+fs = 360.0                      # sampling rate [Hz]
+T = 5.0                         # duration [s]
+t = np.arange(0, T, 1/fs)
+
+hr = 60.0                       # heart rate [bpm]
+RR = 60.0/hr                    # seconds per beat
+
+# Gaussian helper
+def g(t, mu, sigma, A):
+    return A*np.exp(-0.5*((t-mu)/sigma)**2)
+
+# One-beat template (times in seconds relative to beat onset)
+def ecg_template(t):
+    # amplitudes in mV, widths in s (very simplified)
+    P  = g(t, 0.20, 0.045,  0.10)
+    Q  = g(t, 0.36, 0.010, -0.25)
+    R  = g(t, 0.40, 0.012,  1.00)
+    S  = g(t, 0.44, 0.016, -0.35)
+    T  = g(t, 0.70, 0.080,  0.30)
+    return P + Q + R + S + T
+
+# Tile the template every RR seconds
+ecg_mV = np.zeros_like(t)
+for k in range(int(np.ceil(T/RR))):
+    tau = t - k*RR
+    ecg_mV += ecg_template(tau)
+
+# Optional baseline wander + small EMG-like noise (for realism)
+wander = 0.05*np.sin(2*np.pi*0.3*t)        # 0.05 mV @ 0.3 Hz
+noise  = 0.02*np.random.randn(len(t))      # 0.02 mV RMS
+ecg_mV = ecg_mV + wander + noise
+
+# --- 2) Analog front-end gain and ADC setup ---
+G = 200.0                     # gain: mV (input) -> V (ADC input)
+Vfs = 1.0                     # full-scale = +/-1 V
+Vmin, Vmax = -Vfs, Vfs
+
+x_adc = (ecg_mV/1000.0)*G     # convert mV to V and apply gain
+
+def quantize_uniform(x, bits, Vmin, Vmax, mid_tread=True):
+    # Saturate to avoid numeric overflow
+    x_clip = np.clip(x, Vmin, Vmax)
+    L = 2**bits
+    Delta = (Vmax - Vmin)/L
+    if mid_tread:
+        y = Delta*np.round(x_clip/Delta)
+    else:
+        y = Delta*(np.floor(x_clip/Delta) + 0.5)
+    y = np.clip(y, Vmin, Vmax)  # ensure within codebook range
+    return y, Delta
+
+def snr_db(x, y):
+    # SNR over the un-clipped region; compute RMS of signal and error
+    e = x - y
+    # Remove DC for SNR assessment
+    x_ac = x - np.mean(x)
+    e_ac = e - np.mean(e)
+    Px = np.mean(x_ac**2)
+    Pe = np.mean(e_ac**2)
+    return 10*np.log10(Px/Pe), e
+
+# --- 3) Quantize at different bit depths ---
+bits_list = [8, 10, 12]
+results = {}
+for b in bits_list:
+    y_adc, Delta = quantize_uniform(x_adc, b, Vmin, Vmax, mid_tread=True)
+    snr, e = snr_db(x_adc, y_adc)
+    results[b] = dict(y_adc=y_adc, Delta=Delta, snr_db=snr, err=e)
+
+# Print a small summary (ADC-domain). Input-referred values via division by G.
+print("Summary (ADC domain):")
+for b in bits_list:
+    Delta = results[b]["Delta"]
+    snr = results[b]["snr_db"]
+    print(f"{b:2d}-bit -> LSB Δ = {Delta*1e3:.3f} mV, Theoretical/Measured SNR ≈ {snr:5.1f} dB")
+
+# Input-referred LSB and noise RMS for the 12-bit case
+Delta_in = results[12]["Delta"]/G
+sigma_q_in = Delta_in/np.sqrt(12)
+print(f"\nInput-referred (12-bit): Δ_in = {Delta_in*1e6:.3f} µV, σ_q ≈ {sigma_q_in*1e6:.3f} µV RMS")
+
+# --- 4) Plot: original vs quantized (choose 10-bit for visibility) ---
+b_plot = 10
+idx = (t >= 1.5) & (t <= 2.7)  # show about one beat
+plt.figure()
+plt.title(f"ECG (ADC input) vs. {b_plot}-bit quantized")
+plt.plot(t[idx], x_adc[idx], label="Original (ADC input)")
+plt.plot(t[idx], results[b_plot]["y_adc"][idx], label=f"{b_plot}-bit")
+plt.xlabel("Time [s]")
+plt.ylabel("Amplitude [V]")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# --- 5) Plot: quantization error histogram (8-bit to exaggerate steps) ---
+b_err = 8
+plt.figure()
+plt.title(f"Quantization error histogram ({b_err}-bit)")
+plt.hist(results[b_err]["err"], bins=80, density=True)
+plt.xlabel("Error [V]")
+plt.ylabel("PDF estimate")
+plt.grid(True)
+plt.show()
+```
+
+**Interpretation**
+
+* The summary reports the measured SNR from the synthetic ECG after quantization for 8/10/12 bits; values will be below the $6.02b+1.76$ bound because the signal does not use full scale constantly and includes non-sinusoidal content.
+* The input-referred $\Delta\_{\text{in}}$ and $\sigma\_q$ for 12 bits match the analytical estimates in Section 5 (a few $\mu\text{V}$), consistent with common ECG design targets.
+* The error histogram approaches a uniform distribution as assumptions hold; deviations indicate correlation (e.g., at low amplitudes or with deterministic waveforms).
