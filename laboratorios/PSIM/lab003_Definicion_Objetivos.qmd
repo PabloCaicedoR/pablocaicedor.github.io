@@ -1,0 +1,212 @@
+---
+title: "Objetivos de Proyecto Final en Procesamiento de Imágenes Biomédicas (ODS–Colombia)"
+description: "PSIM"
+subtitle: "Laboratorio 003: Objetivos de Proyecto Final en Procesamiento de Imágenes Biomédicas (ODS–Colombia)"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+
+**Propósito**: formular 2–3 **objetivos SMART** para el proyecto final de la asignatura, alineados con **ODS 3: Salud y bienestar** (y secundarios ODS 9/10/11 si aplica) y con necesidades de salud pública en Colombia.
+
+**Restricción metodológica (obligatoria)**: evitar *machine learning* general. **Únicos algoritmos de decisión permitidos**: **K‑means**, **regresión lineal múltiple** y **regresión logística múltiple**. Prohibidos: redes neuronales, SVM, árboles/ensembles, métodos bayesianos avanzados, etc.
+
+## Resultados de aprendizaje
+
+Al finalizar, cada equipo:
+
+1. Conecta un problema clínico-prioritario en Colombia con al menos un **objetivo ODS** y una **meta/indicador** verificable.
+2. Redacta **2–3 objetivos SMART** (impacto clínico, técnico, implementación) con **métricas y umbrales**.
+3. Define fuentes de **datos** (abiertos o locales con cumplimiento ético) y un **plan de validación** reproducible.
+4. Describe riesgos de **sesgo/ética** y medidas de mitigación acordes con normativa colombiana de protección de datos.
+
+
+## Opciones de reto (elige **uno**)
+
+Las siguientes opciones se enfocan en tareas de **detección, medición o soporte a decisión** usando únicamente K‑means y/o regresión múltiple.
+
+### 1) Tuberculosis en radiografía de tórax (soporte a triage)
+
+* **Tarea**: puntaje de riesgo por paciente a partir de descriptores de imagen clásicos (textura, intensidades, morfología).
+* **Algoritmos permitidos**: segmentación de regiones sospechosas (heurística), **K‑means** para agrupar patrones de textura, **regresión logística múltiple** para estimar probabilidad de TB.
+* **Métrica primaria**: sensibilidad y especificidad; curva ROC/AUC para el modelo logístico; tiempo de lectura por estudio.
+
+### 2) Retinopatía diabética (fondo de ojo)
+
+* **Tarea**: detección de lesiones (exudados, microaneurismas) mediante filtros clásicos; conteos y áreas como predictores.
+* **Algoritmos**: **K‑means** sobre espacios de color; **regresión logística múltiple** para riesgo de RD referible.
+* **Métrica primaria**: F1 para lesión referible; exactitud por estratos de calidad de imagen.
+
+### 3) Ultrasonido obstétrico (biometría cefálica)
+
+* **Tarea**: estimar **circunferencia cefálica (HC)** con ajuste geométrico; usar **regresión lineal múltiple** para corregir sesgos por ángulo/ganancia.
+* **Métrica primaria**: error absoluto medio (MAE) en mm frente a anotador experto.
+
+### 4) Lesiones cutáneas (dermatoscopia/imagen macro)
+
+* **Tarea**: segmentación clásica de la lesión; extracción de color/forma/asimetría; **regresión logística múltiple** para riesgo de malignidad (prototipo educativo, no clínico).
+* **Métrica primaria**: AUC; análisis de errores por fototipo.
+
+### 5) Extracción de signos vitales con cámara web (rPPG) **sin ML**
+
+* **Objetivo**: estimar **frecuencia cardiaca (FC)** y **frecuencia respiratoria (FR)** desde video RGB facial capturado con webcam estándar (≥ 30 fps) **sin** redes neuronales.
+* **Pipeline sugerido**: detección de rostro (clásica), definición de ROI (frente/pómulos), promediado espacial por canal, **detrend** y banda pasante; cálculo espectral.
+* **Cálculos**:
+
+  * Señal rPPG por canal: $s_c(t) = \frac{1}{|\Omega|}\sum_{(i,j)\in \Omega} I_c(i,j,t)$.
+  * Preamplificación cromática tipo POS/CHROM (implementación determinista sin entrenamiento).
+  * HR (bpm) desde pico espectral: $\mathrm{HR} = 60, f_{\text{peak}}$.
+  * SNR: $\mathrm{SNR} = 10\log_{10}\left( \frac{P\{\text{señal}}\}{P\{\text{ruido}}\} \right)$.
+* **Algoritmos de decisión permitidos**:
+
+  * **K‑means** para **estabilidad de ROI** (agrupar píxeles por coherencia temporal) o clusterizar condiciones de iluminación.
+  * **Regresión lineal múltiple** para **corrección** de artefactos (p. ej., modelar FC estimada como función de variables de captura: luminancia media, varianza, amplitud de movimiento): $\widehat{\mathrm{FC}} = \beta_0 + \sum_{j=1}^p \beta_j x_j$.
+  * **Regresión logística múltiple** para **calidad binaria** del segmento (válido/no válido) a partir de predictores como SNR, varianza, energía de banda: $\Pr(\text{válido}=1\mid x)=\sigma!\left( \beta_0 + \sum_{j=1}^p \beta_j x_j \right),\ \ \sigma(z)=\frac{1}{1+e^{-z}}$.
+* **Métricas**: MAE de FC (bpm), MAE de FR (rpm), proporción de segmentos válidos, latencia.
+
+---
+
+## Recordatorio de ecuaciones (uso en los tres algoritmos permitidos)
+
+**K‑means (criterio WCSS)**: minimizar
+$J = \sum_{i=1}^k \sum_{x\in C_i} \lVert x - \mu_i \rVert^2$.
+
+**Regresión lineal múltiple**:
+$\hat{y} = \beta_0 + \sum_{j=1}^p \beta_j x_j$, con ajuste por mínimos cuadrados: $\min_\beta \lVert y - X\beta \rVert_2^2$.
+
+**Regresión logística múltiple**:
+$\Pr(Y=1\mid x) = \sigma!\left( \beta_0 + \sum_{j=1}^p \beta_j x_j \right)$, donde $\sigma(z)=\frac{1}{1+e^{-z}}$.
+
+---
+
+## Plantilla: **Lienzo de Objetivos** (1 página)
+
+Complete y entregue una página por equipo. En la plantilla del curso
+
+* **Título del proyecto:**
+* **ODS principal (meta/indicador):**
+* **ODS secundario (opcional):**
+* **Problema en Colombia (fuente breve):**
+* **Población objetivo y escenario de uso:**
+* **Modalidad de imagen y tarea:**
+* **Datos/datasets (licencia y tamaño):**
+* **Objetivo SMART 1 (impacto):**
+* **Objetivo SMART 2 (técnico):**
+* **Objetivo SMART 3 (implementación):**
+* **Métrica(s) primaria(s) y umbrales:**
+* **Riesgos/sesgos y cumplimiento (privacidad y ética):**
+* **Plan de validación:**
+* **Hitos/tiempos:**
+
+---
+
+## Ejemplos de **objetivos SMART** (adaptar al caso)
+
+* **Impacto clínico (ODS 3)**: “En 10 semanas, demostrar en n=40 participantes que el prototipo de rPPG logra **MAE(FC) ≤ 5** bpm frente a pulsioxímetro de referencia, en condiciones de luz ambiental de consultorio.”
+* **Técnico‑algorítmico**: “Implementar pipeline determinista de rPPG con **banda 0.7–4 Hz** para FC y **0.1–0.5 Hz** para FR; usar **K‑means** para seleccionar ROI estable y **regresión lineal múltiple** para corrección por iluminación; alcanzar **proporción de segmentos válidos ≥ 0.9**.”
+* **Implementación/uso responsable**: “Entregar una app **on‑device** que procese 60 s de video en **≤ 3 s** y exporte solo series temporales y métricas (sin video). Incluir aviso y consentimiento informado.”
+
+> Para otras opciones de reto, formule un objetivo análogo con métrica primaria clara (p. ej., **AUC ≥ 0.85** para logística múltiple o **MAE ≤ umbral** en lineal múltiple) y justificativo ODS.
+
+---
+
+## Sugerencias de métricas y validación
+
+* **Clasificación (logística múltiple)**: AUC, sensibilidad, especificidad, F1, calibración (revisar curva de confiabilidad).
+* **Regresión (lineal múltiple)**: MAE, RMSE, $R^2$, análisis de residuos.
+* **Clustering (K‑means)**: inercia (WCSS), silhouette (solo para diagnóstico; no usar como criterio de decisión clínica).
+* **Validación**: partición entrenamiento/validación, **estratificación** por subgrupos (edad/sexo/calidad de imagen), **IC** por bootstrap si el tamaño lo permite.
+
+---
+
+## Riesgos y mitigaciones (ética y sesgo)
+
+* **Privacidad**: evitar almacenar datos identificables; anonimizar; limitar finalidades; consentimiento informado cuando aplique.
+* **Sesgo de dominio**: evaluar por dispositivo, iluminación, fototipo, institución; reportar desempeño estratificado.
+* **Seguridad**: indicar que los prototipos son con **fines educativos** y **no clínicos**.
+
+---
+
+## Entregables de la sesión
+
+1. **Lienzo de Objetivos (1 página)** completado.
+2. **Pitch de 60 s** leyendo objetivo principal y métrica clave.
+3. Archivo breve (máx. 1 página) con las **ecuaciones** que usa su proyecto (de entre las listadas) y la **métrica primaria** con definición formal.
+
+---
+
+## Rúbrica de evaluación (actividad de hoy)
+
+**Puntaje total: 100**. Aprobación sugerida: ≥ 70 y sin criterios en nivel Insuficiente.
+
+| Criterio                                              | Peso | Excelente (4)                                                                               | Bueno (3)                             | Básico (2)                           | Insuficiente (1)                  |
+| ----------------------------------------------------- | ---: | ------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------ | --------------------------------- |
+| **Alineación con ODS**                                |   20 | ODS principal correcto y **meta/indicador** explícito y pertinente                          | ODS correcto sin indicador concreto   | ODS genérico                         | Sin ODS o incorrecto              |
+| **Relevancia país/población**                         |   15 | Contexto Colombia claro (población, nivel de atención, brecha)                              | Contexto parcial                      | Contexto vago                        | Sin contexto                      |
+| **Calidad de objetivos SMART**                        |   20 | 2–3 objetivos con métricas, umbrales y tiempos; separados en impacto/técnico/implementación | Objetivos claros pero incompletos     | Faltan métricas o tiempos            | Confusos o no medibles            |
+| **Viabilidad técnica (solo K‑means / reg. múltiple)** |   15 | Elección y justificación rigurosa; ecuaciones y variables definidas                         | Elección adecuada con ligeras lagunas | Uso dudoso o variables mal definidas | Incumple restricciones o inviable |
+| **Ética y cumplimiento**                              |   10 | Riesgos/sesgos y medidas; privacidad correctamente abordada                                 | Menciona ética sin detalle            | Superficial                          | No aborda                         |
+| **Métricas de éxito**                                 |   10 | Indicadores clínicos/operativos claros y umbrales                                           | Indicadores presentes sin umbrales    | Indicadores vagos                    | No hay                            |
+| **Claridad de la entrega (1 pág + pitch)**            |   10 | Síntesis excelente, visual limpio, pitch preciso                                            | Claro con leves omisiones             | Denso o poco legible                 | Incompleto                        |
+
+---
+
