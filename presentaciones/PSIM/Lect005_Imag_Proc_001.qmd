@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -104,16 +104,16 @@ Operation involving one or more images is carried out on a pixel-bypixel basis
 
 :::
 
-$$ 
+$$
 \begin{bmatrix}
 a_{11} & a_{12} \\
-a_{21} & a_{22}  
+a_{21} & a_{22}
 \end{bmatrix} \oplus \begin{bmatrix} b_{11} & b_{12} \\  b_{21} & b_{22}\end{bmatrix} = \begin{bmatrix} a_{11}+b_{11} & a_{12}+b_{12} \\  a_{21}+b_{21} & a_{22}+b_{22}\end{bmatrix} $$
 
-$$ 
+$$
 \begin{bmatrix}
 a_{11} & a_{12} \\
-a_{21} & a_{22}  
+a_{21} & a_{22}
 \end{bmatrix} \odot \begin{bmatrix} b_{11} & b_{12} \\  b_{21} & b_{22}\end{bmatrix} = \begin{bmatrix} a_{11}.b_{11} & a_{12}.b_{12} \\  a_{21}.b_{21} & a_{22}.b_{22}\end{bmatrix} $$
 
 ## Basic Mathematic - Linear Operations{.scrollable}
@@ -133,12 +133,12 @@ $$f_1 = \begin{bmatrix}0 & -1 \\2 & 4\end{bmatrix}$$, $$f_2 = \begin{bmatrix}30 
 ## Basic Mathematic - Adding
 
 
- ![](../../recursos/imagenes/Presentaciones/PSIM/female-chest-x-ray.jpg){fig-align="center" height=60%} 
+ ![](../../recursos/imagenes/Presentaciones/PSIM/female-chest-x-ray.jpg){fig-align="center" height=60%}
 
 ## Basic Mathematic - Adding {.scrollable}
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images
 
@@ -192,7 +192,7 @@ plt.show()
 
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images
 
@@ -242,11 +242,76 @@ plt.show()
 
 :::
 
+
+## Basic Mathematic - Basic transformation
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: normalization
+
+
+def plot_range_mapping_with_guides(
+    old_min, old_max, new_min=0, new_max=255, title=None
+):
+    # Crear figura y obtener ejes actuales
+    fig = plt.figure()
+    ax = plt.gca()
+
+    # Línea de mapeo y puntos extremos
+    ax.plot([old_min, old_max], [new_min, new_max], linewidth=2, label="Mapeo lineal")
+    ax.scatter([old_min, old_max], [new_min, new_max], s=60, zorder=3)
+
+    # Ticks: solo min, max y nmin, nmax
+    ax.set_xticks(
+        [old_min, old_max], labels=[f"min={old_min:.3g}", f"max={old_max:.3g}"]
+    )
+    ax.set_yticks([new_min, new_max], labels=[f"nmin={new_min}", f"nmax={new_max}"])
+
+    # Guías punteadas
+    ax.axvline(old_min, linestyle="--", linewidth=1)
+    ax.axvline(old_max, linestyle="--", linewidth=1)
+    ax.axhline(new_min, linestyle="--", linewidth=1)
+    ax.axhline(new_max, linestyle="--", linewidth=1)
+
+    # Etiquetas y estética
+    ax.set_xlabel("Rango original [min, max]")
+    ax.set_ylabel("Rango nuevo [nmin, nmax]")
+    if title is None:
+        title = "Mapeo de extremos con guías: [min, max] → [0, 255]"
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, linestyle=":")
+    fig.tight_layout()
+    plt.show()
+
+
+# Ejemplo: reemplaza 12.5 y 73.8 por tus valores reales
+plot_range_mapping_with_guides(12.5, 73.8)
+
+```
+
+:::
+
+::: {.column width="45%"}
+
+::: {.x_mall}
+$$x_{\text{rescaled}} = n_{\min} + \frac{(x - \min)}{\max - \min} \, (n_{\max} - n_{\min})$$
+:::
+
+:::
+::::
+
 ## Basic Mathematic - Pixel intensity {.scrollable}
 
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images
 
@@ -259,7 +324,7 @@ plt.show()
 #| fig-align: "center"
 #| layout-ncol: 3
 #| label: xray-loading-pxinten
-#| fig-subcap: 
+#| fig-subcap:
 #|  - "Original"
 #|  - "Exp=1.1"
 #|  - "Exp=1.2"
@@ -337,7 +402,7 @@ plt.show()
 
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images
 
@@ -405,7 +470,7 @@ plt.imshow(elderly_gray, cmap="gray")
 ## Neighborhood operations
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Original
 
@@ -456,7 +521,7 @@ plt.imshow(dst, cmap="gray")
 ## Neighborhood operations
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Original
 
@@ -505,7 +570,7 @@ plt.imshow(dst1, cmap="gray")
 ## Neighborhood operations
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Mean
 
@@ -556,13 +621,13 @@ plt.imshow(dst, cmap="gray")
 ## Edge dection{.scrollable}
 
 
-![](../../recursos/imagenes/Presentaciones/PSIM/Bordes.png){fig-align="center"} 
+![](../../recursos/imagenes/Presentaciones/PSIM/Bordes.png){fig-align="center"}
 
 
 ## Edge dection{.scrollable}
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images Grad Y
 
@@ -635,7 +700,7 @@ plt.imshow(dst1, cmap="gray")
 ## Histogram
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Histogram
 
@@ -670,7 +735,7 @@ plt.plot(elderly_hist, color="gray")
 ## Histogram
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## First thing to do
 
@@ -753,7 +818,7 @@ cv2.calcHist(images, channels, mask, histSize, ranges)
 ## Histogram{.scrollable}
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images
 
@@ -791,7 +856,7 @@ plt.plot(elderly_hist_lowcontrast, color="red")
 plt.show()
 ```
 
-## Code 
+## Code
 ```{python}
 #| echo: true
 #| eval: false
@@ -851,7 +916,7 @@ where L is the number of intensity levels (e.g., 256 for an 8-bit image).
 ## Histogram Equalization
 
 
-::: {.panel-tabset} 
+::: {.panel-tabset}
 
 ## Images
 
@@ -878,7 +943,7 @@ plt.show()
 
 ```
 
-## Code 
+## Code
 
 ```{python}
 #| echo: true
