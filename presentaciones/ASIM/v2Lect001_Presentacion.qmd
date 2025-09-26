@@ -1,0 +1,231 @@
+---
+title: "ML para Señales e Imágenes Médicas"
+subtitle: "Flujo completo, buenas prácticas y demos con datos sintéticos"
+lang: es
+format:
+  revealjs:
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    hash: true
+execute:
+  echo: true
+  warning: false
+  freeze: auto
+---
+
+## Propósito y alcance (visión general)
+- Flujo de trabajo: datos→representación→modelo→validación→reporte.
+- Ética: consentimiento, PHI, licencias, sesgo y desbalance.
+- Preparación: filtrado, normalización, segmentación, *leakage*.
+- Representaciones: STFT/EEG/EMG, texturas; *deep* (CNN/UNet).
+- Validación: **CV estratificada**, *early stopping*, semillas.
+- Métricas: ROC-AUC, F1; Dice/IoU; MAE/RMSE.
+- Interpretabilidad/robustez y reporte reproducible.
+
+## Ética y cumplimiento (1/2)
+- Consentimiento informado y minimización de datos.
+- PHI: remover identificadores; anonimización/pseudonimización.
+- Licencias: usar CC; atribuir autor, año, URL y licencia.
+- NC/ND: no usos comerciales / no obras derivadas (respetar).
+- Ejemplo: ECG sintético para QRS (docencia) sin PHI.
+
+## Ética y riesgo de sesgo (2/2)
+:::: {.columns style="gap: 1.2rem;"}
+::: {.column width="45%"}
+- Desbalance por clase/población.
+- *Sampling* estratificado y *cost-sensitive*.
+- Auditoría de *drift* y *fairness*.
+:::
+::: {.column width="45%"}
+- Ejemplo clínico: TC nódulos pulmonares.
+  Dataset real: LUNA16 (verificar licencia).
+  Docencia: nódulos sintéticos controlados (sin PHI).
+:::
+::::
+
+## Preparación de datos (1/2)
+- Filtrado: ECG/EMG (pasa-banda), EEG (notch 50/60 Hz).
+- Normalización/estandarización según modelo.
+- Segmentación: latidos, *epochs* EEG, ROIs.
+- **Evitar *data leakage***: normalizar con estadísticas del **train**.
+- Particiones: train/valid/test estratificadas.
+
+## Preparación de datos (2/2)
+:::: {.columns style="gap: 1.2rem;"}
+::: {.column width="45%"}
+- *Leakage* comunes:
+  - Normalizar con todo el dataset.
+  - Selección de *features* global.
+  - *Tuning* sobre test.
+:::
+::: {.column width="45%"}
+- Ejemplo: EMG picos.
+  Ventanas 200 ms; normalizar por canal
+  con media/DE de *train* únicamente.
+:::
+::::
+
+## Representaciones en señales (1/2)
+- STFT/espectrograma (tiempo-frecuencia).
+- EEG bandas: δ, θ, α, β, γ (potencia relativa).
+- EMG: RMS, ARV; envolvente (rectificación+suavizado).
+- ECG: energía por ventana, R-R, derivadas simples.
+- Ejemplo: QRS — energía en 5–15 Hz (sintético).
+
+## Demo: espectrograma de señal estilo EEG
+```{python}
+#| label: fig-spectrogram
+#| fig-cap: "Espectrograma (STFT) de señal sintética estilo EEG."
+import numpy as np, matplotlib.pyplot as plt
+np.random.seed(42)
+fs=128; t=np.arange(0,10,1/fs)
+sig=np.sin(2*np.pi*10*t)*(t<5)+np.sin(2*np.pi*6*t)*(t>=5)+0.4*np.random.randn(len(t))
+Nw=256; H=64; w=np.hanning(Nw)
+frames=[sig[i:i+Nw]*w for i in range(0,len(sig)-Nw,H)]
+S=np.array([np.abs(np.fft.rfft(f)) for f in frames]).T
+f=np.fft.rfftfreq(Nw,1/fs); tt=np.arange(S.shape[1])*H/fs
+plt.figure(figsize=(7,3))
+plt.imshow(20*np.log10(S+1e-6), aspect='auto', origin='lower',
+           extent=[tt[0],tt[-1],f[0],f[-1]])
+plt.xlabel("Tiempo [s]"); plt.ylabel("Frecuencia [Hz]")
+plt.title("Espectrograma sintético EEG (10→6 Hz)"); plt.colorbar(label="dB")
+plt.tight_layout(); plt.show()
+```
+
+## Representaciones en imágenes (2/2)
+:::: {.columns style="gap: 1.2rem;"}
+::: {.column width="45%"}
+- Intensidad/gradientes, texturas (Haralick/GLCM).
+- Histogramas locales; evitar paletas *rainbow*.
+- *Deep*: CNN (clasif.), UNet (segmentación).
+:::
+::: {.column width="45%"}
+- Ejemplo: RM rodilla — cartílago.
+  Máscaras sintéticas para medir Dice/IoU.
+:::
+::::
+
+## Modelos (visión general)
+- Clásicos: regresión, SVM, árboles/ensembles.
+- Profundos: CNN, UNet; RNN/transformers (secuencias).
+- Selección por objetivo/datos/recursos.
+- Regularización: L2, *dropout*, *early stopping*.
+- Semillas fijas para reproducibilidad.
+- Ejemplo: QRS (regresión logística simple).
+
+## Entrenamiento y validación
+:::: {.columns style="gap: 1.2rem;"}
+::: {.column width="45%"}
+- **CV k-fold estratificada** por clase.
+- Conjunto de validación para *tuning*.
+- *Early stopping* con paciencia.
+:::
+::: {.column width="45%"}
+- Semillas: `np.random.seed(42)`.
+- Registrar versiones HW/SW.
+- Ejemplo: EEG sueño — CV por sujeto (si aplica).
+:::
+::::
+
+## Métricas por tarea
+- Clasificación: ROC-AUC, sensibilidad, especificidad, F1.
+- Segmentación: Dice, IoU (Jaccard).
+- Regresión: MAE, RMSE.
+- Reportar incertidumbre (IC/bootstrapping).
+- **Evitar** métricas sesgadas por desbalance (solo accuracy).
+
+## Demo: ROC/F1 vs umbral (clasificación binaria)
+```{python}
+#| label: fig-roc
+#| fig-cap: "Curva ROC y F1 vs umbral con datos sintéticos."
+import numpy as np, matplotlib.pyplot as plt
+np.random.seed(42)
+n=800; y=(np.random.rand(n)<0.35).astype(int)
+scores=0.6*y+0.3*np.random.rand(n)
+thr=np.linspace(0,1,101)
+tpr=[]; fpr=[]; f1=[]
+for th in thr:
+    yhat=(scores>=th).astype(int)
+    tp=np.sum((yhat==1)&(y==1)); fp=np.sum((yhat==1)&(y==0))
+    fn=np.sum((yhat==0)&(y==1)); tn=np.sum((yhat==0)&(y==0))
+    tpr.append(tp/max(tp+fn,1)); fpr.append(fp/max(fp+tn,1))
+    prec=tp/max(tp+fp,1); rec=tpr[-1]; f1.append(2*prec*rec/max(prec+rec,1e-9))
+auc=np.trapz(sorted(tpr), x=sorted(fpr))
+plt.figure(figsize=(7,3))
+plt.subplot(1,2,1); plt.plot(fpr,tpr); plt.plot([0,1],[0,1],'--')
+plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title(f"ROC (AUC≈{auc:.2f})")
+plt.subplot(1,2,2); plt.plot(thr,f1); plt.xlabel("Umbral"); plt.ylabel("F1")
+plt.title("F1 vs umbral"); plt.tight_layout(); plt.show()
+```
+
+## Demo: Dice/IoU en segmentación (máscara sintética)
+```{python}
+#| label: fig-dice
+#| fig-cap: "Máscaras binarias y métricas Dice/IoU en cartílago sintético."
+import numpy as np, matplotlib.pyplot as plt
+np.random.seed(42)
+H,W=128,128
+gt=np.zeros((H,W),int); gt[40:90,30:80]=1
+pred=gt.copy(); pred[45:95,35:85]=1; pred=np.roll(pred,2,axis=1)
+inter=(gt&pred).sum(); union=(gt|pred).sum()
+dice=2*inter/(gt.sum()+pred.sum()); iou=inter/union
+plt.figure(figsize=(7,3))
+plt.subplot(1,3,1); plt.imshow(gt,cmap='gray'); plt.axis('off'); plt.title("GT")
+plt.subplot(1,3,2); plt.imshow(pred,cmap='gray'); plt.axis('off'); plt.title("Pred")
+plt.subplot(1,3,3); plt.imshow(gt+2*pred,cmap='gray'); plt.axis('off')
+plt.title(f"Dice={dice:.2f}, IoU={iou:.2f}")
+plt.tight_layout(); plt.show()
+```
+
+## Interpretabilidad y robustez
+- Saliency/Grad-CAM para CNN (visión global).
+- Perturbaciones: ruido, desenfoque, *contrast shift*.
+- Validación externa: otro hospital/población.
+- Ejemplo: Grad-CAM en UNet (referencia, sin PHI).
+- Advertencia: saliency no implica causalidad clínica.
+
+## Demo: sensibilidad a perturbaciones (imagen)
+```{python}
+#| label: fig-perturb
+#| fig-cap: "Impacto de ruido/desenfoque en una ROI sintética."
+import numpy as np, matplotlib.pyplot as plt
+np.random.seed(42)
+img=np.zeros((128,128)); img[40:88,50:78]=1.0
+noise=img+0.25*np.random.randn(*img.shape)
+blur=np.copy(img)
+for _ in range(6): blur=(blur+np.roll(blur,1,0)+np.roll(blur,-1,0)+np.roll(blur,1,1)+np.roll(blur,-1,1))/5
+plt.figure(figsize=(7,3))
+plt.subplot(1,3,1); plt.imshow(img,cmap='gray'); plt.axis('off'); plt.title("Original")
+plt.subplot(1,3,2); plt.imshow(noise,cmap='gray'); plt.axis('off'); plt.title("Ruido")
+plt.subplot(1,3,3); plt.imshow(blur,cmap='gray'); plt.axis('off'); plt.title("Desenfoque")
+plt.tight_layout(); plt.show()
+```
+
+## Reporte reproducible
+- Fijar semillas (`np.random.seed(42)`).
+- Versiones: Python/NumPy/Matplotlib; HW (GPU/CPU).
+- Guardar *config*, preprocesamiento y splits.
+- Licencias de datos/modelos/código.
+- Documentar criterios de exclusión y fallos.
+
+## Referencias clave (selección)
+- U. Ronneberger *et al.*, MICCAI 2015, UNet, DOI: https://doi.org/10.1007/978-3-319-24574-4_28
+- K. He *et al.*, CVPR 2016, ResNet, DOI: https://doi.org/10.1109/CVPR.2016.90
+- R. R. Selvaraju *et al.*, ICCV 2017, Grad-CAM, DOI: https://doi.org/10.1109/ICCV.2017.74
+- J. A. Hanley, B. J. McNeil, Radiology 1982, ROC-AUC, DOI: https://doi.org/10.1148/radiology.143.1.7063747
+- A. A. Taha, A. Hanbury, ISBI 2015, métricas segm., DOI: https://doi.org/10.1109/ISBI.2015.7164114
