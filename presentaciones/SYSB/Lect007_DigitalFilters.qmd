@@ -115,6 +115,120 @@ y(t)=\mathcal{T}\{x(t)\},\qquad y[n]=\mathcal{T}\{x[n]\}.
 $$
 Block diagrams are used to represent systems and **interconnections** (series/cascade and parallel).
 
+## Overview: what is an input–output relation?
+
+A **system** specifies how an input signal produces an output signal:
+$$
+x(t)\ \longrightarrow\ y(t),\qquad x[n]\ \longrightarrow\ y[n].
+$$
+We study **types of relations** used in analysis and design:
+- Memoryless (static) mappings
+- Differential/difference-equation descriptions
+- Convolution (LTI)
+- Transform-domain forms (frequency, Laplace, \(z\))
+- State–space (first-order vector form)
+- Time-varying vs time-invariant, linear vs nonlinear
+
+## Memoryless (static) relations
+
+A **memoryless** or **static** system relates input and output at the same instant:
+$$
+y(t)=F\!\big(x(t)\big),\qquad y[n]=F\!\big(x[n]\big).
+$$
+Examples: \(y=|x|\), \(y=x^2\), saturation and clipping nonlinearities.
+These are common as pointwise nonlinear stages preceding or following LTI blocks.
+
+## Linear constant-coefficient differential equations (CT)
+
+Many continuous-time LTI systems are described by an LCCDE:
+$$
+\sum_{k=0}^{N} a_k\,\frac{d^{\,k} y(t)}{dt^{\,k}}
+\;=\;
+\sum_{m=0}^{M} b_m\,\frac{d^{\,m} x(t)}{dt^{\,m}},
+\qquad a_0\neq 0.
+$$
+Coefficients \(a_k,b_m\) are constants for **time invariance**.
+This form covers standard electrical/mechanical systems and filters.
+
+## Linear constant-coefficient difference equations (DT)
+
+Discrete-time LTI systems admit an LCCD equation:
+$$
+\sum_{k=0}^{N} a_k\,y[n-k]\;=\;\sum_{m=0}^{M} b_m\,x[n-m],\qquad a_0\neq 0.
+$$
+This representation includes IIR/FIR digital filters and many algorithmic recursions.
+
+## Convolution relations (LTI)
+
+For **LTI** systems the input–output relation is convolution with the impulse response:
+$$
+y(t)=\int_{-\infty}^{\infty} h(\tau)\,x(t-\tau)\,d\tau,\qquad
+y[n]=\sum_{k=-\infty}^{\infty} h[k]\;x[n-k].
+$$
+Here \(h(t)\) or \(h[n]\) is the output to a unit impulse.
+Causality for LTI corresponds to \(h(t)=0\) for \(t<0\) (or \(h[n]=0\) for \(n<0\)).
+
+## Frequency-domain input–output (Fourier)
+
+When Fourier transforms exist, convolution becomes multiplication:
+$$
+Y(\omega)=H(\omega)\,X(\omega),\qquad
+Y\!\big(e^{j\omega}\big)=H\!\big(e^{j\omega}\big)\,X\!\big(e^{j\omega}\big).
+$$
+\(H\) is the **frequency response** (CTFT/DTFT). Magnitude \(|H|\) scales, phase \(\angle H\) shifts/warps timing.
+
+## Laplace and \(z\)-transform forms
+
+With Laplace and \(z\)-transforms (for appropriate regions of convergence):
+$$
+Y(s)=H(s)\,X(s),\qquad Y(z)=H(z)\,X(z),
+$$
+and for LCCDE/LCCD systems
+$$
+H(s)=\frac{b_0+b_1 s+\cdots+b_M s^M}{a_0+a_1 s+\cdots+a_N s^N},\qquad
+H(z)=\frac{b_0+b_1 z^{-1}+\cdots+b_M z^{-M}}{a_0+a_1 z^{-1}+\cdots+a_N z^{-N}}.
+$$
+These rational forms support pole–zero analysis and stability checks.
+
+## State–space (first-order vector) description
+
+An equivalent input–output formulation uses **state variables**:
+$$
+\dot{\mathbf{s}}(t)=\mathbf{A}\,\mathbf{s}(t)+\mathbf{b}\,x(t),\qquad
+y(t)=\mathbf{c}^\top\mathbf{s}(t)+d\,x(t).
+$$
+Discrete time:
+$$
+\mathbf{s}[n+1]=\mathbf{A}\,\mathbf{s}[n]+\mathbf{b}\,x[n],\qquad
+y[n]=\mathbf{c}^\top\mathbf{s}[n]+d\,x[n].
+$$
+This first-order form is algebraically equivalent to LCCDE/LCCD for LTI systems.
+
+## Time-varying vs time-invariant relations
+
+- **Time-invariant (TI)**: coefficients and operators do not change with time/index; shifts commute with the system.
+- **Time-varying (TV)**: coefficients depend on \(t\) or \(n\):
+$$
+\sum_{k=0}^{N} a_k(t)\,\frac{d^{\,k} y(t)}{dt^{\,k}}
+=\sum_{m=0}^{M} b_m(t)\,\frac{d^{\,m} x(t)}{dt^{\,m}}.
+$$
+TV models arise in modulated systems and adaptive filtering.
+
+## Linear vs nonlinear relations
+
+- **Linear**: superposition holds — additivity and homogeneity.
+- **Nonlinear**: violates superposition; examples include squares, rectifiers, saturators, quantizers.
+Nonlinear stages are often analyzed locally or via small-signal linearization around an operating point.
+
+## Stochastic input–output (LTI summary)
+
+For wide-sense stationary (WSS) inputs to an LTI system:
+$$
+\mu_y=\mu_x\,H(0)\ \text{(when defined)},\qquad
+S_{yy}(\omega)=\big|H(\omega)\big|^2\,S_{xx}(\omega).
+$$
+This links input and output statistics through \(H\), supporting noise and SNR analysis.
+
 ## Interconnections (examples)
 
 - **Series (cascade):** output of System 1 feeds System 2.
