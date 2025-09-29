@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -86,7 +86,7 @@ path_ecg = "../../data"
 ::: {.column width="45%"}
 
 - It is a mathematical algorithm or system that processes digital signals.
-- They enhance, suppress, or modify specific frequency components. 
+- They enhance, suppress, or modify specific frequency components.
 - These filters are essential for removing noise, extracting relevant information, and improving signal quality.
 
 :::
@@ -96,7 +96,95 @@ path_ecg = "../../data"
 ![](../../recursos/imagenes/Presentaciones/SYSB/digitalFilters01.png)
 
 :::
+
 ::::
+
+## What is a *system*?
+
+A **system** is a rule that maps an input signal to an output signal. In continuous time and discrete time we depict and denote:
+$$
+x(t)\ \longrightarrow\ y(t),\qquad x[n]\ \longrightarrow\ y[n].
+$$
+These are the standard input–output representations used throughout the text.
+
+## Input–output operator notation
+
+We often write the system as an operator \( \mathcal{T}\{\cdot\} \):
+$$
+y(t)=\mathcal{T}\{x(t)\},\qquad y[n]=\mathcal{T}\{x[n]\}.
+$$
+Block diagrams are used to represent systems and **interconnections** (series/cascade and parallel).
+
+## Interconnections (examples)
+
+- **Series (cascade):** output of System 1 feeds System 2.
+- **Parallel:** both systems process the same input; outputs are summed.
+These patterns are foundational for building complex systems from simpler ones.
+
+## Property: Memoryless vs. with memory
+
+- **Memoryless:** the output at an instant depends only on the input at that same instant.
+- **With memory:** the output depends on past/future values (e.g., accumulators, averagers).
+Example: the **summer/accumulator** (running sum) and its inverse (first difference) illustrate systems with memory:
+$$
+y[n]=\sum_{k=-\infty}^{n} x[k],\qquad \text{inverse: } y[n]=x[n]-x[n-1].
+$$
+Both are causal (see next slide)
+
+## Property: Causality (general and LTI)
+
+**Causal:** output depends only on present/past input values.
+For **LTI** systems, causality is characterized by the impulse response:
+$$
+\text{Discrete time: } h[n]=0\ \text{for } n<0;\qquad
+\text{Continuous time: } h(t)=0\ \text{for } t<0.
+$$
+Under these conditions, the convolution reduces to depend only on past/present input.
+
+## Property: Stability (BIBO)
+
+**Bounded-Input Bounded-Output (BIBO) stability:** bounded input implies bounded output.
+For **LTI** systems:
+$$
+\sum_{k=-\infty}^{\infty} |h[k]| < \infty \quad \Longleftrightarrow \quad \text{discrete-time LTI is stable},
+$$
+$$
+\int_{-\infty}^{\infty} |h(t)|\,dt < \infty \quad \Longleftrightarrow \quad \text{continuous-time LTI is stable}.
+$$
+These are necessary and sufficient conditions.
+
+## Property: Linearity (superposition)
+
+A system is **linear** if it satisfies **additivity** and **homogeneity**: for any signals \(x_1,x_2\) and scalar \(c\),
+$$
+\mathcal{T}\{x_1+x_2\}=\mathcal{T}\{x_1\}+\mathcal{T}\{x_2\},\qquad \mathcal{T}\{c\,x\}=c\,\mathcal{T}\{x\}.
+$$
+(These two conditions together are equivalent to linearity.)
+
+## Property: Time invariance (definition)
+
+A system is **time-invariant** if a shift in the input produces an identical shift in the output:
+$$
+\mathcal{T}\{x(t-t_0)\}=y(t-t_0),\ \text{whenever}\ y(t)=\mathcal{T}\{x(t)\}.
+$$
+Analogously in discrete time with shifts by integer indices. (Definition used throughout the text in system properties and LTI analysis.)
+
+## Property: Invertibility
+
+A system is **invertible** if distinct inputs produce distinct outputs; equivalently, there exists an **inverse system** that recovers the input from the output.
+Example pair (discrete time): the accumulator and the first-difference operator are inverses:
+$$
+y[n]=\sum_{k=-\infty}^{n} x[k] \quad \Longleftrightarrow \quad x[n]=y[n]-y[n-1].
+$$
+
+
+## Additional note: Interconnections and LTI analysis
+
+For LTI systems, interconnections admit simple algebraic descriptions via transforms: e.g., in the Laplace domain, series and parallel lead to product and sum of system functions, respectively:
+$$
+H_{\text{series}}(s)=H_1(s)H_2(s),\qquad H_{\text{parallel}}(s)=H_1(s)+H_2(s).
+$$
+
 
 ## Digital Filter -- Introduction
 
