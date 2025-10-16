@@ -57,10 +57,10 @@ data_path<-"../../data/"
 ```
 
 ```{python}
-#| echo: false
-#| eval: true
-#| output: false
-#| label: Loading Python-Libraries
+# | echo: false
+# | eval: true
+# | output: false
+# | label: Loading Python-Libraries
 
 import numpy as np
 import scipy.io as sio
@@ -68,6 +68,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import cv2
+from matplotlib.patches import Rectangle
 
 plt.rcParams.update(
     {
@@ -91,6 +92,150 @@ def adjust_gamma(image, gamma=1.0):
     ).astype("uint8")
 
     return cv2.LUT(image, table)
+
+
+def mostrarHeatMap(mat, row_labels=None, col_labels=None, fmt=".2f", title=None):
+    """
+    Dibuja un heatmap con anotaciones por celda (mat[i,j]).
+    - mat: array 2D (numpy) con valores (puede contener NaN).
+    - row_labels / col_labels: listas opcionales de etiquetas.
+    - fmt: formato de número (e.g., '.2f', '.0f').
+    - title: título opcional.
+    """
+    mat = np.asarray(mat, dtype=float)
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    im = ax.imshow(mat, aspect="auto", interpolation="nearest", cmap="gray")
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label("Valor")
+
+    nrows, ncols = mat.shape
+
+    # Etiquetas si se proveen
+    if row_labels is not None:
+        ax.set_yticks(range(nrows), labels=row_labels)
+    else:
+        ax.set_yticks(range(nrows))
+    if col_labels is not None:
+        ax.set_xticks(range(ncols), labels=col_labels)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+    else:
+        ax.set_xticks(range(ncols))
+
+    # Anotar cada celda
+    for i in range(nrows):
+        for j in range(ncols):
+            val = mat[i, j]
+            if np.isnan(val):
+                text = ""  # no anotar NaN
+            else:
+                text = format(val, fmt)
+            ax.text(j, i, text, ha="center", va="center", fontsize=8)
+
+    if title:
+        ax.set_title(title)
+
+    ax.set_xlabel("Columnas")
+    ax.set_ylabel("Filas")
+    plt.tight_layout()
+    plt.show()
+
+def _square_bounds_from_center(r, c, size, nrows, ncols):
+    """
+    Devuelve (r0, r1, c0, c1) para un cuadrado centrado en (r,c) de lado `size`.
+    r1 y c1 son exclusivos (estilo slicing de Python).
+    Lanza ValueError si se sale de límites.
+    """
+    if size <= 0:
+        raise ValueError("size debe ser entero positivo.")
+    if not (0 <= r < nrows and 0 <= c < ncols):
+        raise ValueError("Centro fuera de rango.")
+    # Para tamaños pares y nones:
+    half_floor = size // 2
+    r0 = r - half_floor
+    c0 = c - half_floor
+    r1 = r0 + size
+    c1 = c0 + size
+    if r0 < 0 or c0 < 0 or r1 > nrows or c1 > ncols:
+        raise ValueError("El cuadrado centrado excede los límites de la matriz.")
+    return r0, r1, c0, c1
+
+
+def heatmap_resaltado_centro(
+    mat, r, c, size, cmap_base="viridis", cmap_resalte="plasma"
+):
+    """
+    Heatmap que recolorea una subregión cuadrada centrada en (r,c) con otro colormap.
+    """
+    mat = np.asarray(mat, dtype=float)
+    nrows, ncols = mat.shape
+    r0, r1, c0, c1 = _square_bounds_from_center(r, c, size, nrows, ncols)
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+    im_base = ax.imshow(mat, cmap=cmap_base, aspect="auto", interpolation="nearest")
+    cbar = plt.colorbar(im_base, ax=ax)
+    cbar.set_label("Valor")
+
+    # Máscara: True = oculto, False = visible. Solo mostramos la región resaltada con otro cmap.
+    mask = np.ones_like(mat, dtype=bool)
+    mask[r0:r1, c0:c1] = False
+    region = np.ma.masked_array(mat, mask=mask)
+    ax.imshow(
+        region,
+        cmap=cmap_resalte,
+        aspect="auto",
+        interpolation="nearest",
+        norm=im_base.norm,
+    )
+
+    # Marco del cuadrado
+    ax.add_patch(
+        Rectangle(
+            (c0 - 0.5, r0 - 0.5),
+            width=size,
+            height=size,
+            fill=False,
+            edgecolor="black",
+            linewidth=1.5,
+        )
+    )
+
+    ax.set_xlabel("Columnas")
+    ax.set_ylabel("Filas")
+    ax.set_title(f"Resaltado centrado en (r={r}, c={c}), size={size}")
+    plt.tight_layout()
+    plt.show()
+
+
+def heatmap_rectangulo_centro(mat, r, c, size, alpha=0.25, cmap="viridis"):
+    """
+    Heatmap con un rectángulo semitransparente centrado en (r,c), sin recolorear datos.
+    """
+    mat = np.asarray(mat, dtype=float)
+    nrows, ncols = mat.shape
+    r0, r1, c0, c1 = _square_bounds_from_center(r, c, size, nrows, ncols)
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    im = ax.imshow(mat, cmap=cmap, aspect="auto", interpolation="nearest")
+    plt.colorbar(im, ax=ax).set_label("Valor")
+
+    ax.add_patch(
+        Rectangle(
+            (c0 - 0.5, r0 - 0.5),
+            width=size,
+            height=size,
+            linewidth=1.5,
+            edgecolor="black",
+            facecolor="white",
+            alpha=alpha,
+        )
+    )
+
+    ax.set_xlabel("Columnas")
+    ax.set_ylabel("Filas")
+    ax.set_title(f"Rectángulo centrado en (r={r}, c={c}), size={size}")
+    plt.tight_layout()
+    plt.show()
 
 ```
 
@@ -391,6 +536,39 @@ plt.show()
 
 ![Taken from: Gonzalez, Rafael C., y Richard E. Woods. Digital Image Processing. New York, NY: Pearson, 2018.](../../recursos/imagenes/Presentaciones/PSIM/convolution.png)
 
+## Neighborhood operations
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | fig-align: center
+# | label: Neighborhood Concept 1
+
+prueba1 = np.random.randint(0, 20, size=(15,15))
+mostrarHeatMap(prueba1)
+
+```
+
+## Neighborhood operations
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | fig-align: center
+# | label: Neighborhood Concept 2
+
+prueba1 = np.random.randint(0, 20, size=(15, 15))
+heatmap_resaltado_centro(
+    prueba1, r=1, c=3, size=3, cmap_base="gray", cmap_resalte="plasma"
+)
+
+```
+
+## Neighborhood operations
+![](../../recursos/imagenes/GIFs/heatmap_moving_mask.gif)
+
 ## Neighborhood Operations
 
 :::{.small_font}
@@ -408,7 +586,7 @@ plt.show()
 
 ::: columns
 
-:::{.column width="50%"}
+:::{.column width="45%"}
 
 ```{python}
 #| echo: false
@@ -426,7 +604,7 @@ plt.imshow(elderly)
 
 :::
 
-:::{.column width="50%"}
+:::{.column width="45%"}
 
 
 ```{python}
@@ -596,6 +774,222 @@ plt.imshow(dst1, cmap="gray")
 ```
 
 :::
+
+## Mean Filter (3×3)
+
+::: columns
+::: {.column width="40%"}
+**Kernel**
+
+$$
+K_{\text{mean}}=\frac{1}{9}
+\begin{bmatrix}
+1&1&1\\
+1&1&1\\
+1&1&1
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Basic smoothing (box filter).
+**Effect:** Reduces high-frequency noise and blurs edges.
+**Notes:** Linear and separable if implemented as two 1D averages; normalize by kernel sum.
+:::
+:::
+
+---
+
+## Gaussian Filter (σ≈1, 3×3)
+
+::: columns
+::: {.column width="40%"}
+**Kernel**
+
+$$
+K_{\text{gauss}}=\frac{1}{16}
+\begin{bmatrix}
+1&2&1\\
+2&4&2\\
+1&2&1
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Weighted smoothing around the center.
+**Effect:** Attenuates noise while preserving edges better than the mean filter.
+**Notes:** Approximates a discrete Gaussian; often used before edge detection.
+:::
+:::
+
+---
+
+## Sobel Operator (Gradient 3×3)
+
+::: columns
+::: {.column width="40%"}
+**Kernels**
+
+$$
+K_{x}=
+\begin{bmatrix}
+-1&0&1\\
+-2&0&2\\
+-1&0&1
+\end{bmatrix},\quad
+K_{y}=
+\begin{bmatrix}
+-1&-2&-1\\
+0&0&0\\
+1&2&1
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Estimate gradient along \(x\) and \(y\).
+**Effect:** Highlights horizontal and vertical edges; used for magnitude \(\sqrt{(I*K_x)^2+(I*K_y)^2}\).
+**Notes:** Includes implicit smoothing; more robust to noise than Prewitt.
+:::
+:::
+
+---
+
+## Prewitt Operator (Gradient 3×3)
+
+::: columns
+::: {.column width="40%"}
+**Kernels**
+
+$$
+K_{x}=
+\begin{bmatrix}
+-1&0&1\\
+-1&0&1\\
+-1&0&1
+\end{bmatrix},\quad
+K_{y}=
+\begin{bmatrix}
+-1&-1&-1\\
+0&0&0\\
+1&1&1
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Estimate gradient with a simple scheme.
+**Effect:** Directional edge detection.
+**Notes:** Less smoothing than Sobel; computationally cheaper.
+:::
+:::
+
+---
+
+## Laplacian (2nd Derivative)
+
+::: columns
+::: {.column width="40%"}
+**Kernels**
+
+4-neighbor version:
+$$
+\begin{bmatrix}
+0&-1&0\\
+-1&4&-1\\
+0&-1&0
+\end{bmatrix}
+$$
+
+8-neighbor version:
+$$
+\begin{bmatrix}
+-1&-1&-1\\
+-1&8&-1\\
+-1&-1&-1
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Enhance abrupt transitions (zero-crossings).
+**Effect:** Isotropic edge detection; very sensitive to noise.
+**Notes:** Often preceded by smoothing (LoG/DoG). May introduce halos.
+:::
+:::
+
+---
+
+## Sharpen Filter (3×3)
+
+::: columns
+::: {.column width="40%"}
+**Kernel**
+
+$$
+K_{\text{sharpen}}=
+\begin{bmatrix}
+0&-1&0\\
+-1&5&-1\\
+0&-1&0
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Reinforce high-frequency components (details).
+**Effect:** Produces a crisper image; enhances edges and textures.
+**Notes:** Equivalent to adding the original image with a high-pass component; watch for saturation and noise.
+:::
+:::
+
+---
+
+## Roberts Cross Operator (2×2, Diagonals)
+
+::: columns
+::: {.column width="40%"}
+**Kernels**
+
+$$
+K_{x}=
+\begin{bmatrix}
+1&0\\
+0&-1
+\end{bmatrix},\quad
+K_{y}=
+\begin{bmatrix}
+0&1\\
+-1&0
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Diagonal gradient (45°/135°).
+**Effect:** Detects diagonal edges quickly.
+**Notes:** Very noise-sensitive; useful in real-time or hardware systems due to small size.
+:::
+:::
+
+---
+
+## Emboss (Directional Relief)
+
+::: columns
+::: {.column width="40%"}
+**Kernel**
+
+$$
+K_{\text{emboss}}=
+\begin{bmatrix}
+-2&-1&0\\
+-1&1&1\\
+0&1&2
+\end{bmatrix}
+$$
+:::
+::: {.column width="58%"}
+**Purpose:** Simulate relief under oblique lighting.
+**Effect:** Produces shadows and highlights (3D appearance).
+**Notes:** Requires recentering/normalization to avoid brightness shift.
+:::
+:::
+
 
 ## Neighborhood operations
 
