@@ -42,7 +42,50 @@ execute:
   freeze: auto
 ---
 
-## Objetivos de la sesión (3h)
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+# | echo: true
+# | eval: true
+# | output: false
+# | label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+path_ecg = "../../data"
+
+data_path = "../../data/"
+
+# https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+<!-- TODO: Cambiar chunks por tabset quarto. Un tab mostrando resultado y otro tab mostrando el código -->
+
+## Objetivos de la sesión
 
 - Entender el **principio del descenso de gradiente (GD)** como método de optimización.
 - Aplicar GD a **regresión lineal múltiple** (objetivo continuo) y **regresión logística** (clasificación 0/1).
@@ -80,15 +123,96 @@ Enfatizar que el GD es base de la mayoría de métodos de AA actuales, incluidas
 
 ---
 
+## Regresión Lineal
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+
+data = pd.read_csv(data_path + "insurance_2.csv")
+sns.regplot(
+    data=data,
+    x="salary",
+    y="charges",
+    scatter_kws={"color": "blue"},
+    line_kws={"color": "red"},
+)
+```
+
+## Regresión Lineal
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: Error de la regresión lineal
+
+# --- Scatter + recta de regresión (Seaborn) ---
+ax = sns.regplot(
+    data=data,
+    x="salary",
+    y="charges",
+    scatter_kws={"color": "blue", "alpha": 0.1},
+    line_kws={"color": "red", "lw": 2},
+)
+
+# --- Ajuste lineal para obtener m y b (residuos verticales) ---
+x = data["salary"].to_numpy()
+y = data["charges"].to_numpy()
+mask = ~np.isnan(x) & ~np.isnan(y)
+m, b = np.polyfit(x[mask], y[mask], 1)
+
+# ====== A) Residuo para un PUNTO específico ======
+idx = 100  # <-- cambia al índice deseado
+x0 = data.loc[idx, "salary"]
+y0 = data.loc[idx, "charges"]
+yhat0 = m * x0 + b  # estimación sobre la recta
+
+# Línea del error (vertical) + destacar el punto
+ax.plot(
+    [x0, x0], [y0, yhat0], color="black", linestyle="--", lw=2, label="Error (residuo)"
+)
+ax.scatter([x0], [y0], color="orange", s=70, zorder=5, label="Punto observado")
+ax.scatter([x0], [yhat0], color="red", s=50, zorder=5, label="Estimación $\hat{y}$")
+
+# (Opcional) Anotar el valor del residuo
+resid = y0 - yhat0
+ax.annotate(
+    f"Residuo = {resid:.2f}",
+    xy=(x0, (y0 + yhat0) / 2),
+    xytext=(10, 0),
+    textcoords="offset points",
+    fontsize=18,
+    color="black",
+    fontweight="bold",
+    va="center",
+)
+
+# ====== B) (Opcional) Dibujar residuos para TODOS los puntos ======
+# Descomenta para ver las líneas de error de todas las observaciones
+# yhat_all = m * x + b
+# for xi, yi, yhi in zip(x[mask], y[mask], yhat_all[mask]):
+#     ax.plot([xi, xi], [yi, yhi], color="gray", alpha=0.15)
+
+ax.set_xlabel("salary")
+ax.set_ylabel("charges")
+ax.legend()
+plt.tight_layout()
+plt.show()
+
+```
+
+
 ## Función de costo (error)
 
 :::columns
 :::{.column width="45%"}
 **Regresión (continuo):**
 $$
-J(\mathbf{w}) \;=\; \frac{1}{2m}\sum_{i=1}^{m}\left(y_i - \hat{y}_i\right)^2
+J(\mathbf{w}) \;=\; \frac{1}{2m}\sum_{i=1}^{m}\left(y_j - \hat{y}_j\right)^2
 $$
-donde $\hat{y}_i = \mathbf{w}^\top \mathbf{x}_i$.
+donde $\hat{y}_j = \mathbf{w}^\top \mathbf{x}_j$.
 :::
 :::{.column .smaller width="45%"}
 **Clasificación binaria:**
@@ -106,17 +230,110 @@ Conectar con la interpretación probabilística en logística y con el MSE en li
 
 ---
 
+## Función de costo (error)
+::: {.callout-important title="... Para el caso de ejemplo (un modelo tipo lineal)"}
+
+
+$$
+\mathbf{w_{j}}^\top \;=\; \left[w_{j,1}, w_{j,0}\right]
+$$
+
+$$
+salary_i = x_i
+$$
+
+$$
+\hat{y}_j  \;=\; w_{j,1}*x_j + w_{j,0}
+$$
+
+$$
+J(\mathbf{w}) \;=\; \frac{1}{2m}\sum_{i=1}^{m}\left(y_j - w_{j,1}*x_i - w_{j,0}\right)^2
+$$
+
+:::
+
+---
+
 ## Idea central del GD
 
-- Partimos de $\mathbf{w}^{(0)}$ (p. ej., aleatorio).
+- Partimos de $\mathbf{w}_{(0)}$ (p. ej., aleatorio).
 - Iteramos:
 $$
-\mathbf{w}^{(t+1)} \;=\; \mathbf{w}^{(t)} \;-\; \alpha\, \nabla_{\mathbf{w}} J(\mathbf{w}^{(t)})
+\mathbf{w}_{(t+1)} \;=\; \mathbf{w}_{(t)} \;-\; \alpha\, \nabla_{\mathbf{w}} J(\mathbf{w}_{(t)})
 $$
 - $\alpha$ = **tasa de aprendizaje**: grande → rápido pero inestable; pequeña → estable pero lento.
 - Convergencia: buscamos $\nabla J \approx \mathbf{0}$.
 
 **Visualización conceptual:** “valle” del error y trayectoria en zig-zag hacia el mínimo.
+
+---
+
+## Algoritmo de Descenso de Gradiente
+
+:::{.small_font}
+
+::: {.callout-note title="Para la estimación de $w_{j,0}$" collapsible="false"}
+
+$$
+w_{j+1,0} = w_{j,0} - \alpha \frac{\partial J}{\partial w_{j,0}}
+$$
+
+$$
+\frac{\partial J}{\partial w_{j,0}} =
+\frac{\partial}{\partial w_{j,0}}
+\left(
+\frac{1}{2m} \sum_{i=1}^{m}
+\left( y_i - w_{j,1} x_i - w_{j,0} \right)^2
+\right)
+$$
+
+$$
+\frac{\partial}{\partial w_{j,0}}
+\left(
+\frac{1}{2m}
+\sum_{i=1}^{m}
+\left(
+y_i - w_{j,1}x_i - w_{j,0}
+\right)^2
+\right)
+=
+\frac{1}{m}
+\sum_{i=1}^{m}
+\left(
+w_{j,1}x_i + w_{j,0} - y_i
+\right)
+$$
+:::
+
+::: {.callout-note title="Para la estimación de $w_{j,1}$" collapsible="false"}
+
+$$
+w_{j+1,1} = w_{j,1} - \alpha \frac{\partial J}{\partial w_{j,1}}
+$$
+
+$$
+\frac{\partial J}{\partial w_{j,1}} =
+\frac{\partial}{\partial w_{j,1}}
+\left(
+\frac{1}{2m} \sum_{i=1}^{m}
+\left( y_i - w_{j,1} x_i - w_{j,0} \right)^2
+\right)
+$$
+
+$$
+\frac{\partial J}{\partial w_{j,1}}
+=
+\frac{1}{m}
+\sum_{i=1}^{m}
+\left(
+w_{j,1}x_i + w_{j,0} - y_i
+\right)x_i
+$$
+
+:::
+
+:::
+
 
 ---
 
@@ -139,6 +356,12 @@ $$
 ::: notes
 Conectar con mediciones biomédicas heterogéneas y escalas físicas.
 :::
+
+---
+
+## 1.5 EDA
+
+### Empezar a usar jupyter.
 
 ---
 
