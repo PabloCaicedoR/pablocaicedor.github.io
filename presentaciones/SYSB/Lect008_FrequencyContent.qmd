@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -63,23 +63,241 @@ import matplotlib.pyplot as plt
 import scipy.io as sio
 import scipy.signal as sig
 
-plt.rcParams.update(
-    {
-        "text.usetex": False,  # usar LaTeX real
-        "font.family": "Fira Code",  # familia general
-        "mathtext.fontset": "custom",  # fuente personalizada para fórmulas
-        "mathtext.rm": "Fira Code",  # texto “roman”
-        "mathtext.it": "Fira Code:italic",  # texto itálico
-        "mathtext.bf": "Fira Code:bold",  # texto en negrita
-        "text.latex.preamble": r"\usepackage{amsmath}",
-    }
-)
+# plt.rcParams.update(
+#     {
+#         "text.usetex": False,  # usar LaTeX real
+#         "font.family": "Fira Code",  # familia general
+#         "mathtext.fontset": "custom",  # fuente personalizada para fórmulas
+#         "mathtext.rm": "Fira Code",  # texto “roman”
+#         "mathtext.it": "Fira Code:italic",  # texto itálico
+#         "mathtext.bf": "Fira Code:bold",  # texto en negrita
+#         "text.latex.preamble": r"\usepackage{amsmath}",
+#     }
+# )
 
 path_ecg = "../../data"
 
 ```
 
 # Sistemas y Señales Biomedicos - SYSB
+
+## Objective
+
+- To demonstrate, in the **time domain**, how a Linear Time-Invariant (LTI) system responds to a sinusoidal input.
+- We will start from the **convolution integral** and use **Euler’s identity** to show that the steady-state output remains sinusoidal.
+
+---
+
+## 1. System Definition
+
+A continuous-time LTI system is defined by:
+
+$$
+y(t) = x(t) * h(t) = \int_{-\infty}^{\infty} h(\tau)\,x(t - \tau)\,d\tau
+$$
+
+where
+-$x(t)$is the input,
+-$h(t)$is the impulse response,
+-$y(t)$is the output.
+
+---
+
+## 2. Sinusoidal Input
+
+Let the input be a sinusoid:
+
+$$
+x(t) = A \cos(\omega_0 t + \phi)
+$$
+
+Using Euler’s identity:
+
+$$
+x(t) = \frac{A}{2} \left[e^{j(\omega_0 t + \phi)} + e^{-j(\omega_0 t + \phi)}\right]
+$$
+
+---
+
+## 3. Linearity of the Convolution Integral
+
+Because the system is **linear**, we can treat each exponential term separately:
+
+$$
+y(t) = \frac{A}{2}\left[ y_1(t) + y_2(t) \right]
+$$
+where
+$$
+y_1(t) = e^{j\phi} \int_{-\infty}^{\infty} h(\tau)\, e^{j\omega_0(t-\tau)}\, d\tau
+$$
+$$
+y_2(t) = e^{-j\phi} \int_{-\infty}^{\infty} h(\tau)\, e^{-j\omega_0(t-\tau)}\, d\tau
+$$
+
+---
+
+## 4. Simplifying Each Integral
+
+We can factor out the term$e^{j\omega_0 t}$:
+
+$$
+y_1(t) = e^{j\phi} e^{j\omega_0 t} \int_{-\infty}^{\infty} h(\tau)\, e^{-j\omega_0 \tau}\, d\tau
+$$
+
+Let
+$$
+H_1 = \int_{-\infty}^{\infty} h(\tau)\, e^{-j\omega_0 \tau}\, d\tau
+$$
+
+Then,
+$$
+y_1(t) = e^{j\phi} H_1 e^{j\omega_0 t}
+$$
+
+Similarly,
+$$
+y_2(t) = e^{-j\phi} H_1^* e^{-j\omega_0 t}
+$$
+
+---
+
+## 5. Combine the Two Parts
+
+The total output is:
+
+$$
+y(t) = \frac{A}{2}\left[e^{j\phi} H_1 e^{j\omega_0 t} + e^{-j\phi} H_1^* e^{-j\omega_0 t}\right]
+$$
+
+If we express$H_1$in polar form:
+$$
+H_1 = |H_1| e^{j\theta}
+$$
+
+Then,
+$$
+y(t) = A |H_1| \cos(\omega_0 t + \phi + \theta)
+$$
+
+---
+
+## 6. Interpretation in Time Domain
+
+- The output is a **cosine** at the **same frequency**$\omega_0$as the input.
+- Its **amplitude** is scaled by$|H_1|$, which depends on$h(t)$.
+- Its **phase** is shifted by$\theta$, the argument of$H_1$.
+
+$$
+\boxed{y(t) = A |H_1| \cos(\omega_0 t + \phi + \theta)}
+$$
+
+---
+
+## 1. System Definition
+
+A discrete-time LTI system is defined by the **convolution sum**:
+
+$$
+y[n] = \sum_{k=-\infty}^{\infty} h[k]\,x[n - k]
+$$
+
+where
+- $x[n]$ is the input sequence,
+- $h[k]$ is the impulse response,
+- $y[n]$ is the output sequence.
+
+---
+
+## 2. Sinusoidal Input
+
+Let the input be a discrete sinusoid:
+
+$$
+x[n] = A \cos(\omega_0 n + \phi)
+$$
+
+Using Euler’s identity:
+
+$$
+x[n] = \frac{A}{2}\left[e^{j(\omega_0 n + \phi)} + e^{-j(\omega_0 n + \phi)}\right]
+$$
+
+---
+
+## 3. Linearity of the Convolution Sum
+
+Because the system is **linear**, each exponential term can be treated independently:
+
+$$
+y[n] = \frac{A}{2}\left[y_1[n] + y_2[n]\right]
+$$
+
+where
+$$
+y_1[n] = e^{j\phi} \sum_{k=-\infty}^{\infty} h[k]\, e^{j\omega_0 (n - k)}
+$$
+$$
+y_2[n] = e^{-j\phi} \sum_{k=-\infty}^{\infty} h[k]\, e^{-j\omega_0 (n - k)}
+$$
+
+---
+
+## 4. Simplifying Each Sum
+
+We can factor out $e^{j\omega_0 n}$:
+
+$$
+y_1[n] = e^{j\phi} e^{j\omega_0 n} \sum_{k=-\infty}^{\infty} h[k]\, e^{-j\omega_0 k}
+$$
+
+Let
+$$
+H_1 = \sum_{k=-\infty}^{\infty} h[k]\, e^{-j\omega_0 k}
+$$
+
+Then,
+$$
+y_1[n] = e^{j\phi} H_1 e^{j\omega_0 n}
+$$
+
+Similarly,
+$$
+y_2[n] = e^{-j\phi} H_1^* e^{-j\omega_0 n}
+$$
+
+---
+
+## 5. Combine the Two Parts
+
+The total output becomes:
+
+$$
+y[n] = \frac{A}{2}\left[e^{j\phi} H_1 e^{j\omega_0 n} + e^{-j\phi} H_1^* e^{-j\omega_0 n}\right]
+$$
+
+If we write $H_1$ in polar form:
+$$
+H_1 = |H_1| e^{j\theta}
+$$
+
+Then,
+$$
+y[n] = A |H_1| \cos(\omega_0 n + \phi + \theta)
+$$
+
+---
+
+## 6. Interpretation in Time Domain
+
+- The output remains **sinusoidal** with the **same frequency** $\omega_0$.
+- Its **amplitude** is scaled by $|H_1|$.
+- Its **phase** is shifted by $\theta$.
+
+$$
+\boxed{y[n] = A |H_1| \cos(\omega_0 n + \phi + \theta)}
+$$
+
+---
 
 # Frequency Content
 
@@ -94,22 +312,22 @@ path_ecg = "../../data"
 ## Convolution in Time Domain
 
 - Convolution is a fundamental operation in signal processing.
-- Given two signals $x(t)$ and $h(t)$, their convolution is defined as:
-  
-  $$ y(t) = x(t) * h(t) = \int_{-\infty}^{\infty} x(\tau) h(t - \tau) d\tau $$
-  
+- Given two signals$x(t)$and$h(t)$, their convolution is defined as:
+
+ $$y(t) = x(t) * h(t) = \int_{-\infty}^{\infty} x(\tau) h(t - \tau) d\tau$$
+
 - In **discrete-time**, convolution is:
-  
-  $$ y[n] = \sum_{k=-\infty}^{\infty} x[k] h[n-k] $$
+
+ $$y[n] = \sum_{k=-\infty}^{\infty} x[k] h[n-k]$$
 
 ---
 
 ## Convolution Theorem
 
 - **Convolution in time domain corresponds to multiplication in frequency domain**:
-  
-  $$ X(f) H(f) = Y(f) $$
-  
+
+ $$X(f) H(f) = Y(f)$$
+
 - This property is crucial in filter design and system analysis.
 
 ```{python}
@@ -244,10 +462,10 @@ plt.show()
 
 - **Convolution** requiere the representation of the signal in a sum of impulse functions.
 - **Fourier series** represents periodic signals as a sum of sinusoids:
-  
-  $$ x(t) = \sum_{n=-\infty}^{\infty} C_n e^{jn\omega_0 t} $$
-  
-  where $C_n$ are the Fourier coefficients.
+
+ $$x(t) = \sum_{n=-\infty}^{\infty} C_n e^{jn\omega_0 t}$$
+
+  where$C_n$are the Fourier coefficients.
 
 - Decomposing a signal into sinusoidal components allows **frequency analysis**.
 
@@ -255,9 +473,9 @@ plt.show()
 
 ## Fourier Coefficients
 
-- The Fourier coefficients $C_n$ are computed as:
-  
-  $$ C_n = \frac{1}{T} \int_{0}^{T} x(t) e^{-jn\omega_0 t} dt $$
+- The Fourier coefficients$C_n$are computed as:
+
+ $$C_n = \frac{1}{T} \int_{0}^{T} x(t) e^{-jn\omega_0 t} dt$$
 
 - Determines how much of each frequency is present in the signal.
 
@@ -373,41 +591,41 @@ plt.show()
 ```
 
 ## **Linearity**
-- If $f_1(x)$ and $f_2(x)$ have Fourier series,
-- Then for any constants $a, b$,
-- $a f_1(x) + b f_2(x)$ has a Fourier series,
+- If$f_1(x)$and$f_2(x)$have Fourier series,
+- Then for any constants$a, b$,
+-$a f_1(x) + b f_2(x)$has a Fourier series,
 - With coefficients scaled accordingly.
 
 ---
 
 ## **Time Shifting**
-- If $f(x)$ has Fourier coefficients $a_n, b_n$,
-- Then $f(x - x_0)$ has coefficients:
-- $a_n \cos(n\omega x_0) + b_n \sin(n\omega x_0)$,
-- And $b_n \cos(n\omega x_0) - a_n \sin(n\omega x_0)$.
+- If$f(x)$has Fourier coefficients$a_n, b_n$,
+- Then$f(x - x_0)$has coefficients:
+-$a_n \cos(n\omega x_0) + b_n \sin(n\omega x_0)$,
+- And$b_n \cos(n\omega x_0) - a_n \sin(n\omega x_0)$.
 
 ---
 
 ## **Frequency Scaling**
-- If $g(x) = f(cx)$,
-- Then the period scales by $c$,
-- The fundamental frequency changes to $c\omega$,
+- If$g(x) = f(cx)$,
+- Then the period scales by$c$,
+- The fundamental frequency changes to$c\omega$,
 - Fourier coefficients adjust accordingly.
 
 ---
 
 ## ** Differentiation Property**
-- If $f(x)$ is differentiable,
-- Then $f'(x)$ has Fourier series,
-- With coefficients scaled as $n a_n, n b_n$,
+- If$f(x)$is differentiable,
+- Then$f'(x)$has Fourier series,
+- With coefficients scaled as$n a_n, n b_n$,
 - Higher frequencies get amplified.
 
 ---
 
 ## **Integration Property**
-- If $f(x)$ has a Fourier series,
-- Then $\int f(x) dx$ has a Fourier series,
-- With coefficients scaled as $\frac{a_n}{n}, \frac{b_n}{n}$,
+- If$f(x)$has a Fourier series,
+- Then$\int f(x) dx$has a Fourier series,
+- With coefficients scaled as$\frac{a_n}{n}, \frac{b_n}{n}$,
 - Lower frequencies get emphasized.
 
 ---
@@ -416,14 +634,14 @@ plt.show()
 - The total signal energy is conserved,
 - Energy in time domain equals energy in frequency domain,
 - Given by:
-- $\sum (a_n^2 + b_n^2) = \frac{1}{T} \int |f(x)|^2 dx$.
+-$\sum (a_n^2 + b_n^2) = \frac{1}{T} \int |f(x)|^2 dx$.
 
 ---
 
 ## **Convolution Property**
 - Convolution in time domain,
 - Is multiplication in Fourier series coefficients,
-- If $f_1$ and $f_2$ are convoluted,
+- If$f_1$and$f_2$are convoluted,
 - Their Fourier coefficients multiply component-wise.
 
 ---
@@ -437,15 +655,15 @@ plt.show()
 ---
 
 ## **Mathematical Expression**
-- A periodic sequence $x[n]$ can be expressed as:
-- $$x[n] = \sum_{k=0}^{N-1} C_k e^{j(2\pi k n / N)}$$.
-- The coefficients $C_k$ are computed as:
-- $C_k = \frac{1}{N} \sum_{n=0}^{N-1} x[n] e^{-j(2\pi k n / N)}$.
+- A periodic sequence$x[n]$can be expressed as:
+-$$x[n] = \sum_{k=0}^{N-1} C_k e^{j(2\pi k n / N)}$$.
+- The coefficients$C_k$are computed as:
+-$C_k = \frac{1}{N} \sum_{n=0}^{N-1} x[n] e^{-j(2\pi k n / N)}$.
 
 ---
 
 ## **Periodicity and Symmetry**
-- The coefficients $C_k$ repeat every $N$.
+- The coefficients$C_k$repeat every$N$.
 - Ensures correct reconstruction of signals.
 - Explains frequency domain representation.
 - Basis for spectral analysis.
@@ -461,9 +679,9 @@ plt.show()
 ---
 
 ## **Frequency Domain Interpretation**
-- $C_k$ represents discrete frequency content.
-- The spectrum consists of $N$ harmonics.
-- Resolution improves with larger $N$.
+-$C_k$represents discrete frequency content.
+- The spectrum consists of$N$harmonics.
+- Resolution improves with larger$N$.
 - Essential for analyzing periodic discrete signals.
 
 ---
@@ -569,7 +787,7 @@ plt.show()
 
 ## **Conceptual Foundation**
 - Fourier Series represents periodic signals in terms of sinusoids.
-- As period $T \to \infty$, the signal becomes aperiodic.
+- As period$T \to \infty$, the signal becomes aperiodic.
 - The Fourier Transform generalizes Fourier Series to aperiodic signals.
 - Transforms signals from time to frequency domain.
 
@@ -577,25 +795,25 @@ plt.show()
 
 ## **Mathematical Transition**
 - Fourier Series of a periodic signal:
-- $$f(x) = \sum_{n=-\infty}^{\infty} C_n e^{j(2\pi n x / T)}$$.
-- As $T \to \infty$, frequency spacing $\frac{1}{T}$ → differential.
+-$$f(x) = \sum_{n=-\infty}^{\infty} C_n e^{j(2\pi n x / T)}$$.
+- As$T \to \infty$, frequency spacing$\frac{1}{T}$→ differential.
 - Leads to the Fourier Transform:
-- $$F(\omega) = \int_{-\infty}^{\infty} f(x) e^{-j\omega x} dx$$.
+-$$F(\omega) = \int_{-\infty}^{\infty} f(x) e^{-j\omega x} dx$$.
 
 ---
 
 ## **Frequency Spectrum Interpretation**
 - Fourier Series: discrete frequency spectrum.
 - Fourier Transform: continuous frequency spectrum.
-- Coefficients $C_n$ become the function $F(\omega)$.
+- Coefficients$C_n$become the function$F(\omega)$.
 - Allows analysis of arbitrary signals in frequency domain.
 
 ---
 
 ## **Inverse Fourier Transform**
-- Recovers time-domain signal from $F(\omega)$.
+- Recovers time-domain signal from$F(\omega)$.
 - Defined as:
-- $$f(x) = \frac{1}{2\pi} \int_{-\infty}^{\infty} F(\omega) e^{j\omega x} d\omega$$.
+-$$f(x) = \frac{1}{2\pi} \int_{-\infty}^{\infty} F(\omega) e^{j\omega x} d\omega$$.
 - Ensures complete information preservation.
 - Basis for signal reconstruction in DSP.
 
@@ -604,5 +822,5 @@ plt.show()
 ## **Energy and Parseval’s Theorem**
 - Energy conservation in time and frequency domains.
 - Parseval’s theorem states:
-- $$\int |f(x)|^2 dx = \frac{1}{2\pi} \int |F(\omega)|^2 d\omega$$
+-$$\int |f(x)|^2 dx = \frac{1}{2\pi} \int |F(\omega)|^2 d\omega$$
 - Ensures no energy loss between domains.
