@@ -7928,21 +7928,21 @@
     "href": "presentaciones/SYSB/Lect008_FrequencyContent.html#numerical-evaluation-numpy",
     "title": "Sistemas y Señales Biomédicos",
     "section": "4. Numerical Evaluation (NumPy)",
-    "text": "4. Numerical Evaluation (NumPy)\n\n\n     k       Re{c_k}   Im{c_k}         |c_k|\n0  -10  1.949086e-17 -0.000000  1.949086e-17\n1   -9 -1.949086e-17  0.035368  3.536777e-02\n2   -8  1.949086e-17 -0.000000  1.949086e-17\n3   -7 -1.949086e-17  0.045473  4.547284e-02\n4   -6  1.949086e-17 -0.000000  1.949086e-17\n5   -5 -1.949086e-17  0.063662  6.366198e-02\n6   -4  1.949086e-17 -0.000000  1.949086e-17\n7   -3 -1.949086e-17  0.106103  1.061033e-01\n8   -2  1.949086e-17 -0.000000  1.949086e-17\n9   -1 -1.949086e-17  0.318310  3.183099e-01\n10   0  5.000000e-01  0.000000  5.000000e-01\n11   1 -1.949086e-17 -0.318310  3.183099e-01\n12   2  1.949086e-17  0.000000  1.949086e-17\n13   3 -1.949086e-17 -0.106103  1.061033e-01\n14   4  1.949086e-17  0.000000  1.949086e-17\n15   5 -1.949086e-17 -0.063662  6.366198e-02\n16   6  1.949086e-17  0.000000  1.949086e-17\n17   7 -1.949086e-17 -0.045473  4.547284e-02\n18   8  1.949086e-17  0.000000  1.949086e-17\n19   9 -1.949086e-17 -0.035368  3.536777e-02\n20  10  1.949086e-17  0.000000  1.949086e-17"
+    "text": "4. Numerical Evaluation (NumPy)\n\nimport numpy as np\nimport pandas as pd\n\ndef ck_numeric(k):\n    k = np.asarray(k, dtype=float)\n    return np.where(\n        k != 0,\n        1j*(np.exp(1j*np.pi*k)-1)/(2*np.pi*k),\n        0.5\n    )\n\nK = 10\nks = np.arange(-K, K+1)\ncks = ck_numeric(ks)\n\npd.DataFrame({\n    \"k\": ks,\n    \"Re{c_k}\": np.real(cks),\n    \"Im{c_k}\": np.imag(cks),\n    \"|c_k|\": np.abs(cks)\n})\n\n     k       Re{c_k}   Im{c_k}         |c_k|\n0  -10  1.949086e-17 -0.000000  1.949086e-17\n1   -9 -1.949086e-17  0.035368  3.536777e-02\n2   -8  1.949086e-17 -0.000000  1.949086e-17\n3   -7 -1.949086e-17  0.045473  4.547284e-02\n4   -6  1.949086e-17 -0.000000  1.949086e-17\n5   -5 -1.949086e-17  0.063662  6.366198e-02\n6   -4  1.949086e-17 -0.000000  1.949086e-17\n7   -3 -1.949086e-17  0.106103  1.061033e-01\n8   -2  1.949086e-17 -0.000000  1.949086e-17\n9   -1 -1.949086e-17  0.318310  3.183099e-01\n10   0  5.000000e-01  0.000000  5.000000e-01\n11   1 -1.949086e-17 -0.318310  3.183099e-01\n12   2  1.949086e-17  0.000000  1.949086e-17\n13   3 -1.949086e-17 -0.106103  1.061033e-01\n14   4  1.949086e-17  0.000000  1.949086e-17\n15   5 -1.949086e-17 -0.063662  6.366198e-02\n16   6  1.949086e-17  0.000000  1.949086e-17\n17   7 -1.949086e-17 -0.045473  4.547284e-02\n18   8  1.949086e-17  0.000000  1.949086e-17\n19   9 -1.949086e-17 -0.035368  3.536777e-02\n20  10  1.949086e-17  0.000000  1.949086e-17"
   },
   {
     "objectID": "presentaciones/SYSB/Lect008_FrequencyContent.html#partial-sum-reconstruction",
     "href": "presentaciones/SYSB/Lect008_FrequencyContent.html#partial-sum-reconstruction",
     "title": "Sistemas y Señales Biomédicos",
     "section": "5. Partial Sum Reconstruction",
-    "text": "5. Partial Sum Reconstruction"
+    "text": "5. Partial Sum Reconstruction\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\ndef x_numeric(t):\n    # Original pulse over [-π, π): 0 on [-π,0), 1 on [0,π).\n    tw = ((t + np.pi) % (2*np.pi)) - np.pi\n    return np.where((tw &gt;= 0) & (tw &lt; np.pi), 1.0, 0.0)\n\ndef partial_sum(t, N):\n    ks = np.arange(-N, N+1)\n    cks = ck_numeric(ks)\n    return np.sum(cks[:, None] * np.exp(1j*np.outer(ks, t)), axis=0)\n\ntgrid = np.linspace(-2*np.pi, 2*np.pi, 4000, endpoint=False)\nxg = x_numeric(tgrid)"
   },
   {
     "objectID": "presentaciones/SYSB/Lect008_FrequencyContent.html#reconstruction-for-n-5",
     "href": "presentaciones/SYSB/Lect008_FrequencyContent.html#reconstruction-for-n-5",
     "title": "Sistemas y Señales Biomédicos",
     "section": "6. Reconstruction for N = 5",
-    "text": "6. Reconstruction for N = 5\n\n\n(-6.283185307179586, 6.283185307179586)"
+    "text": "6. Reconstruction for N = 5\n\nN1 = 5\nsN1 = partial_sum(tgrid, N1).real\n\nplt.figure(figsize=(8,3))\nplt.plot(tgrid, xg, label='x(t) original')\nplt.plot(tgrid, sN1, label=f'N={N1}')\nplt.xlim([-2*np.pi, 2*np.pi])\n\n(-6.283185307179586, 6.283185307179586)\n\nplt.legend()\nplt.title(\"Partial Sum Reconstruction (N=5)\")\nplt.show()"
   },
   {
     "objectID": "presentaciones/SYSB/Lect008_FrequencyContent.html#reconstruction-for-n-20",
