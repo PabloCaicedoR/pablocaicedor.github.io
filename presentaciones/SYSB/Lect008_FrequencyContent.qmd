@@ -510,6 +510,177 @@ plt.show()
 
 ---
 
+## 1. Definition of the Complex Fourier Series
+
+For a periodic signal $x(t)$ with period $T$:
+
+$$
+x(t) = \sum_{k=-\infty}^{\infty} c_k e^{j k \Omega_0 t},
+$$
+
+where:
+
+$$
+c_k = \frac{1}{T} \int_{T_0}^{T_0 + T} x(t)e^{-jk\Omega_0 t}\,dt, \quad
+\Omega_0 = \frac{2\pi}{T}.
+$$
+
+---
+
+## 2. Example Signal
+
+We define a periodic signal $x(t)$ with period $2\pi$:
+
+$$
+x(t) =
+\begin{cases}
+0, & -\pi \le t < 0,\\
+1, & 0 \le t < \pi.
+\end{cases}
+$$
+
+This corresponds to a **50% duty cycle pulse**.
+
+---
+
+## 3. Symbolic Derivation using SymPy
+
+```{python}
+import sympy as sp
+
+t, k = sp.symbols('t k', real=True)
+pi = sp.pi
+T = 2*sp.pi
+Omega0 = 2*sp.pi/T  # = 1
+
+# x(t) on one period [-π, π)
+x_period = sp.Piecewise(
+    (0, sp.And(t >= -pi, t < 0)),
+    (1, sp.And(t >= 0, t < pi))
+)
+
+# Complex Fourier coefficient
+ck_expr = (1/T) * sp.integrate(x_period * sp.exp(-sp.I*k*t), (t, -pi, pi))
+ck_simplified = sp.simplify(ck_expr)
+ck_simplified
+```
+
+Expected result:
+
+$$
+c_k =
+\begin{cases}
+\dfrac{1}{2}, & k=0,\\[4pt]
+\dfrac{j\left((-1)^k - 1\right)}{2\pi k}, & k \ne 0.
+\end{cases}
+$$
+
+---
+
+## 4. Numerical Evaluation (NumPy)
+
+```{python}
+import numpy as np
+import pandas as pd
+
+def ck_numeric(k):
+    k = np.asarray(k, dtype=float)
+    return np.where(
+        k != 0,
+        1j*(np.exp(1j*np.pi*k)-1)/(2*np.pi*k),
+        0.5
+    )
+
+K = 10
+ks = np.arange(-K, K+1)
+cks = ck_numeric(ks)
+
+pd.DataFrame({
+    "k": ks,
+    "Re{c_k}": np.real(cks),
+    "Im{c_k}": np.imag(cks),
+    "|c_k|": np.abs(cks)
+})
+```
+
+---
+
+## 5. Partial Sum Reconstruction
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+def x_numeric(t):
+    # Original pulse over [-π, π): 0 on [-π,0), 1 on [0,π).
+    tw = ((t + np.pi) % (2*np.pi)) - np.pi
+    return np.where((tw >= 0) & (tw < np.pi), 1.0, 0.0)
+
+def partial_sum(t, N):
+    ks = np.arange(-N, N+1)
+    cks = ck_numeric(ks)
+    return np.sum(cks[:, None] * np.exp(1j*np.outer(ks, t)), axis=0)
+
+tgrid = np.linspace(-2*np.pi, 2*np.pi, 4000, endpoint=False)
+xg = x_numeric(tgrid)
+```
+
+---
+
+## 6. Reconstruction for N = 5
+
+```{python}
+N1 = 5
+sN1 = partial_sum(tgrid, N1).real
+
+plt.figure(figsize=(8,3))
+plt.plot(tgrid, xg, label='x(t) original')
+plt.plot(tgrid, sN1, label=f'N={N1}')
+plt.xlim([-2*np.pi, 2*np.pi])
+plt.legend()
+plt.title("Partial Sum Reconstruction (N=5)")
+plt.show()
+```
+
+---
+
+## 7. Reconstruction for N = 20
+
+```{python}
+N2 = 20
+sN2 = partial_sum(tgrid, N2).real
+
+plt.figure(figsize=(8,3))
+plt.plot(tgrid, xg, label='x(t) original')
+plt.plot(tgrid, sN2, label=f'N={N2}')
+plt.xlim([-2*np.pi, 2*np.pi])
+plt.legend()
+plt.title("Partial Sum Reconstruction (N=20)")
+plt.show()
+```
+
+---
+
+## 8. Discussion
+
+- The average value $c_0 = 0.5$ matches the mean level of the pulse.
+- As $N$ increases, the reconstruction converges except near discontinuities.
+- The **Gibbs phenomenon** appears at the jump discontinuities.
+- The error $\lVert x(t)-S_N(t)\rVert_2$ decreases with $N$.
+
+---
+
+## 9. Summary
+
+| Concept | Expression |
+|----------|-------------|
+| Fundamental frequency | $\Omega_0 = \frac{2\pi}{T}$ |
+| Coefficient $c_k$ | $\frac{1}{T}\int x(t)e^{-jk\Omega_0 t}dt$ |
+| Reconstructed signal | $S_N(t) = \sum_{k=-N}^{N} c_k e^{jk\Omega_0 t}$ |
+| Example $x(t)$ | Half-wave pulse in $[-\pi, \pi)$ |
+
+---
+
 ## Example 2 of Fourier Series
 
 ```{python}
