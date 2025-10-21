@@ -1,0 +1,135 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Laboratorio 003A: Análisis de información base del dataset (Alineación de información)"
+lang: es
+author:
+    - "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-03-4"
+format:
+  html:
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+# **Actividad de Aprendizaje: Análisis de información base del dataset (Alineación de información)**
+
+El proyecto consiste en el desarrollo de un script en Python capaz de realizar la alineación temporal de múltiples complejos PQRST obtenidos a partir de diferentes derivaciones de electrocardiogramas (ECG).
+El estudiante deberá implementar un procedimiento computacional que permita comparar morfologías y sincronizar los ciclos cardíacos de distintas señales, con el propósito de facilitar el análisis cuantitativo y la extracción de características relevantes para estudios biomédicos.
+
+La entrega del proyecto se formaliza mediante una presentación oral de 15 minutos, en la cual el estudiante expondrá durante 10 minutos los fundamentos teóricos, el diseño del algoritmo y los resultados obtenidos, seguidos de 5 minutos destinados a preguntas y discusión técnica.
+Durante la exposición, se espera que el participante evidencie tanto su comprensión del fenómeno electrofisiológico como su capacidad para aplicar herramientas de programación científica en el procesamiento de señales biomédicas.
+
+Esta actividad integra de manera práctica los conocimientos adquiridos en el curso, al vincular los fundamentos teóricos de la señal electrocardiográfica con la resolución computacional de un problema real en ingeniería biomédica.
+El proceso de alineación de complejos PQRST representa una tarea fundamental en la comparación interpaciente, detección de anomalías morfológicas y análisis de sincronía cardíaca, por lo cual su implementación favorece la comprensión del comportamiento dinámico del sistema cardiovascular.
+
+Desde el punto de vista formativo, la actividad fomenta el razonamiento analítico, la programación orientada al procesamiento de biosenales y la comunicación científica oral, competencias esenciales para el ejercicio profesional en ingeniería biomédica. Además, promueve la integración entre teoría y práctica, al exigir una fundamentación fisiológica sólida y una implementación computacional verificable.
+
+---
+
+# Criterios de evaluación
+
+
+La evaluación se realizará mediante **una presentación oral de 15 minutos**, distribuidos en **10 minutos de exposición técnica** y **5 minutos de preguntas**.
+El trabajo deberá evidenciar tanto **comprensión teórica del fenómeno electrofisiológico** como **solidez técnica en la implementación computacional**.
+
+| **Criterio** | **Descripción** | **Indicadores de desempeño** | **Peso (%)** |
+|---------------|----------------|------------------------------|--------------|
+| **1. Fundamentación teórica** | Evalúa la comprensión sobre la fisiología del ECG, la morfología del complejo PQRST y la relevancia biomédica de la alineación. | - Explica correctamente la morfología y función del complejo PQRST.<br>- Justifica la importancia de la alineación en el análisis de señales cardíacas.<br>- Sustenta con referencias científicas válidas y actualizadas. | 20 |
+| **2. Implementación computacional** | Evalúa la calidad técnica, legibilidad y funcionalidad del script Python desarrollado. | - Código documentado y estructurado.<br>- Aplica correctamente técnicas de filtrado, segmentación y normalización.<br>- Implementa un método de alineación apropiado (correlación cruzada, detección de picos, DTW, etc.).<br>- Resultados reproducibles y consistentes. | 25 |
+| **3. Análisis y visualización de resultados** | Evalúa la capacidad de representar e interpretar los resultados del alineamiento. | - Muestra comparaciones visuales antes y después del alineamiento.<br>- Incluye métricas o gráficos de desempeño.<br>- Interpreta resultados con lenguaje técnico y biomédico adecuado. | 20 |
+| **4. Comunicación científica oral** | Evalúa la claridad, estructura y rigor de la exposición. | - Estructura lógica (introducción, objetivos, desarrollo, conclusiones).<br>- Uso adecuado de terminología técnica.<br>- Cumple con el tiempo estipulado (10 + 5 minutos). | 15 |
+| **5. Razonamiento crítico y defensa oral** | Evalúa la capacidad para justificar decisiones técnicas y discutir limitaciones. | - Responde con fundamento teórico y técnico.<br>- Reconoce limitaciones y propone mejoras.<br>- Evidencia dominio del código y de los resultados. | 15 |
+| **6. Trabajo individual o en equipo** | Evalúa la equidad en la participación y la coherencia grupal. | - Cada integrante demuestra conocimiento del trabajo global.<br>- Presentación coherente y articulada. | 5 |
+
+---
+
+# Escala de calificación
+
+| **Nivel de desempeño** | **Rango numérico** | **Descripción** |
+|------------------------|-------------------|-----------------|
+| **Excelente** | 4.6 – 5.0 | Comprensión profunda del fenómeno, dominio técnico sobresaliente y comunicación científica impecable. |
+| **Sobresaliente** | 4.0 – 4.5 | Cumple todos los criterios con claridad, mostrando rigor técnico y conceptual. |
+| **Aceptable** | 3.0 – 3.9 | Evidencia comprensión básica y una implementación funcional, con limitaciones teóricas o comunicativas. |
+| **Insuficiente** | < 3.0 | Presenta vacíos notables en comprensión, implementación o justificación de resultados. |
+
+---
+
+# Correspondencia con resultados de aprendizaje
+
+| **Resultado de aprendizaje** | **Criterios asociados** |
+|------------------------------|--------------------------|
+| Comprender, evaluar y sintetizar información científica. | 1, 3, 5 |
+| Elaborar composiciones y exposiciones científicas comprensibles. | 4, 5 |
+| Analizar el comportamiento físico de la materia y energía en el contexto biomédico. | 1, 3 |
+| Resolver problemas y diseñar procesos mediante herramientas computacionales. | 2 |
+| Formular hipótesis y generar conclusiones a partir de la experimentación. | 3, 5 |
+| Trabajar individualmente y en equipo con responsabilidad. | 6 |
+
+---
+
+# Indicaciones adicionales
+
+- Se valorará especialmente la **capacidad de relacionar los resultados computacionales con la fisiología cardíaca subyacente**.
+- El script debe ejecutarse correctamente y **producir visualizaciones claras del alineamiento**.
+- Las respuestas durante la fase de preguntas deben evidenciar **razonamiento crítico y dominio conceptual**.
+- El material de apoyo (diapositivas, gráficas, ejemplos) debe ser propio y **respetar las normas de uso ético de la información**.
+
+---
+
+**Duración total:** 15 minutos (10 exposición + 5 preguntas)
+**Ponderación total:** 100%
