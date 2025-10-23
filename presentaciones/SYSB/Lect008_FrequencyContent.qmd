@@ -548,21 +548,17 @@ This corresponds to a **50% duty cycle pulse**.
 ```{python}
 import sympy as sp
 
-t, k = sp.symbols('t k', real=True)
+t, k = sp.symbols("t k", real=True)
 pi = sp.pi
-T = 2*sp.pi
-Omega0 = 2*sp.pi/T  # = 1
+T = 2 * sp.pi
+Omega0 = 2 * sp.pi / T  # = 1
 
 # x(t) on one period [-π, π)
-x_period = sp.Piecewise(
-    (0, sp.And(t >= -pi, t < 0)),
-    (1, sp.And(t >= 0, t < pi))
-)
+x_period = sp.Piecewise((0, sp.And(t >= -pi, t < 0)), (1, sp.And(t >= 0, t < pi)))
 
 # Complex Fourier coefficient
-ck_expr = (1/T) * sp.integrate(x_period * sp.exp(-sp.I*k*t), (t, -pi, pi))
+ck_expr = (1 / T) * sp.integrate(x_period * sp.exp(-sp.I * k * t), (t, -pi, pi))
 ck_simplified = sp.simplify(ck_expr)
-ck_simplified
 ```
 
 Expected result:
@@ -655,6 +651,26 @@ plt.show()
 ---
 
 ## 7. Reconstruction for N = 20
+
+```{python}
+# | echo: true
+# | eval: true
+# | output: true
+N2 = 20
+sN2 = partial_sum(tgrid, N2).real
+
+plt.figure(figsize=(8, 3))
+plt.plot(tgrid, xg, label="x(t) original")
+plt.plot(tgrid, sN2, label=f"N={N2}")
+plt.xlim([-2 * np.pi, 2 * np.pi])
+plt.legend()
+plt.title("Partial Sum Reconstruction (N=20)")
+plt.show()
+```
+
+---
+
+## 7. Reconstruction for N = 100
 
 ```{python}
 # | echo: true
