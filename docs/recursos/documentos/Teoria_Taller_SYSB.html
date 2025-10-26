@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.32">
+<meta name="generator" content="quarto-1.8.25">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Pablo Eduardo Caicedo Rodríguez”">
-<meta name="dcterms.date" content="2025-10-11">
+<meta name="dcterms.date" content="2025-10-25">
 
 <title>Taller3: Análisis y diseños de filtros – PECR Knowledge Hub</title>
 <style>
@@ -69,14 +69,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <meta name="quarto:offset" content="../../">
 <script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-0f4abfba90e28d8cc931d883d3f444f4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-1d3fa2149f8108c2ed7d4d9b670d7d8b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -119,7 +120,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -146,7 +147,8 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo">
+    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo light-content">
+    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo dark-content">
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -197,7 +199,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 11, 2025</p>
+      <p class="date">October 25, 2025</p>
     </div>
   </div>
   
@@ -263,7 +265,7 @@ window.Quarto = {
 </ul>
 <p>En el taller, se sugiere <em>calcular el orden mínimo para cada ventana</em> cumpliendo las specs y elegir la de menor orden. Esto implicaría usar fórmulas o tablas estándar (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=From%20the%20discussion%20above%20we,9%201">WindowFIRDesign.fm</a>) (<a href="https://course.ece.cmu.edu/~ece396/lectures/L19/WindowFIRDesign.pdf#:~:text=Fig,4%CF%80">WindowFIRDesign.fm</a>). Por ejemplo, para 40 dB de rechazo y <span class="math inline">\(\Delta f = 20\)</span> Hz (digamos entre 60 y 80 Hz), la Hamming podría necesitar <span class="math inline">\(M \approx \frac{3.3\cdot 2\pi}{(20/f_s)2\pi} = \frac{3.3 f_s}{20}\)</span> (esta es una estimación tosca usando <span class="math inline">\(\Delta\omega \approx 8\pi/M\)</span>). Si la señal es de voz muestreada a 8 kHz (caso típico, aunque aquí es biomédica a 200 Hz?), podemos obtener números específicos. En general, se podría iterar aumentando <span class="math inline">\(M\)</span> y midiendo la respuesta espectral hasta que los requisitos se satisfagan.</p>
 <p>A modo de <strong>ilustración práctica</strong>, diseñemos un filtro FIR pasa-bajos con método del ventaneo en Python, usando <code>scipy.signal.firwin</code>. Por simplicidad, tomemos <span class="math inline">\(f_s=200\)</span> Hz, <span class="math inline">\(f_c=30\)</span> Hz, y usemos ventana de Hamming:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> signal</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fs <span class="op">=</span> <span class="fl">200.0</span>  <span class="co"># Hz</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>fc <span class="op">=</span> <span class="fl">30.0</span>   <span class="co"># Hz (deseamos pasa-bajos)</span></span>
@@ -274,7 +276,7 @@ window.Quarto = {
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>H_db <span class="op">=</span> <span class="dv">20</span><span class="op">*</span>np.log10(np.<span class="bu">abs</span>(H))</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Encontrar atenuación en 60 Hz:</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>idx_60 <span class="op">=</span> np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">60</span>))</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Atenuación a 60Hz: </span><span class="sc">{</span>H_db[idx_60]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Atenuación a 60Hz: </span><span class="sc">{</span>H_db[idx_60]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><em>(El código anterior calcula los coeficientes FIR con ventana de Hamming y evalúa la respuesta. Se puede iterar sobre N hasta lograr &gt;40 dB en 80 Hz, etc.)</em></p>
 <p>En general, el método de ventanas es rápido y fácil de implementar. Su principal limitación es la falta de control preciso sobre las bandas: el ripple y transición vienen determinados por la elección de ventana, no exactamente por parámetros deseados (excepto en Kaiser donde hay más control). Aún así, es muy útil en procesamiento biomédico cuando queremos filtros lineales en fase y podemos permitir órdenes relativamente altos (el costo computacional suele ser menor preocupación en aplicaciones off-line, pero en tiempo real un FIR muy largo puede introducir latencia).</p>
 </section>
@@ -297,7 +299,7 @@ window.Quarto = {
 <p>En diseño, elegir el tipo de filtro depende de la aplicación: en bioseñales, a veces se prefiere Butterworth para evitar cualquier ripple (ej. filtrar ECG sin distorsionar amplitud de componentes clínicas), otras veces un Chebyshev o Elíptico puede ser apropiado si se necesita un filtro muy selectivo (ej. aislar una banda muy estrecha de EEG) y se puede tolerar cierta variación en la ganancia de la banda útil. La fase de los IIR no es lineal, pero si la distorsión de fase es un problema (por ejemplo, desplazamiento o deformación de picos en ECG), puede mitigarse aplicando el filtro hacia adelante y hacia atrás (filtrado por procesamiento inverso con <code>filtfilt</code> de SciPy, logrando respuesta cero-fase a costa de procesar offline) (<a href="http://www.jscholaronline.org/articles/JBER/Signal-Processing.pdf#:~:text=signal%20therefore%20Finite%20Impulse%20Response,3"></a>). En muchos casos, se pueden usar filtros IIR en tiempo real y lograr correcciones de fase si es necesario mediante técnicas de compensación o filtrado bidireccional.</p>
 <p><strong>Diseño por especificaciones:</strong> Las funciones <code>buttord</code>, <code>cheb1ord</code>, <code>cheb2ord</code>, <code>ellipord</code> de Python/MATLAB calculan el orden mínimo y frecuencia de corte necesaria para cumplir especificaciones dadas (paso, rechazo, ripple). Luego <code>butter</code>, <code>cheby1/2</code>, <code>ellip</code> generan los coeficientes. En el taller, se plantea diseñar un pasa-bajos IIR para voz (ej. telefónica: <span class="math inline">\(f_s=8\)</span> kHz, <span class="math inline">\(f_p=3.4\)</span> kHz, <span class="math inline">\(f_s=3.8\)</span> kHz, ripple 1 dB, atenuación 30 dB). Un proceso típico sería: usar <code>ellipord</code> para obtener el orden mínimo elíptico, <code>cheb1ord</code> para Chebyshev I, etc., comparar órdenes y elegir uno. En nuestro ejemplo de la Figura 1, ya vimos cómo Butterworth requería orden 4 frente a 3 de Chebyshev/Elíptico para la misma tarea, lo cual es común (Butterworth suele necesitar más orden para specs estrictas). Generalmente, <strong>Elíptico da el menor orden</strong>, seguido por Chebyshev, luego Butterworth (<a href="https://brianmcfee.net/dstbook-site/content/ch11-iir/IIRFilters.html#:~:text=Fig,distortion%20in%20the%20Elliptic%20filter">11.3. Common IIR filters — Digital Signals Theory</a>). Sin embargo, a veces se evita Elíptico si un ripple en rechazo muy bajo es crítico (porque incluso la pequeña ondulación en banda eliminada puede ser indeseable para ciertas mediciones sensibles, aunque en la mayoría de casos biomédicos 30 dB de atenuación es suficiente sin importar un leve ripple residual).</p>
 <p><strong>Implementación en Python:</strong> A continuación se ilustra cómo diseñar un filtro Chebyshev Tipo I con SciPy para cumplir especificaciones de voz:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> cheb1ord, cheby1, freqz</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>fs <span class="op">=</span> <span class="fl">8000.0</span>  <span class="co"># Hz</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>fp <span class="op">=</span> <span class="fl">3400.0</span>  <span class="co"># Hz pasabanda</span></span>
@@ -311,7 +313,7 @@ window.Quarto = {
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>H_db <span class="op">=</span> <span class="dv">20</span><span class="op">*</span>np.log10(np.<span class="bu">abs</span>(h))</span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Orden Chebyshev I = </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Ganancia a 3.4kHz = </span><span class="sc">{</span>H_db[np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">3400</span>))]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Atenuación a 3.8kHz = </span><span class="sc">{</span>H_db[np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">3800</span>))]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Atenuación a 3.8kHz = </span><span class="sc">{</span>H_db[np.argmin(np.<span class="bu">abs</span>(w<span class="op">-</span><span class="dv">3800</span>))]<span class="sc">:.2f}</span><span class="ss"> dB"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><em>(Este código calcula el orden mínimo y coeficientes de un Chebyshev I, luego evalúa la ganancia en 3.4 kHz y 3.8 kHz para verificar que esté cerca de –1 dB y –30 dB respectivamente.)</em></p>
 <p>El resultado confirmaría el cumplimiento de especificaciones con el filtro diseñado. Del mismo modo podríamos probar <code>ellipord/ellip</code> y <code>buttord/butter</code>. Vale notar que los diseños IIR generalmente no tienen control explícito de fase lineal (la fase es no lineal e importa evaluar el impacto en la señal; a veces, se realizan calibraciones o se aplica filtrado hacia atrás como mencionado para obtener fase cero).</p>
 </section>
@@ -392,13 +394,14 @@ window.Quarto = {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy

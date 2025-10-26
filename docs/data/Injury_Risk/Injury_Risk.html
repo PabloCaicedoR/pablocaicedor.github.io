@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.32">
+<meta name="generator" content="quarto-1.8.25">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -32,14 +32,15 @@ ul.task-list li input[type="checkbox"] {
 <meta name="quarto:offset" content="../../">
 <script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-0f4abfba90e28d8cc931d883d3f444f4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-1d3fa2149f8108c2ed7d4d9b670d7d8b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -80,7 +81,8 @@ ul.task-list li input[type="checkbox"] {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo">
+    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo light-content">
+    <img src="../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo dark-content">
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -115,28 +117,31 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<section id="diccionario-de-datos-5-entradas-2-objetivos" class="level1">
-<h1>Diccionario de datos (5 entradas, 2 objetivos)</h1>
-<p>Entradas (X):</p>
+<section id="diccionario-de-datos" class="level1">
+<h1>Diccionario de datos</h1>
 <ul>
-<li><strong>EMG_Quad_RMS_mV</strong> (mV): RMS EMG cuádriceps.</li>
-<li><strong>EMG_Ham_RMS_mV</strong> (mV): RMS EMG isquiotibiales.</li>
-<li><strong>GRF_Vert_Norm_BW</strong> (BW): Fuerza de reacción vertical (normalizada).</li>
-<li><strong>Omega_Shank_deg_s</strong> (deg/s): Velocidad angular de la pierna (IMU).</li>
-<li><strong>Hip_Flex_deg</strong> (deg): Flexión de cadera.</li>
+<li><strong>Knee_Flex_deg</strong> (deg): Ángulo de flexión de rodilla (variable objetivo).</li>
+<li><strong>EMG_Quad_RMS_mV</strong> (mV): RMS del EMG del cuádriceps (rectificado y promediado).</li>
+<li><strong>EMG_Ham_RMS_mV</strong> (mV): RMS del EMG de isquiotibiales.</li>
+<li><strong>GRF_Vert_Norm_BW</strong> (BW): Componente vertical de la fuerza de reacción del suelo, normalizada por peso corporal.</li>
+<li><strong>Omega_Shank_deg_s</strong> (deg/s): Velocidad angular del segmento pierna (IMU).</li>
+<li><strong>Hip_Flex_deg</strong> (deg): Ángulo de flexión de cadera.</li>
 </ul>
-<p>Objetivos (y):</p>
-<ul>
-<li><strong>Knee_Flex_deg</strong> (deg): Ángulo de flexión de rodilla (regresión).</li>
-<li><strong>Risk_Lesion</strong> (0/1): Riesgo alto de lesión (clasificación).</li>
-</ul>
-<p>Notas:</p>
-<ul>
-<li>Generación no lineal; adecuada para <strong>regresión múltiple no lineal</strong> y <strong>logística no lineal</strong> (polinomios/interacciones, GAM o NNs).</li>
-<li>n = 1000 registro</li>
-</ul>
+<section id="generación-función-subyacente" class="level2">
+<h2 class="anchored" data-anchor-id="generación-función-subyacente">Generación (función subyacente)</h2>
+<pre><code>a = 15 
++ 25 * sigmoid(1.6*(GRF - 0.6)) 
++ 0.06 * sign(ω) * |ω|^1.2 
++ 0.55 * Hip + 9*sin(Hip°) 
+- 10 * (EMG_ham / (EMG_quad + 0.05)) 
++ 6 * EMG_quad * GRF
+- 40 * (EMG_quad - 0.12)^2
++ 8 * GRF * sin(Hip°)
++ ε</code></pre>
+<p>donde ε ~ Normal(0, 2) + 0.5*t(5). Se recortó a [-5, 140] deg.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -191,13 +196,14 @@ ul.task-list li input[type="checkbox"] {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
