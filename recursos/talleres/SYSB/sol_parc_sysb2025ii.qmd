@@ -310,3 +310,143 @@ donde $\phi(\omega)$ es la respuesta de fase. Si $\phi(\omega)$ es lineal, su de
 
 Las opciones A, C y D son incorrectas: A. Es una propiedad computacional, no de fidelidad de la señal. C. La fase lineal no tiene relación con el tipo de banda (paso-bajo/alto/banda-rechazo). D. Esta es una propiedad de la **respuesta de magnitud**, no de la fase.
 </div>
+
+# Resolución y Análisis del Cuestionario de Sistemas y Señales Biomédicos
+
+Este documento presenta la resolución justificada de cada ítem del examen, enfocándose en la teoría fundamental de señales, sistemas y la adquisición de datos biomédicos.
+
+---
+
+## Pregunta 1: Descomposición de Señales Par e Impar
+
+<div class="pregunta">
+**Enunciado:** En una prueba de vasodilatación cutánea, se registra una señal PPG $x(t)$ libre de artefactos. Se construye $x_{par}(t)=\frac{x(t)+x(-t)}{2}$ y $x_{impar}(t)=\frac{x(t)-x(-t)}{2}$. ¿Cuál afirmación es siempre correcta para cualquier $x(t)$?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+Cualquier señal $x(t)$ puede descomponerse de manera **única** en la suma de una componente par ($x_{par}(t)$) y una componente impar ($x_{impar}(t)$): $x(t) = x_{par}(t) + x_{impar}(t)$.
+
+**Justificación Didáctica:**
+La descomposición garantiza que:
+1.  La suma de las dos componentes reconstruye la señal original:
+    $$x_{par}(t) + x_{impar}(t) = \frac{x(t)+x(-t)}{2} + \frac{x(t)-x(-t)}{2} = \frac{2x(t)}{2} = x(t)$$
+2.  Las componentes **par** e **impar** son **ortogonales** entre sí, lo que significa que el producto interno (o la integral de su producto) es cero sobre un rango simétrico.
+Las demás opciones son incorrectas, ya que la causalidad (A), la acotación (C), o la identidad de las componentes (D) no son propiedades universales de esta descomposición.
+</div>
+
+---
+
+## Pregunta 2: Transformaciones Combinadas de Señales
+
+<div class="pregunta">
+**Enunciado:** En un sistema de monitoreo de EMG, se define $y(t)=2\cdot x(3t-0.1)+0.5$. ¿Cuál describe correctamente las transformaciones respecto a $x(t)$?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La transformación temporal $x(at-t_0)$ requiere factorizar el término $a$ para identificar correctamente el desplazamiento:
+$$x(3t - 0.1) = x(3(t - \frac{0.1}{3}))$$
+El término temporal es $x(a(t-t_{d}))$, donde $a=3$ (escala temporal) y $t_{d} = 0.1/3 \approx 0.0333$ (desplazamiento).
+
+**Justificación Didáctica:**
+Siguiendo la jerarquía de transformaciones:
+1.  **$x(3t)$:** **Compresión temporal** por un factor de 3 (la señal se hace 3 veces más rápida).
+2.  **$x(3(t-0.1/3))$:** **Desplazamiento a la derecha** (retraso) por $0.1/3$ segundos. El enunciado aproxima este desplazamiento al valor no factorizado de $0.1$ y asume que es la compresión por 3. Es un error común en la didáctica de señales, pero la opción A es la única que tiene la secuencia correcta (Compresión, Derecha, x2, +0.5).
+3.  **$2\cdot x(\dots)$:** **Escalamiento de amplitud** por 2.
+4.  **$\dots + 0.5$:** **Desplazamiento vertical** (DC *offset*) por $+0.5$.
+
+A pesar de la ambigüedad en la magnitud del desplazamiento en el enunciado (0.1s en lugar de 0.0333s), la **Compresión temporal por 3** y el **desplazamiento a la derecha** son correctos en relación a la estructura de la función original $x(3t-0.1)$, ya que $3t-0.1=0 \implies t=0.1/3$ (tiempo de inicio). La opción A es la única que describe correctamente la compresión (factor $\alpha > 1$) y el sentido de las transformaciones.
+</div>
+
+---
+
+## Pregunta 3: Artefactos en Señales Biomédicas (PPG)
+
+<div class="pregunta">
+**Enunciado:** Durante una prueba de esfuerzo, el acelerómetro de muñeca introduce variaciones de baja frecuencia en la PPG. ¿Qué tipo de "ruido" predomina?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El PPG (Fotopletismografía) se registra comúnmente en la muñeca o el dedo. Las pruebas de esfuerzo implican movimiento. El movimiento causa un cambio en la presión del sensor sobre la piel y/o cambios en el volumen de sangre no relacionados con el pulso cardíaco.
+
+**Justificación Didáctica:**
+Este efecto se clasifica como un **Artefacto de Movimiento** (*Motion Artifact*). Típicamente, este artefacto se presenta como una modulación de la amplitud de la señal PPG y se caracteriza por contener **componentes de muy baja frecuencia** (típicamente $< 2 \text{ Hz}$), a menudo superponiéndose a las frecuencias relevantes de la señal.
+</div>
+
+---
+
+## Pregunta 4: Muestreo: Frecuencia Mínima Aceptable (Nyquist)
+
+<div class="pregunta">
+**Enunciado:** Se adquiere ECG diagnóstico (contenido relevante $\sim 0.05-150 \text{ Hz}$). Para evitar *aliasing*, elija la frecuencia de muestreo mínima aceptable:
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: C
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El **Teorema de Muestreo de Nyquist-Shannon** requiere que la frecuencia de muestreo ($f_{s}$) sea estrictamente mayor que el doble de la frecuencia máxima ($f_{max}$) de la señal.
+$$f_{s} > 2 f_{max}$$
+
+**Justificación Didáctica:**
+Dado que la frecuencia máxima relevante es $f_{max} = 150 \text{ Hz}$, la tasa de Nyquist es $2 \cdot 150 \text{ Hz} = 300 \text{ Hz}$. Para **garantizar** la ausencia de *aliasing*, la frecuencia de muestreo debe ser mayor, pero de las opciones dadas, la frecuencia mínima aceptable es la tasa de Nyquist, **$300 \text{ Hz}$**. En la práctica, se utiliza un margen de seguridad ($f_{s} > 300 \text{ Hz}$), pero $300 \text{ Hz}$ es la respuesta teórica.
+</div>
+
+---
+
+## Pregunta 5: Cuantificación: Impacto del Número de Bits
+
+<div class="pregunta">
+**Enunciado:** En un sistema de adquisición para EEG, se aumenta la resolución del ADC de 12 a 16 bits manteniendo el rango de entrada. ¿Cuál enunciado es más preciso?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El **ruido de cuantización** es el error introducido al discretizar la amplitud de una señal. La Potencia del Ruido de Cuantización ($P_Q$) es inversamente proporcional a $2^{2B}$.
+
+**Justificación Didáctica:**
+La relación Señal-a-Ruido de Cuantización ($SQNR$) ideal en un ADC está dada por $SQNR \approx 6.02 B + 1.76 \text{ dB}$, donde $B$ es el número de bits.
+* Aumentar la resolución en $1 \text{ bit}$ equivale a duplicar el número de niveles ($2^B \to 2^{B+1}$), lo que incrementa la $SQNR$ en aproximadamente **$6 \text{ dB}$**.
+* Un aumento de $12$ a $16 \text{ bits}$ ($4 \text{ bits}$ adicionales) mejora el $SQNR$ en $\approx 24 \text{ dB}$, lo que se traduce en una **disminución del ruido de cuantización** de aproximadamente $6 \text{ dB}$ por bit adicional.
+</div>
+
+---
+
+## Pregunta 6: Sistemas de Diferencia: Detección de Cambios
+
+<div class="pregunta">
+**Enunciado:** Un sistema lineal y causal de adquisición aplica $y(t)=x(t)-x(t-5ms)$ a una señal PPG. Seleccione la opción correcta:
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: C
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La operación $y(t)=x(t)-x(t-\Delta t)$ es una **diferencia finita** de primer orden. Esta operación es una aproximación a la primera derivada de la señal, especialmente cuando $\Delta t$ es pequeño.
+
+**Justificación Didáctica:**
+* La **derivación** es una operación de **filtrado pasa-alto** (filtro de altas frecuencias), ya que amplifica las variaciones rápidas (altas frecuencias) y suprime las variaciones lentas (bajas frecuencias).
+* Este sistema, al ser una diferencia entre el valor actual y un valor pasado, actúa como un **diferenciador discreto aproximado**. Su efecto es **realzar los cambios rápidos** de la señal (por ejemplo, el *peak* sistólico en el PPG), lo que equivale a **realzar las altas frecuencias**.
+</div>
