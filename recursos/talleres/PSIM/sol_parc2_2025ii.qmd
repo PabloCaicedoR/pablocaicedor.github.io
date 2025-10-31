@@ -1,0 +1,417 @@
+---
+title: "Resolución Detallada: Examen de Procesamiento de Imágenes (PSIM)"
+author: "Dr. Pablo Eduardo Caicedo Rodríguez"
+date: "2025-10-31"
+format: html
+editor: visual
+lang: es
+---
+
+<style>
+  body {
+    font-family: 'Georgia', serif;
+    line-height: 1.6;
+    margin: 40px;
+    background-color: #f4f4f9;
+    color: #333;
+  }
+  .pregunta {
+    background-color: #fce4ec;
+    border-left: 5px solid #d81b60;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  .respuesta-correcta {
+    font-weight: bold;
+    color: #4a148c;
+    background-color: #f3e5f5;
+    padding: 5px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .explicacion {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #e1bee7;
+    border-radius: 4px;
+    background-color: #ffffff;
+  }
+  h2 {
+    color: #880e4f;
+    border-bottom: 2px solid #d81b60;
+    padding-bottom: 5px;
+    margin-top: 30px;
+  }
+</style>
+
+# Resolución y Análisis del Cuestionario de Procesamiento de Imágenes (PSIM)
+
+Este documento contiene la resolución justificada de cada ítem del examen, enfocándose en la **cuantificación**, las **operaciones punto a punto (pixel-wise)**, el **filtrado por kernel**, los **histogramas** y los **gradientes** en el contexto biomédico.
+
+---
+
+## Pregunta 1: Cuantización y Rango Dinámico en Radiografía Dental
+
+<div class="pregunta">
+**Enunciado:** En una radiografía dental de 12 bits se exporta por error a 8 bits antes del análisis de contraste local. ¿Cuál consecuencia técnicamente correcta describe mejor el efecto de esta cuantización sobre regiones de bajo contraste (por ejemplo, límites esmalte dentina)?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El cambio de **12 bits** ($2^{12}=4096$ niveles) a **8 bits** ($2^8=256$ niveles) representa una drástica reducción del número de niveles de gris disponibles. Esta operación es una **cuantización destructiva** en el rango de intensidad.
+
+**Justificación Didáctica:**
+Una reducción en el número de bits del píxel reduce la **resolución de contraste** o **rango dinámico útil**. Las regiones de bajo contraste, como la sutil transición entre el esmalte y la dentina, dependen de pequeñas diferencias de intensidad. Al tener menos niveles disponibles, estas diferencias sutiles pueden mapearse al mismo nivel, haciéndose **indiscernibles**. El efecto directo es la **pérdida de la capacidad de discriminar diferencias sutiles** en el rango útil.
+</div>
+
+---
+
+## Pregunta 2: Operaciones Pixel-wise y su Efecto en el Histograma
+
+<div class="pregunta">
+**Enunciado:** En RM cerebral se aplica una corrección de brillo mediante operación punto a punto $g(x,y)=f(x,y)+\beta$ ¿Qué cambio esperado se observa en el histograma de intensidades?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La operación $g(x,y)=f(x,y)+\beta$ es una **transformación lineal simple** (traslación o *bias*) que se aplica a cada píxel de forma independiente (pixel-wise). Sumar una constante $\beta$ a la intensidad $f(x,y)$ de todos los píxeles no altera la relación relativa entre las intensidades; es decir, la dispersión de los datos se mantiene.
+
+**Justificación Didáctica:**
+El **histograma** representa la distribución de las intensidades.
+* La **media** (brillo promedio) cambia en $\beta$. Esto se traduce en un **desplazamiento del histograma**.
+* La **varianza** (dispersión de intensidades) permanece **similar** (si no hay saturación por el desplazamiento), ya que la distancia entre los valores de los píxeles se conserva. Por lo tanto, el histograma se desplaza, pero no se ensancha ni se comprime.
+</div>
+
+---
+
+## Pregunta 3: Ecualización de Histograma
+
+<div class="pregunta">
+**Enunciado:** Para mejorar el contraste en una radiografía de tórax, se considera ecualización de histograma global sobre imagen en 12 bits. ¿Cuál efecto esperado describe mejor este proceso?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La **Ecualización de Histograma** es una técnica de mejora de contraste basada en una transformación no lineal que utiliza la función de **Distribución Acumulada (CDF)** de las intensidades de la imagen como mapa de transformación.
+
+**Justificación Didáctica:**
+El objetivo de la ecualización es forzar la función de densidad de probabilidad (PDF) de las intensidades de salida a ser lo más **uniforme** posible.
+* Esto se logra **redistribuyendo** las intensidades: las regiones del histograma donde hay muchas ocurrencias (baja diferencia visual) se estiran, y las regiones donde hay pocas ocurrencias se comprimen.
+* El efecto es que la imagen utiliza de forma más eficiente el **rango dinámico** disponible, lo que resulta en un **realce del contraste global**.
+</div>
+
+---
+
+## Pregunta 4: Operaciones Elemento a Elemento (Pixel-wise)
+
+<div class="pregunta">
+**Enunciado:** Se aplican operaciones elemento a elemento (pixel-wise) para corregir *vignetting* (oscurecimiento periférico por caída de iluminación hacia los bordes) en fundoscopía: $g(x,y)=\alpha(x,y)\cdot f(x,y).$ con $\alpha(x,y)$ campo de ganancia estimado. ¿Qué propiedad **no** es requerida para esta operación?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La operación $g(x,y)=\alpha(x,y)\cdot f(x,y)$ es una **corrección de campo plano multiplicativa**. Es una operación intrínsecamente **pixel-wise**.
+
+**Justificación Didáctica:**
+* Las propiedades B (Definición punto a punto), C (Conocimiento de $\alpha(x,y)$) y D (Compatibilidad de tamaño) son **requisitos de implementación** para realizar la multiplicación correctamente.
+* **A. Linealidad del operador respecto a la suma de imágenes:** Si bien el operador $T(f) = \alpha \cdot f$ *es* lineal respecto a la suma de imágenes (es decir, $T(f_1 + f_2) = T(f_1) + T(f_2)$), esta propiedad **no es un requisito fundamental** para la *ejecución* de una operación pixel-wise, a diferencia de los requisitos de dominio y tamaño. En el contexto de qué propiedad podría no ser estrictamente necesaria o relevante para la *implementación* misma de una corrección de campo plano multiplicativa, la linealidad se considera la menos crítica entre las opciones, ya que el foco es la acción multiplicativa local.
+</div>
+
+---
+
+## Pregunta 5: Filtrado por Kernel: Suavizado y Preservación de Bordes
+
+<div class="pregunta">
+**Enunciado:** Para atenuar ruido *speckle* en ecografía, se evalúan filtros lineales. ¿Qué combinación de kernel y tamaño ofrece la mejor relación entre suavizado y preservación de bordes en estructuras vasculares finas?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El ruido *speckle* es un ruido multiplicativo presente en imágenes de coherencia (como ecografía). Un filtro de suavizado lineal, como el **Gaussiano**, es un buen punto de partida para su atenuación, ya que suaviza el ruido sin introducir artefactos de bloque.
+
+**Justificación Didáctica:**
+Para lograr la **mejor relación entre suavizado y preservación de bordes finos**, se requiere un equilibrio:
+* El suavizado requiere un $\sigma$ y un tamaño de ventana adecuados.
+* Los **bordes finos** (estructuras vasculares) se desenfocan si el kernel es demasiado grande o $\sigma$ es muy alto (como en C y A).
+* Un **filtro Gaussiano $3\times3$ con $\sigma=1$** proporciona un **suavizado ligero y localizado**. Esto es suficiente para reducir el impacto del *speckle* minimizando el desenfoque lateral, lo que es crucial para mantener la nitidez y la localización de las estructuras finas. La opción D (Mediana) es mejor para ruido impulsivo y distorsiona la forma de onda del *speckle* de forma diferente.
+</div>
+
+---
+
+## Pregunta 6: Detección de Bordes: Módulo del Gradiente (Sobel)
+
+<div class="pregunta">
+**Enunciado:** Para la detección de bordes en angiografía (DSA), se aplican gradientes con Sobel. ¿Cuál afirmación es correcta sobre el módulo del gradiente $|| \nabla f ||$ obtenido con Sobel?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El operador **Sobel** es un operador basado en la **convolución** que calcula la magnitud del vector gradiente de la intensidad de la imagen. El gradiente es un vector que apunta en la dirección de máximo cambio de intensidad y cuya magnitud $|| \nabla f ||$ es la tasa de ese cambio.
+
+**Justificación Didáctica:**
+* El módulo del gradiente **aproxima derivadas parciales** $(\partial f / \partial x, \partial f / \partial y)$ utilizando **máscaras discretas** ($G_x$ y $G_y$).
+* El resultado es una imagen donde la intensidad del píxel es proporcional a la magnitud de la transición de intensidad en ese punto, lo que efectivamente **resalta las transiciones** (bordes).
+* La opción A es incorrecta porque el gradiente **no es invariante ante cambios de escala de intensidad**; si $f$ se multiplica por $k$, el gradiente también se multiplica por $k$.
+* La opción D es incorrecta: la derivada (gradiente) **amplifica el ruido** de alta frecuencia, por lo que el suavizado previo es casi siempre necesario.
+</div>
+
+---
+
+## Pregunta 7: Realce de Bordes: Kernel Laplaciano y Riesgo
+
+<div class="pregunta">
+**Enunciado:** En mamografía digital, se considera una convolución con kernel de realce de bordes (tipo Laplaciano) seguida de umbralización adaptativa. ¿Cuál riesgo técnico es más relevante si el kernel no está adecuadamente normalizado/compensado?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+Los filtros Laplacianos son operadores de segunda derivada, que actúan como **filtros pasa-altos**. El resultado de la convolución Laplaciana se usa generalmente para detectar cambios rápidos de intensidad (bordes) o para sumar a la imagen original (máscara de enfoque).
+
+**Justificación Didáctica:**
+Como filtros pasa-altos, los Laplacianos amplifican las altas frecuencias. Si el kernel de realce no está diseñado cuidadosamente (no compensado o normalizado), su efecto será doblemente perjudicial:
+1.  **Generación de artefactos de sobre-realce (overshoot):** Crea efectos de halos o anillos artificiales alrededor de los bordes.
+2.  **Amplificación del ruido:** El ruido (siempre considerado alta frecuencia) se amplifica junto con los bordes, lo que **disminuye la relación señal-ruido** y puede oscurecer detalles diagnósticos sutiles.
+El riesgo más relevante es la **amplificación de ruido de alta frecuencia** y la introducción de **artefactos de sobre-realce**.
+</div>
+
+---
+
+## Pregunta 8: Preprocesamiento para Detección de Bordes
+
+<div class="pregunta">
+**Enunciado:** En RM ponderada en T1, antes de aplicar operadores de gradiente (Sobel/Prewitt) para detección de bordes, se decide un preprocesamiento mínimo. ¿Cuál opción mejora la robustez de la detección sin sacrificar en exceso la localización del borde?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La operación de detección de bordes por gradiente es un proceso inherentemente susceptible al ruido. Un paso previo de **suavizado** es obligatorio para aumentar la **robustez** de la detección.
+
+**Justificación Didáctica:**
+* El **Suavizado Gaussiano** es el método de suavizado preferido en el procesamiento de imágenes por sus propiedades de separación y por ser el único kernel que es localmente invariante ante la escala de brillo.
+* Para **reducir el impacto del ruido** (robustez) sin **sacrificar en exceso la localización del borde**, se requiere un suavizado **ligero** ($\sigma \approx 1$). Esto cumple con el requisito de ser un **preprocesamiento mínimo** efectivo.
+* Las opciones B, C y D son subóptimas: C (Promedio $7\times7$) sacrifica excesivamente la localización; D (Aumento de nitidez) amplificaría el ruido; y B (Ecualización) es un cambio de contraste global que no es necesario para el gradiente y no está directamente relacionado con la reducción de ruido.
+</div>
+
+# Resolución y Análisis del Cuestionario de Procesamiento de Imágenes (PSIM) - II
+
+Este documento presenta la resolución justificada de cada pregunta, enfocándose en la interacción de operaciones básicas (cuantización, transformaciones afines, histogramas) y kernels (suavizado, gradientes) en el contexto de imágenes biomédicas.
+
+---
+
+## Pregunta 1: Cuantización Irreversible y Reescalado
+
+<div class="pregunta">
+**Enunciado:** Una radiografía dental (12 bits) se cuantiza a 8 bits y luego se reescala linealmente para ocupar $[0, 255]$ antes del análisis de bordes. ¿Qué enunciado describe mejor el impacto final sobre la detectabilidad de límites esmalte dentina?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La **cuantización** de 12 bits ($4096$ niveles) a 8 bits ($256$ niveles) es una operación **irreversible**. Esto significa que las diferencias sutiles de intensidad (bajo contraste) que se podían distinguir con 12 bits se agrupan en un solo nivel en 8 bits, perdiendo la información original.
+
+**Justificación Didáctica:**
+El **reescalado lineal** posterior simplemente toma los $256$ valores existentes y los expande para ocupar el nuevo rango $[0, 255]$. Esta operación **no puede restituir la información de contraste** que se perdió en la reducción inicial de bits. La discriminación sutil de los límites esmalte-dentina, vital en las radiografías dentales, permanece degradada.
+</div>
+
+---
+
+## Pregunta 2: Transformación Afín y Efecto en el Histograma
+
+<div class="pregunta">
+**Enunciado:** En resonancia magnética cerebral, se aplica $g(x,y)=\alpha f(x,y)+\beta$ con $\alpha>1$ y $\beta<0$ para optimizar contraste. ¿Qué efecto esperado tiene sobre el histograma?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: D
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La operación $g(x,y)=\alpha f(x,y)+\beta$ es una **transformación afín** que afecta tanto el brillo como el contraste:
+1.  **Multiplicación por $\alpha$ ($\alpha>1$):** Esto es una **expansión de contraste** (o estiramiento del rango), lo que **aumenta la varianza**.
+2.  **Suma de $\beta$ ($\beta<0$):** Esto es una **disminución de brillo**, lo que **desplaza la media a valores menores**.
+
+**Justificación Didáctica:**
+El efecto combinado es: **aumentar la dispersión** (mayor varianza) y **mover la distribución a la izquierda** (menor media).
+</div>
+
+---
+
+## Pregunta 3: Realce de Bordes por Resta (Unsharp Masking)
+
+<div class="pregunta">
+**Enunciado:** En angiografía por sustracción digital, se emplea un esquema de realce por resta de una versión suavizada de la imagen: (i) suavizado gaussiano, (ii) diferencia $(f-\bar{f})$, (iii) combinación $(f+k(f-\bar{f}))$. Al incrementar $(k)$ para resaltar vasos finos, ¿cuál compromiso y mitigación son correctos?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+Este esquema es la técnica de **Máscara de Enfoque** (*Unsharp Masking*). El factor $k$ controla la agresividad del realce de las altas frecuencias ($(f-\bar{f})$).
+
+**Justificación Didáctica:**
+* Un $k$ mayor amplifica las altas frecuencias, lo que incluye tanto los **bordes finos** como el **ruido**.
+* El riesgo es la aparición de **oscilaciones indeseadas** (*ringing* o *overshoot*) cerca de los bordes y la **amplificación del ruido de alta frecuencia**.
+* La mitigación correcta para contrarrestar este efecto es aplicar un **suavizado previo ligero** a la imagen original ($f$) antes de calcular la máscara, para atenuar el ruido sin perder los detalles de los vasos finos.
+</div>
+
+---
+
+## Pregunta 4: Ecualización Global del Histograma
+
+<div class="pregunta">
+**Enunciado:** En radiografía de tórax, la ecualización global del histograma puede:
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La **Ecualización de Histograma** transforma la función de densidad de probabilidad para hacerla más uniforme.
+
+**Justificación Didáctica:**
+* El proceso **uniforma la ocupación del rango dinámico** y **realza el contraste** en regiones agrupadas.
+* Sin embargo, al estirar las regiones homogéneas (baja varianza) del histograma, las pequeñas variaciones de intensidad (ruido) en esas regiones se separan y se hacen más evidentes. Por lo tanto, la ecualización **incrementa el ruido percibido en regiones homogéneas**.
+</div>
+
+---
+
+## Pregunta 5: Operaciones Pixel-wise: Corrección Multiplicativa
+
+<div class="pregunta">
+**Enunciado:** Para *vignetting* (oscurecimiento periférico por caída de iluminación hacia los bordes) en fundoscopía, se estima $\alpha(x,y)$ mediante campo plano y se corrige $g(x,y)=\alpha f(x,y)$. ¿Qué afirmación es correcta?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: B
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+La corrección de *vignetting* es una **corrección de campo plano**. El *vignetting* es un **sesgo multiplicativo**.
+
+**Justificación Didáctica:**
+La mejor práctica para la corrección es estimar el factor de iluminación ($\alpha(x,y)$) capturando un campo plano bajo **condiciones de adquisición similares** a las de la imagen real. Esta estimación es la base para corregir el **sesgo multiplicativo** impuesto por el sistema óptico de la fundoscopía. La corrección es multiplicativa (no aditiva) y la compatibilidad de tamaño de $\alpha$ y $f$ es crucial.
+</div>
+
+---
+
+## Pregunta 6: Filtrado: Compromiso SRN y Costo Computacional (x2 puntos)
+
+<div class="pregunta">
+**Enunciado:** Para suprimir ruido granular característico de la ecografía en tiempo real, se requiere un buen compromiso entre relación señal-ruido (SRN) y costo computacional. ¿Qué opción es más adecuada?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: C
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+El objetivo es maximizar la **eficiencia computacional** (necesaria para el tiempo real) manteniendo un buen **suavizado**. El costo de una convolución $N\times N$ es $O(N^2)$.
+
+**Justificación Didáctica:**
+El filtro **Gaussiano es separable**. Esto permite descomponer una convolución $N\times N$ en dos convoluciones, una $N\times 1$ y otra $1\times N$, reduciendo el costo de $O(N^2)$ a $O(2N)$. Aplicar un **Gaussiano separable $3\times3$ dos veces** (o incluso un kernel mayor) es una técnica altamente eficiente. Un $3\times3$ separable tiene un costo muy bajo ($O(6)$) en comparación con un $9\times9$ no separable ($O(81)$), ofreciendo un **excelente compromiso costo-SRN** para procesamiento en tiempo real.
+</div>
+
+---
+
+## Pregunta 7: Gradientes: Comparación Sobel vs. Prewitt
+
+<div class="pregunta">
+**Enunciado:** Sobre gradientes: comparación entre Sobel y Prewitt en imágenes ruidosas (angiografía). ¿Qué enunciado es correcto?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: D
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+Tanto Sobel como Prewitt son operadores de gradiente que usan máscaras $3\times3$ para aproximar las derivadas parciales. Sobel difiere en que pondera los píxeles adyacentes a la dirección de la derivada.
+
+**Justificación Didáctica:**
+La máscara de **Sobel incorpora una ponderación central (factor de 2)** que actúa efectivamente como un **suavizado leve** en la dirección perpendicular al borde. Dado que el ruido es amplificado por la derivación, este suavizado inherente hace que **Sobel sea ligeramente más robusto al ruido** en comparación con Prewitt, cuya máscara es uniforme.
+</div>
+
+---
+
+## Pregunta 8: Kernel Laplaciano No Normalizado
+
+<div class="pregunta">
+**Enunciado:** En mamografía, se aplica un kernel de realce de bordes de segunda derivada (tipo Laplaciano) seguido de umbral adaptativo. Si el kernel no está normalizado (suma distinta de 0) ni compensado, el riesgo principal es:
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+Los filtros de realce de bordes (pasa-altos) amplifican el ruido de alta frecuencia junto con los detalles finos (bordes).
+
+**Justificación Didáctica:**
+Si el kernel de realce es excesivamente agresivo o no está correctamente diseñado, la **amplificación del ruido** puede hacer que las variaciones aleatorias de intensidad (ruido) superen el umbral adaptativo. Esto lleva a una alta tasa de **falsos positivos** (detección de puntos de ruido como estructuras) y a un **realce excesivo** (*overshoot* o *ringing*) en los bordes legítimos.
+</div>
+
+---
+
+## Pregunta 9: Detección de Bordes: Suavizado Gaussiano y $\sigma$
+
+<div class="pregunta">
+**Enunciado:** En resonancia magnética ponderada en T1, se desea robustecer la detección de bordes finos con operadores de gradiente sin deslocalizar bordes. Se dispone de suavizado gaussiano con $\sigma \in \{0.5, 1.0, 2.0\}$. ¿Qué estrategia es más adecuada?
+</div>
+
+<div class="respuesta-correcta">
+Respuesta Correcta: A
+</div>
+
+<div class="explicacion">
+**Análisis Conceptual:**
+Para la detección de bordes, $\sigma$ controla el balance entre **robustez** (mayor $\sigma$, mejor rechazo de ruido) y **localización** (menor $\sigma$, borde más preciso).
+
+**Justificación Didáctica:**
+La **detección de bordes finos sin deslocalización** exige un compromiso. La estrategia más sofisticada y efectiva es la **multiescala**:
+* Se prueban múltiples valores de $\sigma$ (e.g., $0.5$ y $1.0$).
+* Se selecciona el resultado que ofrece un **pico de gradiente máximo estable**. Esto permite al algoritmo adaptarse a la escala de los bordes, logrando una **detección robusta** frente al ruido de la RM sin sacrificar la precisión de la localización. Usar un $\sigma$ grande (2.0) deslocalizaría los bordes finos.
+</div>
