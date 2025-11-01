@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.8.25">
+
+  <meta name="author" content="PhD. Pablo Eduardo Caicedo Rodríguez">
+  <meta name="dcterms.date" content="2025-11-01">
+  <title>PECR Knowledge Hub – Descenso de Gradiente en Ciencias Biomédicas</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+  </style>
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/theme/quarto-176da55e71d95df7ed3f7b9abded2f75.css">
+  <link rel="stylesheet" href="../../recursos/estilos/styles_pres.scss">
+  <link href="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Descenso de Gradiente en Ciencias Biomédicas</h1>
+  <p class="subtitle">Regresión lineal múltiple y regresión logística</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+PhD. Pablo Eduardo Caicedo Rodríguez 
+</div>
+</div>
+</div>
+
+  <p class="date">2025-11-01</p>
+</section>
+<section id="objetivos-de-aprendizaje" class="slide level2 scrollable">
+<h2>Objetivos de aprendizaje</h2>
+<ul>
+<li><strong>Comprender</strong> los fundamentos de la <strong>Regresión Lineal</strong>, <strong>Regresión Logística</strong> y <strong>Perceptrón Multicapa (MLP)</strong>.</li>
+<li><strong>Aplicar</strong> estos modelos al contexto de <strong>salud fetal</strong> con datos de <strong>cardiotocografía (CTG)</strong>.</li>
+<li><strong>Evaluar</strong> el desempeño con métricas adecuadas (MSE, AUC/Log-Loss, matriz de confusión, F1).</li>
+</ul>
+<div class="columns">
+<div class="column" style="width:45%;">
+<ol type="1">
+<li>Regresión Lineal</li>
+<li>Regresión Logística</li>
+<li>Perceptrón Multicapa</li>
+<li>Cierre y discusión</li>
+</ol>
+</div><div class="column" style="width:45%;">
+<p><strong>Dataset</strong>: <code>fetal_health.csv</code> (UCI CTG). <strong>Contexto clínico</strong>: interpretación de CTG (<em>normal</em>, <em>sospechoso</em>, <em>patológico</em>).</p>
+</div></div>
+</section>
+<section id="contexto-clínico-ctg" class="slide level2">
+<h2>Contexto clínico (CTG)</h2>
+<div title="Defición">
+<div class="callout callout-important callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Defición</strong></p>
+</div>
+<div class="callout-content">
+<p>Prueba médica que monitoriza simultáneamente la frecuencia cardíaca del feto y la actividad contráctil del útero. Se realiza generalmente durante el tercer trimestre del embarazo y el parto, colocando dos transductores externos (uno para la frecuencia cardíaca fetal y otro para las contracciones) sobre el abdomen de la madre</p>
+</div>
+</div>
+</div>
+</div>
+
+<img data-src="../../recursos/imagenes/Presentaciones/ASIM/cardiotocografia.png" class="r-stretch quarto-figure-center"><p class="caption">Generada con Gemini</p></section>
+<section id="contexto-clínico-ctg-1" class="slide level2">
+<h2>Contexto clínico (CTG)</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 84%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Característica (Variable en CSV)</th>
+<th>Cálculo o Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Parámetros Basales</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>baseline value</td>
+<td>Es la frecuencia cardíaca fetal (FCF) media aproximada en un segmento de 10 minutos, excluyendo aceleraciones, deceleraciones y períodos de variabilidad marcada (&gt;25 lpm). Se redondea a incrementos de 5 latidos por minuto (lpm).[4, 5, 6, 7, 8] El rango normal se considera entre 110 y 160 lpm.[9, 10]</td>
+</tr>
+<tr class="odd">
+<td>fetal_movement</td>
+<td>Número de movimientos fetales detectados por segundo.[1, 11, 12]</td>
+</tr>
+<tr class="even">
+<td>uterine_contractions</td>
+<td>Número de contracciones uterinas por segundo. Se considera normal tener 5 o menos contracciones en 10 minutos.[1, 4, 11, 12]</td>
+</tr>
+<tr class="odd">
+<td>Eventos Transitorios (Aceleraciones y Deceleraciones)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>accelerations</td>
+<td>Número de aceleraciones por segundo. Una aceleración es un aumento abrupto de la FCF por encima de la línea de base de al menos 15 lpm, que dura 15 segundos o más, pero menos de 2 minutos.[5, 9, 10]</td>
+</tr>
+<tr class="odd">
+<td>light_decelerations</td>
+<td>Número de deceleraciones leves por segundo. Una deceleración es una caída de la FCF de más de 15 lpm que dura más de 15 segundos.[5] La categoría “leve” se refiere a su duración, típicamente menor a 120 segundos.[3]</td>
+</tr>
+<tr class="even">
+<td>severe_decelerations</td>
+<td>Número de deceleraciones severas por segundo. Se refiere a deceleraciones de larga duración, a menudo definidas como aquellas que superan los 300 segundos.[3]</td>
+</tr>
+<tr class="odd">
+<td>prolongued_decelerations</td>
+<td>Número de deceleraciones prolongadas por segundo. Son caídas de la FCF que duran más de 2 o 3 minutos pero menos de 10 minutos.[3, 6, 13]</td>
+</tr>
+<tr class="even">
+<td>Variabilidad de la FCF</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>abnormal_short_term_variability</td>
+<td>Porcentaje de tiempo en que la variabilidad a corto plazo (latido a latido) es anormal. La variabilidad se considera anormal si es mínima (≤5 lpm) o marcada (&gt;25 lpm).[6, 8]</td>
+</tr>
+<tr class="even">
+<td>mean_value_of_short_term_variability</td>
+<td>Valor medio de la variabilidad a corto plazo (STV), que describe las fluctuaciones de la FCF latido a latido.[3, 6]</td>
+</tr>
+<tr class="odd">
+<td>percentage_of_time_with_abnormal_long_term_variability</td>
+<td>Porcentaje de tiempo en que la variabilidad a largo plazo es anormal. Se calcula sobre las fluctuaciones de la FCF en un período de un minuto.[5]</td>
+</tr>
+<tr class="even">
+<td>mean_value_of_long_term_variability</td>
+<td>Valor medio de la variabilidad a largo plazo (LTV), que mide la amplitud (diferencia entre el pico y el valle) de las fluctuaciones de la FCF en un minuto.[3, 5]</td>
+</tr>
+<tr class="odd">
+<td>Características del Histograma de FCF</td>
+<td>Estas son propiedades estadísticas calculadas a partir de la distribución de todos los valores de FCF registrados durante el período de monitorización.[1, 11, 12]</td>
+</tr>
+<tr class="even">
+<td>histogram_width</td>
+<td>El ancho del histograma, calculado como la diferencia entre el valor máximo (histogram_max) y el mínimo (histogram_min) de la FCF.</td>
+</tr>
+<tr class="odd">
+<td>histogram_min</td>
+<td>El valor mínimo de la FCF registrado en el histograma.</td>
+</tr>
+<tr class="even">
+<td>histogram_max</td>
+<td>El valor máximo de la FCF registrado en el histograma.</td>
+</tr>
+<tr class="odd">
+<td>histogram_number_of_peaks</td>
+<td>El número de picos en la distribución del histograma.</td>
+</tr>
+<tr class="even">
+<td>histogram_number_of_zeroes</td>
+<td>El número de “ceros” o bins con frecuencia cero en el histograma.</td>
+</tr>
+<tr class="odd">
+<td>histogram_mode</td>
+<td>El valor de FCF que aparece con mayor frecuencia (la moda estadística).</td>
+</tr>
+<tr class="even">
+<td>histogram_mean</td>
+<td>El valor medio de la FCF en el histograma (la media estadística).</td>
+</tr>
+<tr class="odd">
+<td>histogram_median</td>
+<td>El valor central de la FCF en el histograma (la mediana estadística).</td>
+</tr>
+<tr class="even">
+<td>histogram_variance</td>
+<td>La varianza de los valores de FCF, que mide su dispersión alrededor de la media.</td>
+</tr>
+<tr class="odd">
+<td>histogram_tendency</td>
+<td>Indica la simetría o sesgo del histograma. Puede interpretarse como: 1 para tendencia a la derecha (positiva), -1 para tendencia a la izquierda (negativa) y 0 para una distribución simétrica.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="contexto-clínico-ctg-2" class="slide level2">
+<h2>Contexto clínico (CTG)</h2>
+<ul>
+<li>CTG registra <strong>FCF</strong> y <strong>contracciones uterinas</strong>.</li>
+<li>Clasificación clínica (FIGO): <strong>normal / sospechoso / patológico</strong>.</li>
+<li>Variabilidad, aceleraciones y desaceleraciones son claves.</li>
+</ul>
+</section>
+<section id="regresión-lineal" class="slide level2">
+<h2>Regresión Lineal</h2>
+<h3 id="idea-clave">Idea clave</h3>
+<p>Aproxima una relación <strong>lineal</strong> <span class="math inline">\(\hat{y} = \beta_0 + \sum_j \beta_j x_j\)</span>minimizando <strong>MSE</strong>.</p>
+<h3 id="ejemplo-didáctico-ctg">Ejemplo didáctico (CTG)</h3>
+<p>Usamos una <strong>variable continua</strong> de CTG como respuesta (p.&nbsp;ej., <em>histogram_width</em>) para ilustrar ajuste y residuales.</p>
+
+<img data-src="v2Lect003_ADG_RedesNeuronales_files/figure-revealjs/unnamed-chunk-2-1.png" width="960" class="r-stretch"><p><strong>Discusión:</strong> supuestos (linealidad, homocedasticidad, independencia), diagnóstico con residuales.</p>
+</section>
+<section id="regresión-logística" class="slide level2">
+<h2>Regresión Logística</h2>
+<h3 id="idea-clave-1">Idea clave</h3>
+<p>Modela <span class="math inline">\(P(Y=1 \mid \mathbf{x}) = \sigma(\beta_0 + \mathbf{x}^\top \beta)\)</span> con <strong>sigmoide</strong> <span class="math inline">\(\sigma(z)=1/(1+e^{-z})\)</span>.</p>
+</section>
+<section id="definición-de-regresión-logística" class="slide level2">
+<h2>1. Definición de Regresión Logística</h2>
+<p>La <strong>Regresión Logística</strong> es un algoritmo de aprendizaje automático supervisado utilizado fundamentalmente para problemas de <strong>clasificación binaria</strong>.</p>
+<p>A pesar de su nombre, su objetivo no es predecir un valor continuo, sino modelar la <strong>probabilidad</strong> (<span class="math inline">\(P\)</span>) de que una observación pertenezca a una clase específica (usualmente denotada como <span class="math inline">\(Y=1\)</span>).</p>
+<p>El modelo toma variables de entrada (features) <span class="math inline">\(x_1, \dots, x_n\)</span> y estima <span class="math inline">\(P(Y=1 | \mathbf{x})\)</span>.</p>
+</section>
+<section id="el-mecanismo-central-del-modelo" class="slide level2">
+<h2>2. El Mecanismo Central del Modelo</h2>
+<p>El modelo logístico opera en dos pasos cruciales:</p>
+<h3 id="el-componente-lineal-logit">2.1. El Componente Lineal (Logit)</h3>
+<p>Primero, el modelo calcula una suma ponderada de las entradas, exactamente igual que en una regresión lineal. A este resultado (<span class="math inline">\(z\)</span>) se le conoce como <strong>logit</strong> o, más formalmente, <strong>log-odds</strong>.</p>
+<p><span class="math display">\[
+z = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \dots + \beta_n x_n
+\]</span></p>
+<ul>
+<li><span class="math inline">\(\beta_0\)</span> es el intercepto (sesgo).</li>
+<li><span class="math inline">\(\beta_{1 \dots n}\)</span> son los coeficientes (pesos) que el modelo aprende.</li>
+<li>El rango de salida de <span class="math inline">\(z\)</span> es el de todos los números reales: <span class="math inline">\((-\infty, +\infty)\)</span>.</li>
+</ul>
+<h3 id="la-función-sigmoide-logística">2.2. La Función Sigmoide (Logística)</h3>
+<p>Dado que una probabilidad debe estar en el rango <span class="math inline">\([0, 1]\)</span>, <span class="math inline">\(z\)</span> no puede ser el resultado final. La regresión logística aplica la <strong>función sigmoide</strong> (<span class="math inline">\(\sigma\)</span>) a <span class="math inline">\(z\)</span> para “aplastar” (squash) la salida lineal al rango de probabilidad.</p>
+<p><span class="math display">\[
+P = \sigma(z) = \frac{1}{1 + e^{-z}}
+\]</span></p>
+<ul>
+<li>Si <span class="math inline">\(z \to +\infty\)</span>, <span class="math inline">\(e^{-z} \to 0\)</span>, y <span class="math inline">\(P \to 1\)</span>.</li>
+<li>Si <span class="math inline">\(z \to -\infty\)</span>, <span class="math inline">\(e^{-z} \to +\infty\)</span>, y <span class="math inline">\(P \to 0\)</span>.</li>
+<li>Si <span class="math inline">\(z = 0\)</span>, <span class="math inline">\(e^{-0} = 1\)</span>, y <span class="math inline">\(P = 0.5\)</span>.</li>
+</ul>
+</section>
+<section id="la-relación-clave-probabilidad-y-log-odds" class="slide level2 scrollable">
+<h2>3. La Relación Clave: Probabilidad y Log-Odds</h2>
+<p>El concepto central que conecta el modelo lineal con la probabilidad es el <strong>log-odds</strong>. Esta transformación es necesaria para mapear un espacio acotado <span class="math inline">\([0, 1]\)</span> a un espacio no acotado <span class="math inline">\([-\infty, +\infty]\)</span>.</p>
+<h3 id="de-probabilidad-a-log-odds">3.1. De Probabilidad a Log-Odds</h3>
+<p>La transformación se realiza en dos pasos:</p>
+<ol type="1">
+<li><strong>Probabilidad (<span class="math inline">\(P\)</span>)</strong>: La probabilidad del evento.
+<ul>
+<li>Rango: <span class="math inline">\([0, 1]\)</span></li>
+</ul></li>
+<li><strong>Odds (Momios)</strong>: La razón entre la probabilidad de que ocurra (<span class="math inline">\(P\)</span>) y la de que no ocurra (<span class="math inline">\(1-P\)</span>). <span class="math display">\[
+Odds = \frac{P}{1-P}
+\]</span>
+<ul>
+<li>Rango: <span class="math inline">\([0, +\infty]\)</span></li>
+</ul></li>
+<li><strong>Log-Odds (Logit)</strong>: El logaritmo natural de los <em>odds</em>. <span class="math display">\[
+Logit(P) = \ln(Odds) = \ln\left(\frac{P}{1-P}\right)
+\]</span>
+<ul>
+<li>Rango: <span class="math inline">\([-\infty, +\infty]\)</span></li>
+</ul></li>
+</ol>
+<p>El modelo de regresión logística es, por tanto, un modelo lineal que predice el <em>log-odds</em>:</p>
+<p><span class="math display">\[
+z = \ln\left(\frac{P}{1-P}\right) = \beta_0 + \beta_1 x_1 + \dots + \beta_n x_n
+\]</span></p>
+<h3 id="de-log-odds-a-probabilidad-la-inversa">3.2. De Log-Odds a Probabilidad (La Inversa)</h3>
+<p>Para obtener la probabilidad <span class="math inline">\(P\)</span> a partir del log-odds <span class="math inline">\(z\)</span>, simplemente revertimos la transformación <code>Logit</code>. Este proceso de despejar <span class="math inline">\(P\)</span> de la ecuación del logit <strong>da origen a la función sigmoide</strong>:</p>
+<ol type="1">
+<li><p>Ecuación base: <span class="math display">\[
+z = \ln\left(\frac{P}{1-P}\right)
+\]</span></p></li>
+<li><p>Aplicar exponencial (inversa del logaritmo): <span class="math display">\[
+e^z = \frac{P}{1-P}
+\]</span></p></li>
+<li><p>Despejar <span class="math inline">\(P\)</span>: <span class="math display">\[
+e^z (1-P) = P
+\]</span> <span class="math display">\[
+e^z - e^z P = P
+\]</span> <span class="math display">\[
+e^z = P + e^z P
+\]</span> <span class="math display">\[
+e^z = P (1 + e^z)
+\]</span></p></li>
+<li><p>Probabilidad <span class="math inline">\(P\)</span> en función de <span class="math inline">\(z\)</span>: <span class="math display">\[
+P = \frac{e^z}{1 + e^z}
+\]</span></p></li>
+<li><p><em>Forma sigmoide alternativa (dividiendo numerador y denominador por <span class="math inline">\(e^z\)</span>)</em>: <span class="math display">\[
+P = \frac{e^z/e^z}{(1 + e^z)/e^z} = \frac{1}{e^{-z} + 1} = \frac{1}{1 + e^{-z}}
+\]</span></p></li>
+</ol>
+</section>
+<section id="interpretación-de-coeficientes" class="slide level2">
+<h2>4. Interpretación de Coeficientes</h2>
+<p>Debido a esta relación, los coeficientes (<span class="math inline">\(\beta_i\)</span>) del modelo tienen una interpretación específica:</p>
+<ul>
+<li><strong>Coeficiente <span class="math inline">\(\beta_i\)</span></strong>: Un incremento de una unidad en la variable <span class="math inline">\(x_i\)</span> (manteniendo las demás constantes) genera un cambio de <span class="math inline">\(\beta_i\)</span> en el <strong>log-odds</strong> de la predicción.</li>
+<li><strong>Odds Ratio (OR)</strong>: Para una interpretación más intuitiva, se utiliza <span class="math inline">\(e^{\beta_i}\)</span>. Un incremento de una unidad en <span class="math inline">\(x_i\)</span> <strong>multiplica</strong> los <em>odds</em> por un factor de <span class="math inline">\(e^{\beta_i}\)</span>.</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="v2Lect003_ADG_RedesNeuronales_files/figure-revealjs/unnamed-chunk-3-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<h3 id="clasificación-binaria-normal-vs-nonormal">Clasificación binaria (Normal vs No‑Normal)</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>              precision    recall  f1-score   support
+
+           0      0.778     0.745     0.761        94
+           1      0.929     0.940     0.934       332
+
+    accuracy                          0.897       426
+   macro avg      0.853     0.842     0.848       426
+weighted avg      0.895     0.897     0.896       426</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="v2Lect003_ADG_RedesNeuronales_files/figure-revealjs/unnamed-chunk-4-5.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+</section>
+<section>
+<section id="redes-neuronales" class="title-slide slide level1 center">
+<h1>Redes Neuronales</h1>
+
+</section>
+<section id="el-punto-de-partida-regresión-lineal" class="slide level2">
+<h2>1. El Punto de Partida: Regresión Lineal</h2>
+<p>El problema de regresión estándar busca encontrar una función <span class="math inline">\(f\)</span> que mapee entradas <span class="math inline">\(\mathbf{x}\)</span> a una salida <span class="math inline">\(y\)</span>.</p>
+<p>En la <strong>Regresión Lineal</strong>, asumimos que la relación es <em>lineal</em>:</p>
+<p><span class="math display">\[
+y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \dots + \beta_n x_n + \epsilon
+\]</span> O en forma vectorial: <span class="math display">\[
+y = \mathbf{w}^T \mathbf{x} + b
+\]</span></p>
+<ul>
+<li><strong>Objetivo</strong>: Encontrar los parámetros óptimos (<span class="math inline">\(\mathbf{w}, b\)</span>) que minimizan una función de pérdida (ej. Error Cuadrático Medio, MSE).</li>
+<li><strong>Limitación</strong>: El modelo está restringido a representar únicamente relaciones lineales.</li>
+</ul>
+</section>
+<section id="primera-generalización-el-glm" class="slide level2 scrollable">
+<h2>2. Primera Generalización: El GLM</h2>
+<p>¿Qué pasa si la salida no es lineal o no sigue una distribución normal? (Ej. clasificación binaria).</p>
+<p>Usamos un <strong>Modelo Lineal Generalizado (GLM)</strong>, como la <strong>Regresión Logística</strong>:</p>
+<ol type="1">
+<li><p><strong>Predictor Lineal (<span class="math inline">\(z\)</span>)</strong>: Mantenemos el núcleo lineal. <span class="math display">\[
+z = \mathbf{w}^T \mathbf{x} + b
+\]</span> El resultado <span class="math inline">\(z\)</span> (el <em>logit</em>) puede ir de <span class="math inline">\((-\infty, +\infty)\)</span>.</p></li>
+<li><p><strong>Función de Enlace (Inversa)</strong>: Aplicamos una transformación no-lineal <span class="math inline">\(g^{-1}\)</span> para mapear <span class="math inline">\(z\)</span> al rango deseado (ej. <span class="math inline">\([0, 1]\)</span> para probabilidad). <span class="math display">\[
+\hat{y} = g^{-1}(z) = \sigma(z) = \frac{1}{1 + e^{-z}}
+\]</span></p></li>
+</ol>
+<ul>
+<li><strong>Avance</strong>: Hemos <em>generalizado</em> la regresión. El modelo sigue siendo lineal en sus parámetros <span class="math inline">\(\mathbf{w}\)</span>, pero puede modelar fenómenos no lineales mediante una <strong>función de activación</strong> (la sigmoide).</li>
+</ul>
+</section>
+<section id="la-neurona-una-unidad-de-regresión" class="slide level2 scrollable">
+<h2>3. La Neurona: Una Unidad de Regresión</h2>
+<p>Una <strong>neurona artificial</strong> (o Perceptrón) es conceptualmente idéntica a un modelo de regresión logística (un GLM).</p>
+<ol type="1">
+<li class="fragment"><p><strong>Agregación Lineal</strong>: Calcula el predictor lineal <span class="math inline">\(z\)</span> (la entrada neta). <span class="math display">\[
+z = \sum_{i=1}^n w_i x_i + b
+\]</span></p></li>
+<li class="fragment"><p><strong>Función de Activación</strong>: Aplica una transformación no-lineal <span class="math inline">\(a\)</span> (la salida). <span class="math display">\[
+a = g(z)
+\]</span></p></li>
+</ol>
+<ul>
+<li><span class="math inline">\(g(z)\)</span> puede ser <span class="math inline">\(\text{sigmoid}(z)\)</span>, <span class="math inline">\(\tanh(z)\)</span>, <span class="math inline">\(\text{ReLU}(z)\)</span>, etc.</li>
+<li><strong>Concepto Clave</strong>: Una sola neurona es una unidad de regresión (lineal o generalizada) que aprende un <em>único</em> límite de decisión (o una respuesta lineal).</li>
+</ul>
+</section>
+<section id="la-red-composición-de-funciones" class="slide level2">
+<h2>4. La Red: Composición de Funciones</h2>
+<p>¿Cómo modelar relaciones <em>altamente</em> complejas que una sola neurona no puede capturar?</p>
+<p><strong>Respuesta</strong>: Apilando las neuronas en capas.</p>
+<p>La salida de una capa de “unidades de regresión” se convierte en la <em>entrada</em> de la siguiente capa.</p>
+<p><span class="math display">\[
+\text{Capa 1 (Oculta): } \mathbf{a}^{(1)} = g_1(\mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)})
+\]</span> <span class="math display">\[
+\text{Capa 2 (Salida): } \hat{y} = g_2(\mathbf{W}^{(2)}\mathbf{a}^{(1)} + \mathbf{b}^{(2)})
+\]</span></p>
+<p>Esto es una <strong>composición de funciones</strong> anidada:</p>
+<p><span class="math display">\[
+\hat{y} = g_2\left( \mathbf{W}^{(2)} \left( g_1(\mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)}) \right) + \mathbf{b}^{(2)} \right)
+\]</span></p>
+</section>
+<section id="el-teorema-de-aproximación-universal" class="slide level2">
+<h2>5. El Teorema de Aproximación Universal</h2>
+<p>Esta arquitectura de “regresiones apiladas” tiene una propiedad fundamental:</p>
+<blockquote>
+<p><strong>Teorema de Aproximación Universal</strong>: Una red neuronal <em>feedforward</em> con una sola capa oculta (con una función de activación no lineal, como ReLU o Sigmoide) puede aproximar cualquier función continua <span class="math inline">\(f(\mathbf{x})\)</span> a un grado arbitrario de precisión, dado un número suficiente de neuronas.</p>
+</blockquote>
+<ul>
+<li>Una regresión lineal solo puede encontrar la <em>mejor línea</em>.</li>
+<li>Una red neuronal puede encontrar (aprender) la <em>función</em> <span class="math inline">\(f(\mathbf{x})\)</span> en sí misma, sin importar su forma.</li>
+</ul>
+<p><strong>La red neuronal es un regresor generalizado en el sentido más amplio.</strong></p>
+</section>
+<section id="generalización-del-aprendizaje-optimización" class="slide level2">
+<h2>6. Generalización del Aprendizaje (Optimización)</h2>
+<p>El proceso de “entrenamiento” también es una generalización de la regresión.</p>
+<div class="columns">
+<div class="column" style="width:45%;">
+<p><strong>Regresión (Lineal/Logística)</strong></p>
+<ul>
+<li><strong>Pérdida</strong>: Se define una función de coste (Loss Function) <span class="math inline">\(L(y, \hat{y})\)</span>.
+<ul>
+<li><em>Ej. MSE</em>: <span class="math inline">\(L = (y - \hat{y})^2\)</span></li>
+<li><em>Ej. Cross-Entropy</em>: <span class="math inline">\(L = -[y \log(\hat{y}) + (1-y) \log(1-\hat{y})]\)</span></li>
+</ul></li>
+<li><strong>Optimización</strong>: Se encuentran los <span class="math inline">\(\mathbf{w}\)</span> y <span class="math inline">\(b\)</span> que minimizan <span class="math inline">\(L\)</span> (a menudo usando Descenso de Gradiente).</li>
+</ul>
+</div><div class="column" style="width:45%;">
+<p><strong>Red Neuronal</strong></p>
+<ul>
+<li><strong>Pérdida</strong>: Se define la <em>misma</em> función de coste <span class="math inline">\(L(y, \hat{y})\)</span> en la salida final.</li>
+<li><strong>Optimización</strong>: Se encuentran <em>todos</em> los <span class="math inline">\(\mathbf{W}^{(l)}\)</span> y <span class="math inline">\(\mathbf{b}^{(l)}\)</span> de <em>todas</em> las capas que minimizan <span class="math inline">\(L\)</span>.</li>
+<li><strong>Mecanismo</strong>: <strong>Descenso de Gradiente</strong> + <strong>Backpropagation</strong> (Retropropagación).
+<ul>
+<li>Backpropagation es simplemente la aplicación sistemática de la <strong>regla de la cadena</strong> del cálculo para encontrar el gradiente de <span class="math inline">\(L\)</span> con respecto a cada peso en la vasta función compuesta.</li>
+</ul></li>
+</ul>
+</div></div>
+</section>
+<section id="conclusión-la-red-como-f_thetamathbfx" class="slide level2 scrollable">
+<h2>7. Conclusión: La Red como <span class="math inline">\(f_{\theta}(\mathbf{x})\)</span></h2>
+<ol type="1">
+<li><strong>Regresión Lineal</strong>:
+<ul>
+<li>Modelo: <span class="math inline">\(f(\mathbf{x}) = \mathbf{w}^T \mathbf{x} + b\)</span></li>
+<li>Asume una forma funcional <em>fija</em> (lineal).</li>
+</ul></li>
+<li><strong>GLM (Logística)</strong>:
+<ul>
+<li>Modelo: <span class="math inline">\(f(\mathbfx) = g(\mathbf{w}^T \mathbf{x} + b)\)</span></li>
+<li>Asume una forma fija (lineal) transformada por una activación fija (ej. sigmoide).</li>
+</ul></li>
+<li><strong>Red Neuronal (MLP)</strong>:
+<ul>
+<li>Modelo: <span class="math inline">\(f(\mathbf{x}) = f_L(\dots f_2(f_1(\mathbf{x}))\dots)\)</span></li>
+<li><strong>No asume una forma funcional fija</strong>.</li>
+<li>Es un <strong>aproximador de funciones universal</strong> cuyos parámetros <span class="math inline">\(\theta\)</span> (todos los <span class="math inline">\(W\)</span> y <span class="math inline">\(b\)</span>) se <em>aprenden</em> para que <span class="math inline">\(f_{\theta}(\mathbf{x})\)</span> imite la verdadera función subyacente <span class="math inline">\(f(\mathbf{x})\)</span> en los datos.</li>
+</ul></li>
+</ol>
+<p>La red neuronal es la generalización última de la regresión: un sistema que <strong>aprende la forma de la función</strong> desde los datos.</p>
+</section>
+<section id="perceptrón-multicapa-mlp" class="slide level2">
+<h2>Perceptrón Multicapa — MLP</h2>
+<p><strong>Arquitectura propuesta:</strong> 21→32→16→3 con <em>ReLU</em> y <strong>softmax</strong> para 3 clases <span class="math inline">\((1,2,3)\)</span>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<svg width="960" height="480" viewbox="0.00 0.00 961.86 2938.00" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="; max-width: none; max-height: none; display: block; margin: auto auto auto auto">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 2934)">
+<title>MLP_FetalHealth</title>
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-2934 957.86,-2934 957.86,4 -4,4"></polygon>
+<g id="clust1" class="cluster">
+<title>cluster_input</title>
+<polygon fill="none" stroke="gray" points="0,-988 0,-2285 182.75,-2285 182.75,-988 0,-988"></polygon>
+<text text-anchor="middle" x="91.38" y="-2268.4" font-family="Times,serif" font-size="14.00">Input layer (21 CTG features)</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_hidden1</title>
+<polygon fill="none" stroke="gray" points="202.75,-8 202.75,-2769 369.11,-2769 369.11,-8 202.75,-8"></polygon>
+<text text-anchor="middle" x="285.93" y="-2752.4" font-family="Times,serif" font-size="14.00">Hidden layer 1 (ReLU, 32)</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_hidden2</title>
+<polygon fill="none" stroke="gray" points="388.11,-1571 388.11,-2922 554.47,-2922 554.47,-1571 388.11,-1571"></polygon>
+<text text-anchor="middle" x="471.29" y="-2905.4" font-family="Times,serif" font-size="14.00">Hidden layer 2 (ReLU, 16)</text>
+</g>
+<g id="clust4" class="cluster">
+<title>cluster_output</title>
+<polygon fill="none" stroke="gray" points="573.47,-1953 573.47,-2153 953.86,-2153 953.86,-1953 573.47,-1953"></polygon>
+<text text-anchor="middle" x="763.66" y="-2136.4" font-family="Times,serif" font-size="14.00">Output layer (Softmax, 3 classes: Normal, Suspect, Pathological)</text>
+</g>
+<!-- i1 -->
+<g id="node1" class="node">
+<title>i1</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-2234" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-2229.8" font-family="Times,serif" font-size="14.00">i1</text>
+</g>
+<!-- h1_1 -->
+<g id="node22" class="node">
+<title>h1_1</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2529" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2524.8" font-family="Times,serif" font-size="14.00">h1_1</text>
+</g>
+<!-- i1&#45;&gt;h1_1 -->
+<g id="edge1" class="edge">
+<title>i1-&gt;h1_1</title>
+<path fill="none" stroke="black" d="M95.7,-2252.15C104.88,-2297.59 134.56,-2417.71 202.75,-2489 214.72,-2501.51 231.41,-2510.62 246.63,-2516.96"></path>
+<polygon fill="black" stroke="black" points="245.76,-2520.38 256.35,-2520.73 248.29,-2513.85 245.76,-2520.38"></polygon>
+</g>
+<!-- h1_2 -->
+<g id="node23" class="node">
+<title>h1_2</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2450" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2445.8" font-family="Times,serif" font-size="14.00">h1_2</text>
+</g>
+<!-- i1&#45;&gt;h1_2 -->
+<g id="edge2" class="edge">
+<title>i1-&gt;h1_2</title>
+<path fill="none" stroke="black" d="M99.17,-2250.95C113.59,-2285.09 150.3,-2362.88 202.75,-2410 215.54,-2421.48 232.21,-2430.41 247.19,-2436.88"></path>
+<polygon fill="black" stroke="black" points="246.15,-2440.24 256.74,-2440.79 248.81,-2433.76 246.15,-2440.24"></polygon>
+</g>
+<!-- h1_3 -->
+<g id="node24" class="node">
+<title>h1_3</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2282" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2277.8" font-family="Times,serif" font-size="14.00">h1_3</text>
+</g>
+<!-- i1&#45;&gt;h1_3 -->
+<g id="edge3" class="edge">
+<title>i1-&gt;h1_3</title>
+<path fill="none" stroke="black" d="M109.46,-2238.26C139.99,-2245.87 204.59,-2261.97 246.32,-2272.37"></path>
+<polygon fill="black" stroke="black" points="245.59,-2275.8 256.14,-2274.82 247.29,-2269.01 245.59,-2275.8"></polygon>
+</g>
+<!-- h1_4 -->
+<g id="node25" class="node">
+<title>h1_4</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2203" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2198.8" font-family="Times,serif" font-size="14.00">h1_4</text>
+</g>
+<!-- i1&#45;&gt;h1_4 -->
+<g id="edge4" class="edge">
+<title>i1-&gt;h1_4</title>
+<path fill="none" stroke="black" d="M109.8,-2231.19C140.36,-2226.28 204.29,-2215.98 245.87,-2209.29"></path>
+<polygon fill="black" stroke="black" points="246.61,-2212.71 255.93,-2207.67 245.5,-2205.8 246.61,-2212.71"></polygon>
+</g>
+<!-- h1_5 -->
+<g id="node26" class="node">
+<title>h1_5</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2124" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2119.8" font-family="Times,serif" font-size="14.00">h1_5</text>
+</g>
+<!-- i1&#45;&gt;h1_5 -->
+<g id="edge5" class="edge">
+<title>i1-&gt;h1_5</title>
+<path fill="none" stroke="black" d="M110.05,-2232.96C129.91,-2230.93 162.07,-2224.89 182.75,-2207 198.7,-2193.22 187.98,-2179.03 202.75,-2164 214.89,-2151.65 231.6,-2142.56 246.79,-2136.2"></path>
+<polygon fill="black" stroke="black" points="248.46,-2139.31 256.49,-2132.4 245.9,-2132.79 248.46,-2139.31"></polygon>
+</g>
+<!-- i2 -->
+<g id="node2" class="node">
+<title>i2</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-2179" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-2174.8" font-family="Times,serif" font-size="14.00">i2</text>
+</g>
+<!-- i2&#45;&gt;h1_2 -->
+<g id="edge6" class="edge">
+<title>i2-&gt;h1_2</title>
+<path fill="none" stroke="black" d="M110.13,-2178.82C131.01,-2179.66 165.05,-2184.51 182.75,-2206 211.72,-2241.16 176.74,-2372.61 202.75,-2410 213.03,-2424.78 230.34,-2434.31 246.43,-2440.35"></path>
+<polygon fill="black" stroke="black" points="245.62,-2443.77 256.22,-2443.67 247.87,-2437.14 245.62,-2443.77"></polygon>
+</g>
+<!-- i2&#45;&gt;h1_3 -->
+<g id="edge7" class="edge">
+<title>i2-&gt;h1_3</title>
+<path fill="none" stroke="black" d="M110.18,-2180.35C129.85,-2182.67 161.56,-2188.97 182.75,-2206 197.02,-2217.47 189.47,-2229.41 202.75,-2242 215.32,-2253.91 232.1,-2262.93 247.22,-2269.36"></path>
+<polygon fill="black" stroke="black" points="246.27,-2272.75 256.86,-2273.22 248.88,-2266.26 246.27,-2272.75"></polygon>
+</g>
+<!-- i2&#45;&gt;h1_4 -->
+<g id="edge8" class="edge">
+<title>i2-&gt;h1_4</title>
+<path fill="none" stroke="black" d="M109.8,-2181.17C140.27,-2184.97 203.93,-2192.9 245.52,-2198.09"></path>
+<polygon fill="black" stroke="black" points="245.23,-2201.58 255.59,-2199.34 246.1,-2194.63 245.23,-2201.58"></polygon>
+</g>
+<!-- i2&#45;&gt;h1_5 -->
+<g id="edge9" class="edge">
+<title>i2-&gt;h1_5</title>
+<path fill="none" stroke="black" d="M109.46,-2174.12C140.08,-2165.38 204.95,-2146.84 246.67,-2134.93"></path>
+<polygon fill="black" stroke="black" points="247.83,-2138.24 256.48,-2132.13 245.9,-2131.51 247.83,-2138.24"></polygon>
+</g>
+<!-- h1_6 -->
+<g id="node27" class="node">
+<title>h1_6</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2045" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2040.8" font-family="Times,serif" font-size="14.00">h1_6</text>
+</g>
+<!-- i2&#45;&gt;h1_6 -->
+<g id="edge10" class="edge">
+<title>i2-&gt;h1_6</title>
+<path fill="none" stroke="black" d="M110.18,-2178.52C130.46,-2177 163.3,-2171.46 182.75,-2152 204.72,-2130.02 182.64,-2108.69 202.75,-2085 214.15,-2071.58 231.11,-2062.28 246.66,-2056.04"></path>
+<polygon fill="black" stroke="black" points="247.94,-2059.3 256.11,-2052.55 245.51,-2052.74 247.94,-2059.3"></polygon>
+</g>
+<!-- i3 -->
+<g id="node3" class="node">
+<title>i3</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-2124" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-2119.8" font-family="Times,serif" font-size="14.00">i3</text>
+</g>
+<!-- i3&#45;&gt;h1_3 -->
+<g id="edge11" class="edge">
+<title>i3-&gt;h1_3</title>
+<path fill="none" stroke="black" d="M110.07,-2124.21C130.57,-2125.45 163.92,-2130.72 182.75,-2151 210.93,-2181.34 177.13,-2209.47 202.75,-2242 213.73,-2255.94 230.79,-2265.33 246.53,-2271.49"></path>
+<polygon fill="black" stroke="black" points="245.5,-2274.84 256.09,-2274.92 247.86,-2268.25 245.5,-2274.84"></polygon>
+</g>
+<!-- i3&#45;&gt;h1_4 -->
+<g id="edge12" class="edge">
+<title>i3-&gt;h1_4</title>
+<path fill="none" stroke="black" d="M109.82,-2127.84C128.37,-2132.23 158.33,-2140.23 182.75,-2151 192.24,-2155.18 193.64,-2158.06 202.75,-2163 217.63,-2171.06 234.37,-2179.35 248.84,-2186.27"></path>
+<polygon fill="black" stroke="black" points="247.45,-2189.49 257.98,-2190.61 250.45,-2183.16 247.45,-2189.49"></polygon>
+</g>
+<!-- i3&#45;&gt;h1_5 -->
+<g id="edge13" class="edge">
+<title>i3-&gt;h1_5</title>
+<path fill="none" stroke="black" d="M110.15,-2124C140.7,-2124 203.9,-2124 245.34,-2124"></path>
+<polygon fill="black" stroke="black" points="245.37,-2127.5 255.37,-2124 245.37,-2120.5 245.37,-2127.5"></polygon>
+</g>
+<!-- i3&#45;&gt;h1_6 -->
+<g id="edge14" class="edge">
+<title>i3-&gt;h1_6</title>
+<path fill="none" stroke="black" d="M109.82,-2120.16C128.37,-2115.77 158.33,-2107.77 182.75,-2097 192.24,-2092.82 193.64,-2089.94 202.75,-2085 217.63,-2076.94 234.37,-2068.65 248.84,-2061.73"></path>
+<polygon fill="black" stroke="black" points="250.45,-2064.84 257.98,-2057.39 247.45,-2058.51 250.45,-2064.84"></polygon>
+</g>
+<!-- h1_7 -->
+<g id="node28" class="node">
+<title>h1_7</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1966" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1961.8" font-family="Times,serif" font-size="14.00">h1_7</text>
+</g>
+<!-- i3&#45;&gt;h1_7 -->
+<g id="edge15" class="edge">
+<title>i3-&gt;h1_7</title>
+<path fill="none" stroke="black" d="M110.07,-2123.79C130.57,-2122.55 163.92,-2117.28 182.75,-2097 210.93,-2066.66 177.13,-2038.53 202.75,-2006 213.73,-1992.06 230.79,-1982.67 246.53,-1976.51"></path>
+<polygon fill="black" stroke="black" points="247.86,-1979.75 256.09,-1973.08 245.5,-1973.16 247.86,-1979.75"></polygon>
+</g>
+<!-- i4 -->
+<g id="node4" class="node">
+<title>i4</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-2069" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-2064.8" font-family="Times,serif" font-size="14.00">i4</text>
+</g>
+<!-- i4&#45;&gt;h1_4 -->
+<g id="edge16" class="edge">
+<title>i4-&gt;h1_4</title>
+<path fill="none" stroke="black" d="M110.18,-2069.48C130.46,-2071 163.3,-2076.54 182.75,-2096 204.72,-2117.98 182.64,-2139.31 202.75,-2163 214.15,-2176.42 231.11,-2185.72 246.66,-2191.96"></path>
+<polygon fill="black" stroke="black" points="245.51,-2195.26 256.11,-2195.45 247.94,-2188.7 245.51,-2195.26"></polygon>
+</g>
+<!-- i4&#45;&gt;h1_5 -->
+<g id="edge17" class="edge">
+<title>i4-&gt;h1_5</title>
+<path fill="none" stroke="black" d="M109.46,-2073.88C140.08,-2082.62 204.95,-2101.16 246.67,-2113.07"></path>
+<polygon fill="black" stroke="black" points="245.9,-2116.49 256.48,-2115.87 247.83,-2109.76 245.9,-2116.49"></polygon>
+</g>
+<!-- i4&#45;&gt;h1_6 -->
+<g id="edge18" class="edge">
+<title>i4-&gt;h1_6</title>
+<path fill="none" stroke="black" d="M109.8,-2066.83C140.27,-2063.03 203.93,-2055.1 245.52,-2049.91"></path>
+<polygon fill="black" stroke="black" points="246.1,-2053.37 255.59,-2048.66 245.23,-2046.42 246.1,-2053.37"></polygon>
+</g>
+<!-- i4&#45;&gt;h1_7 -->
+<g id="edge19" class="edge">
+<title>i4-&gt;h1_7</title>
+<path fill="none" stroke="black" d="M110.18,-2067.65C129.85,-2065.33 161.56,-2059.03 182.75,-2042 197.02,-2030.53 189.47,-2018.59 202.75,-2006 215.32,-1994.09 232.1,-1985.07 247.22,-1978.64"></path>
+<polygon fill="black" stroke="black" points="248.88,-1981.74 256.86,-1974.78 246.27,-1975.25 248.88,-1981.74"></polygon>
+</g>
+<!-- h1_8 -->
+<g id="node29" class="node">
+<title>h1_8</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1446" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1441.8" font-family="Times,serif" font-size="14.00">h1_8</text>
+</g>
+<!-- i4&#45;&gt;h1_8 -->
+<g id="edge20" class="edge">
+<title>i4-&gt;h1_8</title>
+<path fill="none" stroke="black" d="M109.99,-2069.37C131.05,-2068.76 165.62,-2064.15 182.75,-2042 220.57,-1993.1 169.04,-1537.81 202.75,-1486 212.57,-1470.91 229.83,-1461.34 246,-1455.36"></path>
+<polygon fill="black" stroke="black" points="247.47,-1458.56 255.85,-1452.08 245.26,-1451.92 247.47,-1458.56"></polygon>
+</g>
+<!-- i5 -->
+<g id="node5" class="node">
+<title>i5</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-2014" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-2009.8" font-family="Times,serif" font-size="14.00">i5</text>
+</g>
+<!-- i5&#45;&gt;h1_5 -->
+<g id="edge21" class="edge">
+<title>i5-&gt;h1_5</title>
+<path fill="none" stroke="black" d="M110.05,-2015.04C129.91,-2017.07 162.07,-2023.11 182.75,-2041 198.7,-2054.78 187.98,-2068.97 202.75,-2084 214.89,-2096.35 231.6,-2105.44 246.79,-2111.8"></path>
+<polygon fill="black" stroke="black" points="245.9,-2115.21 256.49,-2115.6 248.46,-2108.69 245.9,-2115.21"></polygon>
+</g>
+<!-- i5&#45;&gt;h1_6 -->
+<g id="edge22" class="edge">
+<title>i5-&gt;h1_6</title>
+<path fill="none" stroke="black" d="M109.8,-2016.81C140.36,-2021.72 204.29,-2032.02 245.87,-2038.71"></path>
+<polygon fill="black" stroke="black" points="245.5,-2042.2 255.93,-2040.33 246.61,-2035.29 245.5,-2042.2"></polygon>
+</g>
+<!-- i5&#45;&gt;h1_7 -->
+<g id="edge23" class="edge">
+<title>i5-&gt;h1_7</title>
+<path fill="none" stroke="black" d="M109.46,-2009.74C139.99,-2002.13 204.59,-1986.03 246.32,-1975.63"></path>
+<polygon fill="black" stroke="black" points="247.29,-1978.99 256.14,-1973.18 245.59,-1972.2 247.29,-1978.99"></polygon>
+</g>
+<!-- i5&#45;&gt;h1_8 -->
+<g id="edge24" class="edge">
+<title>i5-&gt;h1_8</title>
+<path fill="none" stroke="black" d="M109.97,-2014.36C131.02,-2013.73 165.58,-2009.12 182.75,-1987 216.92,-1943 172.28,-1532.64 202.75,-1486 212.6,-1470.93 229.86,-1461.36 246.03,-1455.38"></path>
+<polygon fill="black" stroke="black" points="247.5,-1458.58 255.88,-1452.1 245.28,-1451.94 247.5,-1458.58"></polygon>
+</g>
+<!-- h1_9 -->
+<g id="node30" class="node">
+<title>h1_9</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-46" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="285.93" y="-41.8" font-family="Times,serif" font-size="14.00">h1_9</text>
+</g>
+<!-- i5&#45;&gt;h1_9 -->
+<g id="edge25" class="edge">
+<title>i5-&gt;h1_9</title>
+<path fill="none" stroke="black" d="M110.08,-2014.44C131.24,-2013.9 165.91,-2009.37 182.75,-1987 214.52,-1944.82 174.52,-130.63 202.75,-86 212.45,-70.68 229.87,-61.06 246.18,-55.11"></path>
+<polygon fill="black" stroke="black" points="247.69,-58.3 256.11,-51.87 245.52,-51.65 247.69,-58.3"></polygon>
+</g>
+<!-- i6 -->
+<g id="node6" class="node">
+<title>i6</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1959" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1954.8" font-family="Times,serif" font-size="14.00">i6</text>
+</g>
+<!-- i7 -->
+<g id="node7" class="node">
+<title>i7</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1904" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1899.8" font-family="Times,serif" font-size="14.00">i7</text>
+</g>
+<!-- i8 -->
+<g id="node8" class="node">
+<title>i8</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1849" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1844.8" font-family="Times,serif" font-size="14.00">i8</text>
+</g>
+<!-- i9 -->
+<g id="node9" class="node">
+<title>i9</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1794" rx="18.6" ry="18.6"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1789.8" font-family="Times,serif" font-size="14.00">i9</text>
+</g>
+<!-- i10 -->
+<g id="node10" class="node">
+<title>i10</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1734" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1729.8" font-family="Times,serif" font-size="14.00">i10</text>
+</g>
+<!-- i11 -->
+<g id="node11" class="node">
+<title>i11</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1669" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1664.8" font-family="Times,serif" font-size="14.00">i11</text>
+</g>
+<!-- i12 -->
+<g id="node12" class="node">
+<title>i12</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1604" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1599.8" font-family="Times,serif" font-size="14.00">i12</text>
+</g>
+<!-- i13 -->
+<g id="node13" class="node">
+<title>i13</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1539" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1534.8" font-family="Times,serif" font-size="14.00">i13</text>
+</g>
+<!-- i14 -->
+<g id="node14" class="node">
+<title>i14</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1474" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1469.8" font-family="Times,serif" font-size="14.00">i14</text>
+</g>
+<!-- i15 -->
+<g id="node15" class="node">
+<title>i15</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1409" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1404.8" font-family="Times,serif" font-size="14.00">i15</text>
+</g>
+<!-- i16 -->
+<g id="node16" class="node">
+<title>i16</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1344" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1339.8" font-family="Times,serif" font-size="14.00">i16</text>
+</g>
+<!-- i17 -->
+<g id="node17" class="node">
+<title>i17</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1279" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1274.8" font-family="Times,serif" font-size="14.00">i17</text>
+</g>
+<!-- i18 -->
+<g id="node18" class="node">
+<title>i18</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1214" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1209.8" font-family="Times,serif" font-size="14.00">i18</text>
+</g>
+<!-- i19 -->
+<g id="node19" class="node">
+<title>i19</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1149" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1144.8" font-family="Times,serif" font-size="14.00">i19</text>
+</g>
+<!-- i20 -->
+<g id="node20" class="node">
+<title>i20</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1084" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1079.8" font-family="Times,serif" font-size="14.00">i20</text>
+</g>
+<!-- i21 -->
+<g id="node21" class="node">
+<title>i21</title>
+<ellipse fill="none" stroke="black" cx="91.38" cy="-1019" rx="23.25" ry="23.25"></ellipse>
+<text text-anchor="middle" x="91.38" y="-1014.8" font-family="Times,serif" font-size="14.00">i21</text>
+</g>
+<!-- h2_1 -->
+<g id="node54" class="node">
+<title>h2_1</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2543" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2538.8" font-family="Times,serif" font-size="14.00">h2_1</text>
+</g>
+<!-- h1_1&#45;&gt;h2_1 -->
+<g id="edge26" class="edge">
+<title>h1_1-&gt;h2_1</title>
+<path fill="none" stroke="black" d="M316.39,-2531.25C347.4,-2533.62 396.39,-2537.36 430.75,-2539.98"></path>
+<polygon fill="black" stroke="black" points="430.67,-2543.48 440.9,-2540.76 431.2,-2536.5 430.67,-2543.48"></polygon>
+</g>
+<!-- h2_2 -->
+<g id="node55" class="node">
+<title>h2_2</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-1962" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-1957.8" font-family="Times,serif" font-size="14.00">h2_2</text>
+</g>
+<!-- h1_1&#45;&gt;h2_2 -->
+<g id="edge27" class="edge">
+<title>h1_1-&gt;h2_2</title>
+<path fill="none" stroke="black" d="M315.99,-2522.91C334.53,-2517.38 357.23,-2507.2 369.11,-2489 398.72,-2443.66 358.51,-2047.34 388.11,-2002 397.95,-1986.93 415.21,-1977.36 431.38,-1971.37"></path>
+<polygon fill="black" stroke="black" points="432.85,-1974.57 441.23,-1968.09 430.64,-1967.93 432.85,-1974.57"></polygon>
+</g>
+<!-- h2_3 -->
+<g id="node56" class="node">
+<title>h2_3</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2041" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2036.8" font-family="Times,serif" font-size="14.00">h2_3</text>
+</g>
+<!-- h1_1&#45;&gt;h2_3 -->
+<g id="edge28" class="edge">
+<title>h1_1-&gt;h2_3</title>
+<path fill="none" stroke="black" d="M315.95,-2522.88C334.46,-2517.34 357.16,-2507.16 369.11,-2489 419.02,-2413.19 338.2,-2156.81 388.11,-2081 398.01,-2065.96 415.27,-2056.4 431.43,-2050.41"></path>
+<polygon fill="black" stroke="black" points="432.9,-2053.61 441.27,-2047.12 430.68,-2046.97 432.9,-2053.61"></polygon>
+</g>
+<!-- h2_4 -->
+<g id="node57" class="node">
+<title>h2_4</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2464" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2459.8" font-family="Times,serif" font-size="14.00">h2_4</text>
+</g>
+<!-- h1_1&#45;&gt;h2_4 -->
+<g id="edge29" class="edge">
+<title>h1_1-&gt;h2_4</title>
+<path fill="none" stroke="black" d="M314.78,-2519.13C346.24,-2507.98 397.6,-2489.77 432.62,-2477.35"></path>
+<polygon fill="black" stroke="black" points="434.22,-2480.5 442.48,-2473.86 431.89,-2473.9 434.22,-2480.5"></polygon>
+</g>
+<!-- h1_5&#45;&gt;h2_2 -->
+<g id="edge30" class="edge">
+<title>h1_5-&gt;h2_2</title>
+<path fill="none" stroke="black" d="M315.71,-2116.87C333.64,-2110.96 355.76,-2100.75 369.11,-2084 392.42,-2054.74 364.8,-2031.26 388.11,-2002 399.16,-1988.13 416.24,-1978.74 431.96,-1972.57"></path>
+<polygon fill="black" stroke="black" points="433.29,-1975.81 441.51,-1969.13 430.92,-1969.23 433.29,-1975.81"></polygon>
+</g>
+<!-- h1_5&#45;&gt;h2_3 -->
+<g id="edge31" class="edge">
+<title>h1_5-&gt;h2_3</title>
+<path fill="none" stroke="black" d="M313.99,-2111.75C345.77,-2097.37 398.62,-2073.44 433.95,-2057.45"></path>
+<polygon fill="black" stroke="black" points="435.76,-2060.47 443.42,-2053.16 432.87,-2054.1 435.76,-2060.47"></polygon>
+</g>
+<!-- h1_5&#45;&gt;h2_4 -->
+<g id="edge32" class="edge">
+<title>h1_5-&gt;h2_4</title>
+<path fill="none" stroke="black" d="M315.79,-2130.23C334.24,-2135.81 356.92,-2146 369.11,-2164 401.6,-2211.96 355.62,-2376.04 388.11,-2424 398.21,-2438.9 415.49,-2448.45 431.62,-2454.47"></path>
+<polygon fill="black" stroke="black" points="430.84,-2457.9 441.43,-2457.77 433.07,-2451.26 430.84,-2457.9"></polygon>
+</g>
+<!-- h2_5 -->
+<g id="node58" class="node">
+<title>h2_5</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2120" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2115.8" font-family="Times,serif" font-size="14.00">h2_5</text>
+</g>
+<!-- h1_5&#45;&gt;h2_5 -->
+<g id="edge33" class="edge">
+<title>h1_5-&gt;h2_5</title>
+<path fill="none" stroke="black" d="M316.39,-2123.36C347.4,-2122.68 396.39,-2121.61 430.75,-2120.86"></path>
+<polygon fill="black" stroke="black" points="430.98,-2124.36 440.9,-2120.64 430.83,-2117.36 430.98,-2124.36"></polygon>
+</g>
+<!-- h1_10 -->
+<g id="node31" class="node">
+<title>h1_10</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2613" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2608.8" font-family="Times,serif" font-size="14.00">h1_10</text>
+</g>
+<!-- h1_10&#45;&gt;h2_4 -->
+<g id="edge34" class="edge">
+<title>h1_10-&gt;h2_4</title>
+<path fill="none" stroke="black" d="M319.43,-2602.14C336.45,-2594.92 356.34,-2583.82 369.11,-2568 387.75,-2544.91 368.92,-2526.63 388.11,-2504 399.58,-2490.47 416.71,-2481.13 432.36,-2474.9"></path>
+<polygon fill="black" stroke="black" points="433.67,-2478.14 441.85,-2471.41 431.26,-2471.57 433.67,-2478.14"></polygon>
+</g>
+<!-- h1_10&#45;&gt;h2_5 -->
+<g id="edge35" class="edge">
+<title>h1_10-&gt;h2_5</title>
+<path fill="none" stroke="black" d="M320.17,-2603.58C337.86,-2596.73 358.17,-2585.52 369.11,-2568 417.18,-2491.01 338.2,-2235.81 388.11,-2160 398.01,-2144.96 415.27,-2135.4 431.43,-2129.41"></path>
+<polygon fill="black" stroke="black" points="432.9,-2132.61 441.27,-2126.12 430.68,-2125.97 432.9,-2132.61"></polygon>
+</g>
+<!-- h2_6 -->
+<g id="node59" class="node">
+<title>h2_6</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2701" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2696.8" font-family="Times,serif" font-size="14.00">h2_6</text>
+</g>
+<!-- h1_10&#45;&gt;h2_6 -->
+<g id="edge36" class="edge">
+<title>h1_10-&gt;h2_6</title>
+<path fill="none" stroke="black" d="M318.04,-2627.93C350.26,-2643.39 400.55,-2667.53 434.42,-2683.79"></path>
+<polygon fill="black" stroke="black" points="432.98,-2686.98 443.51,-2688.15 436.01,-2680.67 432.98,-2686.98"></polygon>
+</g>
+<!-- h2_7 -->
+<g id="node60" class="node">
+<title>h2_7</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2622" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2617.8" font-family="Times,serif" font-size="14.00">h2_7</text>
+</g>
+<!-- h1_10&#45;&gt;h2_7 -->
+<g id="edge37" class="edge">
+<title>h1_10-&gt;h2_7</title>
+<path fill="none" stroke="black" d="M321.42,-2614.69C352.5,-2616.22 398.17,-2618.46 430.73,-2620.06"></path>
+<polygon fill="black" stroke="black" points="430.64,-2623.56 440.8,-2620.55 430.98,-2616.57 430.64,-2623.56"></polygon>
+</g>
+<!-- h1_11 -->
+<g id="node32" class="node">
+<title>h1_11</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1882" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1877.8" font-family="Times,serif" font-size="14.00">h1_11</text>
+</g>
+<!-- h1_12 -->
+<g id="node33" class="node">
+<title>h1_12</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1794" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1789.8" font-family="Times,serif" font-size="14.00">h1_12</text>
+</g>
+<!-- h1_13 -->
+<g id="node34" class="node">
+<title>h1_13</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1706" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1701.8" font-family="Times,serif" font-size="14.00">h1_13</text>
+</g>
+<!-- h1_14 -->
+<g id="node35" class="node">
+<title>h1_14</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1618" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1613.8" font-family="Times,serif" font-size="14.00">h1_14</text>
+</g>
+<!-- h1_15 -->
+<g id="node36" class="node">
+<title>h1_15</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1530" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1525.8" font-family="Times,serif" font-size="14.00">h1_15</text>
+</g>
+<!-- h1_16 -->
+<g id="node37" class="node">
+<title>h1_16</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2701" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2696.8" font-family="Times,serif" font-size="14.00">h1_16</text>
+</g>
+<!-- h1_16&#45;&gt;h2_6 -->
+<g id="edge38" class="edge">
+<title>h1_16-&gt;h2_6</title>
+<path fill="none" stroke="black" d="M321.42,-2701C352.5,-2701 398.17,-2701 430.73,-2701"></path>
+<polygon fill="black" stroke="black" points="430.8,-2704.5 440.8,-2701 430.8,-2697.5 430.8,-2704.5"></polygon>
+</g>
+<!-- h1_16&#45;&gt;h2_7 -->
+<g id="edge39" class="edge">
+<title>h1_16-&gt;h2_7</title>
+<path fill="none" stroke="black" d="M318.45,-2687.42C350.42,-2673.65 399.85,-2652.35 433.57,-2637.82"></path>
+<polygon fill="black" stroke="black" points="435.26,-2640.9 443.06,-2633.73 432.49,-2634.47 435.26,-2640.9"></polygon>
+</g>
+<!-- h2_8 -->
+<g id="node61" class="node">
+<title>h2_8</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2780" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2775.8" font-family="Times,serif" font-size="14.00">h2_8</text>
+</g>
+<!-- h1_16&#45;&gt;h2_8 -->
+<g id="edge40" class="edge">
+<title>h1_16-&gt;h2_8</title>
+<path fill="none" stroke="black" d="M318.45,-2714.58C350.42,-2728.35 399.85,-2749.65 433.57,-2764.18"></path>
+<polygon fill="black" stroke="black" points="432.49,-2767.53 443.06,-2768.27 435.26,-2761.1 432.49,-2767.53"></polygon>
+</g>
+<!-- h2_9 -->
+<g id="node62" class="node">
+<title>h2_9</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2859" rx="30.2" ry="30.2"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2854.8" font-family="Times,serif" font-size="14.00">h2_9</text>
+</g>
+<!-- h1_16&#45;&gt;h2_9 -->
+<g id="edge41" class="edge">
+<title>h1_16-&gt;h2_9</title>
+<path fill="none" stroke="black" d="M306.47,-2729.92C325.09,-2755.82 355.11,-2793.52 388.11,-2819 401.61,-2829.42 418.25,-2838.14 433.03,-2844.75"></path>
+<polygon fill="black" stroke="black" points="431.84,-2848.05 442.41,-2848.79 434.61,-2841.62 431.84,-2848.05"></polygon>
+</g>
+<!-- h1_17 -->
+<g id="node38" class="node">
+<title>h1_17</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1362" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1357.8" font-family="Times,serif" font-size="14.00">h1_17</text>
+</g>
+<!-- h1_18 -->
+<g id="node39" class="node">
+<title>h1_18</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1274" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1269.8" font-family="Times,serif" font-size="14.00">h1_18</text>
+</g>
+<!-- h1_19 -->
+<g id="node40" class="node">
+<title>h1_19</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1186" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1181.8" font-family="Times,serif" font-size="14.00">h1_19</text>
+</g>
+<!-- h1_20 -->
+<g id="node41" class="node">
+<title>h1_20</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1098" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1093.8" font-family="Times,serif" font-size="14.00">h1_20</text>
+</g>
+<!-- h1_21 -->
+<g id="node42" class="node">
+<title>h1_21</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-1010" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-1005.8" font-family="Times,serif" font-size="14.00">h1_21</text>
+</g>
+<!-- h1_22 -->
+<g id="node43" class="node">
+<title>h1_22</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-922" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-917.8" font-family="Times,serif" font-size="14.00">h1_22</text>
+</g>
+<!-- h1_23 -->
+<g id="node44" class="node">
+<title>h1_23</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-834" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-829.8" font-family="Times,serif" font-size="14.00">h1_23</text>
+</g>
+<!-- h1_24 -->
+<g id="node45" class="node">
+<title>h1_24</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-2366" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-2361.8" font-family="Times,serif" font-size="14.00">h1_24</text>
+</g>
+<!-- h2_10 -->
+<g id="node63" class="node">
+<title>h2_10</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2380" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2375.8" font-family="Times,serif" font-size="14.00">h2_10</text>
+</g>
+<!-- h1_24&#45;&gt;h2_10 -->
+<g id="edge42" class="edge">
+<title>h1_24-&gt;h2_10</title>
+<path fill="none" stroke="black" d="M321.42,-2368.63C351,-2370.89 393.81,-2374.16 425.93,-2376.61"></path>
+<polygon fill="black" stroke="black" points="425.72,-2380.11 435.96,-2377.38 426.25,-2373.13 425.72,-2380.11"></polygon>
+</g>
+<!-- h2_11 -->
+<g id="node64" class="node">
+<title>h2_11</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2292" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2287.8" font-family="Times,serif" font-size="14.00">h2_11</text>
+</g>
+<!-- h1_24&#45;&gt;h2_11 -->
+<g id="edge43" class="edge">
+<title>h1_24-&gt;h2_11</title>
+<path fill="none" stroke="black" d="M318.87,-2353.11C349.41,-2340.79 395.61,-2322.14 428.94,-2308.69"></path>
+<polygon fill="black" stroke="black" points="430.45,-2311.85 438.41,-2304.87 427.83,-2305.36 430.45,-2311.85"></polygon>
+</g>
+<!-- h2_12 -->
+<g id="node65" class="node">
+<title>h2_12</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-2204" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-2199.8" font-family="Times,serif" font-size="14.00">h2_12</text>
+</g>
+<!-- h1_24&#45;&gt;h2_12 -->
+<g id="edge44" class="edge">
+<title>h1_24-&gt;h2_12</title>
+<path fill="none" stroke="black" d="M319.64,-2355.31C336.72,-2348.14 356.61,-2337.03 369.11,-2321 389.72,-2294.56 367.37,-2274.34 388.11,-2248 398.38,-2234.96 413.6,-2225.31 428.17,-2218.42"></path>
+<polygon fill="black" stroke="black" points="429.84,-2221.51 437.59,-2214.29 427.02,-2215.1 429.84,-2221.51"></polygon>
+</g>
+<!-- h1_25 -->
+<g id="node46" class="node">
+<title>h1_25</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-658" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-653.8" font-family="Times,serif" font-size="14.00">h1_25</text>
+</g>
+<!-- h1_26 -->
+<g id="node47" class="node">
+<title>h1_26</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-570" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-565.8" font-family="Times,serif" font-size="14.00">h1_26</text>
+</g>
+<!-- h1_27 -->
+<g id="node48" class="node">
+<title>h1_27</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-482" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-477.8" font-family="Times,serif" font-size="14.00">h1_27</text>
+</g>
+<!-- h1_28 -->
+<g id="node49" class="node">
+<title>h1_28</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-394" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-389.8" font-family="Times,serif" font-size="14.00">h1_28</text>
+</g>
+<!-- h1_29 -->
+<g id="node50" class="node">
+<title>h1_29</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-306" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-301.8" font-family="Times,serif" font-size="14.00">h1_29</text>
+</g>
+<!-- h1_30 -->
+<g id="node51" class="node">
+<title>h1_30</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-218" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-213.8" font-family="Times,serif" font-size="14.00">h1_30</text>
+</g>
+<!-- h1_31 -->
+<g id="node52" class="node">
+<title>h1_31</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-130" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-125.8" font-family="Times,serif" font-size="14.00">h1_31</text>
+</g>
+<!-- h1_32 -->
+<g id="node53" class="node">
+<title>h1_32</title>
+<ellipse fill="none" stroke="black" cx="285.93" cy="-746" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="285.93" y="-741.8" font-family="Times,serif" font-size="14.00">h1_32</text>
+</g>
+<!-- h2_13 -->
+<g id="node66" class="node">
+<title>h2_13</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-1790" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-1785.8" font-family="Times,serif" font-size="14.00">h2_13</text>
+</g>
+<!-- h1_32&#45;&gt;h2_13 -->
+<g id="edge45" class="edge">
+<title>h1_32-&gt;h2_13</title>
+<path fill="none" stroke="black" d="M320.33,-754.91C338.07,-761.51 358.38,-772.47 369.11,-790 424.6,-880.6 332.62,-1655.4 388.11,-1746 397,-1760.51 412.46,-1770.53 427.58,-1777.29"></path>
+<polygon fill="black" stroke="black" points="426.31,-1780.55 436.9,-1781.09 428.96,-1774.07 426.31,-1780.55"></polygon>
+</g>
+<!-- h2_14 -->
+<g id="node67" class="node">
+<title>h2_14</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-1878" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-1873.8" font-family="Times,serif" font-size="14.00">h2_14</text>
+</g>
+<!-- h1_32&#45;&gt;h2_14 -->
+<g id="edge46" class="edge">
+<title>h1_32-&gt;h2_14</title>
+<path fill="none" stroke="black" d="M320.34,-754.9C338.08,-761.5 358.39,-772.46 369.11,-790 399.37,-839.49 357.85,-1784.51 388.11,-1834 396.99,-1848.52 412.44,-1858.54 427.57,-1865.3"></path>
+<polygon fill="black" stroke="black" points="426.3,-1868.56 436.88,-1869.1 428.95,-1862.08 426.3,-1868.56"></polygon>
+</g>
+<!-- h2_15 -->
+<g id="node68" class="node">
+<title>h2_15</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-1702" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-1697.8" font-family="Times,serif" font-size="14.00">h2_15</text>
+</g>
+<!-- h1_32&#45;&gt;h2_15 -->
+<g id="edge47" class="edge">
+<title>h1_32-&gt;h2_15</title>
+<path fill="none" stroke="black" d="M320.31,-754.91C338.05,-761.52 358.36,-772.48 369.11,-790 419.58,-872.21 337.64,-1575.79 388.11,-1658 397.02,-1672.51 412.47,-1682.52 427.6,-1689.28"></path>
+<polygon fill="black" stroke="black" points="426.33,-1692.54 436.91,-1693.09 428.97,-1686.06 426.33,-1692.54"></polygon>
+</g>
+<!-- h2_16 -->
+<g id="node69" class="node">
+<title>h2_16</title>
+<ellipse fill="none" stroke="black" cx="471.29" cy="-1614" rx="35.36" ry="35.36"></ellipse>
+<text text-anchor="middle" x="471.29" y="-1609.8" font-family="Times,serif" font-size="14.00">h2_16</text>
+</g>
+<!-- h1_32&#45;&gt;h2_16 -->
+<g id="edge48" class="edge">
+<title>h1_32-&gt;h2_16</title>
+<path fill="none" stroke="black" d="M320.07,-755.5C337.5,-762.26 357.59,-773.18 369.11,-790 456.91,-918.14 468.59,-1414.66 470.09,-1568.38"></path>
+<polygon fill="black" stroke="black" points="466.59,-1568.45 470.17,-1578.42 473.59,-1568.39 466.59,-1568.45"></polygon>
+</g>
+<!-- o1 -->
+<g id="node70" class="node">
+<title>o1</title>
+<ellipse fill="none" stroke="black" cx="763.16" cy="-2041" rx="20.89" ry="20.89"></ellipse>
+<text text-anchor="middle" x="763.16" y="-2036.8" font-family="Times,serif" font-size="14.00">o1</text>
+</g>
+<!-- h2_3&#45;&gt;o1 -->
+<g id="edge49" class="edge">
+<title>h2_3-&gt;o1</title>
+<path fill="none" stroke="black" d="M501.68,-2041C557,-2041 676.07,-2041 731.99,-2041"></path>
+<polygon fill="black" stroke="black" points="732.29,-2044.5 742.29,-2041 732.29,-2037.5 732.29,-2044.5"></polygon>
+</g>
+<!-- o2 -->
+<g id="node71" class="node">
+<title>o2</title>
+<ellipse fill="none" stroke="black" cx="763.16" cy="-2100" rx="20.89" ry="20.89"></ellipse>
+<text text-anchor="middle" x="763.16" y="-2095.8" font-family="Times,serif" font-size="14.00">o2</text>
+</g>
+<!-- h2_8&#45;&gt;o2 -->
+<g id="edge50" class="edge">
+<title>h2_8-&gt;o2</title>
+<path fill="none" stroke="black" d="M500.99,-2772.34C518.65,-2766.25 540.52,-2756.04 554.47,-2740 718.48,-2551.41 753.42,-2231.02 760.47,-2130.86"></path>
+<polygon fill="black" stroke="black" points="763.96,-2131.01 761.13,-2120.81 756.98,-2130.55 763.96,-2131.01"></polygon>
+</g>
+<!-- o3 -->
+<g id="node72" class="node">
+<title>o3</title>
+<ellipse fill="none" stroke="black" cx="763.16" cy="-1982" rx="20.89" ry="20.89"></ellipse>
+<text text-anchor="middle" x="763.16" y="-1977.8" font-family="Times,serif" font-size="14.00">o3</text>
+</g>
+<!-- h2_14&#45;&gt;o3 -->
+<g id="edge51" class="edge">
+<title>h2_14-&gt;o3</title>
+<path fill="none" stroke="black" d="M504.7,-1889.63C561.88,-1910.14 679.74,-1952.43 733.86,-1971.85"></path>
+<polygon fill="black" stroke="black" points="732.91,-1975.22 743.5,-1975.3 735.27,-1968.63 732.91,-1975.22"></polygon>
+</g>
+</g>
+</svg>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<h3 id="entrenamiento-multiclase">Entrenamiento (multiclase)</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;sklearn.metrics._plot.confusion_matrix.ConfusionMatrixDisplay object at 0x7b7e48f6fa10&gt;</code></pre>
+</div>
+
+<div class="cell-output cell-output-stdout">
+<pre><code>Macro-F1: 0.8003850715462932</code></pre>
+</div>
+</div>
+<img data-src="v2Lect003_ADG_RedesNeuronales_files/figure-revealjs/unnamed-chunk-6-7.png" width="960" class="r-stretch"><p><strong>Notas didácticas:</strong> desequilibrio de clases (SMOTE), métricas por clase (F1), validación cruzada, <em>early stopping</em>.</p>
+</section>
+<section id="cierre-y-recomendaciones" class="slide level2">
+<h2>Cierre y recomendaciones</h2>
+<ul>
+<li>La <strong>interpretación clínica</strong> sigue siendo esencial; el ML complementa, no reemplaza, el juicio médico.</li>
+<li>Validar externamente (dominios LMIC vs HIC), sesgos de muestreo y <em>data shift</em>.</li>
+<li>Reportar métricas por clase, especialmente la <strong>clase sospechosa</strong>.</li>
+</ul>
+</section>
+<section id="referencias-doi-isbn" class="slide level2">
+<h2>Referencias (DOI / ISBN)</h2>
+<ul>
+<li>Ayres‑de‑Campos D, <em>et al.</em> <strong>FIGO consensus guidelines on intrapartum fetal monitoring: Cardiotocography.</strong> <em>Int J Gynaecol Obstet</em> 2015;131(1):13–24. DOI: 10.1016/j.ijgo.2015.06.020</li>
+<li>Macones GA, <em>et al.</em> <strong>The 2008 NICHD workshop report on electronic fetal monitoring.</strong> <em>J Obstet Gynecol Neonatal Nurs</em> 2008. (see Obstet Gynecol 2008;112:661–6)</li>
+<li>Hoodbhoy Z, <em>et al.</em> <strong>Use of Machine Learning Algorithms for Prediction of Fetal Risk using Cardiotocographic Data.</strong> <em>Int J Appl Basic Med Res</em> 2019;9:226–230. DOI: 10.4103/ijabmr.IJABMR_370_18</li>
+<li>James G, Witten D, Hastie T, Tibshirani R. <strong>An Introduction to Statistical Learning (2nd ed.).</strong> Springer, 2021. DOI: 10.1007/978-1-0716-1418-1</li>
+<li>Hosmer DW, Lemeshow S, Sturdivant RX. <strong>Applied Logistic Regression (3rd ed.).</strong> Wiley, 2013. DOI: 10.1002/9781118548387</li>
+<li>Rumelhart DE, Hinton GE, Williams RJ. <strong>Learning representations by back‑propagating errors.</strong> <em>Nature</em> 1986;323:533–536. DOI: 10.1038/323533a0</li>
+<li>Goodfellow I, Bengio Y, Courville A. <strong>Deep Learning.</strong> MIT Press, 2016. ISBN: 978‑0262035613</li>
+</ul>
+</section>
+<section id="apéndice-carga-de-datos-y-eda-mínimo" class="slide level2">
+<h2>Apéndice · Carga de datos y EDA mínimo</h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>fetal_health
+1.0    1655
+2.0     295
+3.0     176
+Name: count, dtype: int64</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                     count  ...      max
+baseline value                                      2126.0  ...  160.000
+accelerations                                       2126.0  ...    0.019
+fetal_movement                                      2126.0  ...    0.481
+uterine_contractions                                2126.0  ...    0.015
+light_decelerations                                 2126.0  ...    0.015
+severe_decelerations                                2126.0  ...    0.001
+prolongued_decelerations                            2126.0  ...    0.005
+abnormal_short_term_variability                     2126.0  ...   87.000
+mean_value_of_short_term_variability                2126.0  ...    7.000
+percentage_of_time_with_abnormal_long_term_vari...  2126.0  ...   91.000
+mean_value_of_long_term_variability                 2126.0  ...   50.700
+histogram_width                                     2126.0  ...  180.000
+histogram_min                                       2126.0  ...  159.000
+histogram_max                                       2126.0  ...  238.000
+histogram_number_of_peaks                           2126.0  ...   18.000
+histogram_number_of_zeroes                          2126.0  ...   10.000
+histogram_mode                                      2126.0  ...  187.000
+histogram_mean                                      2126.0  ...  182.000
+histogram_median                                    2126.0  ...  186.000
+histogram_variance                                  2126.0  ...  269.000
+histogram_tendency                                  2126.0  ...    1.000
+fetal_health                                        2126.0  ...    3.000
+
+[22 rows x 8 columns]</code></pre>
+</div>
+</div>
+
+
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<p><img src="../../recursos/imagenes/generales/Escuela_Rosario_logo.png" class="slide-logo"></p>
+<div class="footer footer-default">
+<p><a href="https://pablocaicedor.github.io/" class="uri">https://pablocaicedor.github.io/</a></p>
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="../../site_libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="../../site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="../../site_libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="../../site_libs/revealjs/plugin/search/search.js"></script>
+  <script src="../../site_libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="../../site_libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'fade',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1050,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copiado");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copiado");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+          const outerScaffold = trigger.parentElement.cloneNode(true);
+          const codeEl = outerScaffold.querySelector('code');
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
