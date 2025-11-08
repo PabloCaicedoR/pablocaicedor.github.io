@@ -522,3 +522,292 @@ Relaciones costo-beneficio y prevalencia en biomédica.
 - [ ] Documentaste supuestos y limitaciones.
 
 ---
+
+## Objetivos de aprendizaje
+
+- **Comprender** los fundamentos de la **Regresión Lineal**, **Regresión Logística** y **Perceptrón Multicapa (MLP)**.
+- **Aplicar** estos modelos al contexto de **salud fetal** con datos de **cardiotocografía (CTG)**.
+- **Evaluar** el desempeño con métricas adecuadas (MSE, AUC/Log-Loss, matriz de confusión, F1).
+
+::: {.columns}
+::: {.column width="45%"}
+
+1. Regresión Lineal
+2. Regresión Logística
+3. Perceptrón Multicapa
+4. Cierre y discusión
+
+:::
+::: {.column width="45%"}
+**Dataset**: `fetal_health.csv` (UCI CTG).
+**Contexto clínico**: interpretación de CTG (*normal*, *sospechoso*, *patológico*).
+:::
+:::
+
+---
+
+## Contexto clínico (CTG)
+
+::: {.callout-important title="Defición"}
+ Prueba médica que monitoriza simultáneamente la frecuencia cardíaca del feto y la actividad contráctil del útero. Se realiza generalmente durante el tercer trimestre del embarazo y el parto, colocando dos transductores externos (uno para la frecuencia cardíaca fetal y otro para las contracciones) sobre el abdomen de la madre
+:::
+
+![Generada con Gemini](../../recursos/imagenes/Presentaciones/ASIM/cardiotocografia.png)
+
+## Contexto clínico (CTG)
+
+|Característica (Variable en CSV)                      |Cálculo o Descripción                                                                                                                                                                                                                                                                                       |
+|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|Parámetros Basales                                    |                                                                                                                                                                                                                                                                                                            |
+|baseline value                                        |Es la frecuencia cardíaca fetal (FCF) media aproximada en un segmento de 10 minutos, excluyendo aceleraciones, deceleraciones y períodos de variabilidad marcada (>25 lpm). Se redondea a incrementos de 5 latidos por minuto (lpm).[4, 5, 6, 7, 8] El rango normal se considera entre 110 y 160 lpm.[9, 10]|
+|fetal_movement                                        |Número de movimientos fetales detectados por segundo.[1, 11, 12]                                                                                                                                                                                                                                            |
+|uterine_contractions                                  |Número de contracciones uterinas por segundo. Se considera normal tener 5 o menos contracciones en 10 minutos.[1, 4, 11, 12]                                                                                                                                                                                |
+|Eventos Transitorios (Aceleraciones y Deceleraciones) |                                                                                                                                                                                                                                                                                                            |
+|accelerations                                         |Número de aceleraciones por segundo. Una aceleración es un aumento abrupto de la FCF por encima de la línea de base de al menos 15 lpm, que dura 15 segundos o más, pero menos de 2 minutos.[5, 9, 10]                                                                                                      |
+|light_decelerations                                   |Número de deceleraciones leves por segundo. Una deceleración es una caída de la FCF de más de 15 lpm que dura más de 15 segundos.[5] La categoría "leve" se refiere a su duración, típicamente menor a 120 segundos.[3]                                                                                     |
+|severe_decelerations                                  |Número de deceleraciones severas por segundo. Se refiere a deceleraciones de larga duración, a menudo definidas como aquellas que superan los 300 segundos.[3]                                                                                                                                              |
+|prolongued_decelerations                              |Número de deceleraciones prolongadas por segundo. Son caídas de la FCF que duran más de 2 o 3 minutos pero menos de 10 minutos.[3, 6, 13]                                                                                                                                                                   |
+|Variabilidad de la FCF                                |                                                                                                                                                                                                                                                                                                            |
+|abnormal_short_term_variability                       |Porcentaje de tiempo en que la variabilidad a corto plazo (latido a latido) es anormal. La variabilidad se considera anormal si es mínima (≤5 lpm) o marcada (>25 lpm).[6, 8]                                                                                                                               |
+|mean_value_of_short_term_variability                  |Valor medio de la variabilidad a corto plazo (STV), que describe las fluctuaciones de la FCF latido a latido.[3, 6]                                                                                                                                                                                         |
+|percentage_of_time_with_abnormal_long_term_variability|Porcentaje de tiempo en que la variabilidad a largo plazo es anormal. Se calcula sobre las fluctuaciones de la FCF en un período de un minuto.[5]                                                                                                                                                           |
+|mean_value_of_long_term_variability                   |Valor medio de la variabilidad a largo plazo (LTV), que mide la amplitud (diferencia entre el pico y el valle) de las fluctuaciones de la FCF en un minuto.[3, 5]                                                                                                                                           |
+|Características del Histograma de FCF                 |Estas son propiedades estadísticas calculadas a partir de la distribución de todos los valores de FCF registrados durante el período de monitorización.[1, 11, 12]                                                                                                                                          |
+|histogram_width                                       |El ancho del histograma, calculado como la diferencia entre el valor máximo (histogram_max) y el mínimo (histogram_min) de la FCF.                                                                                                                                                                          |
+|histogram_min                                         |El valor mínimo de la FCF registrado en el histograma.                                                                                                                                                                                                                                                      |
+|histogram_max                                         |El valor máximo de la FCF registrado en el histograma.                                                                                                                                                                                                                                                      |
+|histogram_number_of_peaks                             |El número de picos en la distribución del histograma.                                                                                                                                                                                                                                                       |
+|histogram_number_of_zeroes                            |El número de "ceros" o bins con frecuencia cero en el histograma.                                                                                                                                                                                                                                           |
+|histogram_mode                                        |El valor de FCF que aparece con mayor frecuencia (la moda estadística).                                                                                                                                                                                                                                     |
+|histogram_mean                                        |El valor medio de la FCF en el histograma (la media estadística).                                                                                                                                                                                                                                           |
+|histogram_median                                      |El valor central de la FCF en el histograma (la mediana estadística).                                                                                                                                                                                                                                       |
+|histogram_variance                                    |La varianza de los valores de FCF, que mide su dispersión alrededor de la media.                                                                                                                                                                                                                            |
+|histogram_tendency                                    |Indica la simetría o sesgo del histograma. Puede interpretarse como: 1 para tendencia a la derecha (positiva), -1 para tendencia a la izquierda (negativa) y 0 para una distribución simétrica.                                                                                                             |
+
+
+## Contexto clínico (CTG)
+
+- CTG registra **FCF** y **contracciones uterinas**.
+- Clasificación clínica (FIGO): **normal / sospechoso / patológico**.
+- Variabilidad, aceleraciones y desaceleraciones son claves.
+
+
+
+---
+
+## Regresión Lineal
+
+### Idea clave
+Aproxima una relación **lineal** $\hat{y} = \beta_0 + \sum_j \beta_j x_j$minimizando **MSE**.
+
+### Ejemplo didáctico (CTG)
+Usamos una **variable continua** de CTG como respuesta (p. ej., *histogram_width*) para ilustrar ajuste y residuales.
+
+```{python}
+# | echo: true
+# | eval: true
+# | output: true
+import pandas as pd, numpy as np, matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+df = pd.read_csv("./data/Fetal Health Classification/fetal_health.csv")
+
+X = df[["accelerations"]].values
+y = df["histogram_width"].values
+
+model = LinearRegression().fit(X, y)
+x0 = np.linspace(X.min(), X.max(), 100).reshape(-1,1)
+yhat = model.predict(x0)
+
+plt.figure()
+plt.scatter(X, y, s=10)
+plt.plot(x0, yhat)
+plt.title("Regresión lineal: histogram_width vs accelerations")
+plt.xlabel("accelerations")
+plt.ylabel("histogram_width")
+plt.tight_layout()
+plt.show()
+```
+
+**Discusión:** supuestos (linealidad, homocedasticidad, independencia), diagnóstico con residuales.
+
+---
+
+## Regresión Logística
+
+### Idea clave
+Modela $P(Y=1 \mid \mathbf{x}) = \sigma(\beta_0 + \mathbf{x}^\top \beta)$ con **sigmoide** $\sigma(z)=1/(1+e^{-z})$.
+
+## 1. Definición de Regresión Logística
+
+La **Regresión Logística** es un algoritmo de aprendizaje automático supervisado utilizado fundamentalmente para problemas de **clasificación binaria**.
+
+A pesar de su nombre, su objetivo no es predecir un valor continuo, sino modelar la **probabilidad** ($P$) de que una observación pertenezca a una clase específica (usualmente denotada como $Y=1$).
+
+El modelo toma variables de entrada (features) $x_1, \dots, x_n$ y estima $P(Y=1 | \mathbf{x})$.
+
+---
+
+## 2. El Mecanismo Central del Modelo
+
+El modelo logístico opera en dos pasos cruciales:
+
+### 2.1. El Componente Lineal (Logit)
+
+Primero, el modelo calcula una suma ponderada de las entradas, exactamente igual que en una regresión lineal. A este resultado ($z$) se le conoce como **logit** o, más formalmente, **log-odds**.
+
+$$
+z = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \dots + \beta_n x_n
+$$
+
+* $\beta_0$ es el intercepto (sesgo).
+* $\beta_{1 \dots n}$ son los coeficientes (pesos) que el modelo aprende.
+* El rango de salida de $z$ es el de todos los números reales: $(-\infty, +\infty)$.
+
+### 2.2. La Función Sigmoide (Logística)
+
+Dado que una probabilidad debe estar en el rango $[0, 1]$, $z$ no puede ser el resultado final. La regresión logística aplica la **función sigmoide** ($\sigma$) a $z$ para "aplastar" (squash) la salida lineal al rango de probabilidad.
+
+$$
+P = \sigma(z) = \frac{1}{1 + e^{-z}}
+$$
+
+* Si $z \to +\infty$, $e^{-z} \to 0$, y $P \to 1$.
+* Si $z \to -\infty$, $e^{-z} \to +\infty$, y $P \to 0$.
+* Si $z = 0$, $e^{-0} = 1$, y $P = 0.5$.
+
+---
+
+## 3. La Relación Clave: Probabilidad y Log-Odds
+
+El concepto central que conecta el modelo lineal con la probabilidad es el **log-odds**. Esta transformación es necesaria para mapear un espacio acotado $[0, 1]$ a un espacio no acotado $[-\infty, +\infty]$.
+
+### 3.1. De Probabilidad a Log-Odds
+
+La transformación se realiza en dos pasos:
+
+1.  **Probabilidad ($P$)**: La probabilidad del evento.
+    * Rango: $[0, 1]$
+
+2.  **Odds (Momios)**: La razón entre la probabilidad de que ocurra ($P$) y la de que no ocurra ($1-P$).
+    $$
+    Odds = \frac{P}{1-P}
+    $$
+    * Rango: $[0, +\infty]$
+
+3.  **Log-Odds (Logit)**: El logaritmo natural de los *odds*.
+    $$
+    Logit(P) = \ln(Odds) = \ln\left(\frac{P}{1-P}\right)
+    $$
+    * Rango: $[-\infty, +\infty]$
+
+El modelo de regresión logística es, por tanto, un modelo lineal que predice el *log-odds*:
+
+$$
+z = \ln\left(\frac{P}{1-P}\right) = \beta_0 + \beta_1 x_1 + \dots + \beta_n x_n
+$$
+
+### 3.2. De Log-Odds a Probabilidad (La Inversa)
+
+Para obtener la probabilidad $P$ a partir del log-odds $z$, simplemente revertimos la transformación `Logit`. Este proceso de despejar $P$ de la ecuación del logit **da origen a la función sigmoide**:
+
+1.  Ecuación base:
+    $$
+    z = \ln\left(\frac{P}{1-P}\right)
+    $$
+
+2.  Aplicar exponencial (inversa del logaritmo):
+    $$
+    e^z = \frac{P}{1-P}
+    $$
+
+3.  Despejar $P$:
+    $$
+    e^z (1-P) = P
+    $$
+    $$
+    e^z - e^z P = P
+    $$
+    $$
+    e^z = P + e^z P
+    $$
+    $$
+    e^z = P (1 + e^z)
+    $$
+
+4.  Probabilidad $P$ en función de $z$:
+    $$
+    P = \frac{e^z}{1 + e^z}
+    $$
+
+5.  *Forma sigmoide alternativa (dividiendo numerador y denominador por $e^z$)*:
+    $$
+    P = \frac{e^z/e^z}{(1 + e^z)/e^z} = \frac{1}{e^{-z} + 1} = \frac{1}{1 + e^{-z}}
+    $$
+
+---
+
+## 4. Interpretación de Coeficientes
+
+Debido a esta relación, los coeficientes ($\beta_i$) del modelo tienen una interpretación específica:
+
+* **Coeficiente $\beta_i$**: Un incremento de una unidad en la variable $x_i$ (manteniendo las demás constantes) genera un cambio de $\beta_i$ en el **log-odds** de la predicción.
+* **Odds Ratio (OR)**: Para una interpretación más intuitiva, se utiliza $e^{\beta_i}$. Un incremento de una unidad en $x_i$ **multiplica** los *odds* por un factor de $e^{\beta_i}$.
+
+```{python}
+# | echo: true
+# | eval: true
+# | output: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+z = np.linspace(-8, 8, 400)
+sig = 1/(1+np.exp(-z))
+
+plt.figure()
+plt.plot(z, sig)
+plt.title("Función sigmoide")
+plt.xlabel("z")
+plt.ylabel("σ(z)")
+plt.tight_layout(); plt.show()
+```
+
+### Clasificación binaria (Normal vs No‑Normal)
+```{python}
+# | echo: true
+# | eval: true
+# | output: true
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import numpy as np
+
+df = pd.read_csv("./data/Fetal Health Classification/fetal_health.csv")
+df["is_normal"] = (df["fetal_health"]==1).astype(int)
+
+X = df.drop(columns=["fetal_health","is_normal"]).values
+y = df["is_normal"].values
+
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+sc = StandardScaler().fit(X_tr); X_tr_s, X_te_s = sc.transform(X_tr), sc.transform(X_te)
+
+logit = LogisticRegression(max_iter=200).fit(X_tr_s, y_tr)
+proba = logit.predict_proba(X_te_s)[:,1]
+pred = (proba>=0.5).astype(int)
+
+print(classification_report(y_te, pred, digits=3))
+cm = confusion_matrix(y_te, pred)
+
+plt.figure()
+plt.imshow(cm, cmap="gray")
+plt.title("Matriz de confusión (Logística binaria)")
+plt.xlabel("Predicho"); plt.ylabel("Real")
+for i in range(2):
+    for j in range(2):
+        plt.text(j, i, cm[i, j], ha="center", va="center")
+plt.tight_layout(); plt.show()
+```
+
+---
