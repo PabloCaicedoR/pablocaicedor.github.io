@@ -1,0 +1,192 @@
+---
+title: "Proyecto Integrador Final en IA Biomédica"
+subtitle: "Del Problema Clínico a la Solución de Aprendizaje Profundo"
+description: "AASI_M"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html:
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+## 🎯 Objetivos del Proyecto Final
+
+**Propósito:** Este es un proyecto integrador diseñado bajo la estrategia de **aprendizaje basada en retos**. Simula un ciclo completo de investigación y desarrollo (I+D) en ingeniería biomédica.
+
+**Objetivo General:** Desarrollar, validar y documentar un sistema de aprendizaje automático que resuelva un problema clínico relevante, cubriendo el *pipeline* completo.
+
+**Resultados de Aprendizaje (RAE) Evaluados:**
+* **RAE 1.1:** Implementar algoritmos de *deep learning*.
+* **RAE 1.2:** Evaluar algoritmos en el contexto médico.
+* **RAE 1.3/1.4:** Identificar componentes teóricos y prácticos del sistema.
+* **RAE Transversales:** Comunicar, innovar y aplicar herramientas modernas.
+
+---
+
+## 🏥 El Escenario: El Reto Clínico
+
+Como ingenieros biomédicos senior, su equipo desarrollará una solución de IA para uno de los siguientes problemas. Deben seleccionar **uno**:
+
+::: columns
+::: {.column width="45%"}
+**Reto A: Análisis de Señales 🧠**
+
+* **Problema:** Predicción de series temporales médicas.
+* **Datos:** Señales fisiológicas (p.ej., EEG, ECG).
+* **Objetivo:** Desarrollar un modelo basado en CNN que clasifique un estado patológico a partir de la señal.
+* **Dataset:** Buscar un dataset con una afección de su elección.
+:::
+
+::: {.column width="45%"}
+**Reto B: Análisis de Imágenes 🖼️**
+
+* **Problema:** Segmentación de estructuras anatómicas o patologías.
+* **Datos:** Imágenes médicas (p.ej., MRI, CT, Rayos X).
+* **Objetivo:** Implementar un modelo basado en CNN para la **segmentación semántica** precisa de una región de interés.
+* **Dataset:** Buscar un dataset con una afección de su elección.
+:::
+:::
+
+---
+
+## 🛠️ Fases del Proyecto (El Entregable)
+
+El proyecto se divide en 3 Fases de entrega, alineadas con los criterios de evaluación.
+
+### Fase 1: Formulación y Procesamiento de Datos
+(Criterios 1 y 2)
+
+Su primera entrega debe definir:
+
+1.  **Formulación del Problema:**
+    * ¿Cómo tradujo el "reto clínico" a un problema de ML (p.ej., clasificación, regresión, segmentación)?.
+    * ¿Cuál es la hipótesis de su proyecto?
+
+2.  **Análisis y Preprocesamiento de Datos:**
+    * Justificación de las técnicas de preprocesamiento (p.ej., filtrado, normalización, *data augmentation*).
+    * Manejo de artefactos y formatos médicos (p.ej., DICOM, EDF, NIfTI).
+
+---
+
+## 🛠️ Fases del Proyecto (El Entregable)
+
+### Fase 2: Modelado y Evaluación Rigurosa
+(Criterios 3 y 4)
+
+El núcleo de su implementación debe incluir:
+
+1.  **Justificación del Modelo (RAE 1.4):**
+    * ¿Por qué esta arquitectura (p.ej., **CNN**, **LSTM**, **U-Net**)? Justifique teóricamente su elección sobre modelos más simples.
+    * Si usa *Transfer Learning*, ¿por qué y cómo?
+
+2.  **Evaluación Rigurosa (RAE 1.2):**
+    * **Métricas:** No se aceptará solo *accuracy*. Debe usar métricas relevantes al contexto clínico (Sensibilidad, Especificidad, F1, Coeficiente de Dice, IoU).
+    * **Validación:** Estrategia de validación robusta (p.ej., *Cross-validation* por paciente, no por muestra).
+
+---
+
+## 🛠️ Fases del Proyecto (El Entregable)
+
+### Fase 3: Análisis Crítico y Comunicación
+(Criterios 5 y 6)
+
+El proyecto no termina en la métrica; termina en la interpretación:
+
+1.  **Análisis Crítico (RAE 4.5):**
+    * ¿Dónde falla su modelo? (Análisis de falsos positivos/negativos).
+    * ¿Qué limitaciones tiene? (Interpretación).
+
+2.  **Consideraciones Éticas:**
+    * ¿Qué sesgos puede tener su modelo?
+    * ¿Cuál es el riesgo de un fallo en la práctica clínica?
+
+3.  **Comunicación (RAE 4.0):**
+    * Entregar un informe en formato de artículo científico o idea de negocio.
+    * Código 100% reproducible (en Colab o similar).
+
+---
+
+## 📊 Rúbrica de Evaluación del Proyecto
+
+El proyecto se evaluará sobre 5.0, basado en los 6 criterios de diseño.
+
+::: {.scrollable}
+| Criterio | Insuficiente (0-2.4) | Aceptable (2.5-3.7) | Sobresaliente (3.8-5.0) |
+| :--- | :--- | :--- | :--- |
+| **1. Formulación del Problema** | No define un problema de ML claro o no se alinea con el reto clínico. | Define un problema de ML, pero la conexión con el reto clínico es débil o la hipótesis es vaga. | Traduce el reto clínico en un problema de ML preciso, con una hipótesis robusta y medible. |
+| **2. Procesamiento de Datos** | Aplica técnicas genéricas sin justificación. No maneja artefactos o formatos médicos. | Aplica técnicas de preprocesamiento, pero la justificación es débil o no es específica del dominio biomédico. | Justifica y aplica preprocesamiento avanzado y específico para la modalidad (p.ej., filtrado de ECG, registro de MRI), manejando artefactos. |
+| **3. Implementación del Modelo** | El modelo no es de aprendizaje profundo o es una copia de un tutorial sin adaptación. El código no funciona. | Implementa un modelo de DL funcional, pero la arquitectura no está justificada o es subóptima para el problema. | Implementa una arquitectura de DL avanzada (p.ej., LSTM, U-Net), justifica teóricamente su elección y adapta el modelo al problema. |
+| **4. Evaluación Rigurosa** | Usa solo *accuracy* o aplica mal la validación (p.ej., *data leakage*). | Usa métricas adecuadas (p.ej., F1), pero no las interpreta en el contexto clínico. La validación es simple. | Aplica y justifica un conjunto de métricas relevantes (Dice, Sensibilidad) y una estrategia de validación robusta (p.ej., *k-fold* por paciente). |
+| **5. Análisis Crítico y Ética** | No hay análisis de errores ni discusión de limitaciones o ética. | El análisis es superficial. Menciona la ética solo de pasada, sin conectarla al proyecto. | Provee un análisis profundo de los fallos del modelo, sus limitaciones reales y una discusión ética contextualizada (sesgos, riesgos). |
+| **6. Comunicación y Reproducibilidad** | El informe es incomprensible o el código no es reproducible. | El informe es claro pero carece de estructura científica. El código se puede ejecutar con esfuerzo. | El informe está escrito como un artículo científico. El código es 100% reproducible (p.ej., Colab) con un solo clic. |
+:::
+
+---
+
+## ¿Preguntas?
+
+**Recursos:**
+* Python, VSCode, Google Colab
+* Bibliografía del curso
+
+**Herramientas y Prerrequisitos:**
+* Señales y Sistemas
+* Procesamiento de Señales e Imágenes Médicas (PSIM)
+
+**¡A trabajar!**
