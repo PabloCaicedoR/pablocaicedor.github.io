@@ -1,0 +1,459 @@
+---
+title: "Introducción a las Redes Neuronales Convolucionales"
+subtitle: "Fundamentos y Aplicaciones en Ingeniería Biomédica"
+description: "ASIM"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html:
+    code-tools: true
+    code-overflow: scroll
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+bibliography: references.bib
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+# Resumen
+
+El reporte técnico inicia trazando la evolución histórica de las Redes Neuronales Convolucionales, desde su inspiración biológica en la corteza visual (Hubel y Wiesel) y los modelos precursores (Neocognitron, LeNet-5), hasta su resurgimiento moderno con AlexNet, posibilitado por las GPUs y los grandes volúmenes de datos. Inmediatamente, se justifica la adopción de esta arquitectura en el ámbito biomédico al superar la principal limitación de los métodos tradicionales: la necesidad de una extracción manual de características, un proceso subjetivo que las CNN automatizan. A nivel funcional, la arquitectura se descompone en sus bloques esenciales: capas convolucionales que aprenden jerarquías de filtros, activaciones ReLU que introducen no linealidad, y capas de agrupación (pooling) que otorgan invarianza y reducen la dimensionalidad, culminando en un clasificador (MLP) que toma la decisión final. El proceso de entrenamiento de estos filtros se detalla como una optimización donde una función de pérdida (ej. entropía cruzada) se minimiza mediante retropropagación para calcular gradientes, y un optimizador (como SGD) actualiza los pesos, destacando la transferencia de aprendizaje como la técnica pragmática dominante en el sector. Finalmente, se consolidan estos conceptos mostrando sus aplicaciones prácticas en ingeniería biomédica, que abarcan desde la clasificación de patologías y la segmentación semántica de tumores hasta la detección de lesiones específicas en imágenes diagnósticas.
+# 1. Introducción
+
+El análisis de imágenes biomédicas depende fundamentalmente de la capacidad de un modelo para comprender la información espacial y jerárquica. Las Redes Neuronales Convolucionales (CNN) representan la solución de vanguardia para esta tarea, pero su arquitectura es el resultado de varias décadas de investigación en neurociencia computacional y aprendizaje automático.
+
+Los fundamentos conceptuales se remontan a los experimentos de Hubel y Wiesel en la década de 1960, quienes descubrieron que las neuronas en la corteza visual primaria de los mamíferos responden a patrones locales, simples y orientados (como los bordes) [1]. Estas neuronas se organizan de forma jerárquica para detectar características progresivamente más complejas.
+
+Inspirado por este modelo biológico, Kunihiko Fukushima desarrolló el "Neocognitron" en 1980 [2]. Este fue un precursor directo de las CNN modernas, introduciendo una arquitectura jerárquica con capas que alternaban la extracción de características (similares a la convolución) y la reducción de dimensionalidad (similar al *pooling*), demostrando invarianza a la traslación.
+
+Sin embargo, fue el trabajo de Yann LeCun y sus colaboradores a finales de los 80 y 90 el que formalizó la CNN moderna, notablemente con la arquitectura LeNet-5 [3]. Al integrar la convolución con el algoritmo de retropropagación (*backpropagation*) para entrenar los filtros automáticamente a partir de los datos, LeNet-5 estableció el estándar para el reconocimiento de caracteres.
+
+A pesar de este éxito temprano, las CNN fueron superadas por otros métodos (como las SVM) durante casi una década, debido principalmente a las limitaciones computacionales (falta de GPUs potentes) y a la escasez de grandes conjuntos de datos etiquetados.
+
+La era moderna de las CNN fue catalizada en 2012 por Krizhevsky, Sutskever y Hinton con "AlexNet" [4]. Al utilizar GPUs para el entrenamiento y un conjunto de datos masivo (ImageNet), AlexNet demostró una reducción drástica del error en la clasificación de imágenes, superando a todos los métodos anteriores e iniciando la revolución actual del aprendizaje profundo.
+
+Este reporte presenta una revisión técnica de los fundamentos de la arquitectura CNN contemporánea. El objetivo es proporcionar al estudiante de ingeniería biomédica una comprensión clara de sus componentes (convolución, agrupación) y su relevancia en el procesamiento de señales e imágenes biomédicas.
+
+# 2. Justificación
+
+Las imágenes médicas, tales como las tomografías computarizadas (CT), las imágenes por resonancia magnética (MRI) o las preparaciones histopatológicas, poseen una alta dimensionalidad y una inherente estructura espacial. Los métodos de aprendizaje automático tradicionales, como las máquinas de vectores de soporte (SVM) o las redes neuronales de tipo perceptrón multicapa (MLP), requieren una etapa previa de extracción manual de características (*feature engineering*). Este proceso es subjetivo, dependiente del experto y a menudo incapaz de capturar la complejidad completa de los patrones diagnósticos.
+
+Las CNN superan esta limitación al integrar la extracción de características y la clasificación en un solo modelo optimizable de extremo a extremo (end-to-end). [cite_start]Su arquitectura está diseñada para explotar la invarianza espacial y la composición jerárquica de las características visuales, lo cual es fundamental en el análisis de imágenes biomédicas[cite: 25].
+
+# 3. Funcionamiento de la Arquitectura
+
+Una CNN procesa datos de entrada (imágenes) a través de una serie de capas especializadas para aprender representaciones de datos de complejidad creciente.
+
+
+
+## 3.1. Capa Convolucional (Convolutional Layer)
+
+A continuación, se presenta un diagrama de una arquitectura CNN típica, que consta de dos bloques de extracción de características (Convolución, Activación y Agrupación) y un bloque clasificador (MLP).
+
+![](../../../recursos/imagenes/documentos/ASIM/cnn.png){width="40%" fig-align="center"}
+
+La capa convolucional es el componente central de la CNN. Utiliza un conjunto de filtros (o kernels) aprendibles para detectar características locales (bordes, texturas, formas) en la imagen de entrada.
+
+Un filtro $K$ de tamaño $m \times n$ se desliza sobre la imagen de entrada $I$. En cada posición, se calcula el producto punto entre el filtro y la región de la imagen que cubre. Esta operación, la convolución discreta 2D, genera un "mapa de características" (feature map) $O$:
+
+$$
+O(i, j) = (I * K)(i, j) = \sum_{m} \sum_{n} I(i-m, j-n) K(m, n)
+$$
+
+Parámetros clave de esta capa son:
+
+* **Profundidad (Depth):** El número de filtros en la capa. Cada filtro aprende a detectar una característica diferente.
+* **Paso (Stride):** El número de píxeles que el filtro se desplaza en cada paso. Un *stride* mayor reduce la dimensionalidad del mapa de características.
+* **Relleno (Padding):** La adición de píxeles (usualmente ceros) al borde de la imagen. El *padding* (ej. "same") permite controlar el tamaño espacial de salida y asegurar que los bordes de la imagen sean procesados adecuadamente.
+
+## 3.2. Función de Activación No Lineal
+
+Cada elemento del mapa de características es procesado por una función de activación no lineal. [cite_start]La más utilizada en CNNs es la Unidad Lineal Rectificada (ReLU)[cite: 26], definida como:
+
+$$
+\text{ReLU}(x) = \max(0, x)
+$$
+
+ReLU introduce no linealidad en el modelo, permitiéndole aprender relaciones complejas. Es computacionalmente eficiente y ayuda a mitigar el problema del desvanecimiento del gradiente (vanishing gradient) durante el entrenamiento.
+
+## 3.3. Capa de Agrupación (Pooling Layer)
+
+La capa de agrupación (o submuestreo) reduce la dimensionalidad espacial de los mapas de características. Esto reduce la carga computacional y el número de parámetros, ayudando a controlar el sobreajuste (*overfitting*).
+
+La operación más común es **Max Pooling**. Se define una ventana (ej. $2 \times 2$) y se toma el valor máximo de la región del mapa de características cubierta por esa ventana.
+
+## 3.4. Capa Totalmente Conectada (Fully Connected Layer)
+
+Después de varias capas convolucionales y de agrupación, los mapas de características resultantes son "aplanados" (*flattening*) en un vector unidimensional. Este vector alimenta una o más capas totalmente conectadas (densas), que son perceptrones multicapa estándar.
+
+Estas capas realizan la clasificación final basándose en las características de alto nivel extraídas por las capas anteriores. La última capa suele emplear una función de activación **Softmax** para problemas de clasificación multiclase, generando una distribución de probabilidad sobre las clases de salida.
+
+# 4. Entrenamiento de una CNN
+
+El entrenamiento de una Red Neuronal Convolucional es un proceso de optimización supervisado. El objetivo es ajustar iterativamente los parámetros del modelo (principalmente los pesos de los filtros y los pesos de las capas densas) para que las predicciones de la red se asemejen lo más posible a las etiquetas verdaderas (ground truth) de un conjunto de datos de entrenamiento.
+
+Este proceso se fundamenta en tres componentes: la función de pérdida, el algoritmo de retropropagación y el optimizador de descenso de gradiente.
+
+## 4.1. La Función de Pérdida (Loss Function)
+
+El primer paso es definir una métrica cuantitativa del error. La función de pérdida, $J(\beta)$, mide la discrepancia entre la salida predicha por la red ($\hat{y}$) y la etiqueta real ($y$). El vector $\beta$ representa todos los parámetros aprendibles del modelo (pesos y sesgos de todas las capas).
+
+Para problemas de clasificación, la función de pérdida más utilizada es la **Entropía Cruzada Categórica** (Categorical Cross-Entropy). Mide la "distancia" entre la distribución de probabilidad predicha (salida de la capa Softmax) y la distribución real (la etiqueta *one-hot*).
+
+Para un solo ejemplo de entrenamiento, la pérdida es:
+$$
+J_i(\beta) = - \sum_{c=1}^{M} y_{i,c} \log(\hat{y}_{i,c})
+$$
+
+Donde:
+* $M$ es el número total de clases (ej. "Normal", "Neumonía", "COVID-19").
+* $y_{i,c}$ es 1 si la muestra $i$ pertenece a la clase $c$, y 0 en caso contrario.
+* $\hat{y}_{i,c}$ es la probabilidad predicha por la red (salida Softmax) de que la muestra $i$ pertenezca a la clase $c$.
+
+El objetivo del entrenamiento es encontrar el conjunto de parámetros $\beta^*$ que minimiza la pérdida promedio sobre todo el conjunto de entrenamiento $N$:
+$$
+\beta^* = \arg \min_{\beta} \frac{1}{N} \sum_{i=1}^{N} J_i(\beta)
+$$
+
+## 4.2. Retropropagación y Descenso de Gradiente
+
+Para minimizar $J(\beta)$, se utiliza un algoritmo de optimización basado en el gradiente. El más fundamental es el **Descenso de Gradiente**. La idea es calcular cómo un pequeño cambio en cada parámetro $\beta_j$ (cada peso individual en cada filtro) afecta la pérdida total $J$. Esta "sensibilidad" es el gradiente (derivada parcial) de la pérdida con respecto a ese parámetro: $\frac{\partial J}{\partial \beta_j}$.
+
+El algoritmo de **Retropropagación** (Backpropagation) es el método eficiente para calcular este gradiente. Utiliza la regla de la cadena del cálculo para propagar el error desde la capa de salida hacia atrás, capa por capa, calculando el gradiente de la pérdida con respecto a los parámetros de cada capa.
+
+Una vez que se tiene el gradiente $\nabla J(\beta)$ (el vector de todas las derivadas parciales), se actualizan los parámetros en la dirección opuesta al gradiente (la dirección de máximo descenso del error). La regla de actualización es:
+
+$$
+\beta_{\text{nuevo}} = \beta_{\text{viejo}} - \eta \cdot \nabla J(\beta)
+$$
+
+* $\eta$ (letra griega "eta") es la **tasa de aprendizaje** (learning rate), un hiperparámetro crucial que controla el tamaño del paso en cada actualización.
+
+En la práctica, calcular el gradiente sobre todo el conjunto de datos $N$ es computacionalmente prohibitivo. En su lugar, se utiliza el **Descenso de Gradiente Estocástico (SGD)** o, más comúnmente, el **SGD por Mini-Lotes (Mini-Batch SGD)**. En este enfoque, el gradiente se estima usando un pequeño subconjunto (un "lote") de datos en cada iteración.
+
+## 4.3. El Entrenamiento Específico de los Filtros (Kernels)
+
+La pregunta clave es: ¿cómo se aplica esto a los pesos de un filtro convolucional?
+
+Un filtro $K$ en una capa $l$ es simplemente un conjunto de parámetros $\beta$ como cualquier otro. Los pesos del filtro (ej. una matriz de $3 \times 3$) no se diseñan manualmente; se **inicializan con valores aleatorios** (ruido).
+
+El proceso de entrenamiento *aprende* los valores de esos pesos:
+
+1.  **Propagación Hacia Adelante:** La imagen de entrada pasa por el filtro $K$ (inicialmente aleatorio), produciendo un mapa de características (Feature Map). Este mapa pasa por el resto de la red, generando una predicción.
+2.  **Cálculo de Pérdida:** Se calcula el error $J(\beta)$ comparando la predicción con la etiqueta real.
+3.  **Retropropagación:** El gradiente del error, $\frac{\partial J}{\partial K}$, se calcula usando la regla de la cadena. Este gradiente representa cómo debe cambiar cada peso en el filtro $K$ para reducir el error final.
+4.  **Actualización del Filtro:** El filtro se utiliza usando la regla de descenso de gradiente:
+    $$
+    K_{\text{nuevo}} = K_{\text{viejo}} - \eta \cdot \frac{\partial J}{\partial K}
+    $$
+
+A medida que este proceso se repite miles de veces (épocas), los filtros aleatorios se "esculpen" iterativamente. Si un filtro que detecta bordes horizontales en la capa 1 ayuda a la red a minimizar la pérdida (es decir, a distinguir mejor las clases), el gradiente moverá los pesos de ese filtro para que se convierta en un detector de bordes horizontales.
+
+Los filtros de las primeras capas aprenden características simples (bordes, colores, texturas). Los filtros de capas más profundas aprenden a combinar estas características simples para detectar patrones más complejos (formas, objetos parciales) que son relevantes para la tarea de clasificación.
+
+## 4.4. Transferencia de Aprendizaje (Transfer Learning)
+
+Entrenar una CNN desde cero (con filtros aleatorios) requiere una enorme cantidad de datos etiquetados (como ImageNet) y un alto costo computacional. En el dominio biomédico, los conjuntos de datos suelen ser mucho más pequeños.
+
+Por esta razón, la técnica estándar es la **Transferencia de Aprendizaje**.
+1.  Se toma una CNN pre-entrenada en un conjunto de datos masivo (ej. ResNet50 entrenada en ImageNet).
+2.  Se asume que los filtros aprendidos en las primeras capas (detectores de bordes, texturas) son genéricos y útiles para cualquier tarea visual.
+3.  Se congela el entrenamiento de estas primeras capas.
+4.  Se reemplaza la capa clasificadora final (MLP) por una nueva, adaptada al problema biomédico (ej. 3 clases en lugar de 1000).
+5.  Se entrena (o "reajusta", *fine-tuning*) únicamente esta nueva capa clasificadora y, opcionalmente, las últimas capas convolucionales, usando el conjunto de datos médicos.
+
+# 5. Aplicaciones en Ingeniería Biomédica
+
+La arquitectura de las CNN es directamente aplicable a una vasta gama de problemas en el análisis de imágenes médicas.
+
+* **Clasificación de Imágenes:** Diagnóstico de patologías a partir de imágenes completas, como la detección de retinopatía diabética en imágenes de fondo de ojo o la clasificación de cáncer de piel a partir de dermatoscopias.
+* **Segmentación Semántica:** Identificación y delineación de estructuras anatómicas u órganos (ej. ventrículos cerebrales) o regiones patológicas (ej. tumores). Arquitecturas especializadas como U-Net son el estándar en esta área.
+* **Detección y Localización de Objetos:** Identificación de la ubicación de anomalías específicas, como nódulos pulmonares en CT o microcalcificaciones en mamografías.
+
+# 6. Conclusión
+
+Las Redes Neuronales Convolucionales representan un avance fundamental en el procesamiento de imágenes médicas. Su capacidad para aprender jerarquías de características espaciales directamente desde los datos elimina la necesidad de extracción manual de características. Para el ingeniero biomédico, la comprensión de esta arquitectura es esencial para el desarrollo de sistemas CAD de próxima generación.
+
+# Ejemplo
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: true
+#| label: Ejemplo CNN
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import ToTensor
+import matplotlib.pyplot as plt
+import numpy as np
+
+# --- 0. Definir Hiperparámetros y Dispositivo ---
+EPOCHS = 10
+BATCH_SIZE = 128
+LEARNING_RATE = 0.001
+
+# Configurar el dispositivo (GPU si está disponible, sino CPU)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Usando dispositivo: {device}")
+
+# --- 1. Carga y Preparación de Datos ---
+
+# PyTorch usa 'transforms' para preprocesar datos.
+# ToTensor() convierte la imagen PIL/Numpy a un Tensor
+# y normaliza los píxeles del rango [0, 255] a [0, 1].
+transform = ToTensor()
+
+# Descargar datos de entrenamiento
+train_dataset = datasets.MNIST(
+    root="./data",  # Directorio donde se guardan los datos
+    train=True,
+    download=True,
+    transform=transform
+)
+
+# Descargar datos de prueba
+test_dataset = datasets.MNIST(
+    root="./data",
+    train=False,
+    download=True,
+    transform=transform
+)
+
+# Crear 'DataLoaders' para manejar los lotes (batches)
+train_loader = DataLoader(
+    dataset=train_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=True  # Mezclar los datos de entrenamiento
+)
+
+test_loader = DataLoader(
+    dataset=test_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=False
+)
+
+# Verificación de las dimensiones (N_lote, Canales, Altura, Ancho)
+# Note la diferencia con Keras (N, H, W, C)
+data_iter = iter(train_loader)
+images, labels = next(data_iter)
+print(f"\nDimensiones de un lote de imágenes: {images.shape}") # (128, 1, 28, 28)
+print(f"Dimensiones de un lote de etiquetas: {labels.shape}") # (128)
+
+# --- 2. Construcción de la Arquitectura CNN ---
+
+# En PyTorch, los modelos se definen como clases que heredan de nn.Module
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super(SimpleCNN, self).__init__()
+
+        # Bloque Extractor 1
+        # nn.Conv2d(canales_entrada, canales_salida, kernel_size)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
+        self.relu1 = nn.ReLU()
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # Bloque Extractor 2
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
+        self.relu2 = nn.ReLU()
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # Bloque Clasificador (MLP)
+        self.flatten = nn.Flatten()
+        # Cálculo de la entrada a la capa densa:
+        # (N, 64, 7, 7) -> 64 * 7 * 7 = 3136
+        self.fc1 = nn.Linear(in_features=64 * 7 * 7, out_features=128)
+        self.relu3 = nn.ReLU()
+        self.dropout = nn.Dropout(0.5)
+        self.fc2 = nn.Linear(in_features=128, out_features=10) # 10 clases de salida
+
+    # El método 'forward' define cómo fluyen los datos a través de las capas
+    def forward(self, x):
+        # Bloque 1
+        x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.pool1(x)
+
+        # Bloque 2
+        x = self.conv2(x)
+        x = self.relu2(x)
+        x = self.pool2(x)
+
+        # Clasificador
+        x = self.flatten(x)
+        x = self.fc1(x)
+        x = self.relu3(x)
+        x = self.dropout(x)
+        x = self.fc2(x) # Salida de logits (sin softmax)
+
+        return x
+
+# Instanciar el modelo y moverlo al dispositivo (GPU/CPU)
+model = SimpleCNN().to(device)
+print(model)
+
+# --- 3. Definición de Pérdida y Optimizador ---
+
+# nn.CrossEntropyLoss aplica internamente Softmax y la pérdida
+# Por eso, el modelo debe retornar los logits "crudos".
+criterion = nn.CrossEntropyLoss()
+
+# Optimizador Adam
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+
+# --- 4. Bucle de Entrenamiento ---
+
+# Listas para guardar el historial de la métrica
+train_losses = []
+val_losses = []
+val_accuracies = []
+
+print("\nIniciando entrenamiento...")
+
+for epoch in range(EPOCHS):
+
+    # ---- Fase de Entrenamiento ----
+    model.train() # Poner el modelo en modo entrenamiento (activa Dropout)
+    running_loss = 0.0
+
+    for batch_idx, (data, targets) in enumerate(train_loader):
+        # Mover datos al dispositivo
+        data = data.to(device)
+        targets = targets.to(device)
+
+        # 1. Poner a cero los gradientes
+        optimizer.zero_grad()
+
+        # 2. Forward pass (predicción)
+        outputs = model(data)
+
+        # 3. Calcular la pérdida
+        loss = criterion(outputs, targets)
+
+        # 4. Backward pass (retropropagación)
+        loss.backward()
+
+        # 5. Actualizar pesos
+        optimizer.step()
+
+        running_loss += loss.item()
+
+    avg_train_loss = running_loss / len(train_loader)
+    train_losses.append(avg_train_loss)
+
+    # ---- Fase de Validación ----
+    model.eval() # Poner el modelo en modo evaluación (desactiva Dropout)
+    running_val_loss = 0.0
+    correct = 0
+    total = 0
+
+    # Desactivar el cálculo de gradientes para la validación
+    with torch.no_grad():
+        for data, targets in test_loader:
+            data = data.to(device)
+            targets = targets.to(device)
+
+            outputs = model(data)
+            loss = criterion(outputs, targets)
+            running_val_loss += loss.item()
+
+            # Calcular la precisión
+            _, predicted = torch.max(outputs.data, 1)
+            total += targets.size(0)
+            correct += (predicted == targets).sum().item()
+
+    avg_val_loss = running_val_loss / len(test_loader)
+    val_losses.append(avg_val_loss)
+
+    accuracy = 100 * correct / total
+    val_accuracies.append(accuracy)
+
+    print(f"Época [{epoch+1}/{EPOCHS}] - "
+          f"Pérdida (Entrenamiento): {avg_train_loss:.4f} - "
+          f"Pérdida (Validación): {avg_val_loss:.4f} - "
+          f"Precisión (Validación): {accuracy:.2f}%")
+
+print("Entrenamiento finalizado.")
+
+# --- 5. Visualización de Resultados ---
+
+plt.figure(figsize=(12, 5))
+
+# Gráfico de Precisión (usando val_accuracies)
+plt.subplot(1, 2, 1)
+plt.plot(val_accuracies, label='Precisión (Validación)', color='blue')
+plt.title('Precisión del Modelo (Validación)')
+plt.xlabel('Época')
+plt.ylabel('Precisión (%)')
+plt.legend()
+plt.grid(True)
+
+# Gráfico de Pérdida
+plt.subplot(1, 2, 2)
+plt.plot(train_losses, label='Pérdida (Entrenamiento)', color='orange')
+plt.plot(val_losses, label='Pérdida (Validación)', color='green')
+plt.title('Pérdida del Modelo')
+plt.xlabel('Época')
+plt.ylabel('Pérdida (Cross-Entropy)')
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+```
