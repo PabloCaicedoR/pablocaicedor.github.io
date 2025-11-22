@@ -1,0 +1,225 @@
+---
+title: "Redes Neuronales Convolucionales & Redes Recurrentes "
+subtitle: "Regresión lineal múltiple, regresión logística y Redes Neuronales"
+author: "PhD. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+lang: es
+format:
+  revealjs:
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    hash: true
+
+execute:
+  echo: false
+  warning: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+# | echo: true
+# | eval: true
+# | output: false
+# | label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+path_ecg = "../../data"
+
+data_path = "../../data/"
+
+# https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+## Introduction
+
+::: {.callout-important title="Motivation"}
+
+Standard Feedforward Networks (MLPs) fail to scale for high-dimensional data like images due to:
+
+1.  **Full Connectivity**: Exploding parameter count.
+2.  **Spatial Invariance**: Ignorance of local spatial topology.
+
+:::
+
+**Convolutional Neural Networks (CNNs)** introduce:
+
+* **Local Connectivity**: Neurons connect only to a local receptive field.
+* **Parameter Sharing**: Same weights (filters) applied across the input.
+* **Equivariance**: Translation of input results in translation of output.
+
+
+## The Convolution Operation
+
+:::{.columns}
+
+:::{.column width="45%"}
+
+In the context of CNNs, the operation is technically a **cross-correlation**, but conventionally termed convolution.
+
+Given an input image $I$ and a kernel (filter) $K$, the feature map $S$ is defined as:
+
+
+
+:::
+
+:::{.column width="45%"}
+
+![](../../recursos/imagenes/GIFs/heatmap_moving_mask.gif)
+
+:::
+
+:::
+
+$$S(i, j) = (I * K)(i, j) = \sum_{m} \sum_{n} I(i+m, j+n) K(m, n)$$
+
+Where:
+* $(i, j)$ are the pixel coordinates.
+* $(m, n)$ are the kernel offsets.
+
+
+
+## Hyperparameters
+
+The spatial dimensions of the output feature map depend on:
+
+1.  **Filter Size ($F$)**: Receptive field dimensions (e.g., $3 \times 3$).
+2.  **Stride ($S$)**: Step size of the filter convolution.
+3.  **Padding ($P$)**: Zero-padding around the border to preserve dimensions.
+
+**Output Dimension Formula:**
+Given input size $W_{in} \times H_{in}$:
+
+$$W_{out} = \frac{W_{in} - F + 2P}{S} + 1$$
+
+
+
+## Pooling Layers
+
+Pooling provides **invariance to small translations** and reduces dimensionality (downsampling).
+
+### Max Pooling
+Selects the maximum activation in the receptive field:
+$$y_{i,j,k} = \max_{(p,q) \in \mathcal{R}_{i,j}} x_{p,q,k}$$
+
+### Average Pooling
+Calculates the arithmetic mean. Generally, Max Pooling performs better for identifying dominant features (edges, textures).
+
+
+
+## Activation Functions
+
+Linear convolution is insufficient for approximating non-linear functions.
+
+**ReLU (Rectified Linear Unit):**
+$$f(x) = \max(0, x)$$
+
+* **Sparsity**: Activations $< 0$ are zeroed out.
+* **Gradient Propagation**: Mitigates vanishing gradient problem compared to Sigmoid/Tanh.
+
+Variants: *Leaky ReLU*, *ELU*, *GELU* (Gaussian Error Linear Unit).
+
+
+
+## Architecture Overview
+
+A typical CNN architecture follows a hierarchical pattern:
+
+1.  **Feature Extraction Block**:
+    * [Conv $\rightarrow$ ReLU $\rightarrow$ Pooling] $\times N$
+2.  **Classification Head**:
+    * Flattening
+    * Fully Connected Layers (Dense)
+    * Softmax (for multi-class classification)
+
+$$P(y=j | \mathbf{x}) = \frac{e^{\mathbf{w}_j^T \mathbf{h} + b_j}}{\sum_{k=1}^K e^{\mathbf{w}_k^T \mathbf{h} + b_k}}$$
+
+
+## Backpropagation in CNNs
+
+Training requires computing gradients w.r.t weights $W$ using the Chain Rule.
+
+For a convolution layer $l$:
+$$\frac{\partial L}{\partial W^{(l)}} = \frac{\partial L}{\partial \text{out}^{(l)}} * \text{in}^{(l)}$$
+
+Where the gradient is computed via convolution between the incoming error signal and the input activations from the previous layer.
+
+
+
+## Implementation: PyTorch Snippet
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: true
+#| label: MiniEjemplo
+import torch
+import torch.nn as nn
+
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super(SimpleCNN, self).__init__()
+        # Feature Extraction
+        self.features = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+        # Classifier
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * 7 * 7, 128), # Assuming 28x28 input
+            nn.ReLU(),
+            nn.Linear(128, 10)
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+```
+# Recurrent Neuronal Network

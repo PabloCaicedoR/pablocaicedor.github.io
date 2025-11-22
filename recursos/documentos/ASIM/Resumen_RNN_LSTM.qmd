@@ -1,0 +1,256 @@
+---
+title: "Redes Neuronales Recurrentes en Series Temporales Biomédicas"
+subtitle: "Fundamentos Matemáticos, Implementación y Causalidad"
+description: "ASIM"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html:
+    code-tools: true
+    code-overflow: scroll
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+bibliography: references.bib
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+## 1. Introducción: Secuencialidad en Biomedicina
+
+[cite_start]La medicina contemporánea se caracteriza por la generación masiva de datos con dependencia temporal intrínseca, provenientes de fuentes como electroencefalogramas (EEG) y Unidades de Medición Inercial (IMU)[cite: 9, 10]. [cite_start]A diferencia de las imágenes estáticas, estos datos encapsulan la dinámica fisiológica, donde el estado actual $x_t$ está causalmente vinculado a su historial $x_{t-1}, \dots, x_{t-k}$[cite: 11, 13].
+
+[cite_start]El presente reporte técnico aborda la ineficacia de las redes *feedforward* convencionales para tratar esta autocorrelación y propone el uso de Redes Neuronales Recurrentes (RNN), específicamente arquitecturas LSTM, para mitigar el problema del desvanecimiento del gradiente en secuencias largas[cite: 12, 36]. [cite_start]Asimismo, se discute la necesidad imperativa de superar la naturaleza de "caja negra" mediante técnicas de Inteligencia Artificial Explicable (XAI) como ShaTS y Causalidad de Granger Neural[cite: 18, 22].
+
+## 2. Fundamentos Matemáticos
+
+### 2.1. Dinámica de la RNN Estándar
+
+Una RNN procesa una secuencia de entrada $x=(x_1, ..., x_T)$ manteniendo un estado oculto $h_t$. [cite_start]La actualización se define formalmente como[cite: 29]:
+
+$$
+h_t = \tanh(W_{hh}h_{t-1} + W_{xh}x_t + b_h)
+$$
+
+[cite_start]Donde $W_{hh}$ modula la memoria a corto plazo y $W_{xh}$ proyecta la entrada al espacio latente[cite: 31, 32]. [cite_start]Sin embargo, durante la retropropagación a través del tiempo (BPTT), la multiplicación repetida de $W_{hh}$ conduce al desvanecimiento o explosión del gradiente, impidiendo el aprendizaje de dependencias temporales extensas, como precursores tempranos de caídas[cite: 37, 40].
+
+### 2.2. Arquitectura LSTM (Long Short-Term Memory)
+
+[cite_start]La arquitectura LSTM introduce una celda de memoria $c_t$ y un mecanismo de compuertas para regular el flujo de información, permitiendo que el gradiente fluya sin perturbaciones multiplicativas severas[cite: 42, 43]. [cite_start]Las ecuaciones que rigen una celda LSTM en el instante $t$ son [cite: 46-60]:
+
+1.  **Compuerta de Olvido ($f_t$):** Determina la información irrelevante del estado anterior.
+    $$f_t = \sigma(W_f \cdot [h_{t-1}, x_t] + b_f)$$
+2.  **Compuerta de Entrada ($i_t$) y Estado Candidato ($\tilde{c}_t$):**
+    $$i_t = \sigma(W_i \cdot [h_{t-1}, x_t] + b_i)$$
+    $$\tilde{c}_t = \tanh(W_c \cdot [h_{t-1}, x_t] + b_c)$$
+3.  **Actualización de la Celda ($c_t$):** Operación lineal aditiva crítica para la preservación del gradiente.
+    $$c_t = f_t \odot c_{t-1} + i_t \odot \tilde{c}_t$$
+4.  **Salida ($h_t$):**
+    $$o_t = \sigma(W_o \cdot [h_{t-1}, x_t] + b_o)$$
+    $$h_t = o_t \odot \tanh(c_t)$$
+
+## 3. Metodología e Implementación Técnica
+
+[cite_start]El flujo de trabajo se basa en el análisis del dataset SisFall, considerando la física de los sensores (acelerometría y giroscopía) y la ubicación biomecánica en la zona lumbar (L4-L5) para aproximar el Centro de Masa (CoM)[cite: 70, 81].
+
+### 3.1. Ingeniería de Datos: Ventanas Deslizantes
+
+[cite_start]Dado el requisito de *Lead Time* (~400ms) para sistemas de protección activa, se segmentan las señales continuas utilizando ventanas deslizantes[cite: 97, 108].
+
+> [cite_start]**Nota Técnica:** Se recomienda un tamaño de ventana entre 1.28s y 2.0s (128-200 muestras a 100Hz) con una superposición del 50%-90% para evitar perder eventos en los bordes de la ventana[cite: 111, 112].
+
+```{python}
+#| eval: false
+import numpy as np
+import torch
+
+def create_sliding_windows(data: np.ndarray,
+                           window_size: int,
+                           overlap: float) -> torch.Tensor:
+    """
+    Genera tensores tridimensionales a partir de series temporales continuas
+    utilizando técnica de ventana deslizante.
+
+    Args:
+        data (np.ndarray): Matriz de entrada (muestras_totales, canales).
+        window_size (int): Número de pasos de tiempo (L).
+        overlap (float): Porcentaje de superposición [0.0 - 1.0].
+
+    Returns:
+        torch.Tensor: Tensor de forma (N, L, H_in).
+    """
+    step = int(window_size * (1 - overlap))
+    windows = []
+
+    # Iteración para segmentación (Lógica algorítmica)
+    for i in range(0, len(data) - window_size, step):
+        window = data[i : i + window_size, :]
+        windows.append(window)
+
+    # Conversión a tensor PyTorch
+    return torch.tensor(np.array(windows), dtype=torch.float32)
+```
+
+### 3.2. Arquitectura del Modelo en PyTorch
+
+La implementación de la clase `BiomedicalLSTM` hereda de `nn.Module`. [cite_start]Es crítico configurar `batch_first=True` para alinear la entrada con el formato $(N, L, H_{in})$ generado en el preprocesamiento[cite: 119]. [cite_start]Para tareas de clasificación, se extrae el último estado oculto $h_n$ o `output[:, -1, :]`[cite: 126].
+
+```{python}
+#| eval: false
+import torch.nn as nn
+
+class BiomedicalLSTM(nn.Module):
+    """
+    Arquitectura LSTM para clasificación de series temporales biomédicas.
+    Integra capa recurrente y clasificador denso.
+    """
+    def __init__(self, input_size: int, hidden_size: int,
+                 num_layers: int, num_classes: int, dropout: float = 0.2):
+        """
+        Args:
+            input_size (int): H_in (ej. 6 para acc+gyro).
+            hidden_size (int): Dimensión del espacio latente.
+            num_layers (int): Profundidad de la recurrencia.
+            num_classes (int): Salida (ej. 2 para Caída/No-Caída).
+        """
+        super(BiomedicalLSTM, self).__init__()
+
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+        # Capa LSTM: batch_first=True es vital para tensores (N, L, H_in)
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0
+        )
+
+        # Clasificador lineal (Fully Connected)
+        self.fc = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Paso forward de la red.
+
+        Args:
+            x (torch.Tensor): Tensor de entrada (Batch, Seq_Len, Features).
+
+        Returns:
+            torch.Tensor: Logits de clasificación.
+        """
+        # Inicialización implícita de h0, c0 en ceros si no se proveen
+
+        # output shape: (batch, seq_len, hidden_size)
+        # h_n shape: (num_layers, batch, hidden_size)
+        lstm_out, (h_n, c_n) = self.lstm(x)
+
+        # Extracción del último estado oculto para clasificación many-to-one
+        # Se toma el último instante temporal de la secuencia
+        last_time_step = lstm_out[:, -1, :]
+
+        # Proyección al espacio de clases
+        out = self.fc(last_time_step)
+
+        return out
+```
+
+### 3.3. Estrategia de Entrenamiento y Función de Pérdida
+
+[cite_start]El desequilibrio de clases (caídas son eventos raros frente a ADLs) requiere estrategias de ponderación. Se implementa el uso de `pos_weight` en la función de pérdida para penalizar fuertemente los falsos negativos[cite: 102, 131].
+
+```{python}
+#| eval: false
+def get_loss_function(class_counts: list, device: torch.device) -> nn.Module:
+    """
+    Configura la función de pérdida con pesos para manejar desequilibrio de clases.
+
+    Args:
+        class_counts (list): [n_negativos, n_positivos].
+        device (torch.device): CPU o CUDA.
+
+    Returns:
+        nn.Module: BCEWithLogitsLoss ponderada.
+    """
+    # Cálculo del peso para la clase positiva (Caída)
+    # weight = n_neg / n_pos
+    pos_weight = torch.tensor([class_counts[0] / class_counts[1]], device=device)
+
+    # BCEWithLogitsLoss integra Sigmoid + BCELoss para estabilidad numérica
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+
+    return criterion
+```
+
+## 4. Interpretabilidad y Análisis Causal
+
+### 4.1. ShaTS: Superando las limitaciones de SHAP
+
+[cite_start]SHAP estándar asume independencia entre características, una premisa violada en series temporales donde $x_t \approx x_{t-1}$[cite: 139]. [cite_start]Para mitigar esto, se emplea ShaTS (Shapley Values for Time Series), que implementa estrategias de agrupamiento[cite: 141]:
+
+* **Agrupamiento Temporal:** Analiza la relevancia de intervalos de tiempo específicos (ej. fase de impacto).
+* **Agrupamiento de Sensores:** Determina si la decisión se basó en acelerometría o giroscopía.
+
+[cite_start]**Figura 1:** (Descripción Teórica) *Heatmaps* poblacionales que revelan patrones biomecánicos, como la mayor relevancia del eje vertical ($Acel_Z$) en poblaciones geriátricas frente a jóvenes[cite: 156, 157].
+
+### 4.2. Causalidad de Granger Neural
+
+Más allá de la correlación, se busca establecer causalidad (si el pasado de $X$ mejora la predicción de $Y$). Se utilizan arquitecturas **Component-wise LSTM (cLSTM)**. [cite_start]A diferencia de los modelos *feedforward*, las cLSTM utilizan $T-1$ puntos de la secuencia, ofreciendo mayor robustez en eventos cortos[cite: 168].
+
+[cite_start]Para descubrir la estructura causal (Matriz de Adyacencia), se aplican penalizaciones de esparcidad durante el entrenamiento, como **Group Lasso**, forzando a cero los pesos de conexiones irrelevantes entre series temporales[cite: 172].
+
+## 5. Conclusiones
+
+[cite_start]El análisis confirma a las LSTM como la arquitectura superior para datos IMU debido a su gestión de dependencias temporales[cite: 180]. [cite_start]No obstante, la implementación exitosa depende críticamente de una ingeniería de datos alineada con la física (ventanas, manejo de desequilibrio) y de la integración de módulos de interpretabilidad (ShaTS) y causalidad (Neural Granger) para garantizar la confiabilidad clínica del sistema[cite: 181, 183].
