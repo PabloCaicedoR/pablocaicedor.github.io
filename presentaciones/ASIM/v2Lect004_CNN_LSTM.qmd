@@ -223,3 +223,398 @@ class SimpleCNN(nn.Module):
         return x
 ```
 # Recurrent Neuronal Network
+
+
+## ¿Por qué RNNs?
+
+Las redes neuronales tradicionales (MLP, CNN) asumen que **las entradas y salidas son independientes**.
+
+::: {.fragment}
+**El problema:**
+¿Cómo procesamos datos donde el *orden* importa?
+:::
+
+::: {.incremental}
+*   Traducción de idiomas (La gramática depende del contexto previo).
+*   Audio y Voz (La onda sonora es continua).
+*   Series de Tiempo (El valor de hoy depende de ayer).
+*   Genómica (Secuencias de ADN).
+:::
+
+## La Celda Recurrente (RNN Cell)
+
+La diferencia fundamental es la **memoria**. La RNN procesa la entrada actual ($x_t$) considerando el estado anterior ($a_{t-1}$).
+
+```{tikz}
+#| label: fig-rnn-single-cell
+#| echo: false
+#| fig-align: center
+#| fig-ext: svg
+#| fig-width: 10
+#| fig-height: 4.5
+
+\usetikzlibrary{shapes.misc, arrows.meta, positioning, calc}
+
+% --- PALETA DE ALTO CONTRASTE ---
+\definecolor{rnnFill}{HTML}{27AE60}     % Verde Esmeralda (Procesamiento)
+\definecolor{flowState}{HTML}{D35400}   % Naranja Quemado (Memoria/Estado)
+\definecolor{flowIO}{HTML}{00796B}      % Verde Azulado (Entrada/Salida)
+\definecolor{weightRed}{HTML}{C0392B}   % Rojo Oscuro (Parámetros)
+
+\begin{tikzpicture}[
+    font=\sffamily\bfseries\Large,
+    node distance=1.5cm and 2.5cm,
+    rnn_box/.style={
+        rounded rectangle, minimum width=2.5cm, minimum height=1.5cm,
+        fill=rnnFill, text=white, align=center, font=\sffamily\bfseries\Huge
+    },
+    arrow_state/.style={
+        draw=flowState, line width=2mm, -{Triangle[width=5mm, length=3mm]}
+    },
+    arrow_io/.style={
+        draw=flowIO, line width=2mm, -{Triangle[width=5mm, length=3mm]}
+    }
+]
+    % Nodos
+    \node[rnn_box] (rnn) {RNN};
+    \node[left=of rnn, text=flowState] (a_prev) {$a_{t-1}$};
+    \node[below=of rnn, text=flowIO] (x_t) {$x_t$};
+
+    % Ecuaciones compactas para evitar errores de parrafo
+    \node[right=of rnn, text=flowState, anchor=west] (eq_right) {
+        $a_t = \tanh [ \textcolor{weightRed}{W_{aa}} a_{t-1} + \textcolor{weightRed}{W_{ax}} x_t + \textcolor{weightRed}{b_a} ]$
+    };
+
+    \node[above=of rnn, text=flowIO] (eq_top) {
+        $\hat{y}_t = \text{softmax} [ \textcolor{weightRed}{W_{ya}} a_t + \textcolor{weightRed}{b_y} ]$
+    };
+
+    % Conexiones
+    \draw[arrow_state] (a_prev) -- (rnn);
+    \draw[arrow_state] (rnn) -- (eq_right);
+    \draw[arrow_io] (x_t) -- (rnn);
+    \draw[arrow_io] (rnn) -- (eq_top);
+
+\end{tikzpicture}
+```
+
+## Formulación Matemática
+
+Analicemos las ecuaciones clave utilizando el código de color:
+
+$$
+\textcolor{#D35400}{a_t} = g_1(\textcolor{#C0392B}{W_{aa}}\textcolor{#D35400}{a_{t-1}} + \textcolor{#C0392B}{W_{ax}}\textcolor{#00796B}{x_t} + \textcolor{#C0392B}{b_a})
+$$
+
+$$
+\textcolor{#00796B}{\hat{y}_t} = g_2(\textcolor{#C0392B}{W_{ya}}\textcolor{#D35400}{a_t} + \textcolor{#C0392B}{b_y})
+$$
+
+::: {.callout-note}
+*   $\textcolor{#D35400}{a_t}$: **Estado oculto** (Hidden State). Es la "memoria" del paso $t$.
+*   $\textcolor{#C0392B}{W_{ax}, W_{aa}, W_{ya}}$: **Pesos compartidos**. Son los mismos para *cada* paso de tiempo.
+*   $g_1$: Usualmente **tanh** o ReLU.
+*   $g_2$: Usualmente **Softmax** (clasificación) o Lineal (regresión).
+:::
+
+## Desenrollando en el Tiempo (Unrolling)
+
+Una RNN es simplemente la misma celda ejecutada múltiples veces. $a_t$ pasa información de un paso al siguiente.
+
+```{tikz}
+#| label: fig-rnn-unrolled-fixed
+#| echo: false
+#| fig-align: center
+#| fig-ext: svg
+#| fig-width: 14
+#| fig-height: 4
+
+\usetikzlibrary{shapes.misc, arrows.meta, positioning, calc, chains}
+
+% --- PALETA ---
+\definecolor{rnnFill}{HTML}{27AE60}
+\definecolor{flowState}{HTML}{D35400}
+\definecolor{flowIO}{HTML}{00796B}
+
+\begin{tikzpicture}[
+    font=\sffamily\bfseries,
+    node distance=0.8cm and 0.8cm,
+    rnn_box/.style={
+        rounded rectangle, minimum width=1.2cm, minimum height=1.2cm,
+        fill=rnnFill, text=white, align=center, font=\sffamily\bfseries\large,
+        on chain
+    },
+    arrow_state/.style={
+        draw=flowState, line width=1.5mm, -{Triangle[width=3mm, length=2mm]}
+    },
+    arrow_io/.style={
+        draw=flowIO, line width=1.5mm, -{Triangle[width=3mm, length=2mm]}
+    },
+    io_label/.style={text=flowIO, font=\sffamily\bfseries\large}
+]
+    \begin{scope}[start chain=going right]
+        % CORRECCIÓN: Usamos {\dots} para evitar que el parser confunda los puntos con rangos
+        \foreach \tlabel/\xlabel [count=\i] in {t-1/x_{t-1}, t/x_{t}, t+1/x_{t+1}, t+2/{\dots}} {%
+            \node[rnn_box] (rnn\i) {RNN};%
+            \node[below=of rnn\i, io_label] (x\i) {$\xlabel$};%
+            % Condicional para imprimir salida normal o puntos suspensivos
+            \ifnum\i=4%
+                \node[above=of rnn\i, io_label] (y\i) {$\dots$};%
+            \else%
+                \node[above=of rnn\i, io_label] (y\i) {$\hat{y}_{\tlabel}$};%
+            \fi%
+
+            \draw[arrow_io] (x\i) -- (rnn\i);%
+            \draw[arrow_io] (rnn\i) -- (y\i);%
+
+            \ifnum\i>1%
+                \pgfmathtruncatemacro{\prev}{\i-1}%
+                \draw[arrow_state] (rnn\prev.east) -- (rnn\i.west);%
+            \fi%
+        }
+    \end{scope}
+
+    % Entradas/Salidas estado externos
+    \draw[arrow_state] ($(rnn1.west) + (-1,0)$) -- node[above, text=flowState]{$a_{t-2}$} (rnn1.west);
+    \draw[arrow_state] (rnn4.east) -- node[above, text=flowState]{$a_{t+2}$} ($(rnn4.east) + (1,0)$);
+
+\end{tikzpicture}
+```
+
+## Arquitecturas Flexibles
+
+Las RNN permiten procesar secuencias de longitudes variables en diferentes configuraciones.
+
+::: {layout-ncol=2}
+**Tipos:**
+
+1.  **Many-to-Many ($T_x = T_y$):** Clasificación de entidades nombradas (NER), Generación de texto.
+2.  **Many-to-One:** Análisis de sentimiento, Clasificación de actividad.
+3.  **One-to-Many:** Generación de música, Captioning de imágenes (Input = Imagen CNN).
+4.  **Many-to-Many ($T_x \neq T_y$):** Traducción automática (Encoder-Decoder).
+:::
+
+## Retropropagación en el Tiempo (BPTT)
+
+Para entrenar, calculamos el gradiente de la pérdida $L$ respecto a los parámetros $W$.
+
+$$ \frac{\partial L}{\partial W} = \sum_{t} \frac{\partial L_t}{\partial W} $$
+
+::: {.callout-warning title="El Reto del Gradiente"}
+Al multiplicar gradientes muchas veces (por la regla de la cadena a través del tiempo), estos pueden:
+
+1.  **Desvanecerse (Vanishing):** La red olvida el pasado lejano. (Solución: **LSTM/GRU**).
+2.  **Explotar (Exploding):** El entrenamiento diverge. (Solución: **Gradient Clipping**).
+:::
+
+## Resumen Visual
+
+<br>
+
+```{tikz}
+#| label: fig-rnn-summary-final
+#| echo: false
+#| fig-align: center
+#| fig-ext: svg
+#| fig-width: 12
+#| fig-height: 3
+
+\usetikzlibrary{shapes.misc, arrows.meta, positioning}
+\definecolor{rnnFill}{HTML}{27AE60}
+\definecolor{flowState}{HTML}{D35400}
+
+\begin{tikzpicture}[
+    font=\sffamily\bfseries,
+    rnn_box_large/.style={
+        rounded rectangle, minimum width=3cm, minimum height=1.8cm,
+        fill=rnnFill, text=white, align=center, font=\sffamily\bfseries\Huge
+    },
+    arrow_state_large/.style={
+        draw=flowState, line width=3mm, -{Triangle[width=6mm, length=4mm]}
+    },
+    text_label/.style={
+        text=black, font=\sffamily\bfseries\Huge, anchor=west
+    }
+]
+    \node[rnn_box_large] (rnn) {RNN};
+    \node[right=of rnn, xshift=0.5cm, text_label] (outText) {Secuencia $\to$ Secuencia};
+    \draw[arrow_state_large] (rnn.east) -- (outText.west);
+
+    \node[left=of rnn, xshift=-0.5cm, text_label, anchor=east] (inText) {Entrada};
+    \draw[arrow_state_large] (inText.east) -- (rnn.west);
+\end{tikzpicture}
+```
+
+**Conclusión:** Las RNNs unifican el aprendizaje sobre datos secuenciales aprendiendo parámetros ($W$) que se comparten a través del tiempo.
+
+
+
+## Basic Concepts
+
+<br/>
+
+```{tikz}
+#| label: fig-rnn-diplosaurio-fixed
+#| echo: false
+#| fig-align: center
+#| fig-ext: svg
+#| fig-width: 10
+#| fig-height: 3
+
+\usetikzlibrary{shapes.misc, arrows.meta, positioning}
+
+% --- PALETA (Igual al gráfico anterior) ---
+\definecolor{rnnFill}{HTML}{27AE60}
+\definecolor{flowState}{HTML}{D35400}
+
+\begin{tikzpicture}[
+    font=\sffamily\bfseries,
+    rnn_box_large/.style={
+        rounded rectangle, minimum width=3.5cm, minimum height=2.0cm,
+        fill=rnnFill, text=white, align=center, font=\sffamily\bfseries\Huge
+    },
+    arrow_state_large/.style={
+        draw=flowState, line width=3mm, -{Triangle[width=6mm, length=4mm]}
+    },
+    text_label/.style={
+        text=black, font=\sffamily\bfseries\Huge, anchor=west
+    }
+]
+    % 1. Nodo RNN (Sin saltos de línea vacíos alrededor)
+    \node[rnn_box_large] (rnn) {RNN};
+    % 2. Nodo Texto (Ajustado a negro para verse en fondo blanco)
+    \node[right=of rnn, xshift=1.0cm, text_label] (outText) {d i p l o s a u r i o};
+    % 3. Flecha
+    \draw[arrow_state_large] (rnn.east) -- (outText.west);
+\end{tikzpicture}
+```
+
+## Basic Concepts
+
+::: {.callout-note title="General Schema"}
+
+Let's make a general structure of the problem
+
+:::
+
+<br/>
+
+
+```{tikz}
+#| label: fig-rnn-sequence-fixed
+#| echo: false
+#| fig-align: center
+#| fig-ext: svg
+#| fig-width: 14
+#| fig-height: 4
+
+\usetikzlibrary{shapes.misc, arrows.meta, positioning, calc, chains}
+
+% --- PALETA (Igual al anterior) ---
+\definecolor{rnnFill}{HTML}{27AE60}
+\definecolor{flowState}{HTML}{D35400}
+\definecolor{flowIO}{HTML}{00796B}
+
+\begin{tikzpicture}[
+    font=\sffamily\bfseries,
+    node distance=0.8cm and 0.8cm,
+    rnn_box/.style={
+        rounded rectangle, minimum width=1.2cm, minimum height=1.2cm,
+        fill=rnnFill, text=white, align=center, font=\sffamily\bfseries\large,
+        on chain
+    },
+    arrow_state/.style={
+        draw=flowState, line width=2mm, -{Triangle[width=4mm, length=2.5mm]}
+    },
+    arrow_io/.style={
+        draw=flowIO, line width=2mm, -{Triangle[width=4mm, length=2.5mm]}
+    },
+    io_label/.style={text=flowIO, font=\sffamily\bfseries\large}
+]
+    % INICIO DE LA CADENA
+    \begin{scope}[start chain=going right]
+        % Iteración por pares (Entrada/Salida) para evitar errores de indexación y líneas en blanco
+        \foreach \inChar/\outChar [count=\t] in {d/i, i/p, p/l, l/o, o/s, s/a, a/u, u/r, r/i, i/o} {%
+            % 1. Nodo RNN
+            \node[rnn_box] (rnn\t) {RNN};%
+            % 2. Etiquetas E/S
+            \node[below=of rnn\t, io_label] (x\t) {$x_{\t}=\inChar$};%
+            \node[above=of rnn\t, io_label] (y\t) {$y_{\t}=\outChar$};%
+            % 3. Flechas E/S
+            \draw[arrow_io] (x\t) -- (rnn\t);%
+            \draw[arrow_io] (rnn\t) -- (y\t);%
+            % 4. Conexión Horizontal (Estado)
+            \ifnum\t>1%
+                \pgfmathtruncatemacro{\prev}{\t-1}%
+                \draw[arrow_state] (rnn\prev.east) -- (rnn\t.west);%
+            \fi%
+        }
+    \end{scope}
+
+    % --- Conexiones Externas ---
+    \coordinate (start_state) at ($(rnn1.west) + (-1.0, 0)$);
+    \draw[arrow_state] (start_state) -- (rnn1.west);
+
+    \coordinate (end_state) at ($(rnn10.east) + (1.0, 0)$);
+    \draw[arrow_state] (rnn10.east) -- (end_state);
+
+\end{tikzpicture}
+```
+
+## Basic Concepts
+
+```{tikz}
+#| label: fig-rnn-cell-v3
+#| echo: false
+#| fig-align: center
+#| fig-ext: svg
+#| fig-width: 10
+#| fig-height: 5
+
+\usetikzlibrary{shapes.misc, arrows.meta, positioning, calc}
+
+% --- PALETA DE ALTO CONTRASTE ---
+\definecolor{rnnFill}{HTML}{27AE60}
+\definecolor{flowState}{HTML}{D35400}
+\definecolor{flowIO}{HTML}{00796B}
+\definecolor{weightRed}{HTML}{C0392B}
+
+\begin{tikzpicture}[
+    font=\sffamily\bfseries\Large,
+    node distance=1.5cm and 2.5cm,
+    rnn_box/.style={
+        rounded rectangle, minimum width=2.5cm, minimum height=1.5cm,
+        fill=rnnFill, text=white, align=center, font=\sffamily\bfseries\Huge
+    },
+    arrow_state/.style={
+        draw=flowState, line width=2.5mm, -{Triangle[width=5mm, length=3mm]}
+    },
+    arrow_io/.style={
+        draw=flowIO, line width=2.5mm, -{Triangle[width=5mm, length=3mm]}
+    }
+]
+
+    % --- Nodos ---
+    \node[rnn_box] (rnn) {RNN};
+    \node[left=of rnn, text=flowState] (a_prev) {$a_{t-1}$};
+    \node[below=of rnn, text=flowIO] (x_t) {$x_t$};
+
+    % --- Ecuaciones (Sin saltos de línea dentro de los $) ---
+    \node[right=of rnn, text=flowState, anchor=west] (eq_right) {
+        $a_t = f [ \textcolor{weightRed}{W_{aa}} a_{t-1} + \textcolor{weightRed}{W_{ax}} x_t + \textcolor{weightRed}{b_a} ]$
+    };
+
+    \node[above=of rnn, text=flowIO] (eq_top) {
+        $y_t = g [ \textcolor{weightRed}{W_{ya}} a_t + \textcolor{weightRed}{b_y} ]$
+    };
+
+    % --- Conexiones ---
+    \draw[arrow_state] (a_prev) -- (rnn);
+    \draw[arrow_state] (rnn) -- (eq_right);
+    \draw[arrow_io] (x_t) -- (rnn);
+    \draw[arrow_io] (rnn) -- (eq_top);
+
+\end{tikzpicture}
+```
+
+
