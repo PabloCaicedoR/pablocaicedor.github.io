@@ -8752,63 +8752,63 @@
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html",
     "href": "recursos/documentos/ASIM/ResumenCNN.html",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "",
     "text": "El reporte técnico inicia trazando la evolución histórica de las Redes Neuronales Convolucionales, desde su inspiración biológica en la corteza visual (Hubel y Wiesel) y los modelos precursores (Neocognitron, LeNet-5), hasta su resurgimiento moderno con AlexNet, posibilitado por las GPUs y los grandes volúmenes de datos. Inmediatamente, se justifica la adopción de esta arquitectura en el ámbito biomédico al superar la principal limitación de los métodos tradicionales: la necesidad de una extracción manual de características, un proceso subjetivo que las CNN automatizan. A nivel funcional, la arquitectura se descompone en sus bloques esenciales: capas convolucionales que aprenden jerarquías de filtros, activaciones ReLU que introducen no linealidad, y capas de agrupación (pooling) que otorgan invarianza y reducen la dimensionalidad, culminando en un clasificador (MLP) que toma la decisión final. El proceso de entrenamiento de estos filtros se detalla como una optimización donde una función de pérdida (ej. entropía cruzada) se minimiza mediante retropropagación para calcular gradientes, y un optimizador (como SGD) actualiza los pesos, destacando la transferencia de aprendizaje como la técnica pragmática dominante en el sector. Finalmente, se consolidan estos conceptos mostrando sus aplicaciones prácticas en ingeniería biomédica, que abarcan desde la clasificación de patologías y la segmentación semántica de tumores hasta la detección de lesiones específicas en imágenes diagnósticas.\n# 1. Introducción\nEl análisis de imágenes biomédicas depende fundamentalmente de la capacidad de un modelo para comprender la información espacial y jerárquica. Las Redes Neuronales Convolucionales (CNN) representan la solución de vanguardia para esta tarea, pero su arquitectura es el resultado de varias décadas de investigación en neurociencia computacional y aprendizaje automático.\nLos fundamentos conceptuales se remontan a los experimentos de Hubel y Wiesel en la década de 1960, quienes descubrieron que las neuronas en la corteza visual primaria de los mamíferos responden a patrones locales, simples y orientados (como los bordes) [1]. Estas neuronas se organizan de forma jerárquica para detectar características progresivamente más complejas.\nInspirado por este modelo biológico, Kunihiko Fukushima desarrolló el “Neocognitron” en 1980 [2]. Este fue un precursor directo de las CNN modernas, introduciendo una arquitectura jerárquica con capas que alternaban la extracción de características (similares a la convolución) y la reducción de dimensionalidad (similar al pooling), demostrando invarianza a la traslación.\nSin embargo, fue el trabajo de Yann LeCun y sus colaboradores a finales de los 80 y 90 el que formalizó la CNN moderna, notablemente con la arquitectura LeNet-5 [3]. Al integrar la convolución con el algoritmo de retropropagación (backpropagation) para entrenar los filtros automáticamente a partir de los datos, LeNet-5 estableció el estándar para el reconocimiento de caracteres.\nA pesar de este éxito temprano, las CNN fueron superadas por otros métodos (como las SVM) durante casi una década, debido principalmente a las limitaciones computacionales (falta de GPUs potentes) y a la escasez de grandes conjuntos de datos etiquetados.\nLa era moderna de las CNN fue catalizada en 2012 por Krizhevsky, Sutskever y Hinton con “AlexNet” [4]. Al utilizar GPUs para el entrenamiento y un conjunto de datos masivo (ImageNet), AlexNet demostró una reducción drástica del error en la clasificación de imágenes, superando a todos los métodos anteriores e iniciando la revolución actual del aprendizaje profundo.\nEste reporte presenta una revisión técnica de los fundamentos de la arquitectura CNN contemporánea. El objetivo es proporcionar al estudiante de ingeniería biomédica una comprensión clara de sus componentes (convolución, agrupación) y su relevancia en el procesamiento de señales e imágenes biomédicas."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#capa-convolucional-convolutional-layer",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#capa-convolucional-convolutional-layer",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "3.1. Capa Convolucional (Convolutional Layer)",
     "text": "3.1. Capa Convolucional (Convolutional Layer)\nA continuación, se presenta un diagrama de una arquitectura CNN típica, que consta de dos bloques de extracción de características (Convolución, Activación y Agrupación) y un bloque clasificador (MLP).\n\n\n\n\n\nLa capa convolucional es el componente central de la CNN. Utiliza un conjunto de filtros (o kernels) aprendibles para detectar características locales (bordes, texturas, formas) en la imagen de entrada.\nUn filtro \\(K\\) de tamaño \\(m \\times n\\) se desliza sobre la imagen de entrada \\(I\\). En cada posición, se calcula el producto punto entre el filtro y la región de la imagen que cubre. Esta operación, la convolución discreta 2D, genera un “mapa de características” (feature map) \\(O\\):\n\\[\nO(i, j) = (I * K)(i, j) = \\sum_{m} \\sum_{n} I(i-m, j-n) K(m, n)\n\\]\nParámetros clave de esta capa son:\n\nProfundidad (Depth): El número de filtros en la capa. Cada filtro aprende a detectar una característica diferente.\nPaso (Stride): El número de píxeles que el filtro se desplaza en cada paso. Un stride mayor reduce la dimensionalidad del mapa de características.\nRelleno (Padding): La adición de píxeles (usualmente ceros) al borde de la imagen. El padding (ej. “same”) permite controlar el tamaño espacial de salida y asegurar que los bordes de la imagen sean procesados adecuadamente."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#función-de-activación-no-lineal",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#función-de-activación-no-lineal",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "3.2. Función de Activación No Lineal",
     "text": "3.2. Función de Activación No Lineal\nCada elemento del mapa de características es procesado por una función de activación no lineal. [cite_start]La más utilizada en CNNs es la Unidad Lineal Rectificada (ReLU)[cite: 26], definida como:\n\\[\n\\text{ReLU}(x) = \\max(0, x)\n\\]\nReLU introduce no linealidad en el modelo, permitiéndole aprender relaciones complejas. Es computacionalmente eficiente y ayuda a mitigar el problema del desvanecimiento del gradiente (vanishing gradient) durante el entrenamiento."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#capa-de-agrupación-pooling-layer",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#capa-de-agrupación-pooling-layer",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "3.3. Capa de Agrupación (Pooling Layer)",
     "text": "3.3. Capa de Agrupación (Pooling Layer)\nLa capa de agrupación (o submuestreo) reduce la dimensionalidad espacial de los mapas de características. Esto reduce la carga computacional y el número de parámetros, ayudando a controlar el sobreajuste (overfitting).\nLa operación más común es Max Pooling. Se define una ventana (ej. \\(2 \\times 2\\)) y se toma el valor máximo de la región del mapa de características cubierta por esa ventana."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#capa-totalmente-conectada-fully-connected-layer",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#capa-totalmente-conectada-fully-connected-layer",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "3.4. Capa Totalmente Conectada (Fully Connected Layer)",
     "text": "3.4. Capa Totalmente Conectada (Fully Connected Layer)\nDespués de varias capas convolucionales y de agrupación, los mapas de características resultantes son “aplanados” (flattening) en un vector unidimensional. Este vector alimenta una o más capas totalmente conectadas (densas), que son perceptrones multicapa estándar.\nEstas capas realizan la clasificación final basándose en las características de alto nivel extraídas por las capas anteriores. La última capa suele emplear una función de activación Softmax para problemas de clasificación multiclase, generando una distribución de probabilidad sobre las clases de salida."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#la-función-de-pérdida-loss-function",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#la-función-de-pérdida-loss-function",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "4.1. La Función de Pérdida (Loss Function)",
     "text": "4.1. La Función de Pérdida (Loss Function)\nEl primer paso es definir una métrica cuantitativa del error. La función de pérdida, \\(J(\\beta)\\), mide la discrepancia entre la salida predicha por la red (\\(\\hat{y}\\)) y la etiqueta real (\\(y\\)). El vector \\(\\beta\\) representa todos los parámetros aprendibles del modelo (pesos y sesgos de todas las capas).\nPara problemas de clasificación, la función de pérdida más utilizada es la Entropía Cruzada Categórica (Categorical Cross-Entropy). Mide la “distancia” entre la distribución de probabilidad predicha (salida de la capa Softmax) y la distribución real (la etiqueta one-hot).\nPara un solo ejemplo de entrenamiento, la pérdida es:\n\\[\nJ_i(\\beta) = - \\sum_{c=1}^{M} y_{i,c} \\log(\\hat{y}_{i,c})\n\\]\nDonde:\n* \\(M\\) es el número total de clases (ej. “Normal”, “Neumonía”, “COVID-19”).\n* \\(y_{i,c}\\) es 1 si la muestra \\(i\\) pertenece a la clase \\(c\\), y 0 en caso contrario.\n* \\(\\hat{y}_{i,c}\\) es la probabilidad predicha por la red (salida Softmax) de que la muestra \\(i\\) pertenezca a la clase \\(c\\).\nEl objetivo del entrenamiento es encontrar el conjunto de parámetros \\(\\beta^*\\) que minimiza la pérdida promedio sobre todo el conjunto de entrenamiento \\(N\\):\n\\[\n\\beta^* = \\arg \\min_{\\beta} \\frac{1}{N} \\sum_{i=1}^{N} J_i(\\beta)\n\\]"
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#retropropagación-y-descenso-de-gradiente",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#retropropagación-y-descenso-de-gradiente",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "4.2. Retropropagación y Descenso de Gradiente",
     "text": "4.2. Retropropagación y Descenso de Gradiente\nPara minimizar \\(J(\\beta)\\), se utiliza un algoritmo de optimización basado en el gradiente. El más fundamental es el Descenso de Gradiente. La idea es calcular cómo un pequeño cambio en cada parámetro \\(\\beta_j\\) (cada peso individual en cada filtro) afecta la pérdida total \\(J\\). Esta “sensibilidad” es el gradiente (derivada parcial) de la pérdida con respecto a ese parámetro: \\(\\frac{\\partial J}{\\partial \\beta_j}\\).\nEl algoritmo de Retropropagación (Backpropagation) es el método eficiente para calcular este gradiente. Utiliza la regla de la cadena del cálculo para propagar el error desde la capa de salida hacia atrás, capa por capa, calculando el gradiente de la pérdida con respecto a los parámetros de cada capa.\nUna vez que se tiene el gradiente \\(\\nabla J(\\beta)\\) (el vector de todas las derivadas parciales), se actualizan los parámetros en la dirección opuesta al gradiente (la dirección de máximo descenso del error). La regla de actualización es:\n\\[\n\\beta_{\\text{nuevo}} = \\beta_{\\text{viejo}} - \\eta \\cdot \\nabla J(\\beta)\n\\]\n\n\\(\\eta\\) (letra griega “eta”) es la tasa de aprendizaje (learning rate), un hiperparámetro crucial que controla el tamaño del paso en cada actualización.\n\nEn la práctica, calcular el gradiente sobre todo el conjunto de datos \\(N\\) es computacionalmente prohibitivo. En su lugar, se utiliza el Descenso de Gradiente Estocástico (SGD) o, más comúnmente, el SGD por Mini-Lotes (Mini-Batch SGD). En este enfoque, el gradiente se estima usando un pequeño subconjunto (un “lote”) de datos en cada iteración."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#el-entrenamiento-específico-de-los-filtros-kernels",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#el-entrenamiento-específico-de-los-filtros-kernels",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "4.3. El Entrenamiento Específico de los Filtros (Kernels)",
     "text": "4.3. El Entrenamiento Específico de los Filtros (Kernels)\nLa pregunta clave es: ¿cómo se aplica esto a los pesos de un filtro convolucional?\nUn filtro \\(K\\) en una capa \\(l\\) es simplemente un conjunto de parámetros \\(\\beta\\) como cualquier otro. Los pesos del filtro (ej. una matriz de \\(3 \\times 3\\)) no se diseñan manualmente; se inicializan con valores aleatorios (ruido).\nEl proceso de entrenamiento aprende los valores de esos pesos:\n\nPropagación Hacia Adelante: La imagen de entrada pasa por el filtro \\(K\\) (inicialmente aleatorio), produciendo un mapa de características (Feature Map). Este mapa pasa por el resto de la red, generando una predicción.\nCálculo de Pérdida: Se calcula el error \\(J(\\beta)\\) comparando la predicción con la etiqueta real.\nRetropropagación: El gradiente del error, \\(\\frac{\\partial J}{\\partial K}\\), se calcula usando la regla de la cadena. Este gradiente representa cómo debe cambiar cada peso en el filtro \\(K\\) para reducir el error final.\nActualización del Filtro: El filtro se utiliza usando la regla de descenso de gradiente:\n\\[\nK_{\\text{nuevo}} = K_{\\text{viejo}} - \\eta \\cdot \\frac{\\partial J}{\\partial K}\n\\]\n\nA medida que este proceso se repite miles de veces (épocas), los filtros aleatorios se “esculpen” iterativamente. Si un filtro que detecta bordes horizontales en la capa 1 ayuda a la red a minimizar la pérdida (es decir, a distinguir mejor las clases), el gradiente moverá los pesos de ese filtro para que se convierta en un detector de bordes horizontales.\nLos filtros de las primeras capas aprenden características simples (bordes, colores, texturas). Los filtros de capas más profundas aprenden a combinar estas características simples para detectar patrones más complejos (formas, objetos parciales) que son relevantes para la tarea de clasificación."
   },
   {
     "objectID": "recursos/documentos/ASIM/ResumenCNN.html#transferencia-de-aprendizaje-transfer-learning",
     "href": "recursos/documentos/ASIM/ResumenCNN.html#transferencia-de-aprendizaje-transfer-learning",
-    "title": "Redes Neuronales Recurrentes en Series Temporales Biomédicas",
+    "title": "Redes Neuronales Convolucionales",
     "section": "4.4. Transferencia de Aprendizaje (Transfer Learning)",
     "text": "4.4. Transferencia de Aprendizaje (Transfer Learning)\nEntrenar una CNN desde cero (con filtros aleatorios) requiere una enorme cantidad de datos etiquetados (como ImageNet) y un alto costo computacional. En el dominio biomédico, los conjuntos de datos suelen ser mucho más pequeños.\nPor esta razón, la técnica estándar es la Transferencia de Aprendizaje.\n1. Se toma una CNN pre-entrenada en un conjunto de datos masivo (ej. ResNet50 entrenada en ImageNet).\n2. Se asume que los filtros aprendidos en las primeras capas (detectores de bordes, texturas) son genéricos y útiles para cualquier tarea visual.\n3. Se congela el entrenamiento de estas primeras capas.\n4. Se reemplaza la capa clasificadora final (MLP) por una nueva, adaptada al problema biomédico (ej. 3 clases en lugar de 1000).\n5. Se entrena (o “reajusta”, fine-tuning) únicamente esta nueva capa clasificadora y, opcionalmente, las últimas capas convolucionales, usando el conjunto de datos médicos."
   },
@@ -8964,7 +8964,7 @@
     "href": "presentaciones/ASIM/v2Lect004_CNN_LSTM.html#formulación-matemática",
     "title": "Redes Neuronales Convolucionales & Redes Recurrentes",
     "section": "Formulación Matemática",
-    "text": "Formulación Matemática\nAnalicemos las ecuaciones clave utilizando el código de color:\n\\[\n\\textcolor{#D35400}{a_t} = g_1(\\textcolor{#C0392B}{W_{aa}}\\textcolor{#D35400}{a_{t-1}} + \\textcolor{#C0392B}{W_{ax}}\\textcolor{#00796B}{x_t} + \\textcolor{#C0392B}{b_a})\n\\]\n\\[\n\\textcolor{#00796B}{\\hat{y}_t} = g_2(\\textcolor{#C0392B}{W_{ya}}\\textcolor{#D35400}{a_t} + \\textcolor{#C0392B}{b_y})\n\\]\n\n\n\n\n\n\nNota\n\n\n\n\\(\\textcolor{#D35400}{a_t}\\): Estado oculto (Hidden State). Es la “memoria” del paso \\(t\\).\n\\(\\textcolor{#C0392B}{W_{ax}, W_{aa}, W_{ya}}\\): Pesos compartidos. Son los mismos para cada paso de tiempo.\n\\(g_1\\): Usualmente tanh o ReLU.\n\\(g_2\\): Usualmente Softmax (clasificación) o Lineal (regresión)."
+    "text": "Formulación Matemática\n\n\\[\n% Definición de colores semánticos (Modelo HTML para compatibilidad)\n\\newcommand{\\cState}[1]{\\color[HTML]{D35400}{#1}}\n\\newcommand{\\cWeight}[1]{\\color[HTML]{C0392B}{#1}}\n\\newcommand{\\cInput}[1]{\\color[HTML]{00796B}{#1}}\n\\]\n\nAnalicemos las ecuaciones clave utilizando el código de color:\n\\[\na_t = g_1(W_{aa}a_{t-1} + W_{ax}x_t + b_a)\n\\]\n\\[\n\\hat{y}_t = g_2(W_{ya}a_t + b_y)\n\\]\n\n\n\n\n\n\nNota\n\n\n\n\\(\\textcolor{#D35400}{a_t}\\): Estado oculto (Hidden State). Es la “memoria” del paso \\(t\\).\n\\(\\textcolor{#C0392B}{W_{ax}, W_{aa}, W_{ya}}\\): Pesos compartidos. Son los mismos para cada paso de tiempo.\n\\(g_1\\): Usualmente tanh o ReLU.\n\\(g_2\\): Usualmente Softmax (clasificación) o Lineal (regresión)."
   },
   {
     "objectID": "presentaciones/ASIM/v2Lect004_CNN_LSTM.html#desenrollando-en-el-tiempo-unrolling",
@@ -8993,5 +8993,152 @@
     "title": "Redes Neuronales Convolucionales & Redes Recurrentes",
     "section": "Resumen Visual",
     "text": "Resumen Visual\n\n\n\nFigura 3\nConclusión: Las RNNs unifican el aprendizaje sobre datos secuenciales aprendiendo parámetros (\\(W\\)) que se comparten a través del tiempo."
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "",
+    "text": "La modelización matemática de sistemas dinámicos requiere representaciones capaces de capturar dependencias temporales. A diferencia de los modelos estáticos, que asumen independencia entre observaciones, las señales biológicas, el lenguaje y las series financieras son intrínsecamente secuenciales. Las Redes Neuronales Recurrentes (RNN) introducen bucles de retroalimentación que permiten mantener un estado interno, funcionando como una memoria persistente a través del tiempo."
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#la-dimensión-temporal-en-el-procesamiento-de-señales",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#la-dimensión-temporal-en-el-procesamiento-de-señales",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "",
+    "text": "La modelización matemática de sistemas dinámicos requiere representaciones capaces de capturar dependencias temporales. A diferencia de los modelos estáticos, que asumen independencia entre observaciones, las señales biológicas, el lenguaje y las series financieras son intrínsecamente secuenciales. Las Redes Neuronales Recurrentes (RNN) introducen bucles de retroalimentación que permiten mantener un estado interno, funcionando como una memoria persistente a través del tiempo."
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#redes-neuronales-recurrentes-rnn",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#redes-neuronales-recurrentes-rnn",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "2. Redes Neuronales Recurrentes (RNN)",
+    "text": "2. Redes Neuronales Recurrentes (RNN)\n\n2.1 Arquitectura y Dinámica de Estado\nUna RNN procesa secuencias mediante la aplicación recursiva de una función de transición. Conceptualmente, la red se “desenrolla” a lo largo de los pasos de tiempo \\(T\\), compartiendo los mismos parámetros en cada paso.\nLa actualización del estado oculto se define formalmente como:\n\\[h_t = \\sigma_h (W_{ih} x_t + b_{ih} + W_{hh} h_{t-1} + b_{hh})\\]\nDonde:\n\n\\(h_t \\in \\mathbb{R}^h\\): Vector de estado oculto en el tiempo \\(t\\).\n\\(x_t \\in \\mathbb{R}^d\\): Vector de entrada en el tiempo \\(t\\).\n\\(W_{hh} \\in \\mathbb{R}^{h\\times h}\\): Matriz de pesos recurrente que conecta el pasado con el presente.\n\\(\\sigma_h\\): Función de activación no lineal (usualmente \\(\\tanh\\)).\n\nLa salida del sistema en cada instante se proyecta desde el estado oculto:\n\\[y_t = \\sigma_y(W_{hy} h_t + b_y)\\]\n\n\n2.2 Limitaciones del Gradiente\nDurante el entrenamiento mediante Backpropagation Through Time (BPTT), el cálculo del gradiente implica productos sucesivos de matrices Jacobianas:\n\\[\\frac{\\partial h_t}{\\partial h_k} = \\prod_{j=k+1}^t \\text{diag}(\\sigma'(z_j)) W_{hh}\\]\nEl comportamiento espectral de \\(W_{hh}\\) determina la estabilidad del aprendizaje:\n1. Desvanecimiento: Si el radio espectral es menor a 1, la señal de error decae exponencialmente, impidiendo capturar dependencias lejanas.\n2. Explosión: Si es mayor a 1, los gradientes divergen, desestabilizando los pesos."
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#arquitectura-long-short-term-memory-lstm",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#arquitectura-long-short-term-memory-lstm",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "3. Arquitectura Long Short-Term Memory (LSTM)",
+    "text": "3. Arquitectura Long Short-Term Memory (LSTM)\nLa arquitectura LSTM introduce una celda de memoria (\\(C_t\\)) independiente del estado oculto (\\(h_t\\)), diseñada para preservar el flujo del gradiente mediante interacciones lineales.\n\n3.1 Mecanismo de Compuertas\nEl flujo de información es regulado por estructuras sigmoidales:\n\nOlvido (\\(f_t\\)): Determina la información a descartar del estado de celda previo.\n\\[f_t = \\sigma(W_f \\cdot [h_{t-1}, x_t] + b_f)\\]\nEntrada (\\(i_t\\)) y Candidato (\\(\\tilde{C}_t\\)): Regulan la incorporación de nueva información.\n\\[i_t = \\sigma(W_i \\cdot [h_{t-1}, x_t] + b_i)\\]\n\\[\\tilde{C}_t = \\tanh(W_C \\cdot [h_{t-1}, x_t] + b_C)\\]\nActualización de Celda (\\(C_t\\)): Combina linealmente el pasado y el presente.\n\\[C_t = f_t \\odot C_{t-1} + i_t \\odot \\tilde{C}_t\\]\nSalida (\\(o_t\\)) y Estado Oculto:\n\\[o_t = \\sigma(W_o \\cdot [h_{t-1}, x_t] + b_o)\\]\n\\[h_t = o_t \\odot \\tanh(C_t)\\]"
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#gated-recurrent-units-gru",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#gated-recurrent-units-gru",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "4. Gated Recurrent Units (GRU)",
+    "text": "4. Gated Recurrent Units (GRU)\nLa GRU optimiza la arquitectura recurrente fusionando los estados y reduciendo el sistema a dos compuertas de control, mejorando la eficiencia computacional sin sacrificar significativamente la capacidad de modelado.\n\n4.1 Dinámica de Transición\n\nCompuerta de Actualización (\\(z_t\\)): Controla cuánto del estado anterior se mantiene.\n\\[z_t = \\sigma(W_z \\cdot [h_{t-1}, x_t] + b_z)\\]\nCompuerta de Reinicio (\\(r_t\\)): Determina la relevancia del pasado para el cálculo actual.\n\\[r_t = \\sigma(W_r \\cdot [h_{t-1}, x_t] + b_r)\\]\nEstado Oculto (\\(h_t\\)): Interpolación directa.\n\\[\\tilde{h}_t = \\tanh(W_h \\cdot [r_t \\odot h_{t-1}, x_t] + b_h)\\]\n\\[h_t = (1 - z_t) \\odot h_{t-1} + z_t \\odot \\tilde{h}_t\\]\n\n\n\n4.2 Selección de Arquitectura\n\nLSTM: Preferible para secuencias con dependencias temporales muy extensas o cuando la separación entre memoria y estado oculto es crítica.\nGRU: Ideal para sistemas con restricciones de cómputo, inferencia en tiempo real y conjuntos de datos limitados, debido a su menor número de parámetros."
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#implementación-modular-en-pytorch",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#implementación-modular-en-pytorch",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "5. Implementación Modular en PyTorch",
+    "text": "5. Implementación Modular en PyTorch\nLa implementación se estructura mediante clases modulares que encapsulan la lógica recurrente, permitiendo la instanciación flexible de RNN, LSTM o GRU. Se asume una entrada tridimensional estandarizada: (Batch Size, Sequence Length, Features).\n\n5.1 Estructura Genérica de Clasificación\nEsta clase implementa un modelo “Muchos a Uno” (Many-to-One), donde la secuencia completa es procesada para generar una única salida basada en el último estado oculto.\n\nimport torch\nimport torch.nn as nn\nfrom typing import Tuple, Union\n\nclass ModuloRecurrenteGenerico(nn.Module):\n    \"\"\"\n    Bloque constructivo para procesamiento de secuencias temporales.\n    Encapsula la lógica de selección de arquitectura recurrente.\n    \"\"\"\n    def __init__(self,\n                 tipo_arquitectura: str,\n                 dim_entrada: int,\n                 dim_oculta: int,\n                 dim_salida: int):\n        \"\"\"\n        Configuración de la arquitectura.\n\n        Args:\n            tipo_arquitectura (str): Identificador ('RNN', 'LSTM', 'GRU').\n            dim_entrada (int): Número de características por paso de tiempo.\n            dim_oculta (int): Tamaño del vector de estado interno.\n            dim_salida (int): Dimensión del vector de salida final.\n        \"\"\"\n        super(ModuloRecurrenteGenerico, self).__init__()\n        self.tipo = tipo_arquitectura\n        self.dim_oculta = dim_oculta\n\n        # Inicialización agnóstica de la capa recurrente\n        if self.tipo == 'RNN':\n            self.rnn = nn.RNN(dim_entrada, dim_oculta, batch_first=True)\n        elif self.tipo == 'LSTM':\n            self.rnn = nn.LSTM(dim_entrada, dim_oculta, batch_first=True)\n        elif self.tipo == 'GRU':\n            self.rnn = nn.GRU(dim_entrada, dim_oculta, batch_first=True)\n        else:\n            raise ValueError(\"Arquitectura no soportada.\")\n\n        # Capa de proyección final\n        self.proyeccion = nn.Linear(dim_oculta, dim_salida)\n\n    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:\n        \"\"\"\n        Procesamiento de la secuencia.\n\n        Args:\n            x (torch.Tensor): Entrada de forma (Batch, Seq_Len, Features).\n\n        Returns:\n            torch.Tensor: Salida proyectada del último estado temporal.\n        \"\"\"\n        # Propagación a través de la capa recurrente\n        if self.tipo == 'LSTM':\n            # LSTM retorna: output, (hidden_state, cell_state)\n            salida_secuencia, (h_n, c_n) = self.rnn(x)\n        else:\n            # GRU/RNN retornan: output, hidden_state\n            salida_secuencia, h_n = self.rnn(x)\n\n        # Extracción del estado correspondiente al último paso de tiempo (t=T)\n        # salida_secuencia shape: (Batch, Seq_Len, Hidden_Dim)\n        estado_final = salida_secuencia[:, -1, :]\n\n        return self.proyeccion(estado_final)\n\n\n\n5.2 Estructura Genérica de Generación Secuencial\nEsta clase implementa un modelo “Muchos a Muchos” (Many-to-Many) autorregresivo, típico en tareas donde la salida en \\(t\\) depende de la historia hasta \\(t\\). Utiliza capas de Embedding para manejar entradas discretas.\n\nclass GeneradorSecuencial(nn.Module):\n    \"\"\"\n    Modelo autorregresivo para generación de secuencias discretas.\n    Soporta mantenimiento de estado entre pasos de inferencia.\n    \"\"\"\n    def __init__(self,\n                 tamano_vocabulario: int,\n                 dim_embedding: int,\n                 dim_oculta: int,\n                 num_capas: int = 1):\n        super(GeneradorSecuencial, self).__init__()\n        self.dim_oculta = dim_oculta\n        self.num_capas = num_capas\n\n        # Transformación de índices discretos a espacio vectorial denso\n        self.embedding = nn.Embedding(tamano_vocabulario, dim_embedding)\n\n        # Núcleo recurrente (LSTM por defecto para memoria de largo plazo)\n        self.lstm = nn.LSTM(dim_embedding, dim_oculta, num_capas, batch_first=True)\n\n        # Decodificador al espacio original\n        self.decodificador = nn.Linear(dim_oculta, tamano_vocabulario)\n\n    def forward(self, x: torch.Tensor, estado_previo: Tuple[torch.Tensor, torch.Tensor]) \\\n            -&gt; Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:\n        \"\"\"\n        Paso de inferencia.\n\n        Args:\n            x: Índices de entrada (Batch, Seq_Len).\n            estado_previo: Tupla con (hidden_state, cell_state) del paso t-1.\n\n        Returns:\n            output: Distribución de probabilidad no normalizada (logits).\n            nuevo_estado: Estado actualizado para el paso t+1.\n        \"\"\"\n        vectores = self.embedding(x)\n\n        # Actualización recurrente\n        salida_rnn, nuevo_estado = self.lstm(vectores, estado_previo)\n\n        # Aplanamiento para procesamiento denso\n        # (Batch * Seq_Len, Hidden_Dim)\n        salida_aplanada = salida_rnn.reshape(-1, self.dim_oculta)\n\n        output = self.decodificador(salida_aplanada)\n        return output, nuevo_estado\n\n    def inicializar_estado(self, batch_size: int, dispositivo: torch.device) -&gt; Tuple[torch.Tensor, torch.Tensor]:\n        \"\"\"Genera el estado cero inicial.\"\"\"\n        peso_ref = next(self.parameters()).data\n        h_0 = peso_ref.new(self.num_capas, batch_size, self.dim_oculta).zero_().to(dispositivo)\n        c_0 = peso_ref.new(self.num_capas, batch_size, self.dim_oculta).zero_().to(dispositivo)\n        return (h_0, c_0)"
+  },
+  {
+    "objectID": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#perspectiva-comparativa-rnn-vs.-transformers",
+    "href": "recursos/documentos/ASIM/GRU_LSTM_RNN.html#perspectiva-comparativa-rnn-vs.-transformers",
+    "title": "Arquitecturas de Memoria Profunda: Redes Neuronales Recurrentes, LSTM y GRU",
+    "section": "6. Perspectiva Comparativa: RNN vs. Transformers",
+    "text": "6. Perspectiva Comparativa: RNN vs. Transformers\nAunque las arquitecturas basadas en Attention (Transformers) predominan en el modelado de lenguaje a gran escala, las RNN mantienen ventajas estructurales en dominios específicos:\n\nComplejidad de Inferencia: Las RNN operan con complejidad temporal \\(O(N)\\) y espacial \\(O(1)\\) respecto a la longitud de la historia, lo cual es crítico para sistemas embebidos (Edge AI) y procesamiento de señales en tiempo real (Streaming).\nEficiencia de Datos: En regímenes de Small Data o señales con alta relación señal-ruido, arquitecturas como GRU suelen converger con mayor estabilidad que modelos masivos.\n\nLa elección de la arquitectura debe basarse en las restricciones de latencia, memoria disponible y la naturaleza causal de los datos."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#la-dimensión-temporal-en-ia",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#la-dimensión-temporal-en-ia",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "1. La Dimensión Temporal en IA",
+    "text": "1. La Dimensión Temporal en IA\n\nEl Paradigma Estático: Las redes feedforward tradicionales asumen independencia entre muestras (ej. clasificación de imágenes estáticas).\nLa Realidad Dinámica: El mundo físico y cognitivo es secuencial (lenguaje, audio, señales biológicas, finanzas).\nLa Necesidad de Memoria: Se requiere una arquitectura capaz de mantener un “estado” o contexto histórico para interpretar el presente."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#redes-neuronales-recurrentes-rnn",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#redes-neuronales-recurrentes-rnn",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "2. Redes Neuronales Recurrentes (RNN)",
+    "text": "2. Redes Neuronales Recurrentes (RNN)\nConcepto Fundamental\nLa RNN rompe la estructura acíclica. Al “desenrollar” la red en el tiempo, procesa la secuencia paso a paso compartiendo los mismos pesos (\\(W\\)).\n\n\\[h_t = \\sigma_h (W_{ih} x_t + W_{hh} h_{t-1} + b)\\]\n\n\n\n\n\\(h_t\\): Estado oculto (memoria) actual.\n\\(h_{t-1}\\): Estado previo.\n\\(x_t\\): Entrada actual.\n\n\n\n\\(W_{hh}\\): Matriz recurrente (Memoria).\n\\(\\sigma_h\\): Activación (\\(\\tanh\\))."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#el-problema-del-gradiente",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#el-problema-del-gradiente",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "El Problema del Gradiente",
+    "text": "El Problema del Gradiente\nEntrenamiento mediante Backpropagation Through Time (BPTT).\nLa derivada del error respecto a los pesos recurrentes implica un producto continuo de matrices Jacobianas:\n\\[ \\frac{\\partial h_t}{\\partial h_k} = \\prod_{j=k+1}^t \\text{diag}(\\sigma'(z_j)) W_{hh} \\]\n\n\n\n\n\n\nPatologías Espectrales\n\n\n\nDesvanecimiento (\\(\\rho &lt; 1\\)): El gradiente tiende a cero. La red “olvida” relaciones lejanas (ej. sujeto vs. verbo en párrafos largos).\nExplosión (\\(\\rho &gt; 1\\)): El gradiente diverge. Requiere Gradient Clipping."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#long-short-term-memory-lstm",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#long-short-term-memory-lstm",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "3. Long Short-Term Memory (LSTM)",
+    "text": "3. Long Short-Term Memory (LSTM)\nIngeniería de la Persistencia\nDiseñada para mitigar el desvanecimiento del gradiente introduciendo una Celda de Memoria (\\(C_t\\)) separada del estado oculto.\n\nInnovación Clave: El “Carrusel de Error Constante”. La información fluye por la celda con interacciones lineales (sumas), protegiendo la señal del gradiente."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#anatomía-de-la-lstm-12",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#anatomía-de-la-lstm-12",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "Anatomía de la LSTM (1/2)",
+    "text": "Anatomía de la LSTM (1/2)\nEl flujo es regulado por Compuertas Sigmoidales (\\(\\sigma \\in [0, 1]\\)):\n\n\n1. Compuerta de Olvido (\\(f_t\\))\n¿Qué borramos del pasado? \\[f_t = \\sigma(W_f \\cdot [h_{t-1}, x_t] + b_f)\\]\n2. Compuerta de Entrada (\\(i_t\\))\n¿Qué información nueva guardamos? \\[i_t = \\sigma(W_i \\cdot [h_{t-1}, x_t] + b_i)\\]\n\nMemoria Candidata (\\(\\tilde{C}_t\\))\nPropuesta de nuevo contenido. \\[\\tilde{C}_t = \\tanh(W_C \\cdot [h_{t-1}, x_t] + b_C)\\]"
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#anatomía-de-la-lstm-22",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#anatomía-de-la-lstm-22",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "Anatomía de la LSTM (2/2)",
+    "text": "Anatomía de la LSTM (2/2)\nActualización y Salida\n3. Actualización de Celda (\\(C_t\\))\nCombinación lineal crítica. Aquí ocurre la magia de la persistencia. \\[C_t = f_t \\odot C_{t-1} + i_t \\odot \\tilde{C}_t\\]\n4. Generación de Salida (\\(h_t\\))\nFiltrado de la memoria para el uso inmediato. \\[o_t = \\sigma(W_o \\cdot [h_{t-1}, x_t] + b_o)\\] \\[h_t = o_t \\odot \\tanh(C_t)\\]"
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#gated-recurrent-units-gru",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#gated-recurrent-units-gru",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "4. Gated Recurrent Units (GRU)",
+    "text": "4. Gated Recurrent Units (GRU)\nEficiencia y Simplificación\nPropuesta para reducir la complejidad computacional de la LSTM sin sacrificar rendimiento.\n\nFusión de Estados: No hay celda \\(C_t\\) separada. Solo existe \\(h_t\\).\nReducción de Compuertas: Solo dos compuertas (Update y Reset)."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#dinámica-de-la-gru",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#dinámica-de-la-gru",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "Dinámica de la GRU",
+    "text": "Dinámica de la GRU\n\n\nCompuerta de Actualización (\\(z_t\\)): Fusiona las funciones de entrada y olvido. \\[z_t = \\sigma(W_z \\cdot [h_{t-1}, x_t])\\]\nCompuerta de Reinicio (\\(r_t\\)): Decide cuánto del pasado ignorar para el cálculo actual. \\[r_t = \\sigma(W_r \\cdot [h_{t-1}, x_t])\\]\n\nInterpolación Final: \\[h_t = (1 - z_t) \\odot h_{t-1} + z_t \\odot \\tilde{h}_t\\]\nPermite saltar pasos temporales o sobrescribir memoria completamente."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#comparativa-técnica",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#comparativa-técnica",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "Comparativa Técnica",
+    "text": "Comparativa Técnica\n\n\n\nCaracterística\nLSTM\nGRU\n\n\n\n\nComplejidad\nAlta (3 compuertas)\nMedia (2 compuertas)\n\n\nParámetros\n\\(4 \\times ((n+m)n + n)\\)\n\\(\\approx 25\\%\\) menos\n\n\nMemoria\nEstado Oculto + Celda\nSolo Estado Oculto\n\n\nDependencias\nExtremadamente largas\nLargas / Medias\n\n\nDatos Requeridos\nAlto volumen\nFunciona bien con Small Data"
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#implementación-en-pytorch",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#implementación-en-pytorch",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "5. Implementación en PyTorch",
+    "text": "5. Implementación en PyTorch\nEstructura modular agnóstica a la arquitectura (“Many-to-One”).\n\nimport torch.nn as nn\n\nclass ClasificadorRecurrente(nn.Module):\n    def __init__(self, tipo_rnn, input_size, hidden_size, num_classes):\n        super().__init__()\n\n        # Selección Dinámica de Arquitectura\n        if tipo_rnn == 'LSTM':\n            self.rnn = nn.LSTM(input_size, hidden_size, batch_first=True)\n        elif tipo_rnn == 'GRU':\n            self.rnn = nn.GRU(input_size, hidden_size, batch_first=True)\n        else:\n            self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)\n\n        self.fc = nn.Linear(hidden_size, num_classes)\n\n    def forward(self, x):\n        # x shape: (Batch, Seq_Len, Features)\n\n        # Propagación\n        if isinstance(self.rnn, nn.LSTM):\n            out, (hn, cn) = self.rnn(x) # LSTM devuelve tupla\n        else:\n            out, hn = self.rnn(x)       # GRU/RNN devuelven tensor\n\n        # Clasificación basada en el último paso de tiempo\n        last_step = out[:, -1, :]\n        return self.fc(last_step)"
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#rnns-en-la-era-de-transformers",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#rnns-en-la-era-de-transformers",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "6. RNNs en la Era de Transformers",
+    "text": "6. RNNs en la Era de Transformers\n¿Por qué seguir usando RNN/GRU hoy en día?\n\nComplejidad Computacional:\n\nTransformers: \\(O(N^2)\\) en tiempo/memoria (o Caché KV lineal).\nRNN/GRU: \\(O(1)\\) en memoria durante inferencia.\n\nEdge AI / TinyML:\n\nIdeales para microcontroladores (Wearables, Sensores IoT).\n\nStreaming:\n\nProcesamiento de audio/señales en tiempo real con latencia cero (Wake Word Detection)."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#conclusión",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#conclusión",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "Conclusión",
+    "text": "Conclusión\n\n\n\n\n\n\nResumen\n\n\n\nRNN: Fundamento teórico del aprendizaje secuencial. Inestable en secuencias largas.\nLSTM: Estándar de oro para dependencias complejas gracias a su celda de memoria protegida.\nGRU: La opción eficiente. Menor coste computacional, ideal para inferencia rápida y Edge Computing.\n\n\n\n\nLa elección arquitectónica depende del balance entre capacidad de memoria y restricciones de latencia/hardware."
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#la-neurona-lstm",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#la-neurona-lstm",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "La neurona LSTM",
+    "text": "La neurona LSTM\n\nTomada de codificando bits"
+  },
+  {
+    "objectID": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#la-neurona-lstm-1",
+    "href": "presentaciones/ASIM/v2Lect005_RNN_GRU_LSTM.html#la-neurona-lstm-1",
+    "title": "Arquitecturas de Memoria Profunda",
+    "section": "La neurona LSTM",
+    "text": "La neurona LSTM\n\n\n\n\n\n\n\nGRU_Variant\n\n\nc_prev\nc\nt-1\n\n\n\nmul_c_gate\n\n×\n\n\n\nc_prev-&gt;mul_c_gate\n\n\n\n\n\na_prev\na\nt-1\n\n\n\n\na_prev-&gt;split_a\n\n\n\n\n\nx_t\nx\nt\n\n\n\n\nx_t-&gt;join_ax\n\n\n\n\n\nc_t\nc\nt\n\n\n\na_t\na\nt\n\n\n\nadd_c\n\n+\n\n\n\nmul_c_gate-&gt;add_c\n\n\n\n\n\nadd_c-&gt;c_t\n\n\n\n\n\ntanh_c_out\n\ntanh\n\n\n\nadd_c-&gt;tanh_c_out\n\n\n\n\n\nmul_reset\n\n×\n\n\n\nmul_cand\n\n×\n\n\n\nmul_reset-&gt;mul_cand\n\n\n\n\n\ntanh_cand\n\ntanh\n\n\n\nmul_cand-&gt;tanh_cand\n\n\n\n\n\nmul_out\n\n×\n\n\n\nmul_out-&gt;a_t\n\n\n\n\n\nsig_update\n\nσ\n\n\n\nsig_update-&gt;mul_c_gate\n\n\n\n\n\nsig_update-&gt;mul_cand\n\n\n\n\n\nsig_reset\n\nσ\n\n\n\nsig_reset-&gt;mul_reset\n\n\n\n\n\nsig_out\n\nσ\n\n\n\nsig_out-&gt;mul_out\n\n\n\n\n\ntanh_cand-&gt;add_c\n\n\n\n\n\ntanh_c_out-&gt;mul_out\n\n\n\n\n\nnn_update\n\nNN\n\n\n\nnn_update-&gt;sig_update\n\n\n\n\n\nnn_reset\n\nNN\n\n\n\nnn_reset-&gt;sig_reset\n\n\n\n\n\nnn_out\n\nNN\n\n\n\nnn_out-&gt;sig_out\n\n\n\n\n\nsplit_a-&gt;mul_reset\n\n\n\n\n\nsplit_a-&gt;join_ax\n\n\n\n\n\njoin_ax-&gt;split_main\n\n\n\n\n\nsplit_main-&gt;nn_update\n\n\n\n\n\nsplit_main-&gt;nn_reset\n\n\n\n\n\nsplit_main-&gt;nn_out"
   }
 ]
