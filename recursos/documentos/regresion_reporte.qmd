@@ -1,0 +1,200 @@
+---
+title: "Modelado Estadístico Avanzado en Ingeniería Biomédica"
+subtitle: "De la Teoría Matricial a la Interpretación Fisiológica de Señales EMG"
+description: "Ciencias Biomédicas y Procesamiento de Señales"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html:
+    code-tools: true
+    code-overflow: scroll
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+## 1. Introducción: Intersección entre Fisiología y Estadística
+
+La ingeniería biomédica moderna se encuentra en una encrucijada fascinante donde la biología cuantitativa converge con el modelado estadístico avanzado. El desafío fundamental reside en decodificar sistemas biológicos complejos, ruidosos y variables a partir de observaciones limitadas. El análisis de datos biomédicos no es simplemente la aplicación de algoritmos a datos limpios; es un arte científico que requiere comprender la génesis fisiológica de los datos y las asunciones matemáticas subyacentes.
+
+Este documento desglosa la formulación matricial rigurosa de la Regresión Lineal y la Regresión Logística, contrastando la estimación por Mínimos Cuadrados Ordinarios (OLS) frente a la de Máxima Verosimilitud (MLE). Además, se aborda la inferencia causal, crucial para distinguir entre asociaciones estadísticas y mecanismos fisiológicos reales.
+
+## 2. Fundamentos Fisiológicos y Estocasticidad de la Señal EMG
+
+Antes de profundizar en el formalismo matemático, es imperativo establecer la naturaleza del fenómeno físico. La señal EMG es la manifestación eléctrica de la activación neuromuscular, resultante de la suma espaciotemporal de los potenciales de acción de las unidades motoras (MUAP).
+
+### 2.1 La Génesis Estocástica
+La señal EMG bruta durante una contracción isométrica puede modelarse como un proceso estocástico Gaussiano de amplitud modulada. Esto es consecuencia directa del Teorema del Límite Central: la suma de muchas variables aleatorias independientes tiende a una distribución normal. Sin embargo, la varianza de esta distribución escala con la intensidad de la contracción, violando potencialmente el supuesto de homocedasticidad.
+
+### 2.2 Relación EMG-Fuerza
+Uno de los objetivos primarios en biomecánica es estimar la fuerza muscular interna a partir de la señal EMG. Aunque en músculos pequeños la relación es lineal, en músculos grandes como el bíceps o deltoides, la relación suele ser no lineal (cuadrática o exponencial) debido a:
+
+1.  **Reclutamiento de Unidades Motoras:** Según el principio de Henneman, las fibras rápidas (Tipo II) se reclutan a mayores demandas de fuerza, incrementando desproporcionadamente la señal EMG.
+2.  **Sinergias y Co-activación:** La fuerza neta depende de la interacción entre músculos agonistas y antagonistas.
+
+## 3. Regresión Lineal: Teoría y Estimación
+
+La regresión lineal es fundamental para modelar variables continuas. Su formulación matricial permite el manejo eficiente de grandes conjuntos de datos multivariados.
+
+### 3.1 Formulación del Modelo Lineal General
+Para $N$ observaciones y $K$ predictores, la variable de respuesta $y_i$ se modela como:
+
+$$ y_i = \beta_0 + \beta_1 x_{i1} + \dots + \beta_K x_{iK} + \epsilon_i $$
+
+En notación matricial compacta:
+
+$$ \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\epsilon} $$
+
+Donde $\mathbf{y}$ es el vector de respuesta ($N \times 1$), $\mathbf{X}$ es la matriz de diseño ($N \times (K+1)$), $\boldsymbol{\beta}$ es el vector de parámetros y $\boldsymbol{\epsilon}$ el vector de errores.
+
+### 3.2 Estimación por Mínimos Cuadrados Ordinarios (OLS)
+El objetivo es minimizar la suma de los errores cuadrados (SSR). La función de costo $J(\boldsymbol{\beta})$ es:
+
+$$ J(\boldsymbol{\beta}) = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^T (\mathbf{y} - \mathbf{X}\boldsymbol{\beta}) $$
+
+Al calcular el gradiente respecto a $\boldsymbol{\beta}$ e igualarlo a cero, obtenemos las Ecuaciones Normales, que ofrecen una solución cerrada:
+
+$$ \hat{\boldsymbol{\beta}}_{OLS} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y} $$
+
+### 3.3 Supuestos Críticos y Violaciones
+La validez del estimador depende de los supuestos de Gauss-Markov:
+
+* **Homocedasticidad:** La varianza del error debe ser constante. En biomecánica, esto se viola frecuentemente ya que el ruido aumenta con la fuerza.
+* **No Autocorrelación:** Los errores no deben estar correlacionados temporalmente. Las señales EMG muestreadas a alta frecuencia presentan alta autocorrelación, lo que subestima la varianza y produce p-values falsamente significativos.
+
+## 4. Regresión Logística: Clasificación de Estados
+
+Para variables de respuesta binarias, como la presencia de fatiga o patología, utilizamos la Regresión Logística.
+
+### 4.1 Transformación Logit y Probabilidad
+Modelamos la probabilidad $p = P(y=1|\mathbf{x})$ usando la función sigmoide para garantizar que esté en el intervalo $(0, 1)$. La relación se linealiza mediante el logit (log-odds):
+
+$$ \text{logit}(p) = \ln \left(\frac{p}{1-p} \right) = \mathbf{x}^T\boldsymbol{\beta} $$
+
+Los coeficientes $\beta$ se interpretan en términos de Odds Ratios ($e^{\beta}$), indicando el cambio multiplicativo en las probabilidades de ocurrencia del evento.
+
+### 4.2 Estimación de Máxima Verosimilitud (MLE)
+Dado que la relación es no lineal y los errores son binomiales, usamos MLE en lugar de OLS. Maximizamos la función de log-verosimilitud:
+
+$$ \ell(\boldsymbol{\beta}) = \sum_{i=1}^{N} \left[ y_i \ln(h_{\beta}(\mathbf{x}_i)) + (1-y_i) \ln(1-h_{\beta}(\mathbf{x}_i)) \right] $$
+
+La solución se encuentra mediante métodos iterativos numéricos como Newton-Raphson:
+
+$$ \boldsymbol{\beta}_{n+1} = \boldsymbol{\beta}_n - [\mathbf{H}(\boldsymbol{\beta}_n)]^{-1} \nabla \ell(\boldsymbol{\beta}_n) $$
+
+Donde $\mathbf{H}$ es la matriz Hessiana.
+
+## 5. Implementación Computacional en Python
+
+A continuación, se presenta un flujo de trabajo utilizando `statsmodels` para inferencia estadística rigurosa.
+
+### 5.1 Simulación de Datos
+Generamos datos sintéticos que incorporan características fisiológicas reales: no linealidad en la fuerza y cambios espectrales por fatiga.
+
+```{python}
+#| eval: false
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from typing import Tuple
+
+def generar_datos_emg(n_samples: int = 1000) -> pd.DataFrame:
+    """
+    Simula datos de EMG, Fuerza y Fatiga con propiedades biomédicas realistas.
+
+    Args:
+        n_samples (int): Número de muestras a generar.
+
+    Returns:
+        pd.DataFrame: Dataset con columnas 'EMG', 'Fuerza', 'MDF', 'Fatiga'.
+    """
+    np.random.seed(42)
+
+    # Variable Independiente: EMG RMS (0-100%)
+    emg_rms = np.linspace(0, 100, n_samples)
+
+    # Variable Dependiente 1: Fuerza (Modelo Cuadrático + Heterocedasticidad)
+    ruido = np.random.normal(0, 5 + 0.2 * emg_rms, n_samples)
+    fuerza = 2.0 + 3.5 * emg_rms + 0.015 * (emg_rms**2) + ruido
+
+    # Variable Dependiente 2: Fatiga (Basada en Frecuencia Mediana - MDF)
+    # La fatiga reduce la MDF (compresión espectral)
+    mdf = 100 - 0.5 * emg_rms + np.random.normal(0, 8, n_samples)
+
+    # Probabilidad de fatiga (Modelo Logístico Latente)
+    z = -10 + 0.2 * emg_rms - 0.15 * mdf
+    prob_fatiga = 1 / (1 + np.exp(-z))
+    fatiga = np.random.binomial(1, prob_fatiga)
+
+    return pd.DataFrame({
+        'EMG': emg_rms,
+        'Fuerza': fuerza,
+        'MDF': mdf,
+        'Fatiga': fatiga
+    })
+
+data = generar_datos_emg()
+```
+
+### 5.2 Regresión Lineal (Estimación de Fuerza)
+
+```{python}
+#| eval: false
+def modelo_lineal_fuerza(df: pd.DataFrame):
+    """Ajusta y resume un modelo OLS para fuerza."""
+    # Es CRÍTICO añadir la constante manualmente en statsmodels
+    X = sm.add_constant(df['EMG'])
+    y = df['Fuerza']
+
+    model = sm.OLS(y, X).fit()
+    print(model.summary())
+
+modelo_lineal_fuerza(data)
+```
+
+### 5.3 Regresión Logística (Detección de Fatiga)
+
+```{python}
+#| eval: false
+def modelo_logistico_fatiga(df: pd.DataFrame):
+    """Ajusta un modelo Logit para predecir fatiga y calcula Odds Ratios."""
+    X = sm.add_constant(df[['EMG', 'MDF']])
+    y = df['Fatiga']
+
+    model = sm.Logit(y, X).fit()
+    print(model.summary())
+
+    # Interpretación: Odds Ratios
+    odds_ratios = np.exp(model.params)
+    print("\nOdds Ratios (Cambio multiplicativo en odds de fatiga):")
+    print(odds_ratios)
+
+modelo_logistico_fatiga(data)
+```
+
+## 6. Inferencia Causal en Datos Observacionales
+
+Es vital recordar que los modelos de regresión son "máquinas de correlación". En biomedicina, una asociación estadística (ej. correlación entre EMG y grasa subcutánea) no implica causalidad (la grasa atenúa la señal, no debilita el músculo per se).
+
+Para establecer causalidad, debemos trascender los coeficientes y aplicar el marco de inferencia causal de Pearl y Rubin, controlando las variables de confusión que abren "caminos traseros" (backdoor paths) o utilizando diseños intervencionales (ej. estimulación eléctrica funcional).
+
+### Guía de Reporte (TRIPOD)
+* **Tamaño de Muestra:** >10-15 eventos por predictor variable.
+* **Normalización:** Estandarizar entradas (%MVC) para reducir variabilidad inter-sujeto.
+* **Validación:** Inspeccionar residuos para descartar estructuras no aleatorias y puntos influyentes (Distancia de Cook).
