@@ -583,14 +583,14 @@ fs = 2000  # sampling for plotting/estimation
 T_E = 8.0
 tE = np.linspace(0, T_E, int(fs * T_E), endpoint=False)
 xE = np.exp(-a * tE)  # x_E(t) = e^{-a t} u(t)
-E_num = np.trapz(xE**2, tE)  # numerical energy ≈ \int_0^\infty e^{-2at} dt = 1/(2a)
+E_num = np.trapezoid(xE**2, tE)  # numerical energy ≈ \int_0^\infty e^{-2at} dt = 1/(2a)
 
 # Power signal: simulate over many periods to estimate time-average power
 T_P = 4.0  # seconds (many periods at f0=5 Hz)
 tP = np.linspace(0, T_P, int(fs * T_P), endpoint=False)
 xP = np.cos(2 * np.pi * f0 * tP)
 # Numerical average power ≈ (1/T) \int_0^T |x(t)|^2 dt
-P_num = np.trapz(xP**2, tP) / (tP[-1] - tP[0])
+P_num = np.trapezoid(xP**2, tP) / (tP[-1] - tP[0])
 
 # --- Plot ---
 fig, axes = plt.subplots(2, 1, figsize=(9, 5), sharex=False)
