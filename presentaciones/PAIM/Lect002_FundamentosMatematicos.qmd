@@ -40,7 +40,7 @@ resources:
 * Impacto directo en la **interpretabilidad diagnóstica**.
 * Base fundamental para el desarrollo de sistemas de **IA Confiable**.
 
----
+
 
 ## 1. Representación Digital
 
@@ -52,7 +52,93 @@ Una imagen continua $f(x,y)$ se discretiza en $I[m,n]$ mediante:
     * Estándar Clínico: **12-16 bits** (Escala Hounsfield).
     * Falso contorneo: Artefacto por baja profundidad de bits.
 
----
+
+
+## 1. Representación Digital
+
+:::{.panel-tabset}
+
+## Cuantizacion
+
+```{python}
+
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import data, img_as_float, color
+
+
+def simulate_quantization(image, bits):
+    """
+    Simula el efecto de reducir la profundidad de bits.
+    """
+    levels = 2**bits
+    return np.round(image * (levels - 1)) / (levels - 1)
+
+
+# Cargamos una imagen de prueba y la normalizamos
+image = img_as_float(data.camera())
+# Simulamos diferentes profundidades
+q_8bit = simulate_quantization(image, 8)
+q_4bit = simulate_quantization(image, 4)
+q_2bit = simulate_quantization(image, 2)
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+axes[0].imshow(q_8bit, cmap="gray")
+axes[0].set_title("Resolución Estándar (8-bit)")
+axes[1].imshow(q_4bit, cmap="gray")
+axes[1].set_title("Cuantización 4-bit (16 niveles)")
+axes[2].imshow(q_2bit, cmap="gray")
+axes[2].set_title("Cuantización 2-bit (4 niveles)")
+for ax in axes:
+    ax.axis("off")
+plt.tight_layout()
+plt.show()
+
+```
+
+## Código
+
+```{python}
+# | eval: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import data, img_as_float, color
+
+
+def simulate_quantization(image, bits):
+    """
+    Simula el efecto de reducir la profundidad de bits.
+    """
+    levels = 2**bits
+    return np.round(image * (levels - 1)) / (levels - 1)
+
+
+# Cargamos una imagen de prueba y la normalizamos
+image = img_as_float(data.camera())
+# Simulamos diferentes profundidades
+q_8bit = simulate_quantization(image, 8)
+q_4bit = simulate_quantization(image, 4)
+q_2bit = simulate_quantization(image, 2)
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+axes[0].imshow(q_8bit, cmap="gray")
+axes[0].set_title("Resolución Estándar (8-bit)")
+axes[1].imshow(q_4bit, cmap="gray")
+axes[1].set_title("Cuantización 4-bit (16 niveles)")
+axes[2].imshow(q_2bit, cmap="gray")
+axes[2].set_title("Cuantización 2-bit (4 niveles)")
+for ax in axes:
+    ax.axis("off")
+plt.tight_layout()
+plt.show()
+
+```
+
+:::
+
+## 1. Representación Digital
+![](../../recursos/imagenes/Presentaciones/PAIM/paim001.png)
 
 ## 2. Percepción Visual y Color
 
@@ -62,7 +148,7 @@ Una imagen continua $f(x,y)$ se discretiza en $I[m,n]$ mediante:
     * $a^*, b^*$: Componentes cromáticos.
 * **Aplicación:** Crítico en patología digital y endoscopia.
 
----
+
 
 ## 3. Caracterización del Ruido Clínico
 
@@ -74,7 +160,7 @@ El ruido es un proceso estocástico dependiente de la física de adquisición:
 * **Ruido Gaussiano (Electrónico):**
     * Originado por la instrumentación y digitalización.
 
----
+
 
 ## 4. Métricas de Desempeño
 
@@ -85,7 +171,7 @@ $$CNR = \frac{|\mu_{tumor} - \mu_{sano}|}{\sigma_{ruido}}$$
 
 * Evalúa la diferencia de intensidad entre tejidos normalizada por el ruido ambiental.
 
----
+
 
 ## 5. Resolución Espacial y la MTF
 
@@ -96,7 +182,7 @@ La resolución no es solo el tamaño de la matriz, es una **propiedad dinámica*
     $$MTF(u,v) = \frac{|\mathcal{F}\{PSF\}|}{|\mathcal{F}\{PSF\}_{(0,0)}|}$$
 * Cuantifica la pérdida de contraste en función de la frecuencia espacial ($lp/mm$).
 
----
+
 
 ## 6. Determinación Práctica: Método del Borde
 
@@ -106,7 +192,7 @@ Dado que no existen "puntos perfectos", se utiliza el borde de una placa de plom
 2.  **LSF (Line Spread Function):** Derivada de la ERF ($LSF(x) = \frac{d}{dx}ERF(x)$).
 3.  **MTF:** Transformada de Fourier de la LSF.
 
----
+
 
 ## 7. Interpretación Clínica de la MTF
 
@@ -116,7 +202,7 @@ Dado que no existen "puntos perfectos", se utiliza el borde de una placa de plom
 * **Mamografía:** Requiere MTF alta en frecuencias elevadas ($10-15 lp/mm$).
 * **TC Corporal:** Centrado en frecuencias bajas para contraste de tejidos blandos.
 
----
+
 
 ## Conclusiones
 
