@@ -1,0 +1,126 @@
+---
+title: "Procesamiento Avanzado de Imágenes Médicas"
+description: "PAIM"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+format:
+  revealjs: 
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme: 
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    mainfont: "Fira Code"
+resources:
+  - demo.pdf
+---
+
+# Procesado Avanzado de Imágenes Médicas - PAIM
+
+# Fundamentos Matemáticos
+
+
+## Introducción al Procesamiento Biomédico
+
+* La imagen médica es un proceso de **extracción de información biológica fidedigna**.
+* Impacto directo en la **interpretabilidad diagnóstica**.
+* Base fundamental para el desarrollo de sistemas de **IA Confiable**.
+
+---
+
+## 1. Representación Digital
+
+### Modelado de la Digitalización
+Una imagen continua $f(x,y)$ se discretiza en $I[m,n]$ mediante:
+
+1.  **Muestreo Espacial:** Determina el tamaño del píxel ($\sim 100-200 \mu m$ en radiografía).
+2.  **Cuantización:** Resolución de contraste.
+    * Estándar Clínico: **12-16 bits** (Escala Hounsfield).
+    * Falso contorneo: Artefacto por baja profundidad de bits.
+
+---
+
+## 2. Percepción Visual y Color
+
+* **Limitación de RGB:** Falta de uniformidad perceptual para análisis cuantitativo.
+* **Espacio CIELAB:**
+    * $L^*$: Luminosidad (información estructural).
+    * $a^*, b^*$: Componentes cromáticos.
+* **Aplicación:** Crítico en patología digital y endoscopia.
+
+---
+
+## 3. Caracterización del Ruido Clínico
+
+El ruido es un proceso estocástico dependiente de la física de adquisición:
+
+* **Ruido de Poisson (Cuántico):**
+    * Dominante en Rayos X y TC.
+    * $\sigma^2 \propto \text{Intensidad de la señal}$.
+* **Ruido Gaussiano (Electrónico):**
+    * Originado por la instrumentación y digitalización.
+
+---
+
+## 4. Métricas de Desempeño
+
+Para que una patología sea detectable, debe superar el umbral de ruido:
+
+**Contrast-to-Noise Ratio (CNR):**
+$$CNR = \frac{|\mu_{tumor} - \mu_{sano}|}{\sigma_{ruido}}$$
+
+* Evalúa la diferencia de intensidad entre tejidos normalizada por el ruido ambiental.
+
+---
+
+## 5. Resolución Espacial y la MTF
+
+La resolución no es solo el tamaño de la matriz, es una **propiedad dinámica**.
+
+* **PSF (Point Spread Function):** Respuesta del sistema a un punto infinitesimal $\delta(x,y)$.
+* **MTF (Modulation Transfer Function):**
+    $$MTF(u,v) = \frac{|\mathcal{F}\{PSF\}|}{|\mathcal{F}\{PSF\}_{(0,0)}|}$$
+* Cuantifica la pérdida de contraste en función de la frecuencia espacial ($lp/mm$).
+
+---
+
+## 6. Determinación Práctica: Método del Borde
+
+Dado que no existen "puntos perfectos", se utiliza el borde de una placa de plomo:
+
+1.  **ERF (Edge Response Function):** Perfil perpendicular al borde.
+2.  **LSF (Line Spread Function):** Derivada de la ERF ($LSF(x) = \frac{d}{dx}ERF(x)$).
+3.  **MTF:** Transformada de Fourier de la LSF.
+
+---
+
+## 7. Interpretación Clínica de la MTF
+
+
+* **$f_{50}$:** Frecuencia donde se pierde el 50% del contraste (nitidez percibida).
+* **$f_{10}$:** Límite de resolución detectable por el ojo humano.
+* **Mamografía:** Requiere MTF alta en frecuencias elevadas ($10-15 lp/mm$).
+* **TC Corporal:** Centrado en frecuencias bajas para contraste de tejidos blandos.
+
+---
+
+## Conclusiones
+
+* La **cuantización** limita la sensibilidad del contraste.
+* El **ruido cuántico** impone el límite fundamental de detectabilidad.
+* La **MTF** es la métrica definitiva para validar la cadena de adquisición.
+* Sin métricas objetivas (CNR, MTF), la validación de IA carece de sustento físico.
