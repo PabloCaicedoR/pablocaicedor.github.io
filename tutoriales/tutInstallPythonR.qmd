@@ -172,7 +172,96 @@ R --version    # Debe mostrar la versión de R recién instalada
 sudo R
 install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx", "rstatix", "languageserver", "bibliometrix"))
 ```
-## 5. Descargar y extraer Python 3.12
+
+## Introducción
+
+En el desarrollo de **IA confiable** y el procesamiento de señales biomédicas, la reproducibilidad es un pilar fundamental. El uso de `uv`, desarrollado por Astral, proporciona una gestión de dependencias y entornos Python significativamente más rápida y robusta que las herramientas tradicionales (`pip`, `venv`, `conda`).
+
+## 1. Instalación de uv
+
+Para instalar `uv` de forma aislada en Ubuntu 24.04, se utiliza el script de instalación oficial. Este método evita conflictos con el gestor de paquetes del sistema (`apt`).
+
+```bash
+# Descarga e instalación del binario
+curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | sh
+
+# Actualización del entorno de shell (o reiniciar terminal)
+source $HOME/.cargo/env
+```
+
+## 2. Gestión de Versiones de Python
+
+Como investigador, es probable que requiera versiones específicas para garantizar la compatibilidad de librerías de procesamiento de imágenes. `uv` gestiona estas instalaciones de forma transparente.
+
+```bash
+# Instalación de una versión específica
+uv python install 3.12
+
+# Listado de versiones disponibles y detectadas
+uv python list
+```
+
+## 3. Flujo de Trabajo en Proyectos de Biomecánica
+
+Para asegurar la integridad de los experimentos, cada proyecto debe estar encapsulado.
+
+### Inicialización
+El comando `init` genera un archivo `pyproject.toml` compatible con los estándares modernos de empaquetado (PEP 621).
+
+```bash
+uv init
+```
+
+### Creación y Activación de Entornos
+```bash
+# Crear entorno virtual con versión específica
+uv venv --python 3.12
+
+# Activación en Linux
+source .venv/bin/activate
+```
+
+## 4. Gestión de Dependencias y Reproducibilidad
+
+El archivo `uv.lock` garantiza que todos los colaboradores (o procesos de CI/CD) utilicen las mismas versiones de las librerías, minimizando la incertidumbre en los resultados de IA Causal.
+
+| Comando | Función |
+|---------|---------|
+| `uv add <paquete>` | Añade una dependencia al proyecto y actualiza el lockfile. |
+| `uv remove <paquete>` | Elimina una dependencia. |
+| `uv sync` | Sincroniza el entorno local con el archivo de bloqueo. |
+
+Ejemplo práctico para procesamiento de señales:
+
+```bash
+uv add numpy scipy pandas matplotlib
+```
+
+## 5. Integración con Quarto e IA
+
+Para la generación de diapositivas o reportes técnicos, Quarto debe apuntar al intérprete del entorno virtual creado.
+
+```bash
+# Ejemplo de renderización usando el entorno del proyecto
+uv run quarto render documento.qmd
+```
+
+> **Nota Académica:** La adopción de `uv` no solo optimiza el tiempo de cómputo en la resolución de dependencias, sino que mitiga riesgos asociados a la mutabilidad de los entornos de desarrollo, un paso necesario hacia una IA más confiable y reproducible.
+
+---
+
+```python
+# Verificación de entorno dentro de un bloque de código Quarto
+import sys
+import os
+
+print(f"Intérprete en uso: {sys.executable}")
+print(f"Versión de Python: {sys.version}")
+```
+
+
+
+## 6. Descargar y extraer Python 3.12
 
 ### 1. Descarga el código fuente de Python 3.12 y descomprímelo en `/usr/src`:
 
