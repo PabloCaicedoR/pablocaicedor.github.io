@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -160,18 +160,171 @@ El ruido es un proceso estocástico dependiente de la física de adquisición:
 * **Ruido Gaussiano (Electrónico):**
     * Originado por la instrumentación y digitalización.
 
+## 3. Caracterización del Ruido Clínico
 
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: Poisson Noise
+
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage import data
+
+
+def add_poisson_noise(image, peak=50):
+    """
+    Simula el ruido cuántico (shot noise) típico de adquisiciones de Rayos X
+    utilizando una distribución de Poisson.
+    """
+    # Escalamiento para simular el flujo de fotones (λ = image * peak)
+    # La variable 'noisy' es una realización de la variable aleatoria de Poisson
+    noisy = np.random.poisson(image * peak) / peak
+    return np.clip(noisy, 0, 1)
+
+
+# Generación del fantoma de Shepp-Logan
+phantom = data.shepp_logan_phantom()
+noisy_phantom = add_poisson_noise(phantom, peak=50)
+
+# Visualización comparativa
+plt.figure(figsize=(10, 5))
+
+plt.subplot(1, 2, 1)
+plt.imshow(phantom, cmap="gray")
+plt.title("Fantoma Ideal (Sin Ruido)")
+plt.axis("off")
+
+plt.subplot(1, 2, 2)
+plt.imshow(noisy_phantom, cmap="gray")
+plt.title(r"Fantoma con Ruido de Poisson ($\lambda \propto I$)")
+plt.axis("off")
+
+plt.tight_layout()
+plt.show()
+
+```
 
 ## 4. Métricas de Desempeño
+
+$$SNR = \frac{\mu_{signal}}{\sigma_{signal}}$$
+
+$$CNR = \frac{\mu_{signal} - \mu_{background}}{\sqrt{\sigma_{signal}^2 + \sigma_{background}^2}}$$
 
 Para que una patología sea detectable, debe superar el umbral de ruido:
 
 **Contrast-to-Noise Ratio (CNR):**
-$$CNR = \frac{|\mu_{tumor} - \mu_{sano}|}{\sigma_{ruido}}$$
+$$CNR = \frac{|\mu_{tumor} - \mu_{sano}|}{\sqrt{\sigma_{tumor}^2 + \sigma_{sano}^2}}$$
 
 * Evalúa la diferencia de intensidad entre tejidos normalizada por el ruido ambiental.
 
+## 4. Métricas de Desempeño
 
+```{python}
+# | echo: false
+# | eval: true
+# | output: true
+# | label: CNR
+
+
+def get_metrics(
+    img: np.ndarray, roi_sig: list[int], roi_bg: list[int]
+) -> tuple[float, float]:
+    """
+    Calcula SNR y CNR con validación de dimensiones y robustez estadística.
+
+    Args:
+        img: Matriz de la imagen (2D).
+        roi_sig: Coordenadas [y1, y2, x1, x2] de la señal.
+        roi_bg: Coordenadas [y1, y2, x1, x2] del fondo.
+    """
+    try:
+        # Extracción con slicing
+        signal = img[roi_sig[0] : roi_sig[1], roi_sig[2] : roi_sig[3]]
+        background = img[roi_bg[0] : roi_bg[1], roi_bg[2] : roi_bg[3]]
+
+        if signal.size == 0 or background.size == 0:
+            raise ValueError(
+                "Las ROIs no deben estar vacías. Verifique las coordenadas."
+            )
+
+        mu_s, sigma_s = np.mean(signal), np.std(signal)
+        mu_b, sigma_b = np.mean(background), np.std(background)
+
+        # SNR basada en la variabilidad local de la señal (IA Confiable)
+        snr = mu_s / sigma_s if sigma_s != 0 else 0.0
+
+        # CNR normalizada para mejor comparativa entre equipos
+        cnr = np.abs(mu_s - mu_b) / np.sqrt(sigma_s**2 + sigma_b**2)
+
+        return float(snr), float(cnr)
+
+    except Exception as e:
+        print(f"Error en el cálculo de métricas: {e}")
+        return 0.0, 0.0
+
+
+#
+#  Definición de ROIs sobre el fantoma (ejemplo ilustrativo)
+# ROI señal: elipse central; ROI fondo: área negra superior
+snr, cnr = get_metrics(noisy_phantom, [180, 220, 180, 220], [10, 40, 10, 40])
+print(f"Métricas de Calidad:\nSNR: {snr:.4f}\nCNR: {cnr:.4f}")
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
+
+
+def plot_roi_validation(
+    img: np.ndarray, roi_sig: list, roi_bg: list, snr: float, cnr: float
+):
+    """
+    Genera una visualización académica de las ROIs y las métricas obtenidas.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+
+    # Mostrar imagen en escala de grises
+    ax.imshow(img, cmap="gray", origin="upper")
+
+    # Definir rectángulos [y1, y2, x1, x2] -> Rectangle((x, y), width, height)
+    rect_sig = patches.Rectangle(
+        (roi_sig[2], roi_sig[0]),
+        roi_sig[3] - roi_sig[2],
+        roi_sig[1] - roi_sig[0],
+        linewidth=2,
+        edgecolor="r",
+        facecolor="none",
+        label="Señal",
+    )
+
+    rect_bg = patches.Rectangle(
+        (roi_bg[2], roi_bg[0]),
+        roi_bg[3] - roi_bg[2],
+        roi_bg[1] - roi_bg[0],
+        linewidth=2,
+        edgecolor="b",
+        facecolor="none",
+        label="Fondo",
+    )
+
+    # Agregar parches a los ejes
+    ax.add_patch(rect_sig)
+    ax.add_patch(rect_bg)
+
+    # Estética y anotaciones
+    ax.set_title(f"Validación de ROIs\nSNR: {snr:.2f} | CNR: {cnr:.2f}", fontsize=14)
+    ax.legend(loc="upper right")
+    ax.axis("off")
+
+    plt.tight_layout()
+    plt.show()
+
+
+# Ejemplo de uso:
+plot_roi_validation(noisy_phantom, [180, 220, 180, 220], [10, 40, 10, 40], snr, cnr)
+
+```
 
 ## 5. Resolución Espacial y la MTF
 
