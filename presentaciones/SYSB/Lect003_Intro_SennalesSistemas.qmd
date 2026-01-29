@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -566,6 +566,82 @@ Definitions. For a signal $x(t)$ (continuous-time, CT) or $x[n]$ (discrete-time,
 
 - Power signal: $0<P<\infty$ and $E=\infty$ (e.g., $x_P(t)=\cos(2\pi f_0 t)$, with $P=\tfrac{1}{2}$).
 
+## Fundamental Definitions
+
+In signal processing, the classification of a signal $x(t)$ depends on its behavior over an infinite time interval.
+
+**Total Energy ($E$)**
+$$E = \int_{-\infty}^{\infty} |x(t)|^2 dt$$
+
+**Average Power ($P$)**
+$$P = \lim_{T \to \infty} \frac{1}{2T} \int_{-T}^{T} |x(t)|^2 dt$$
+
+---
+
+## Energy Signals
+
+A signal is classified as an **energy signal** if and only if:
+$$0 < E < \infty$$
+This condition implies that the average power $P = 0$.
+
+
+
+* Typically non-periodic.
+* Finite duration or rapidly decaying.
+
+---
+
+## Example: Exponential Decay
+
+Consider the signal $x(t) = e^{-at} u(t)$ where $a > 0$.
+
+**Proof of Energy:**
+$$E = \int_{0}^{\infty} (e^{-at})^2 dt = \int_{0}^{\infty} e^{-2at} dt$$
+
+Evaluating the definite integral:
+$$E = \left[ \frac{e^{-2at}}{-2a} \right]_{0}^{\infty} = 0 - \left( \frac{1}{-2a} \right) = \frac{1}{2a}$$
+
+**Conclusion:** Since $E$ is a finite value, it is an energy signal.
+
+---
+
+## Power Signals
+
+A signal is classified as a **power signal** if and only if:
+$$0 < P < \infty$$
+This condition implies that the total energy $E = \infty$.
+
+
+
+* Typically periodic.
+* Infinite duration without decay.
+
+---
+
+## Example: Sinusoidal Signal
+
+Consider $x(t) = A \cos(\omega_0 t)$.
+
+**Proof of Power:**
+Using the period $T = \frac{2\pi}{\omega_0}$:
+$$P = \frac{1}{T} \int_{0}^{T} |A \cos(\omega_0 t)|^2 dt = \frac{A^2}{T} \int_{0}^{T} \frac{1 + \cos(2\omega_0 t)}{2} dt$$
+
+The integral of the oscillating term over a full period is zero:
+$$P = \frac{A^2}{2T} [t]_0^T = \frac{A^2}{2}$$
+
+**Conclusion:** Power is finite ($P = A^2/2$), thus it is a power signal.
+
+---
+
+## Summary Table
+
+| Signal Type | Energy ($E$) | Power ($P$) | Characteristics |
+| :--- | :---: | :---: | :--- |
+| **Energy** | $0 < E < \infty$ | $P = 0$ | Aperiodic, transient |
+| **Power** | $E = \infty$ | $0 < P < \infty$ | Periodic, stationary |
+| **Neither** | $E = \infty$ | $P = \infty$ | e.g., $x(t) = t$ |
+
+## Python Example
 ```{python}
 # | echo: false
 # | eval: true
@@ -587,7 +663,7 @@ E_num = np.trapezoid(xE**2, tE)  # numerical energy ≈ \int_0^\infty e^{-2at} d
 
 # Power signal: simulate over many periods to estimate time-average power
 T_P = 4.0  # seconds (many periods at f0=5 Hz)
-tP = np.linspace(0, T_P, int(fs * T_P), endpoint=False)
+tP = np.linspace(-T_P / 2, T_P / 2, int(fs * T_P), endpoint=False)
 xP = np.cos(2 * np.pi * f0 * tP)
 # Numerical average power ≈ (1/T) \int_0^T |x(t)|^2 dt
 P_num = np.trapezoid(xP**2, tP) / (tP[-1] - tP[0])

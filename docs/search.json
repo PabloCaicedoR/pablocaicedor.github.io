@@ -9322,5 +9322,54 @@
     "title": "Procesamiento Avanzado de Imágenes Médicas",
     "section": "Código",
     "text": "Código\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom skimage import data, img_as_float, color\n\n\ndef simulate_quantization(image, bits):\n    \"\"\"\n    Simula el efecto de reducir la profundidad de bits.\n    \"\"\"\n    levels = 2**bits\n    return np.round(image * (levels - 1)) / (levels - 1)\n\n\n# Cargamos una imagen de prueba y la normalizamos\nimage = img_as_float(data.camera())\n# Simulamos diferentes profundidades\nq_8bit = simulate_quantization(image, 8)\nq_4bit = simulate_quantization(image, 4)\nq_2bit = simulate_quantization(image, 2)\n\nfig, axes = plt.subplots(1, 3, figsize=(18, 6))\naxes[0].imshow(q_8bit, cmap=\"gray\")\naxes[0].set_title(\"Resolución Estándar (8-bit)\")\naxes[1].imshow(q_4bit, cmap=\"gray\")\naxes[1].set_title(\"Cuantización 4-bit (16 niveles)\")\naxes[2].imshow(q_2bit, cmap=\"gray\")\naxes[2].set_title(\"Cuantización 2-bit (4 niveles)\")\nfor ax in axes:\n    ax.axis(\"off\")\nplt.tight_layout()\nplt.show()\n\n:::"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#fundamental-definitions",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#fundamental-definitions",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Fundamental Definitions",
+    "text": "Fundamental Definitions\nIn signal processing, the classification of a signal \\(x(t)\\) depends on its behavior over an infinite time interval.\nTotal Energy (\\(E\\)) \\[E = \\int_{-\\infty}^{\\infty} |x(t)|^2 dt\\]\nAverage Power (\\(P\\)) \\[P = \\lim_{T \\to \\infty} \\frac{1}{2T} \\int_{-T}^{T} |x(t)|^2 dt\\]"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#energy-signals",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#energy-signals",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Energy Signals",
+    "text": "Energy Signals\nA signal is classified as an energy signal if and only if: \\[0 &lt; E &lt; \\infty\\] This condition implies that the average power \\(P = 0\\).\n\nTypically non-periodic.\nFinite duration or rapidly decaying."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#example-exponential-decay",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#example-exponential-decay",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Example: Exponential Decay",
+    "text": "Example: Exponential Decay\nConsider the signal \\(x(t) = e^{-at} u(t)\\) where \\(a &gt; 0\\).\nProof of Energy: \\[E = \\int_{0}^{\\infty} (e^{-at})^2 dt = \\int_{0}^{\\infty} e^{-2at} dt\\]\nEvaluating the definite integral: \\[E = \\left[ \\frac{e^{-2at}}{-2a} \\right]_{0}^{\\infty} = 0 - \\left( \\frac{1}{-2a} \\right) = \\frac{1}{2a}\\]\nConclusion: Since \\(E\\) is a finite value, it is an energy signal."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#power-signals",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#power-signals",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Power Signals",
+    "text": "Power Signals\nA signal is classified as a power signal if and only if: \\[0 &lt; P &lt; \\infty\\] This condition implies that the total energy \\(E = \\infty\\).\n\nTypically periodic.\nInfinite duration without decay."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#example-sinusoidal-signal",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#example-sinusoidal-signal",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Example: Sinusoidal Signal",
+    "text": "Example: Sinusoidal Signal\nConsider \\(x(t) = A \\cos(\\omega_0 t)\\).\nProof of Power: Using the period \\(T = \\frac{2\\pi}{\\omega_0}\\): \\[P = \\frac{1}{T} \\int_{0}^{T} |A \\cos(\\omega_0 t)|^2 dt = \\frac{A^2}{T} \\int_{0}^{T} \\frac{1 + \\cos(2\\omega_0 t)}{2} dt\\]\nThe integral of the oscillating term over a full period is zero: \\[P = \\frac{A^2}{2T} [t]_0^T = \\frac{A^2}{2}\\]\nConclusion: Power is finite (\\(P = A^2/2\\)), thus it is a power signal."
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#summary-table",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#summary-table",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Summary Table",
+    "text": "Summary Table\n\n\n\nSignal Type\nEnergy (\\(E\\))\nPower (\\(P\\))\nCharacteristics\n\n\n\n\nEnergy\n\\(0 &lt; E &lt; \\infty\\)\n\\(P = 0\\)\nAperiodic, transient\n\n\nPower\n\\(E = \\infty\\)\n\\(0 &lt; P &lt; \\infty\\)\nPeriodic, stationary\n\n\nNeither\n\\(E = \\infty\\)\n\\(P = \\infty\\)\ne.g., \\(x(t) = t\\)"
+  },
+  {
+    "objectID": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#python-example",
+    "href": "presentaciones/SYSB/Lect003_Intro_SennalesSistemas.html#python-example",
+    "title": "Sistemas y Señales Biomédicos",
+    "section": "Python Example",
+    "text": "Python Example"
   }
 ]
