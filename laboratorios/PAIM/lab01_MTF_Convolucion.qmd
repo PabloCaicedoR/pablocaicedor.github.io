@@ -1,0 +1,383 @@
+---
+title: "Análisis de la Calidad de Imagen: Función de Transferencia de Modulación (MTF)"
+subtitle: "PAIM - Ingeneiería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: "`r Sys.Date()`"
+format:
+  html:
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+path_ecg="../../data"
+
+#https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#write
+
+```
+
+
+## 1. Introducción
+
+En el procesamiento de imágenes médicas, evaluar la **calidad de imagen** es fundamental para garantizar diagnósticos confiables.
+Uno de los indicadores más importantes de calidad espacial es la **Función de Transferencia de Modulación (MTF, Modulation Transfer Function)**.
+
+La MTF describe **qué tan bien un sistema de adquisición de imágenes reproduce los detalles espaciales del objeto original**, en función de la frecuencia espacial.
+
+Este tutorial está dirigido a estudiantes universitarios de ingeniería biomédica, física médica o procesamiento de imágenes, y tiene como objetivo:
+
+- Comprender **qué es la MTF**
+- Entender su **fundamento físico y matemático**
+- Aprender **cómo se calcula en la práctica**
+- Relacionar la MTF con imágenes médicas reales (RX, CT, RM, US)
+
+---
+
+## 2. ¿Por qué es importante la MTF en imágenes médicas?
+
+Un sistema de imagen médica nunca es perfecto. Siempre introduce:
+
+- Desenfoque
+- Difusión
+- Pérdida de contraste en detalles finos
+
+La MTF permite responder preguntas clave como:
+
+- ¿Cuál es la resolución real del sistema?
+- ¿Hasta qué tamaño de detalle el sistema es confiable?
+- ¿Cómo comparar dos equipos de imagen?
+
+Ejemplos de aplicación:
+
+- Control de calidad en tomografía computarizada (CT)
+- Evaluación de detectores digitales de rayos X
+- Comparación de protocolos de reconstrucción
+- Diseño y validación de sistemas de imagen
+
+---
+
+## 3. Concepto de frecuencia espacial
+
+Antes de definir la MTF, es esencial entender la **frecuencia espacial**.
+
+### 3.1 Frecuencia espacial
+
+La frecuencia espacial describe **qué tan rápido cambian las intensidades en el espacio**.
+
+- Baja frecuencia → regiones suaves y homogéneas
+- Alta frecuencia → bordes, detalles finos, ruido
+
+Se mide típicamente en:
+
+- ciclos/mm
+- pares de líneas/mm
+
+Un borde ideal contiene **todas las frecuencias espaciales**.
+
+---
+
+## 4. Sistema de imagen como sistema lineal
+
+En primera aproximación, muchos sistemas de imagen médica pueden modelarse como:
+
+- Lineales
+- Invariantes en el espacio
+
+Esto permite usar herramientas de **teoría de sistemas**.
+
+Un sistema de imagen puede describirse como:
+
+$$
+g(x,y) = f(x,y) * h(x,y)
+$$
+
+donde:
+
+- $f(x,y)$es el objeto
+- $h(x,y)$es la **Función de Respuesta al Impulso** (PSF)
+- $* $es la convolución
+- $g(x,y)$es la imagen adquirida
+
+---
+
+## 5. De la PSF a la MTF
+
+### 5.1 Función de Respuesta al Impulso (PSF)
+
+La **PSF (Point Spread Function)** describe cómo el sistema reproduce un punto ideal.
+
+Un punto perfecto se convierte en una mancha borrosa debido a:
+
+- Difracción
+- Dispersión
+- Limitaciones del detector
+
+---
+
+### 5.2 Función de Transferencia Óptica (OTF)
+
+La **OTF** se define como la transformada de Fourier de la PSF:
+
+$$
+OTF(u,v) = \mathcal{F}\{PSF(x,y)\}
+$$
+
+La OTF es compleja y tiene:
+
+- Parte real
+- Parte imaginaria
+
+---
+
+### 5.3 Definición de la MTF
+
+La **MTF** es el módulo de la OTF normalizado:
+
+$$
+MTF(u,v) = \frac{|OTF(u,v)|}{|OTF(0,0)|}
+$$
+
+Propiedades importantes:
+
+- $MTF(0) = 1$
+- $0 \le MTF \le 1$
+- Disminuye al aumentar la frecuencia espacial
+
+---
+
+## 6. Interpretación física de la MTF
+
+La MTF indica **cuánto contraste se conserva** para cada frecuencia espacial.
+
+Ejemplo conceptual:
+
+- MTF = 1 → contraste perfectamente conservado
+- MTF = 0.5 → contraste reducido a la mitad
+- MTF ≈ 0 → detalle no detectable
+
+La **frecuencia de corte** suele definirse cuando:
+
+- MTF = 0.1
+- MTF = 0.05
+
+---
+
+## 7. Métodos prácticos para calcular la MTF
+
+En la práctica, no se mide directamente la PSF ideal. Se usan métodos indirectos:
+
+1. Método del punto
+2. Método del borde (ESF)
+3. Método de la línea (LSF)
+
+En imágenes médicas, el **método del borde** es el más utilizado.
+
+---
+
+## 8. Método del borde (Edge Method)
+
+### 8.1 Función de Borde (ESF)
+
+Se adquiere una imagen de un borde de alto contraste (por ejemplo, aire–metal).
+
+La **Edge Spread Function (ESF)** es el perfil de intensidad perpendicular al borde.
+
+---
+
+### 8.2 De ESF a LSF
+
+La **Line Spread Function (LSF)** se obtiene derivando la ESF:
+
+$$
+LSF(x) = \frac{d}{dx} ESF(x)
+$$
+
+La LSF describe cómo el sistema reproduce una línea infinitamente delgada.
+
+---
+
+### 8.3 De LSF a MTF
+
+La MTF se calcula como:
+
+$$
+MTF(f) = \frac{|\mathcal{F}\{LSF(x)\}|}{\max(|\mathcal{F}\{LSF(x)\}|)}
+$$
+
+---
+
+## 9. Algoritmo paso a paso para calcular la MTF
+
+### Paso 1: Adquisición de imagen
+- Imagen de un borde recto y bien definido
+- Alto contraste
+- Buena relación señal–ruido
+
+### Paso 2: Selección de ROI
+- Región pequeña alrededor del borde
+- Borde aproximadamente vertical u horizontal
+
+### Paso 3: Cálculo de la ESF
+- Promediar perfiles perpendiculares al borde
+
+### Paso 4: Suavizado (opcional)
+- Filtro de Savitzky–Golay o gaussiano
+
+### Paso 5: Derivada → LSF
+- Derivada numérica de la ESF
+
+### Paso 6: Transformada de Fourier
+- FFT de la LSF
+
+### Paso 7: Normalización
+- Dividir por el valor en frecuencia cero
+
+---
+
+## 10. Ejemplo de pseudocódigo (conceptual)
+
+```python
+# ESF: perfil del borde
+ESF = promedio_perfiles(imagen)
+
+# Derivada
+LSF = np.gradient(ESF)
+
+# FFT
+MTF = np.abs(np.fft.fft(LSF))
+
+# Normalización
+MTF = MTF / np.max(MTF)
+```
+
+---
+
+## 11. Interpretación de la curva MTF
+
+Una curva MTF típica:
+
+- Comienza en 1
+- Decae suavemente
+- Cruza valores de referencia (0.5, 0.1)
+
+Comparaciones útiles:
+
+- Dos sistemas → mayor MTF = mejor resolución
+- Un sistema, distintos protocolos → impacto del procesamiento
+
+---
+
+## 12. MTF en distintas modalidades médicas
+
+### Radiografía digital
+- Dominada por el detector
+- Influencia del tamaño de píxel
+
+### Tomografía computarizada (CT)
+- Dependiente del kernel de reconstrucción
+- Trade-off resolución vs ruido
+
+### Resonancia magnética (RM)
+- Limitada por muestreo en k-space
+- Apodización y filtrado
+
+### Ultrasonido
+- Dependiente del ancho de banda del transductor
+- Focalización y profundidad
+
+---
+
+## 13. Limitaciones de la MTF
+
+- No describe el ruido
+- No incluye artefactos
+- Es una medida promedio
+
+Por eso, suele complementarse con:
+
+- NPS (Noise Power Spectrum)
+- DQE (Detective Quantum Efficiency)
+
+---
+
+## 14. Resumen final
+
+- La MTF cuantifica la **resolución espacial**
+- Se basa en la **transformada de Fourier**
+- El método del borde es el más usado en imágenes médicas
+- Es una herramienta clave en control de calidad y comparación de sistemas
+
+---
+
+## 15. Lecturas recomendadas
+
+- Bushberg et al., *The Essential Physics of Medical Imaging*
+- IEC 62220-1 (detectores digitales)
+- Samei & Flynn, *Medical Imaging Systems*
+
+---
+
+## 16. Procedimiento
+
+1. Toma la [imagen](./imagenes/MidiendoContraste.png)
+2. Recorta y convierte en dos imágenes una con alto contraste y otra con bajo contraste.
+3. Calcula la MTF de cada imagen
+4. Compara las MTF de las dos imágenes
+
+---
+
+## 17. Cierre
+
+Entender la MTF no solo es aprender una curva matemática, sino **comprender cómo un sistema de imagen transforma la realidad física en información diagnóstica**.
+
+Este conocimiento es esencial para todo profesional que trabaje con imágenes médicas.
+
+---
