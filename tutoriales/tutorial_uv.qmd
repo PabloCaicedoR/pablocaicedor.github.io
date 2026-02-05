@@ -1,0 +1,146 @@
+---
+title: "Instalación de Entorno de trabajo. UV"
+description: "Tutorial"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+image: "../recursos/imagenes/tutoriales/InstalacionPython/portada.png"
+date: last-modified
+format:
+  html:
+    toc: true
+    toc-location: left
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    align: justify
+    self-contained: true
+    theme:
+      - simple
+      - ../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    mainfont: "Fira Code"
+
+resources:
+  - demo.pdf
+---
+
+# Descarga de UV
+
+# Instalación de UV
+
+# Configuración de UV
+
+## Escalabilidad y Reproducibilidad
+
+Para asegurar la escalabilidad y la reproducibilidad en proyectos de procesamiento de señales e IA, la integración de módulos desde una carpeta `src/` hacia un punto de entrada raíz (`main.py`) debe seguir estándares de desarrollo **Senior**. En este documento se detalla la configuración técnica requerida utilizando `uv`.
+
+## 1. Definición de Paquetes mediante `__init__.py`
+
+En arquitecturas profesionales, cada subdirectorio dentro de `src/` debe ser tratado como un paquete. Aunque Python 3.3+ permite *Namespace Packages*, la inclusión explícita de archivos `__init__.py` es la norma en desarrollo robusto para delimitar el alcance de los módulos.
+
+Su estructura debe consolidarse de la siguiente manera:
+
+```text
+.
+├── src/
+│   ├── __init__.py
+│   ├── features/
+│   │   ├── __init__.py
+│   │   └── extraction.py
+│   ├── preprocessing/
+│   │   ├── __init__.py
+│   │   └── filters.py
+│   └── models/
+│       ├── __init__.py
+│       └── causal_ia.py
+├── main.py
+└── pyproject.toml
+```
+
+## 2. Sintaxis de Importación en `main.py`
+
+Dado que `main.py` se encuentra en la raíz, Python añade este directorio al `sys.path` automáticamente. La forma correcta de acceder a la lógica de procesamiento es mediante **importaciones absolutas**.
+
+```python
+# Ejemplo de implementación en main.py
+from src.preprocessing.filters import butterworth_filter
+from src.features.extraction import compute_emg_rms
+from src.models.causal_ia import structural_model_fit
+
+def main():
+    """
+    Pipeline principal para el análisis de señales de espasticidad.
+    """
+    # Ejemplo de aplicación de un filtro digital: H(z)
+    print("Iniciando procesamiento de señales...")
+    # ... lógica del programa ...
+
+if __name__ == "__main__":
+    main()
+```
+
+## 3. Configuración del Entorno con `uv`
+
+Para evitar errores de tipo `ModuleNotFoundError`, el proyecto debe ser instalado en modo editable dentro del entorno virtual. Esto permite que el gestor de paquetes reconozca la carpeta `src` como una fuente legítima de módulos instalados.
+
+### Configuración de `pyproject.toml`
+
+Ajuste su archivo de configuración para declarar el sistema de construcción y los paquetes incluidos:
+
+```toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spasticity-signal-analysis"
+version = "0.1.0"
+dependencies = [
+    "numpy",
+    "scipy",
+    # Agregue sus dependencias de IA aquí
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+```
+
+### Ejecución de la Instalación Editable
+
+Desde la terminal, ejecute el siguiente comando para que `uv` gestione el enlace simbólico:
+
+```bash
+uv pip install -e .
+```
+
+Esto garantiza que cualquier cambio realizado en los scripts dentro de `src/` se refleje inmediatamente en `main.py` sin necesidad de reinstalación.
+
+## 4. Consideraciones Críticas y Errores Comunes
+
+::: {.callout-important}
+### Evite el uso de `sys.path.append()`
+Es una práctica deficiente que compromete la portabilidad del código. La resolución de rutas debe ser gestionada por el entorno de ejecución o el sistema de empaquetado.
+:::
+
+::: {.callout-warning}
+### Importaciones Relativas
+No intente usar `from .src import ...` en `main.py`. Las importaciones relativas solo son válidas dentro de paquetes definidos, no en scripts de ejecución principal (top-level scripts).
+:::
+
+
+# Uso de UV
+
+# Ejemplos de uso
+
+# Solución de problemas
+
