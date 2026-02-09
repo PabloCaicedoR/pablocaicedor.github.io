@@ -1,0 +1,191 @@
+---
+title: "Reporte técnico: modelado de atenuación, respuesta de Flat Panel y formación de radiografías (enfoque RX y CT)"
+subtitle: "Generación/adquisición y reconstrucción de imágenes médicas con enfoque ingenieril y clínico-operativo"
+author: "Experto en Procesamiento de Imágenes Médicas"
+date: last-modified
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    geometry: margin=1in
+    fontsize: 11pt
+    linestretch: 1.15
+    colorlinks: true
+  html:
+    toc: true
+    code-fold: false
+    theme: cosmo
+---
+
+
+# Resumen Ejecutivo
+
+En el ámbito de la ingeniería biomédica moderna, la brecha entre los modelos teóricos ideales y la realidad física de la adquisición de imágenes es la fuente principal de errores diagnósticos y fallos en algoritmos de Inteligencia Artificial. [cite_start]Este reporte técnico aborda la modelización matemática—tanto determinista como estocástica—de la cadena de adquisición en Rayos X (RX) y Tomografía Computarizada (CT)[cite: 1, 11].
+
+[cite_start]Nos enfrentamos a un problema fundamental: la discrepancia entre la asunción de linealidad y monocromaticidad, frente a una realidad gobernada por espectros policromáticos, detectores con respuesta no lineal y ruido cuántico[cite: 13]. Esta discrepancia se manifiesta en artefactos críticos como el endurecimiento del haz (*beam hardening*) y degradación de la relación señal-ruido.
+
+[cite_start]El análisis presentado demuestra que la optimización de la relación dosis-calidad no puede basarse en la intuición, sino que requiere una modelización rigurosa de la Función de Transferencia de Modulación (MTF) y la Eficiencia Cuántica de Detección (DQE)[cite: 14]. [cite_start]Para el desarrollo de una IA confiable y sistemas de reconstrucción robustos, recomendamos imperativamente abandonar las simulaciones monocromáticas simples en favor de modelos que integren el espectro de energía ponderado y apliquen correcciones de segundo orden en el pre-procesamiento de los datos crudos[cite: 15, 16].
+
+# Introducción: La Cadena de Imagen como Sistema de Señales
+
+[cite_start]Desde una perspectiva estrictamente ingenieril, un sistema de imagenología médica opera como un filtro paso bajo espacial, degradado inevitablemente por ruido estocástico y distorsiones no lineales[cite: 20]. La generación de una imagen útil no es más que la medición precisa de la atenuación de un haz de fotones al atravesar un objeto biológico.
+
+[cite_start]Podemos visualizar este proceso como una cadena secuencial de transformación de energía[cite: 21, 22, 23]:
+
+1.  **Fuente:** Se genera un flujo de fotones $\Phi(E)$ con una distribución energética específica.
+2.  **Interacción:** El haz interactúa con la materia, sufriendo atenuación lineal $\mu(x,y,z,E)$ y dispersión (*scatter*).
+3.  **Detección:** El detector convierte los fotones supervivientes en electrones (mediante centelleo y fotodiodos o conversión directa).
+4.  **Electrónica:** La señal analógica se amplifica, integra y digitaliza (cuantización A/D).
+5.  **Reconstrucción:** Finalmente, aplicamos logaritmos y filtrado para recuperar la proyección o el volumen tomográfico.
+
+[cite_start]El dominio de este flujo requiere familiaridad con métricas clave como la **Fluencia** (fotones por unidad de área) y la escala **Hounsfield (HU)** en CT, que normaliza la atenuación respecto al agua[cite: 27].
+
+# Fundamentos Físicos de la Radiación
+
+Para modelar correctamente la imagen, primero debemos entender la naturaleza caótica de la fuente. [cite_start]Un tubo de rayos X no emite una energía única; genera un espectro complejo $S(E)$ compuesto por dos fenómenos[cite: 30]:
+
+1.  [cite_start]**Bremsstrahlung (Frenado):** Radiación continua que sigue la ley aproximada de Kramers, donde la intensidad es proporcional a $Z_{anode}(E_{max}-E)$[cite: 32].
+2.  [cite_start]**Rayos Característicos:** Picos discretos de energía resultantes de las transiciones electrónicas (capas K y L) del material del ánodo (usualmente Tungsteno)[cite: 33].
+
+Cuando este espectro policromático atraviesa al paciente, la atenuación se rige por la ley de Beer-Lambert generalizada. [cite_start]En el rango diagnóstico (20-140 keV), la materia actúa como un filtro selectivo mediante dos mecanismos principales[cite: 35]:
+
+* **Efecto Fotoeléctrico:** Absorción total del fotón. [cite_start]Su probabilidad escala con $Z^3/E^3$, lo que explica el alto contraste del hueso y los medios yodados[cite: 36].
+* [cite_start]**Dispersión Compton:** Dispersión inelástica que depende de la densidad electrónica $\rho_e$, predominante en tejidos blandos a altas energías[cite: 37].
+
+La atenuación total es la suma de estas contribuciones:
+$$ \mu_{total}(E) = \mu_{photo}(E) + \mu_{compton}(E) + \mu_{rayleigh}(E) $$
+
+# Modelado Matemático de la Adquisición
+
+## Radiografía: La Proyección Polinomática
+
+A diferencia de los libros de texto básicos, en la práctica profesional no podemos usar la versión simple de la Ley de Beer. [cite_start]La intensidad $I(u,v)$ detectada en un píxel es una integral sobre todo el espectro de energía, ponderada por la eficiencia del detector $\eta(E)$[cite: 42, 43]:
+
+$$ I(u,v) = \int_{0}^{E_{max}} S(E) E \eta(E) \exp\left( - \int_{L(u,v)} \mu(x,y,z, E) \, ds \right) dE + \text{Scatter}(u,v) $$
+
+Es crucial notar el término $E$ dentro de la integral: la mayoría de los detectores comerciales (Flat Panels) son **integradores de energía**, no contadores de fotones. [cite_start]Esto significa que un fotón de alta energía contribuye más a la señal que uno de baja energía, sesgando la estadística[cite: 45].
+
+## Tomografía Computarizada (CT): De Radon a la Realidad
+
+En CT, el objetivo es inverso: recuperar el mapa de atenuación $\mu(x,y)$ a partir de las proyecciones. [cite_start]Matemáticamente, esto es la inversión de la **Transformada de Radon**[cite: 47].
+
+La proyección logarítmica ideal $P$ se define como:
+$$ P(\theta, t) = -\ln\left( \frac{I}{I_0} \right) = \int_{L(\theta, t)} \mu(x,y) \, ds $$
+
+Para reconstruir la imagen, el método estándar sigue siendo la **Retroproyección Filtrada (FBP)**. Simplemente "embarrar" las proyecciones de vuelta sobre la matriz de imagen genera una imagen borrosa (convolución con $1/r$). [cite_start]Por ello, es obligatorio aplicar un filtro rampa (kernel Ram-Lak) $h(t)$ antes de retroproyectar[cite: 49, 50]:
+
+$$ \mu(x,y) = \int_{0}^{\pi} \left( P(\theta, t) * h(t) \right) d\theta $$
+
+# Métodos de Ingeniería y Simulación
+
+## Método A: El Desafío del Endurecimiento del Haz (Beam Hardening)
+
+El espectro policromático introduce una no-linealidad severa. A medida que el haz atraviesa el objeto, los fotones de baja energía se absorben preferentemente. Esto aumenta la energía media del haz restante ("endurecimiento").
+
+[cite_start]La consecuencia matemática es que el logaritmo negativo de la atenuación ya no es lineal respecto al espesor $x$ del objeto[cite: 63]:
+$$ P_{poly} = -\ln\left( \frac{I}{I_0} \right) \neq \mu(E_{eff}) \cdot x $$
+
+[cite_start]En la imagen clínica, esto provoca el artefacto de *cupping*: un objeto homogéneo parece tener menos densidad en el centro que en la periferia[cite: 163].
+
+**Implementación de la Corrección:**
+La solución estándar en la industria es una linealización polinomial basada en una calibración previa con maniquíes de agua.
+
+```python
+import numpy as np
+
+def beam_hardening_correction(sinogram_poly, coeffs):
+    """
+    Linealiza un sinograma afectado por beam hardening usando un modelo polinomial.
+
+    Args:
+        sinogram_poly: Proyecciones logarítmicas 'crudas' (afectadas por el espectro).
+        coeffs: Lista [a0, a1, a2...] obtenida de la calibración con fantoma de agua.
+                Modela la curva inversa: P_ideal = Poly(P_medido)
+    """
+    sinogram_corr = np.zeros_like(sinogram_poly)
+
+    # Aplicación del polinomio: P_corr = a1*P + a2*P^2 + ...
+    for i, c in enumerate(coeffs):
+        sinogram_corr += c * (sinogram_poly ** (i + 1))
+
+    return sinogram_corr
+```
+[cite_start]*Nota: Los coeficientes se obtienen empíricamente ajustando la curva de atenuación medida vs. el espesor conocido de un cilindro de agua.* [cite: 82]
+
+## Método B: Modelado de la Respuesta del Detector (Cascada Lineal)
+
+[cite_start]Para simular un detector de panel plano (FPD) de manera realista, utilizamos el modelo de cascada lineal (*Linear Cascaded Model*) descrito por Cunningham et al.[cite: 91]. Este modelo trata al detector como una serie de etapas donde la señal se transfiere y el ruido se añade o amplifica.
+
+[cite_start]El proceso físico sigue estos pasos [cite: 92-98]:
+1.  **Conversión Cuántica:** Los fotones incidentes son absorbidos con una eficiencia $\eta$.
+2.  **Ganancia Óptica:** Cada fotón absorbido genera $g_1$ fotones de luz en el centellador (ej. CsI).
+3.  **Acoplamiento y Conversión:** La luz viaja ($g_2$) y se convierte en electrones en el fotodiodo ($g_3$).
+4.  **Apertura:** La integración de la señal en el área sensible del píxel provoca un borroneado espacial.
+
+La resolución del sistema (MTF) queda dominada por la dispersión de luz en el centellador y el tamaño del píxel:
+$$ MTF_{sys}(f) = T_{scint}(f) \cdot \text{sinc}(af) $$
+
+**Ruido y Cuantización:**
+El ruido no es constante. [cite_start]Se compone de ruido cuántico (dependiente de la señal, Poisson) y ruido electrónico (aditivo, Gaussiano)[cite: 102]. [cite_start]Además, el proceso de digitalización (ADC) introduce un error de cuantización $\sigma_Q^2 = \Delta^2/12$[cite: 105].
+
+El siguiente flujo simula computacionalmente este comportamiento estocástico:
+
+```python
+def detector_response(photon_fluence, gain, noise_elec, bit_depth, max_signal):
+    # 1. Ruido Cuántico (Naturaleza de la luz)
+    absorbed_photons = np.random.poisson(photon_fluence)
+
+    # 2. Conversión a electrones (Ganancia del sistema)
+    electrons = absorbed_photons * gain
+
+    # 3. Ruido Electrónico (Readout de la electrónica)
+    noise = np.random.normal(0, noise_elec, electrons.shape)
+    signal_analog = electrons + noise
+
+    # 4. Saturación y Cuantización (ADC)
+    signal_analog = np.clip(signal_analog, 0, max_signal)
+    max_digital = 2**bit_depth - 1
+    step_size = max_signal / max_digital
+
+    # El redondeo simula la pérdida de información del ADC
+    return np.round(signal_analog / step_size).astype(np.uint16)
+```
+[cite_start][cite: 110-135]
+
+## Método C: Pipeline de Procesamiento de Imagen
+
+Una vez adquiridos los datos "crudos" ($I_{raw}$), estos no son aptos para diagnóstico. [cite_start]Se requiere un pipeline de post-procesamiento estricto[cite: 144]:
+
+1.  **Corrección de Campo Plano (Flat Field):** Normaliza la respuesta de cada píxel usando imágenes de referencia (oscura y brillante).
+    $$ I_{corr} = \frac{I_{raw} - I_{dark}}{I_{flat} - I_{dark}} \cdot \bar{I}_{flat} $$
+2.  **Manejo de Defectos:** Los píxeles muertos se interpolan usando la media de sus vecinos.
+3.  **Inversión Logarítmica:** Transformamos la transmisión en densidad óptica ($I_{log} = \ln(I_{max}) - \ln(I_{corr})$).
+4.  **Procesamiento Multiescala:** Se aplican Look-Up Tables (LUT) sigmoideas y realce de bordes (*Unsharp Masking*) para adaptar el rango dinámico de la máquina (14-16 bits) al ojo humano.
+
+# Artefactos y Evaluación de Calidad
+
+Cualquier desviación de los modelos anteriores resulta en artefactos. [cite_start]En radiografía, el *aliasing* (patrón de Moiré) ocurre cuando la frecuencia de la rejilla anti-dispersión interfiere con la matriz de píxeles[cite: 161]. [cite_start]En CT, además del *cupping* por endurecimiento del haz, son comunes los artefactos de anillo (*Ring Artifacts*) causados por la descalibración de un solo elemento del detector[cite: 163].
+
+[cite_start]Para evaluar objetivamente la calidad, los ingenieros no confiamos en la inspección visual, sino en métricas cuantitativas [cite: 166-170]:
+
+* **MTF (Modulation Transfer Function):** Mide la resolución espacial (nitidez) analizando la respuesta al borde (*slanted edge*).
+* **NPS (Noise Power Spectrum):** Caracteriza la textura y frecuencia del ruido.
+* **DQE (Detective Quantum Efficiency):** La métrica dorada. Define qué tan eficientemente el sistema usa la radiación incidente para formar una imagen.
+    $$ DQE(f) = \frac{MTF^2(f) \cdot \Phi \cdot G^2}{NPS(f)} $$
+
+[cite_start]Un DQE bajo a altas frecuencias indica que el sistema "desperdicia" dosis sin aportar detalle diagnóstico fino[cite: 172].
+
+# Conclusiones y Seguridad
+
+La ingeniería de imágenes médicas es un constante compromiso (*trade-off*) gobernado por el principio ALARA (*As Low As Reasonably Achievable*). [cite_start]Reducir la dosis a la mitad conlleva penalizar la relación señal-ruido por un factor de $\sqrt{2}$[cite: 177].
+
+Para avanzar hacia una IA confiable en medicina, es fundamental comprender que las imágenes no son fotos perfectas, sino mapas de atenuación sesgados por la física. [cite_start]Modelar correctamente el ruido de Poisson y los efectos espectrales, como el endurecimiento del haz, es el único camino para diseñar algoritmos que interpreten la anatomía real y no las alucinaciones del hardware[cite: 189, 190].
+
+# Referencias
+
+[cite_start]1.  [cite: 1] Reporte técnico: modelado de atenuación.
+[cite_start]2.  [cite: 193] Bushberg, J. T., et al. (2020). *The Essential Physics of Medical Imaging*.
+[cite_start]3.  [cite: 194] Hsieh, J. (2015). *Computed Tomography: Principles, Design, Artifacts*.
+[cite_start]4.  [cite: 195] Kak, A. C., & Slaney, M. (1988). *Principles of Computerized Tomographic Imaging*.
+[cite_start]5.  [cite: 196] ICRU Report 87. (2012). *Radiation Dose and Image-Quality Assessment in Computed Tomography*.
+[cite_start]6.  [cite: 197] Cunningham, I. A. (2000). *Linear-systems modeling of parallel-cascaded stochastic processes*.

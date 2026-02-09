@@ -1,0 +1,1201 @@
+---
+title: "Reporte técnico: modelado de atenuación, respuesta de Flat Panel y formación de radiografías (enfoque RX y CT)"
+subtitle: "Generación/adquisición y reconstrucción de imágenes médicas con enfoque ingenieril y clínico-operativo"
+author: "Experto en Procesamiento de Imágenes Médicas"
+date: last-modified
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    geometry: margin=1in
+    fontsize: 11pt
+    linestretch: 1.15
+    colorlinks: true
+  html:
+    toc: true
+    code-fold: false
+    theme: cosmo
+---
+
+> **Alcance y supuestos explícitos (por falta de restricciones detalladas):**
+> - Modalidad principal: **RX (radiografía digital) y CT (TAC)**. MRI se menciona solo para contexto comparativo, artefactos y seguridad.
+> - Restricciones asumidas: (i) **baja dosis** como objetivo frecuente, (ii) **flujo clínico estándar** (tiempo de reconstrucción segundos–minutos), (iii) hardware típico hospitalario (CPU multi-core; **GPU opcional**), (iv) población mixta (adulto/pediátrica) con énfasis en **ALARA**.
+> - Nivel de matemáticas: **medio** (modelos, supuestos, ecuaciones esenciales; sin derivaciones largas).
+> - No se reportan resultados experimentales reales; cualquier número es **hipotético e ilustrativo**.
+
+# 1) Resumen ejecutivo
+
+## 1.1 Problema que resuelven los métodos
+
+En **radiografía (RX)** y **tomografía computarizada (CT)**, la calidad diagnóstica depende de una cadena física–digital:
+
+1) **Formación del haz** (espectro, filtración, geometría, dispersión),
+2) **Interacción con el paciente** (atenuación polienergética y scatter),
+3) **Respuesta del detector** (PSF/MTF, NPS, DQE, lag, saturación),
+4) **Muestreo y cuantización** (ADC, rango dinámico, bit-depth),
+5) **Calibración y correcciones** (dark/flat, beam hardening, scatter),
+6) **Reconstrucción** (en CT: FBP/FDK/iterativa/MBIR; en RX: proyección 2D con procesamiento),
+7) **Posproceso y visualización**,
+8) **QA/validación** (phantoms, métricas, estabilidad).
+
+Los métodos solicitados atacan tres puntos críticos:
+
+- **(A) Modelar matemáticamente la atenuación y la formación del haz:** imprescindible para predecir señal, dosis, endurecimiento del haz, scatter y límites de contraste.
+- **(B) Analizar detectores planos y cuantización:** determina resolución, ruido, eficiencia cuántica y sesgos (lag, ghosting), y permite definir calibraciones y métricas (DQE/MTF/NPS).
+- **(C) Formación de radiografías:** integra geometría + física + detector + muestreo en un modelo “end-to-end” útil para simulación, diseño de protocolo, QA y reconstrucción/corrección.
+
+## 1.2 Impacto operativo y clínico (RX/CT y nota sobre MRI)
+
+- **RX:** optimizar el compromiso **dosis–ruido–resolución**; controlar scatter y exposición; evitar saturación; asegurar consistencia multi-equipo y multi-turno.
+- **CT:** reconstrucción robusta a **baja dosis**, metal y movimiento; estabilidad de HU y uniformidad; reducción de artefactos (beam hardening, rings, streaks).
+- **MRI (contexto):** aunque no usa radiación ionizante, comparte problemas de **modelado del sistema**, artefactos, muestreo y reconstrucción (k-space, regularización). Esto importa para equipos multimodales y cultura de QA.
+
+## 1.3 Limitaciones críticas (“no negociables”)
+
+1) **Polienergía:** el modelo monoenergético Beer–Lambert falla en presencia de espectro amplio → **beam hardening** y sesgos en CT (HU) y RX (contraste).
+2) **Scatter:** si no se modela/corrige, produce **capping**, pérdida de contraste y errores cuantitativos.
+3) **Detector no ideal:** MTF y NPS dependen de kVp, filtración, dosis, ángulo; hay **lag/ghosting** y no linealidades.
+4) **Calibración:** errores en dark/flat/air-scan se traducen en **banding**, rings y drift de HU.
+5) **Reconstrucción y regularización:** exceso de suavizado puede “borrar” hallazgos sutiles; métodos de IA pueden **alucinar patrones** si no se controlan.
+
+## 1.4 Recomendaciones (acciones concretas)
+
+- Adoptar un **modelo forward polienergético** con scatter y respuesta del detector para simulación y diseño de protocolos.
+- Medir/estimar **MTF + NPS + DQE** (o al menos MTF/NPS) y registrar **exposure index** (EI) y su consistencia.
+- En CT, para baja dosis: priorizar **recon iterativa estadística/MBIR** o híbridos; usar FBP como referencia/QA.
+- Implementar un **pipeline de calibración** con monitoreo de drift (offset/gain), estabilidad de HU, uniformidad, y artefactos (rings/streaks).
+- Para IA: usar estrategias “physics-informed” o **unrolled** con validación estricta, *no* solo métricas promedio; documentar dominios de validez.
+
+---
+
+# 2) Introducción
+
+## 2.1 Modalidades y cadena completa (RX/CT)
+
+**Figura 1: Cadena de adquisición y reconstrucción (RX/CT).**
+(1) Generador HV → (2) tubo RX (espectro) + filtración + colimación → (3) paciente (atenuación + scatter) → (4) anti-scatter grid/opciones → (5) detector flat panel (conversión + readout) → (6) muestreo/ADC → (7) calibración (dark/flat/air) → (8) correcciones (scatter, beam hardening) → (9) reconstrucción (CT) o procesamiento (RX) → (10) posproceso (ventaneo, realce) → (11) visualización/PACS → (12) QA y trazabilidad.
+
+### RX (radiografía digital)
+- Resultado: **imagen 2D** de una proyección de atenuación (y scatter residual), con blur geométrico y del detector, y ruido cuántico/electrónico.
+
+### CT (TAC)
+- Resultado: **volumen 3D** reconstruido desde múltiples proyecciones (sinograma).
+- Geometrías: axial/helicoidal, fan-beam, cone-beam.
+- Métrica cuantitativa principal: **HU (Hounsfield Units)**.
+
+## 2.2 Glosario (términos clave)
+
+> Nota: Se incluyen también términos MRI por cultura general y porque muchos marcos de QA y reconstrucción comparten ideas (muestreo, regularización, artefactos).
+
+| Término | Definición operativa | Comentario práctico |
+|---|---|---|
+| SNR | Relación señal/ruido | Depende de dosis, MTF, NPS, filtrado |
+| CNR | Contraste/ruido | Más correlacionado con detectabilidad |
+| PSF | Respuesta puntual | Determina blur; su FT es la MTF |
+| MTF | Modulación vs frecuencia espacial | Métrica de resolución (linealidad asumida) |
+| NPS | Espectro de potencia del ruido | Caracteriza ruido espacialmente correlacionado |
+| DQE | Eficiencia cuántica detective | Conecta señal y ruido con dosis (IEC) |
+| HU | Unidades Hounsfield | Normalización de $\mu$ en CT |
+| CTDIvol/DLP | Indicadores de dosis en CT | Gestión de dosis y comparabilidad |
+| k-space | Dominio de muestreo en MRI | En CT el análogo operacional es el sinograma |
+| Gibbs ringing | Artefacto por truncamiento | MRI y también en CT por filtrado/ventaneo |
+
+---
+
+# 3) Fundamentos físicos por modalidad
+
+## 3.1 Interacción fotón–materia (rango diagnóstico)
+
+En diagnóstico (≈ 20–150 keV), dominan:
+
+- **Efecto fotoeléctrico** (∝ $Z^n/E^3$ aprox., con $n\sim 3$–4): aporta **contraste** (alto en hueso/alto Z, iodados).
+- **Compton** (∝ densidad electrónica, débilmente dependiente de Z): aporta **scatter** y reduce contraste; domina en tejidos blandos y energías medias.
+
+Definimos el **coeficiente de atenuación lineal** $\mu(E,\mathbf{r})$ [1/cm] y el **coeficiente másico** $\mu/\rho$ [cm²/g].
+
+## 3.2 Ley de Beer–Lambert (monoenergética)
+
+Para un haz monoenergético de energía $E$:
+
+$$
+I = I_0 \exp\left(-\int_{L} \mu(E,\mathbf{r})\,dl\right)
+$$
+
+**Símbolos:**
+- $I_0$: intensidad incidente (sin objeto)
+- $I$: intensidad transmitida
+- $L$: trayectoria del rayo
+- $\mu(E,\mathbf{r})$: atenuación lineal
+
+**Limitación:** En RX real, el haz es **polienergético** → la atenuación no es una exponencial simple.
+
+## 3.3 Haz polienergético, filtración y endurecimiento (beam hardening)
+
+El tubo produce un espectro $S(E)$ (bremsstrahlung + líneas características), modificado por:
+
+- filtración inherente + adicional (Al, Cu, etc.),
+- colimación y geometría,
+- efecto talón (heel effect),
+- dispersión y backscatter del paciente.
+
+Modelo básico:
+
+$$
+I = \int S(E)\, \exp\left(-\int_L \mu(E,\mathbf{r})\,dl\right)\, dE + I_{\text{sc}}
+$$
+
+donde $I_{\text{sc}}$ es componente de **scatter** detectada.
+
+**Endurecimiento:** los fotones de baja energía se atenúan más → el espectro transmitido se desplaza a energías más altas, generando:
+- no linealidad en la relación log-señal vs espesor,
+- artefactos tipo **cupping** en CT,
+- sesgos de contraste en RX.
+
+## 3.4 Dispersión (scatter)
+
+En geometrías de proyección (RX/CT), el scatter:
+- añade un término **aditivo** (no sigue Beer–Lambert),
+- reduce contraste (eleva el “fondo”),
+- induce artefactos y sesgo cuantitativo.
+
+Modelos comunes:
+- aproximación “primary + scatter” ($I = I_p + I_s$),
+- kernels dependientes de espesor y campo,
+- modelos físicos simplificados,
+- Monte Carlo (alto costo, referencia).
+
+---
+
+# 4) Modelo matemático de adquisición
+
+## 4.1 RX: proyección 2D con blur, ruido y scatter
+
+### 4.1.1 Modelo forward mínimo (lineal en intensidad)
+
+Sea $(u,v)$ el plano del detector. Modelo:
+
+$$
+Y(u,v) = \left[ \left(I_p(u,v) + I_s(u,v)\right) \ast h_{\text{det}}(u,v) \right] \downarrow_{\Delta} + n_e(u,v)
+$$
+
+- $I_p$: intensidad primaria transmitida (polienergética)
+- $I_s$: scatter en detector
+- $h_{\text{det}}$: PSF efectiva del detector (incluye scintillator + óptica + charge sharing)
+- $\ast$: convolución
+- $\downarrow_{\Delta}$: muestreo con paso de pixel $\Delta$
+- $n_e$: ruido electrónico/lectura
+
+**Ruido cuántico (Poisson):** típicamente $I_p$ sigue Poisson con media proporcional a fotones detectados.
+
+### 4.1.2 Transformación log (radiografía “de atenuación”)
+
+Si se corrige dark/flat y se aproxima $I_s \approx 0$:
+
+$$
+p(u,v) = -\ln \left( \frac{I(u,v)}{I_0(u,v)} \right) \approx \int_L \mu_{\text{eff}}(\mathbf{r})\,dl
+$$
+
+Pero con polienergía y scatter residual, $p$ queda **sesgado**.
+
+## 4.2 CT: sinograma, Radon y geometrías
+
+### 4.2.1 Transformada de Radon (ideal 2D)
+
+Para atenuación monoenergética $\mu(x,y)$:
+
+$$
+p(\theta, s) = \int_{-\infty}^{\infty}\mu(x,y)\, d\ell
+$$
+
+donde $(\theta,s)$ parametriza cada rayo. La reconstrucción ideal invierte la Radon.
+
+### 4.2.2 Modelo polienergético y calibración
+
+Medidas crudas (cuentas) $Y$:
+
+$$
+Y(\theta,s) \sim \text{Poisson}\left( \int S(E)\exp(-\mathcal{P}[\mu(E)] )\, dE + S_{\text{sc}} \right) + \text{electrónico}
+$$
+
+Calibración típica con **dark** ($D$) y **air scan** ($A$):
+
+$$
+\tilde{I} = \frac{Y - D}{A - D}, \qquad p = -\ln(\tilde{I})
+$$
+
+**Red flag:** si $A-D$ es pequeño (saturación, mala ganancia, drift), $p$ explota y aparecen streaks/rings.
+
+### 4.2.3 HU (unidades Hounsfield)
+
+Tras reconstruir $\hat{\mu}(\mathbf{r})$ a energía efectiva:
+
+$$
+HU(\mathbf{r}) = 1000 \cdot \frac{\hat{\mu}(\mathbf{r}) - \mu_{\text{agua}}}{\mu_{\text{agua}}}
+$$
+
+**Requisito clínico:** estabilidad de HU (agua ≈ 0, aire ≈ -1000) dentro de tolerancias QA.
+
+---
+
+# 5) Métodos solicitados y métodos estándar de reconstrucción/corrección
+
+## 5.0 Catálogo de métodos incluidos
+
+**Tabla 5.0: Métodos (núcleo solicitado + estándar RX/CT).**
+
+| ID | Método | Dominio | Uso típico |
+|---|---|---|---|
+| M1 | Modelo polienergético de atenuación y formación del haz | Física | Simulación, correcciones BH/scatter |
+| M2 | Modelo de detector Flat Panel + cuantización (MTF/NPS/DQE) | Detector | Diseño, QA, predicción SNR |
+| M3 | Modelo end-to-end de formación de radiografías | Sistema | Simulación, optimización protocolo |
+| M4 | Calibración: dark/flat/air + linealización/log | Operación | Estabilidad y comparabilidad |
+| M5 | Corrección beam hardening (BH) | RX/CT | Reducción cupping/streaks |
+| M6 | Corrección de scatter (grid + modelado) | RX/CT | Recuperar contraste y cuantificación |
+| M7 | Reconstrucción CT por FBP (fan-beam/helicoidal) | CT | Base clínica, referencia QA |
+| M8 | Reconstrucción cone-beam por FDK | CBCT | Intervencionismo/RT/odontología |
+| M9 | Iterativa algebraica (ART/SIRT/SART) | CT/CBCT | Pocos ángulos, regularización simple |
+| M10 | Iterativa estadística/MBIR (MAP/PL) + regularización (TV/Huber) | CT | Baja dosis, robustez |
+| M11 | Metal Artifact Reduction (MAR) | CT | Implantes, ortopedia, odontología |
+| M12 | Reducción de ruido (sinograma/imagen) y preservación de bordes | RX/CT | Baja dosis, posproceso controlado |
+| M13 | Reconstrucción basada en Deep Learning (unrolled/priors) | RX/CT | Aceleración y denoising con control |
+
+> Formato repetible obligatorio (a–i) aplicado en cada método.
+
+---
+
+## 5.1 M1 — Modelado matemático de la atenuación de fotones y la formación del haz
+
+### a) Definición formal y objetivo
+Construir un modelo **forward** que prediga la señal detectada $I$ a partir de:
+- espectro emitido $S(E)$,
+- filtración y geometría,
+- atenuación del objeto $\mu(E,\mathbf{r})$,
+- dispersión $I_{\text{sc}}$.
+
+**Objetivo operacional:** permitir (i) simulación realista, (ii) diseño de protocolo (kVp/filtración/mAs), (iii) correcciones (beam hardening, scatter), (iv) estimación de incertidumbre (ruido/dosis).
+
+### b) Supuestos y condiciones de validez
+- Sistema estable (espectro reproducible a igualdad de kVp/filtración).
+- Linealidad del detector en el rango operativo (sin saturación).
+- $\mu(E)$ conocido o aproximable (tablas NIST/ICRU) para materiales relevantes.
+- Scatter tratable como término aditivo y/o convolutivo a primer orden.
+
+### c) Derivación/explicación matemática esencial
+Modelo polienergético por rayo $r$:
+
+$$
+I_r = \int S(E)\, T_{\text{fil}}(E)\, \exp\left(-\int_{L_r}\mu(E,\mathbf{r})dl\right)\, dE + I_{\text{sc},r}
+$$
+
+- $T_{\text{fil}}(E)=\exp(-\sum_k \mu_k(E) t_k)$ modela filtros (material $k$, espesor $t_k$).
+- En CT, $r$ recorre ángulos $\theta$ y detector $s$ → sinograma.
+
+**Aproximación de energía efectiva:**
+Definir $E_{\text{eff}}$ tal que:
+
+$$
+\exp\left(-\int \mu(E_{\text{eff}})dl\right) \approx
+\frac{\int S(E)\exp(-\int \mu(E)dl)dE}{\int S(E)dE}
+$$
+
+Útil para interpretación, **no** corrige BH por sí sola.
+
+### d) Algoritmo paso a paso + pseudocódigo
+**Algoritmo: simulación de proyección polienergética**
+
+```pseudo
+Inputs:
+  - Geometry: ray paths L_r for each detector pixel (u,v) or (theta,s)
+  - Spectrum S(E) discretized on energies E_i with weights w_i
+  - Filters: T_fil(E_i)
+  - Object: material map or mu(E_i, r) along rays
+  - Scatter model (optional): Isc_r
+
+For each ray r:
+  I_primary = 0
+  For each energy bin i:
+    line_integral = integrate_over_path( mu(E_i, position) along L_r )
+    I_primary += w_i * S(E_i) * T_fil(E_i) * exp( -line_integral )
+  I_r = I_primary + scatter_estimate(r)
+Return I_r
+```
+
+### e) Parámetros: significado físico, rangos típicos y selección
+- **kVp:** 60–150 kVp (RX general 60–120; CT 80–140).
+- **Filtración:** inherente (equipo) + adicional (p.ej., mm Al; opcional Cu).
+- **Tamaño de foco efectivo:** impacta blur geométrico (ver M3).
+- **Discretización espectral:** 1–5 keV por bin suele ser suficiente para simulación.
+
+Selección:
+- Para correcciones BH, se necesita sensibilidad a cambios espectrales → bins más finos.
+
+### f) Complejidad computacional
+- $O(N_{\text{ray}} \cdot N_E \cdot C_{\text{integral}})$
+- Acelerable con GPU y/o preintegración por materiales (material decomposition).
+
+### g) Comportamiento frente a ruido/artefactos
+- Permite predecir **cuantitativamente** dónde habrá BH y pérdida de contraste.
+- Si el scatter no se modela, se subestima señal en regiones gruesas.
+
+### h) Riesgos (red flags)
+- Usar $\mu(E)$ incorrecto (material equivocado) → correcciones BH “empeoran”.
+- Ignorar heel effect/colimación → gradientes espurios en RX.
+- Ajustar parámetros para “parecerse” a una imagen sin medir físicamente → modelo no transferible.
+
+### i) Recomendaciones RX vs CT vs MRI
+- **RX/CT:** método central.
+- **MRI:** no aplica (no hay fotones ionizantes), pero la idea de “forward model” sí.
+
+---
+
+## 5.2 M2 — Respuesta de detectores planos (Flat Panel) y cuantización
+
+### a) Definición formal y objetivo
+Modelar y caracterizar la conversión **fotón → señal digital** en un Flat Panel Detector (FPD), incluyendo:
+- PSF/MTF (resolución),
+- NPS (ruido),
+- DQE (eficiencia vs dosis),
+- no idealidades: lag/ghosting, no linealidad, saturación,
+- cuantización ADC y rango dinámico.
+
+**Objetivo:** predecir desempeño (SNR/CNR), diseñar QA, evitar errores de exposición y sesgos por calibración.
+
+### b) Supuestos y condiciones de validez
+- Operación en región lineal (exposición dentro del rango recomendado).
+- Estacionariedad local para métricas espectrales (MTF/NPS).
+- Separabilidad aproximada de blur (foco vs detector) cuando aplica.
+
+### c) Matemática esencial (MTF, NPS, DQE, cuantización)
+
+**Modelo lineal shift-invariant (LSI) local:**
+$$
+y = (x \ast h) + n
+$$
+
+- $h$ PSF; su transformada de Fourier $H(f)$ define la **MTF**:
+$$
+MTF(f) = \frac{|H(f)|}{|H(0)|}
+$$
+
+**NPS (2D):** densidad espectral del ruido de imagen (tras detrending).
+Para una región uniforme:
+$$
+NPS(f_x,f_y) = \frac{\Delta x \Delta y}{N_x N_y} \, \mathbb{E}\{ |\mathcal{F}\{ n(x,y)\}|^2 \}
+$$
+
+**DQE:** (concepto) cuánto SNR se preserva por unidad de dosis:
+$$
+DQE(f) = \frac{SNR_{\text{out}}^2(f)}{SNR_{\text{in}}^2(f)}
+$$
+En práctica se calcula combinando MTF, NPS y kerma en aire bajo condiciones estándar (ver IEC).
+
+**Cuantización ADC:** si el ADC tiene $B$ bits y rango full-scale $FS$:
+- paso de cuantización $q = FS/2^B$
+- varianza de ruido de cuantización (aprox uniforme):
+$$
+\sigma_q^2 \approx \frac{q^2}{12}
+$$
+
+**Regla práctica:** si $\sigma_q$ es comparable al ruido electrónico, estás perdiendo calidad por bit-depth insuficiente o mal uso del rango.
+
+### d) Algoritmo paso a paso + pseudocódigo
+**Medición conceptual de MTF (edge method):**
+```pseudo
+Acquire image of sharp edge on uniform background
+Extract Edge Spread Function (ESF) by oversampling along edge normal
+Differentiate ESF -> Line Spread Function (LSF)
+Compute Fourier magnitude of LSF -> MTF
+Normalize MTF(0) = 1
+```
+
+**Medición conceptual de NPS:**
+```pseudo
+Acquire K images of uniform field at fixed technique
+For each image:
+  select ROI(s), remove mean/trend
+  compute FFT2 of ROI noise
+  accumulate |FFT|^2
+Average over K -> NPS
+```
+
+### e) Parámetros típicos y elección
+- **Pixel pitch:** ~100–200 µm (RX), mayor en algunos sistemas portátiles.
+- **Bit-depth:** 12–16 bits (típico clínico).
+- **Ganancia/offset:** dependen de temperatura y electrónica; se controlan con calibración.
+
+Selección:
+- Ajustar ganancia para evitar saturación a técnicas habituales (incluye pacientes grandes y proyecciones difíciles).
+- Mantener EI en rango recomendado y estable (evitar “dose creep”).
+
+### f) Complejidad computacional
+- Cálculo MTF/NPS: FFTs 2D → $O(N\log N)$ por ROI.
+
+### g) Comportamiento frente a ruido/artefactos
+- Mayor MTF suele exigir diseño que puede elevar NPS (trade-off).
+- Lag/ghosting produce “memoria” temporal: artefactos en series rápidas o fluoroscopia.
+
+### h) Riesgos (red flags)
+- Saturación oculta por LUT → “imagen bonita” pero sin cuantificación.
+- Drift de offset → bandas o shading; en CT se manifiesta como **rings**.
+- DQE “nominal” de fabricante sin condiciones claras → no comparable.
+
+### i) Recomendaciones RX vs CT vs MRI
+- **RX:** crítico (FPD define imagen final).
+- **CT:** crítico; detectores (a menudo de estado sólido + scintillator) con calibraciones aún más sensibles (rings).
+- **MRI:** no aplica (detector es RF coil + digitalización; analogía: SNR y ancho de banda).
+
+---
+
+## 5.3 M3 — Modelo end-to-end de formación de radiografías (RX)
+
+### a) Definición formal y objetivo
+Modelo integrado:
+**espectro + objeto + scatter + geometría + blur + muestreo + cuantización** → imagen digital RX.
+
+Objetivo: simulación y análisis de sensibilidad (qué domina la pérdida de detalle o el aumento de ruido).
+
+### b) Supuestos
+- Geometría de proyección conocida (SID, SOD, magnificación).
+- Foco y detector modelables como PSFs (aprox).
+- Scatter aproximable por campo y espesor.
+
+### c) Matemática esencial
+
+**Geometría y magnificación:**
+- $SID$: source-to-image distance
+- $SOD$: source-to-object distance
+- Magnificación $M = SID/SOD$
+- Blur geométrico por foco efectivo $f$:
+$$
+U_g \approx f \cdot \frac{SID - SOD}{SOD}
+$$
+
+**Modelo final:**
+$$
+Y = Q\left( \left[ (I_p + I_s) \ast h_{\text{foco}} \ast h_{\text{det}} \right] \downarrow_{\Delta} + n_e \right)
+$$
+donde $Q(\cdot)$ es cuantización ADC.
+
+### d) Algoritmo + pseudocódigo
+```pseudo
+Compute primary intensity using polienergetic model (M1)
+Estimate scatter map (low-frequency) Is (M6)
+Apply geometric blur due to focal spot (Ug) -> PSF_foco
+Apply detector blur -> PSF_det
+Sample to pixel grid
+Add Poisson noise (photon) + Gaussian electronic
+Quantize to B bits with full-scale FS
+Apply calibration pipeline (M4) if simulating processed image
+Return Y
+```
+
+### e) Parámetros y rangos
+- SID: ~100–180 cm (según estudio)
+- Foco: ~0.6–1.2 mm (típico; depende de equipo)
+- Pixel pitch: 100–200 µm
+- kVp: 60–120 (RX general)
+
+Selección: controlar $U_g$ con geometría y foco apropiados según tarea (p.ej., microcalcificaciones).
+
+### f) Complejidad
+Dominada por trazado de rayos y convoluciones FFT: $O(N_{\text{ray}}N_E + N\log N)$.
+
+### g) Frente a ruido/artefactos
+- Modela aliasing si $\Delta$ es grande frente a la banda espacial real.
+- Predice pérdida de contraste por scatter (baja frecuencia).
+
+### h) Riesgos
+- Ajustar PSF “a ojo” sin medición → conclusiones engañosas.
+- Ignorar grid cutoff o desalineación → artefactos no explicados por el modelo.
+
+### i) Recomendaciones
+- RX: aplicar para diseño de técnica y QA; CT: análogo a forward model del sinograma. MRI: no aplica.
+
+---
+
+## 5.4 M4 — Calibración (dark/flat/air), linealización y log
+
+### a) Definición y objetivo
+Convertir señal cruda a una señal normalizada, estable y comparable:
+- corrección de offset (dark),
+- corrección de ganancia (flat/air),
+- corrección de píxeles defectuosos,
+- linealización (si aplica),
+- log-transform para proyecciones.
+
+### b) Supuestos
+- Dark y flat representativos del estado del detector (temperatura/tiempo).
+- Exposición uniforme para flat (sin estructura).
+
+### c) Matemática esencial
+Para cada píxel:
+$$
+I_{\text{corr}} = \frac{Y - D}{F - D}
+$$
+Luego:
+$$
+p = -\ln(I_{\text{corr}})
+$$
+
+### d) Pseudocódigo
+```pseudo
+Acquire/Load D (dark), F (flat/air), and raw Y
+Check for saturation and low denominator (F-D)
+Icorr = (Y-D)/(F-D)
+Replace bad pixels via neighborhood interpolation
+If CT: p = -log(Icorr) to build sinogram
+Return calibrated data
+```
+
+### e) Parámetros y selección
+- Frecuencia de recalibración: según drift del equipo; en CT es crítica (rings).
+- Umbrales: detectar saturación, clamp, o denominadores pequeños.
+
+### f) Complejidad
+Lineal $O(N)$.
+
+### g) Frente a ruido/artefactos
+- Reduce fixed-pattern noise; mejora uniformidad.
+- Si $F$ está contaminado (scatter/estructura), introduce shading.
+
+### h) Riesgos
+- Reusar calibraciones antiguas tras mantenimiento → rings/banding.
+- No registrar versión de calibración → no trazabilidad.
+
+### i) Recomendaciones
+RX y CT: obligatorio. MRI: calibración análoga existe (coil sensitivity, B0/B1 maps) pero distinta.
+
+---
+
+## 5.5 M5 — Corrección de beam hardening (BH)
+
+### a) Definición y objetivo
+Compensar la no linealidad por polienergía para reducir:
+- cupping,
+- streaks entre materiales densos,
+- sesgos en HU.
+
+### b) Supuestos
+- Material dominante aproximable (agua-equivalente) o se dispone de multi-material.
+- Relación medible entre espesor equivalente y señal.
+
+### c) Matemática esencial (enfoque de pre-corrección)
+Modelo empírico:
+$$
+p_{\text{corr}} = p + \sum_{k=2}^{K} a_k p^k
+$$
+donde $a_k$ se calibra con phantom de espesores conocidos (agua/aluminio).
+
+Enfoque físico (dos materiales):
+$$
+p \approx \mathcal{F}(t_1,t_2), \quad \text{invertir para obtener } t_1,t_2
+$$
+
+### d) Algoritmo + pseudocódigo
+```pseudo
+Calibration:
+  Acquire projections through known thicknesses (phantom)
+  Fit polynomial mapping p -> p_corr (or table lookup)
+
+Application:
+  For each ray measurement p:
+    p_corr = apply_mapping(p)
+  Reconstruct using corrected sinogram
+```
+
+### e) Parámetros
+- Orden K (2–4 suele bastar).
+- Phantom/materiales de calibración (agua-equivalente, Al, etc.).
+
+### f) Complejidad
+Lineal $O(N)$.
+
+### g) Ruido/artefactos
+- Reduce cupping; puede aumentar ruido si la corrección amplifica regiones de baja señal.
+
+### h) Riesgos
+- Calibrar con un espectro y operar con otro (kVp/filtración distinta).
+- Ignorar presencia de contraste iodado/metal → corrección incompleta.
+
+### i) Recomendaciones
+CT: muy relevante. RX: útil si se busca cuantificación/consistencia, menos crítico que en CT.
+
+---
+
+## 5.6 M6 — Corrección de scatter
+
+### a) Definición y objetivo
+Estimar y sustraer/compensar $I_s$ para recuperar contraste y cuantificación.
+
+### b) Supuestos
+- Scatter varía lentamente (baja frecuencia) respecto a primaria.
+- Grid reduce scatter pero no lo elimina.
+
+### c) Matemática esencial
+Modelo aditivo:
+$$
+I = I_p + I_s, \quad \hat{I}_p = I - \hat{I}_s
+$$
+Modelos de $\hat{I}_s$:
+- kernel-based: $\hat{I}_s = (I \ast k)$ con $k$ ancho dependiente de espesor/campo,
+- modelos físicos simplificados,
+- mediciones con beam-stop arrays (referencia experimental).
+
+### d) Algoritmo (kernel-based) + pseudocódigo
+```pseudo
+Estimate low-frequency scatter:
+  smooth = lowpass_filter(I, large_kernel)
+  Is_hat = alpha * smooth   # alpha calibrated by phantom or grid ratio
+Primary_hat = max(I - Is_hat, epsilon)
+Proceed with log-transform / reconstruction
+```
+
+### e) Parámetros
+- Tamaño kernel (relacionado con tamaño campo y espesor).
+- Factor alpha (calibración).
+
+### f) Complejidad
+Convolución $O(N)$ (o $N\log N$ por FFT si kernel grande).
+
+### g) Ruido/artefactos
+- Mejora CNR; puede introducir “overcorrection” (fondo negativo) si mal calibrado.
+
+### h) Riesgos
+- En CT, scatter angularmente dependiente y colimación dinámica → modelo simple puede fallar.
+- En RX portátil sin grid: scatter dominante → se requiere cuidado extremo.
+
+### i) Recomendaciones
+RX: crítico en abdomen/portátil. CT: crítico en CBCT y pacientes grandes; en MDCT el sistema incluye correcciones propietarias.
+
+---
+
+## 5.7 M7 — CT por Filtered Backprojection (FBP) en fan-beam/helicoidal
+
+### a) Definición y objetivo
+Reconstrucción analítica rápida basada en inversión de Radon (o aproximación fan-beam), usando filtrado en frecuencia y retroproyección.
+
+### b) Supuestos
+- Datos suficientemente completos y calibrados.
+- Modelo aproximadamente monoenergético y scatter corregido.
+- Ruido moderado; FBP es sensible a baja dosis.
+
+### c) Matemática esencial (2D paralelo para intuición)
+$$
+\hat{\mu}(x,y) = \int_0^\pi \left( p(\theta, s) \ast h_{\text{rampa}}(s) \right)\Big|_{s=x\cos\theta + y\sin\theta}\, d\theta
+$$
+El filtro “rampa” se suele apodizar (Shepp-Logan, Hamming, Hann) para controlar ruido.
+
+### d) Algoritmo + pseudocódigo
+```pseudo
+Input: sinogram p(theta, s)
+For each theta:
+  pf = filter_1D(p(theta, :), ramp * window)
+Backproject:
+  For each voxel (x,y):
+    sum over theta of pf(theta, s=x cos theta + y sin theta)
+Return mu_hat
+```
+
+### e) Parámetros
+- Tipo de ventana (trade-off resolución/ruido).
+- Paso angular y muestreo detector.
+
+### f) Complejidad
+$O(N_{\theta} N_{\text{pix}})$ (acelerable con GPU).
+
+### g) Ruido/artefactos
+- Amplifica altas frecuencias → ruido granular a baja dosis.
+- Streaks por metal y errores de calibración.
+
+### h) Riesgos
+- Ajustar ventana para “hacerla ver bien” sin controlar detectabilidad.
+- Confundir suavizado con mejora real.
+
+### i) Recomendaciones
+FBP como referencia QA; para baja dosis, preferir iterativa/MBIR.
+
+---
+
+## 5.8 M8 — Cone-Beam CT por Feldkamp–Davis–Kress (FDK)
+
+### a) Definición y objetivo
+Extensión práctica de FBP a geometría cone-beam circular (CBCT), con ponderación geométrica + filtrado + backprojection 3D.
+
+### b) Supuestos
+- Trayectoria circular; ángulo de cono moderado.
+- Correcciones de scatter/BH adecuadas.
+
+### c) Matemática esencial (conceptual)
+FDK aplica:
+1) ponderación por distancia,
+2) filtrado 1D tipo rampa en detector,
+3) retroproyección 3D.
+
+### d) Pseudocódigo
+```pseudo
+For each projection angle theta:
+  weight projection by geometry
+  filter along detector u direction (ramp*window)
+Backproject into volume with cone-beam geometry mapping
+Return volume
+```
+
+### e) Parámetros
+- Ventana de filtrado, voxel size, truncation handling.
+
+### f) Complejidad
+Alta; típicamente GPU.
+
+### g) Ruido/artefactos
+- Sensible a scatter → capping.
+- Artefactos por cono (incompletitud) si geometría no cumple condiciones.
+
+### h) Riesgos
+- Usar FDK sin corrección de scatter en CBCT abdominal → cuantificación pobre.
+
+### i) Recomendaciones
+CBCT: usar FDK como base; para cuantificación o baja dosis severa, considerar iterativa (M9–M10).
+
+---
+
+## 5.9 M9 — Reconstrucción iterativa algebraica (ART/SIRT/SART)
+
+### a) Definición y objetivo
+Resolver $\mathbf{A}\mathbf{x} \approx \mathbf{b}$ donde:
+- $\mathbf{x}$: voxeles de atenuación,
+- $\mathbf{b}$: sinograma,
+- $\mathbf{A}$: operador de proyección (forward).
+
+Objetivo: manejar datos incompletos (pocos ángulos), imponer restricciones simples (no negatividad), y mejorar robustez.
+
+### b) Supuestos
+- Modelo linealizado (post-log), scatter/BH suficientemente corregidos.
+- Proyector y backproyector consistentes.
+
+### c) Matemática esencial
+ART (Kaczmarz):
+$$
+\mathbf{x}^{k+1} = \mathbf{x}^k + \lambda \frac{b_i - \langle \mathbf{a}_i,\mathbf{x}^k\rangle}{\|\mathbf{a}_i\|^2}\mathbf{a}_i
+$$
+SIRT actualiza promediando sobre todas las ecuaciones.
+
+### d) Pseudocódigo
+```pseudo
+Initialize x = 0
+For iter = 1..K:
+  For each ray i:
+    r = b[i] - dot(A[i], x)
+    x = x + lambda * r / norm(A[i])^2 * A[i]^T
+  Enforce constraints: x = max(x, 0)
+Return x
+```
+
+### e) Parámetros
+- $\lambda$ (relajación), número de iteraciones K, regularización simple.
+
+### f) Complejidad
+Costosa: múltiples forward/backprojections.
+
+### g) Ruido/artefactos
+- Puede reducir streaks por incompletitud, pero si no hay regularización, amplifica ruido.
+
+### h) Riesgos
+- Convergencia lenta; dependencia fuerte de proyector.
+- Overfitting al ruido si K grande.
+
+### i) Recomendaciones
+Útil en CBCT y pocos ángulos; en CT diagnóstico moderno se prefiere PL/MBIR (M10).
+
+---
+
+## 5.10 M10 — Reconstrucción iterativa estadística / MBIR (MAP / Penalized Likelihood) + regularización (TV/Huber)
+
+### a) Definición y objetivo
+Modelar estadísticamente la medición (Poisson + electrónica) y estimar $\mathbf{x}$ resolviendo:
+
+$$
+\hat{\mathbf{x}} = \arg\min_{\mathbf{x}\ge 0}\ \underbrace{D(\mathbf{y}\,\|\,\mathbf{g}(\mathbf{x}))}_{\text{fidelidad a datos}} + \beta\, R(\mathbf{x})
+$$
+
+- $D$: discrepancia (p.ej., negativa log-verosimilitud Poisson)
+- $\mathbf{g}(\mathbf{x})$: forward model (incluye $\exp(-A x)$)
+- $R(\mathbf{x})$: regularización (suavidad, bordes, sparsity)
+
+**Objetivo:** mejor calidad a **baja dosis**, menos ruido, control de artefactos.
+
+### b) Supuestos
+- Forward model adecuado (al menos monoenergético en dominio log, o mejor).
+- Parámetro $\beta$ calibrable por tarea clínica.
+
+### c) Matemática esencial
+Ejemplo (en dominio post-log linealizado):
+$$
+\min_x \frac{1}{2}\|W(Ax-b)\|^2 + \beta R(x)
+$$
+- $W$: pesos (inversa de varianza aproximada).
+
+Regularización TV (total variation):
+$$
+R_{\text{TV}}(x)=\sum_{j}\|\nabla x_j\|
+$$
+
+Huber / edge-preserving:
+penaliza poco gradientes grandes (bordes), más gradientes pequeños (ruido).
+
+### d) Pseudocódigo (esquema proximal)
+```pseudo
+Initialize x
+For k = 1..K:
+  grad_data = A^T * W^T * W * (A x - b)
+  x_temp = x - alpha * grad_data
+  x = prox_{alpha*beta*R}(x_temp)   # e.g., TV denoise step
+  x = max(x, 0)
+Return x
+```
+
+### e) Parámetros
+- $\beta$: controla suavizado vs detalle; depende de dosis y tarea.
+- Iteraciones K, paso $\alpha$, tipo de regularizador.
+
+Selección práctica:
+- Calibrar con phantom + evaluación clínica; evitar escoger por “me gusta cómo se ve”.
+
+### f) Complejidad
+Alta (iteraciones + proyecciones); GPU ayuda, pero CPU puede servir con K moderado.
+
+### g) Ruido/artefactos
+- Reduce ruido y streaks; riesgo de “plastic look” o pérdida de microdetalle.
+- TV puede introducir textura artificial (staircasing).
+
+### h) Riesgos
+- Sobre-regularización → pérdida de lesiones sutiles.
+- Sub-regularización → ruido residual como FBP.
+- Ajuste inestable entre protocolos/poblaciones.
+
+### i) Recomendaciones
+CT baja dosis: preferible. RX: conceptos aplican a deconvolución/denoising, pero no es “recon” 3D.
+
+---
+
+## 5.11 M11 — Metal Artifact Reduction (MAR)
+
+### a) Definición y objetivo
+Reducir streaks por metal (implantes) debidos a:
+- atenuación extrema (photon starvation),
+- beam hardening severo,
+- scatter y no linealidades.
+
+### b) Supuestos
+- Metal identificable (segmentación inicial).
+- Se acepta reconstrucción híbrida (analítica + correcciones).
+
+### c) Matemática esencial
+En sinograma, el metal corrompe regiones específicas. Estrategias:
+- **inpainting** del sinograma (interpolación en zonas corruptas),
+- reproyección iterativa con máscara de metal,
+- modelos polienergéticos (más robustos).
+
+### d) Algoritmo (sinogram inpainting) + pseudocódigo
+```pseudo
+1) Reconstruct preliminary volume (FBP)
+2) Segment metal -> mask M
+3) Forward project M to identify corrupted sinogram bins
+4) Replace corrupted bins by interpolation from neighbors (inpainting)
+5) Reconstruct corrected sinogram (FBP or iterative)
+6) Optionally blend with original to preserve non-metal details
+```
+
+### e) Parámetros
+- Umbral/criterio de metal, método de inpainting, blending.
+
+### f) Complejidad
+Moderada–alta (requiere forward projection adicional).
+
+### g) Ruido/artefactos
+- Reduce streaks; puede introducir nuevos artefactos cerca del metal (pérdida de detalle o sesgo).
+
+### h) Riesgos
+- Segmentación errónea (confundir contraste denso con metal).
+- “Sobre-corrección” que borra información adyacente.
+
+### i) Recomendaciones
+CT ortopédico/odontológico/intervencionista: muy útil; validar con casos reales y phantom.
+
+---
+
+## 5.12 M12 — Reducción de ruido y preservación de bordes (sinograma/imagen)
+
+### a) Definición y objetivo
+Disminuir ruido (especialmente en baja dosis) preservando bordes relevantes.
+
+### b) Supuestos
+- Ruido aproximadamente Poisson-Gauss (mixto).
+- Bordes clínicos importantes (vasos, nódulos, cortical ósea).
+
+### c) Matemática esencial
+Filtros en imagen:
+- bilateral / anisotropic diffusion (edge-preserving),
+- non-local means (NLM),
+- wavelet shrinkage.
+
+En sinograma:
+- suavizado adaptativo por varianza (respetando estructura angular).
+
+### d) Pseudocódigo (bilateral conceptual)
+```pseudo
+For each pixel i:
+  weighted_sum = 0; norm = 0
+  For j in neighborhood(i):
+    w = exp( -||pos_i - pos_j||^2 / (2*sigma_s^2) ) *
+        exp( -||I_i - I_j||^2 / (2*sigma_r^2) )
+    weighted_sum += w * I_j
+    norm += w
+  I_out[i] = weighted_sum / norm
+```
+
+### e) Parámetros
+- $\sigma_s$ (espacial), $\sigma_r$ (radiométrico).
+- En wavelets: umbral (global o por subbanda).
+
+### f) Complejidad
+Bilateral/NLM pueden ser costosos; optimizaciones o aproximaciones son habituales.
+
+### g) Ruido/artefactos
+- Puede suavizar microcalcificaciones o bordes finos si mal parametrizado.
+
+### h) Riesgos
+- “Textura sintética” o pérdida de granularidad útil para percepción diagnóstica.
+- Filtrar después de reconstrucción puede no corregir artefactos estructurados.
+
+### i) Recomendaciones
+Preferir integrar regularización en reconstrucción (M10) para CT; en RX, filtrar con criterios de detectabilidad, no estética.
+
+---
+
+## 5.13 M13 — Reconstrucción basada en Deep Learning (DL), con control de física
+
+### a) Definición y objetivo
+Usar redes (denoising, super-res, recon directa, unrolled) para mejorar calidad o acelerar reconstrucción, manteniendo control sobre:
+- fidelidad a datos,
+- generalización,
+- seguridad clínica.
+
+### b) Supuestos
+- Dataset representativo y etiquetado/pareado (o auto-supervisión).
+- Validación externa y monitoreo post-despliegue.
+
+### c) Matemática esencial (unrolled / physics-informed)
+Desenrollar K iteraciones de un método tipo proximal:
+
+$$
+x^{k+1} = \mathcal{D}_{\theta_k}\left(x^k - \alpha_k A^T(Ax^k-b)\right)
+$$
+
+donde $\mathcal{D}_{\theta_k}$ es un “denoiser” aprendido. Esto preserva el vínculo con el modelo físico.
+
+### d) Pseudocódigo
+```pseudo
+Initialize x0 (e.g., FBP)
+For k = 1..K:
+  xk = xk - alpha_k * A^T(A xk - b)      # data consistency
+  xk = DenoiserNet_k(xk)                 # learned prior
+Return xK
+```
+
+### e) Parámetros
+- K (profundidad), pesos de consistencia, estrategia de entrenamiento, métricas de validación por tarea.
+
+### f) Complejidad
+Entrenamiento alto; inferencia moderada (GPU preferida).
+
+### g) Ruido/artefactos
+- Excelente reducción de ruido; riesgo de **hallazgos falsos** (alucinación) o supresión de lesiones.
+
+### h) Riesgos (red flags)
+- Validar solo con PSNR/SSIM: insuficiente para clínica.
+- Cambios de dominio (otro hospital/protocolo) → fallas silenciosas.
+- “Imágenes demasiado limpias” sin granularidad esperada.
+
+### i) Recomendaciones
+Usar DL preferiblemente en esquemas con consistencia física (unrolled) y con QA fuerte; limitar uso en hallazgos sutiles hasta robustecer evidencia.
+
+---
+
+# 6) Artefactos y fallas típicas (con red flags)
+
+## 6.1 RX
+- **Scatter residual:** “velo” y pérdida de contraste; red flag: imagen con fondo elevado y bordes lavados.
+- **Grid artifacts / moiré:** patrón periódico; red flag: bandas regulares.
+- **Motion blur:** bordes dobles; red flag: estructuras duplicadas.
+- **Saturación / clipping:** blancos planos o negros planos; red flag: histograma recortado.
+- **Aliasing:** patrones falsos en alta frecuencia (rejillas finas, estructuras repetitivas).
+
+## 6.2 CT
+- **Streaks por metal:** líneas radiadas; causa: photon starvation + BH.
+- **Beam hardening / cupping:** centro “más oscuro” en objetos homogéneos.
+- **Ring artifacts:** anillos concéntricos; causa: mala calibración/ganancia detector.
+- **Partial volume:** bordes borrosos y HU intermedios en voxeles mixtos.
+- **Cone-beam artifacts:** en CBCT por incompletitud.
+
+## 6.3 MRI (contexto)
+- **Motion/ghosting**, **susceptibilidad**, **chemical shift**, **Gibbs**, **wrap-around**.
+
+---
+
+# 7) Calidad de imagen y evaluación cuantitativa
+
+## 7.1 Métricas
+
+### 7.1.1 SNR y CNR
+Para ROI señal $S$ y fondo $B$:
+$$
+SNR = \frac{\mu_S}{\sigma_S},\qquad
+CNR = \frac{|\mu_S - \mu_B|}{\sigma_B}
+$$
+
+### 7.1.2 MTF, NPS, DQE
+- MTF: resolución (frecuencia espacial).
+- NPS: textura del ruido.
+- DQE: eficiencia global vs dosis (condiciones estandarizadas).
+
+### 7.1.3 Detectabilidad ($d'$) (noción)
+En análisis ideal-observer, $d'$ depende de contraste, MTF y NPS; útil como guía para tareas.
+
+## 7.2 Protocolos con phantoms (configuraciones típicas)
+
+**Figura 7: Esquema de evaluación RX (phantom uniforme + borde + patrón).**
+- ROI uniformes (NPS/SNR), borde inclinado (MTF), objetos de contraste (CNR).
+
+**Figura 8: Esquema de QA CT (phantom tipo ACR/Catphan).**
+- Módulos: uniformidad, resolución alta, bajo contraste, números CT, geometría.
+
+> Nota: seguir guías institucionales (ACR/IEC/AAPM/IAEA) y el manual del fabricante del phantom.
+
+## 7.3 Diseño de experimento (repetibilidad y sesgo)
+- Repetir adquisiciones (n≥10 ideal para estimar varianza).
+- Controlar temperatura y estado del detector.
+- Reportar intervalos de confianza (bootstrap si no normalidad).
+- Definir tamaño de efecto clínicamente relevante (no solo estadísticamente significativo).
+
+---
+
+# 8) Dosis y seguridad
+
+## 8.1 RX/CT: indicadores y trade-offs
+- RX: kerma en aire, ESAK, índices operacionales del equipo; foco en ALARA.
+- CT: **CTDIvol** y **DLP** como indicadores operacionales; relacionarlos con protocolo y paciente.
+
+**Trade-off:** bajar dosis aumenta ruido; se compensa con recon iterativa/regularización, pero con riesgo de pérdida de detalle.
+
+## 8.2 MRI (contexto)
+- SAR, límites de gradiente, seguridad de implantes y calentamiento.
+
+## 8.3 Riesgos operativos y mitigaciones (checklist)
+- Verificación de protocolos pediátricos.
+- Alertas por EI fuera de rango (evitar “dose creep”).
+- Bloqueo de técnicas no validadas (post-mantenimiento).
+- Auditoría periódica de drift de HU y uniformidad.
+
+---
+
+# 9) Recomendaciones de implementación (pipeline y QA)
+
+## 9.1 Pipeline sugerido — RX
+**Figura 9: Pipeline RX recomendado.**
+Adquisición cruda → dark/flat (M4) → estimación scatter (M6) → log/normalización → corrección shading → realce controlado (M12) → métricas/registro EI → almacenamiento.
+
+## 9.2 Pipeline sugerido — CT
+**Figura 10: Pipeline CT recomendado.**
+Cuentas crudas → dark/air (M4) → log → BH (M5) + scatter (M6) → detección metal (si aplica) (M11) → reconstrucción (FBP M7 / MBIR M10) → posproceso (ventana, kernels) → QA HU/uniformidad/artefactos.
+
+## 9.3 Checklist de validación
+- **Calibración:** dark/flat/air vigente, verificación de saturación.
+- **Geométrico:** centrado, colimación, SID/SOD correctos.
+- **Métricas:** MTF/NPS (o equivalentes), uniformidad.
+- **CT:** agua/aire HU, rings, uniformidad, resolución, bajo contraste.
+- **Trazabilidad:** protocolo, kVp/mAs, filtración, recon kernel, versión SW, fecha de calibración.
+
+---
+
+# 10) Casos de uso y guía de selección
+
+## 10.1 Matriz de decisión (objetivo clínico → método)
+
+| Objetivo | RX | CT |
+|---|---|---|
+| Reducir dosis manteniendo detectabilidad | Control EI + M12 conservador | M10 (MBIR) + evaluación d'/phantom |
+| Minimizar scatter (portátil/abdomen) | M6 + uso apropiado de grid | M6 (especialmente CBCT) |
+| Estabilidad cuantitativa | M1–M4 | M4 + M5 + control HU |
+| Metal/implantes | — | M11 + (M10 si baja dosis) |
+| Pocos ángulos / tiempo real | — | M9 (si limitado) o DL (M13) con consistencia |
+
+## 10.2 Reglas rápidas “Si tu objetivo es X, usa Y”
+- **Si** hay cupping/HU inestables → revisar M4 y aplicar M5 con calibración correcta.
+- **Si** el contraste está “lavado” en RX → priorizar M6 y revisar uso de grid/colimación.
+- **Si** baja dosis en CT genera ruido inaceptable → M10 antes que suavizar agresivamente.
+- **Si** hay rings → casi siempre es M4 (calibración detector) antes que “filtrar”.
+
+---
+
+# 11) Conclusiones
+
+1) El desempeño clínico en RX/CT se explica mejor con un **modelo forward polienergético** (M1) acoplado a un **modelo realista de detector** (M2) y un modelo end-to-end de formación (M3).
+2) La **calibración** (M4) es el punto más costo-efectivo para prevenir fallas recurrentes (rings, banding, drift).
+3) En CT, FBP (M7) es base y referencia QA, pero para baja dosis y robustez los métodos **iterativos/MBIR** (M10) ofrecen ventajas claras si se controlan parámetros y se valida por tarea.
+4) Correcciones de **beam hardening** (M5) y **scatter** (M6) son determinantes para cuantificación y para evitar artefactos estructurados.
+5) IA (M13) aporta valor cuando se integra con consistencia física y QA fuerte; sin ello, aumenta el riesgo de sesgos y hallazgos no reales.
+
+---
+
+# 12) Referencias (formato IEEE, selección mínima ≥ 25)
+
+> Nota: Algunas normas IEC/ACR son de acceso restringido; se citan por identificador. Para implementación/QA se recomienda adquirir la versión vigente aplicable al país y al equipo.
+
+[1] J. T. Bushberg, J. A. Seibert, E. M. Leidholdt Jr., and J. M. Boone, *The Essential Physics of Medical Imaging*, 3rd ed. Lippincott Williams & Wilkins, 2012.
+[2] E. Samei and M. J. Flynn (eds.), *Handbook of Medical Imaging: Physics and Psychophysics*. SPIE Press, 2000–2002.
+[3] W. R. Hendee and E. R. Ritenour, *Medical Imaging Physics*, 4th ed. Wiley-Liss, 2002.
+[4] M. Buzug, *Computed Tomography: From Photon Statistics to Modern Cone-Beam CT*. Springer, 2008.
+[5] J. Hsieh, *Computed Tomography: Principles, Design, Artifacts, and Recent Advances*, 3rd ed. SPIE Press, 2015.
+[6] A. C. Kak and M. Slaney, *Principles of Computerized Tomographic Imaging*. SIAM, 2001.
+[7] F. Natterer, *The Mathematics of Computerized Tomography*. SIAM, 2001.
+[8] H. H. Barrett and K. J. Myers, *Foundations of Image Science*. Wiley, 2004.
+[9] ICRU, “Tissue Substitutes in Radiation Dosimetry and Measurement,” ICRU Report 44, 1989.
+[10] ICRP, “Radiological Protection in Medicine,” ICRP Publication 105, 2007.
+[11] AAPM, “An Exposure Indicator for Digital Radiography,” AAPM Report No. 116, 2009.
+[12] IEC, “Medical electrical equipment—Exposure index of digital X-ray imaging systems—Part 1: Definitions and requirements for general radiography,” IEC 62494-1.
+[13] IEC, “Medical electrical equipment—Characteristics of digital X-ray imaging devices—Part 1-1: Determination of the detective quantum efficiency (DQE) of digital X-ray detectors used in radiographic imaging,” IEC 62220-1-1.
+[14] IEC, “Medical electrical equipment—Part 2-44: Particular requirements for the basic safety and essential performance of X-ray equipment for computed tomography,” IEC 60601-2-44.
+[15] ACR, “CT Accreditation Program: Phantom and QC Guidance (ACR CT Phantom).” American College of Radiology, (documentación técnica).
+[16] E. A. Krupinski, “Current perspectives in medical image perception,” *Atten. Percept. Psychophys.*, vol. 72, pp. 1205–1217, 2010.
+[17] H. Kundel, “History of medical imaging perception research,” *Radiology*, vol. 258, pp. 1–8, 2011.
+[18] L. A. Feldkamp, L. C. Davis, and J. W. Kress, “Practical cone-beam algorithm,” *J. Opt. Soc. Am. A*, vol. 1, no. 6, pp. 612–619, 1984.
+[19] K. Sauer and C. Bouman, “A local update strategy for iterative reconstruction,” *IEEE Trans. Signal Process.*, vol. 41, no. 2, pp. 534–548, 1993.
+[20] J. Fessler, “Statistical image reconstruction methods for transmission tomography,” *Handbook of Medical Imaging*, SPIE, 2000.
+[21] S. Boyd et al., “Distributed optimization and statistical learning via the alternating direction method of multipliers,” *Found. Trends Mach. Learn.*, 2011.
+[22] L. Rudin, S. Osher, and E. Fatemi, “Nonlinear total variation based noise removal algorithms,” *Physica D*, 1992.
+[23] K. Thibault et al., “A three-dimensional statistical approach to improved image quality for multislice helical CT,” (MBIR concepts), *Med. Phys.*, 2007.
+[24] G. Wang, “A perspective on deep imaging,” *IEEE Access*, 2016.
+[25] K. Hammernik et al., “Learning a variational network for reconstruction of accelerated MRI data,” *Magn. Reson. Med.*, 2018. (referencia conceptual a unrolled; extrapolable por analogía)
+[26] J. Adler and O. Öktem, “Learned primal-dual reconstruction,” *IEEE Trans. Med. Imaging*, 2018.
+[27] C. McCollough et al., “CT dose index and patient dose considerations,” (revisiones AAPM/IAEA varias), *Radiology/Med. Phys.*, (lecturas recomendadas).
+[28] IAEA, “Diagnostic Radiology Physics: A Handbook for Teachers and Students.” International Atomic Energy Agency, training material.
+[29] NCRP, “Radiation Protection in Dentistry and Diagnostic Radiology,” (reportes y guías), National Council on Radiation Protection and Measurements.
+[30] EANM, “Quality Control in CT (technical guidance),” European Association of Nuclear Medicine, (guía técnica de QC; aplicable como referencia general).
+
+---
+
+## Anexo A — Plantilla de trazabilidad mínima (recomendado)
+- Equipo / modelo / versión SW
+- Protocolo (kVp, mAs, colimación, pitch, kernel, recon type)
+- Fecha/hora, operador
+- Calibración (dark/flat/air) versión y fecha
+- Indicadores dosis (CTDIvol/DLP)
+- EI (RX) y exposición estimada
+- Observaciones de artefactos y acciones correctivas
+
+## Cómo generar el PDF con Quarto (orientativo)
+1) Guardar este archivo como `reporte_rx_ct.qmd`
+2) Ejecutar: `quarto render reporte_rx_ct.qmd --to pdf`
+
+
+

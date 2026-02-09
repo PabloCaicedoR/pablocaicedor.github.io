@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -30,3 +30,255 @@ resources:
 ---
 
 # Procesado Avanzado de Imágenes Médicas - PAIM
+
+## Introducción: El Sistema de Comunicación
+La adquisición de imágenes por rayos X (RX) y tomografía computarizada (CT) puede modelarse como un **sistema de transferencia de información** donde el haz de fotones actúa como portador, el paciente como canal modulador y el detector como transductor.
+
+La calidad diagnóstica final depende de la integridad de cada eslabón en la cadena de procesamiento.
+
+---
+
+## 1. Formación del Haz y Geometría
+La calidad de la fuente define el límite superior de la resolución espacial y la SNR inicial.
+
+* **Filtración:** Endurecimiento del haz para reducir la dosis en piel y artefactos de baja energía.
+* **Geometría:** El tamaño de la mancha focal ($f$) induce una penumbra ($\sigma$):
+    $$\text{Penumbra} = f \cdot \frac{d_{p-d}}{d_{s-p}}$$
+* **Dispersión:** Controlada mediante colimadores para limitar el volumen irradiado.
+
+A continuación, presento la estructura de las diapositivas en Quarto utilizando un enfoque didáctico simplificado, pero manteniendo el rigor de las relaciones físicas fundamentales.
+
+## 1. El Tubo: Una Máquina de Colisiones
+Imagine un acelerador de partículas en miniatura:
+
+* **Cátodo:** Un filamento que se calienta para soltar electrones (como corredores en la línea de salida).
+* **Voltaje ($kVp$):** El "empujón" eléctrico. A mayor voltaje, los electrones corren más rápido.
+* **Ánodo:** El muro de metal donde los electrones chocan violentamente.
+
+---
+
+## El Proceso de Generación
+
+```{mermaid}
+graph LR
+    A[Electrones Libres] --> B{Aceleración kVp}
+    B --> C[Choque en el Ánodo]
+    C --> D[Rayos X 1%]
+    C --> E[Calor 99%]
+```
+
+---
+
+## 2. ¿Cómo se crea el Rayo X?
+Ocurren dos fenómenos en el "muro" (ánodo):
+
+1.  **El Frenazo (*Bremsstrahlung*):** El electrón frena bruscamente al pasar cerca de un átomo. La energía que pierde al frenar sale como un fotón.
+2.  **El Choque Directo:** El electrón golpea a otro electrón del átomo y lo expulsa. Al reordenarse, el átomo libera energía muy específica.
+
+---
+
+## 3. El Material del Ánodo ($Z$)
+El **Número Atómico ($Z$)** representa qué tan "denso" es el muro de átomos.
+
+* Si el muro es de **Tungsteno ($Z=74$)**, hay muchos obstáculos y los electrones chocan con más fuerza.
+* **Resultado:** Producimos muchos más rayos X que si usáramos un metal ligero.
+
+---
+
+## 4. La Mezcla de Energías $I(E)$
+Los rayos X no son todos iguales; salen en una "mezcla":
+
+* **Baja Energía:** No atraviesan al paciente, solo dañan la piel.
+* **Alta Energía:** Son los útiles para ver los huesos.
+
+**La Filtración:** Colocamos una lámina de metal (Aluminio) para "limpiar" la mezcla y dejar pasar solo los rayos fuertes.
+
+---
+
+## 5. La Penumbra: El Problema del Tamaño
+¿Por qué algunas radiografías se ven borrosas?
+
+* Si el punto de choque en el ánodo es **grande**, las sombras tienen bordes difusos.
+* **Matemáticamente:** $P = f \cdot \frac{d_{OD}}{d_{SO}}$
+* Para una imagen nítida, necesitamos que el foco ($f$) sea lo más pequeño posible.
+
+---
+
+## 6. SNR: ¿Por qué la imagen se ve con "grano"?
+La **Relación Señal-Ruido (SNR)** es la limpieza de la imagen.
+
+* **Poca radiación:** La imagen se ve granulada (como una foto de noche).
+* **Mucha radiación:** La imagen es clara, pero el paciente recibe más dosis.
+* **Límite físico:** $SNR \approx \sqrt{N}$ (donde $N$ es el número de fotones).
+
+---
+
+## Resumen de la Cadena
+Para obtener una buena imagen necesitamos:
+
+1.  Suficiente fuerza ($kVp$).
+2.  Un muro denso (alto $Z$).
+3.  Un filtro que limpie la mezcla ($I(E)$).
+4.  Un punto de choque pequeño para evitar la **penumbra**.
+5.  Suficientes fotones para una buena **SNR**.
+
+---
+
+## 2. Interacción con el Paciente
+El paciente actúa como un filtro espacialmente variante definido por $\mu(x, y, z, E)$.
+
+* **Atenuación:** Regida por la ley de Beer-Lambert (para haces monocromáticos):
+    $$I = I_0 e^{-\int \mu(l) dl}$$
+* **Efecto Compton:** Principal fuente de *scatter*, reduciendo el contraste de la señal primaria.
+* **Atenuación Polienergética:** Provoca el *beam hardening*, ya que $\mu$ decrece con el aumento de $E$.
+
+---
+
+## Flujo de la Cadena Física-Digital
+
+```{mermaid}
+graph LR
+    A[Generación Haz] --> B[Interacción Paciente]
+    B --> C[Detección Fotónica]
+    C --> D[Digitalización ADC]
+    D --> E[Procesamiento/Recon]
+    E --> F[Visualización]
+```
+
+---
+
+## 3. Respuesta del Detector
+El detector es el componente más crítico en la degradación de la resolución espacial y el ruido.
+
+* **MTF (Modulation Transfer Function):** Define la respuesta en frecuencia espacial.
+* **DQE (Detective Quantum Efficiency):**
+    $$DQE(f) = \frac{SNR_{out}^2(f)}{SNR_{in}^2(f)}$$
+* **Factores Limitantes:** *Lag* de fósforo, ruido electrónico y saturación del rango dinámico.
+
+---
+
+## 4. Digitalización y Cuantización
+Transformación de la señal analógica continua en un dominio discreto.
+
+* **ADC:** Conversión de corriente/voltaje a niveles digitales.
+* **Bit-depth:** Define la resolución en contraste. Generalmente 12-16 bits.
+* **Ruido de Cuantización:** Si el paso de cuantización $q$ es grande:
+    $$\sigma_q^2 = \frac{q^2}{12}$$
+
+---
+
+## 5. Calibración y Datos Crudos
+Antes de la reconstrucción, los datos deben normalizarse.
+
+1.  **Dark Current:** Corrección de la señal térmica sin exposición.
+2.  **Flat-field:** Compensación de la sensibilidad no uniforme entre píxeles.
+3.  **Beam Hardening Correction:** Modelado matemático para linealizar el sinograma respecto al espesor del material.
+
+---
+
+## 6. Reconstrucción de la Imagen
+En CT, se resuelve el problema inverso de la Transformada de Radon.
+
+* **FBP (Filtered Back Projection):** Implementación eficiente en frecuencia:
+    $$\hat{f}(x,y) = \int_0^\pi [p(\cdot, \theta) * k] d\theta$$
+* **Iterativa (MBIR):** Optimización de una función de costo estocástica. Es superior en presencia de ruido y dosis bajas, pero computacionalmente costosa.
+
+---
+
+## 7. Posproceso y Visualización
+Mapeo de la profundidad de bits del detector a la capacidad del sistema visual humano.
+
+* **Escala Hounsfield:**
+    $$HU = 1000 \times \frac{\mu_x - \mu_{w}}{\mu_{w} - \mu_{a}}$$
+* **Windowing:** Selección de *Window Level* (WL) y *Window Width* (WW) para resaltar estructuras específicas (hueso vs. parénquima).
+
+---
+
+## 8. QA y Validación
+Cierre del lazo de control de calidad.
+
+* **Phantoms:** Evaluación de linealidad, resolución de bajo contraste y espesor de corte.
+* **Métricas de Dosis:** CTDIvol y DLP para cumplimiento del principio ALARA.
+* **Estabilidad Temporal:** Seguimiento de la deriva del detector y calibración del tubo.
+
+---
+
+## Conclusión
+La optimización de la calidad diagnóstica no puede realizarse de forma aislada. La integración de **IA Confiable** y **IA Causal** en las etapas 5 (calibración) y 6 (reconstrucción) es el paradigma actual para minimizar la dosis sin comprometer la interpretabilidad clínica.
+
+## Codigo
+
+```{python}
+# | echo: true
+# | eval: true
+# | output: true
+# | label: codigo001
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter
+from skimage.exposure import rescale_intensity
+
+
+def generate_phantom(size=512):
+    """Genera un fantoma sintético con gradientes y estructuras de alta frecuencia."""
+    image = np.zeros((size, size))
+    # Gradiente para ver cuantización
+    xx, yy = np.mgrid[0:size, 0:size]
+    image = xx / size
+    # Estructuras circulares (baja y alta frecuencia)
+    for i in range(5):
+        r = 20 + i * 15
+        mask = (xx - 150) ** 2 + (yy - 150 - i * 60) ** 2 < r**2
+        image[mask] = 0.8 - (i * 0.1)
+    # Barras de resolución (alta frecuencia)
+    for i in range(10):
+        image[350:450, 200 + i * 20 : 210 + i * 20] = 1.0
+    return image
+
+
+def simulate_mtf(image, sigma):
+    """
+    Simula la degradación por MTF mediante la convolución con una PSF Gaussiana.
+    A mayor sigma, menor frecuencia de corte en la MTF.
+    """
+    return gaussian_filter(image, sigma=sigma)
+
+
+def simulate_quantization(image, bit_depth):
+    """
+    Simula el proceso de cuantización del ADC.
+    """
+    levels = 2**bit_depth - 1
+    quantized = np.round(image * levels) / levels
+    return quantized
+
+
+# --- Parámetros de simulación ---
+sigma_psf = 3.5  # Representa una MTF deficiente
+bits_low = 3  # Cuantización extrema para visualización
+
+# Procesamiento
+original = generate_phantom()
+blurred = simulate_mtf(original, sigma_psf)
+quantized = simulate_quantization(original, bits_low)
+combined = simulate_quantization(blurred, bits_low)
+
+# Visualización
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+titles = [
+    "Original (Ideal - High Bit-depth/MTF)",
+    f"Degradación MTF ($\sigma$={sigma_psf})",
+    f"Cuantización ({bits_low} bits)",
+    "Cadena Combinada (MTF + Cuantización)",
+]
+images = [original, blurred, quantized, combined]
+
+for ax, img, title in zip(axes.ravel(), images, titles):
+    im = ax.imshow(img, cmap="gray", vmin=0, vmax=1)
+    ax.set_title(title, fontsize=12, fontweight="bold")
+    ax.axis("off")
+
+plt.tight_layout()
+plt.show()
+```
