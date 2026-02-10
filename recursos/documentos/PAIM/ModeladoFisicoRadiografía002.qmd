@@ -1,0 +1,1217 @@
+---
+title: "Reporte técnico (extenso): Modelado de atenuación y formación del haz, respuesta de detectores Flat Panel y formación de radiografías (RX) con extensión a CT"
+subtitle: "Enfoque ingenieril y clínico-operativo para adquisición, reconstrucción, QA y seguridad en RX/CT"
+author: "Experto en Procesamiento de Imágenes Médicas"
+date: "2026-01-19"
+format:
+  pdf:
+    pdf-engine: xelatex
+    toc: true
+    number-sections: true
+    colorlinks: true
+    highlight-style: tango
+  html:
+    toc: true
+    code-fold: false
+    theme: cosmo
+
+header-includes:
+  - \usepackage{tikz}
+  - \usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric}
+  - \usepackage{adjustbox}
+  - \usepackage{amsmath,amssymb}
+  - \usepackage{siunitx}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{graphicx}
+  - \usepackage{float}
+  - \usepackage{caption}
+  - \setcapwidth{\linewidth}
+  - \usepackage{microtype}
+  - \usepackage{hyperref}
+  - \sisetup{per-mode=symbol}
+
+---
+
+<!-- ---
+title: "Reporte técnico EXTENSO: Física, dosimetría y “reconstrucción” en Radiografía Digital por Rayos X (RX)"
+subtitle: "Enfoque ingenieril y clínico-operativo (modalidad principal: RX; comparativos: CT/MRI)"
+author: "Rol: Ingeniero biomédico / físico médico senior"
+date: "2026-02-10"
+format:
+  pdf:
+    pdf-engine: xelatex
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    colorlinks: true
+    geometry: margin=2.2cm
+    fontsize: 11pt
+    linestretch: 1.12
+    fig-pos: "H"
+header-includes:
+  - \usepackage{amsmath,amssymb}
+  - \usepackage{siunitx}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{graphicx}
+  - \usepackage{float}
+  - \usepackage{caption}
+  - \usepackage{microtype}
+  - \usepackage{hyperref}
+  - \sisetup{per-mode=symbol}
+--- -->
+
+> **Cómo generar el PDF**: guarde este archivo como `reporte_rx_extenso.qmd` y ejecute:
+> `quarto render reporte_rx_extenso.qmd --to pdf`
+>
+> **Supuestos explícitos (si no se indica lo contrario):**
+> - Sistema RX digital tipo DR (FPD) con AEC disponible; generador convencional 40–150 kVp.
+> - Población mixta (adulto/pediatría); se enfatiza **ALARA** y control de *dose creep*.
+> - Restricciones típicas: **baja dosis cuando sea posible**, flujo clínico rápido, hardware hospitalario estándar (CPU; GPU opcional para algoritmos avanzados).
+> - Nivel matemático: **medio** (se prioriza trazabilidad e interpretación física).
+
+# 1. Resumen ejecutivo (1–2 páginas)
+
+La radiografía (RX) es la modalidad de imagen médica más utilizada por su rapidez, costo-efectividad y disponibilidad. Su esencia física es simple de enunciar pero compleja de controlar: un **haz policromático** de fotones X atraviesa un paciente, se atenúa y se dispersa, y un detector convierte la energía incidente en señal digital. La “imagen radiográfica” es un mapa 2D que representa, de manera aproximada, **integrales de atenuación** a lo largo de trayectorias, contaminadas por **dispersión (scatter)**, desenfoque (foco, movimiento, PSF del detector) y ruido (cuántico + electrónico).
+
+Este reporte resuelve tres necesidades operativas de ingeniería clínica:
+
+1) **Proceso físico–matemático de generación de imágenes por RX**
+   - Modela el espectro del tubo y su filtración; describe la interacción (fotoeléctrico y Compton), el endurecimiento del haz y la dispersión; formaliza el detector como un sistema lineal con PSF/MTF y ruido.
+   - Resultado: un modelo de adquisición útil para diseño de protocolos, QA, y diagnóstico de artefactos.
+
+2) **Determinación de dosis en radiografías**
+   - Diferencia cantidades físicas (kerma en aire, dosis absorbida) de cantidades de protección (equivalente/efectiva).
+   - En RX clínica se gestionan principalmente **KAP/DAP** y **ESAK/ESD** (según convención), más índices como **Exposure Index (EI)** para control interno.
+   - Se entregan rutas prácticas: medición con cámara de ionización/KAP-metro, o estimación desde salida del tubo + geometría + factor de retrodispersión.
+
+3) **“Reconstrucción” de una imagen por RX** (radiografía de proyección)
+   - A diferencia de CT/MRI, en RX no se reconstruye un volumen: la imagen es una proyección 2D directa. En ingeniería, “reconstrucción RX” se refiere al **pipeline** que convierte lecturas crudas del detector en imagen clínica: correcciones *dark/flat*, linealización, corrección de ganancia/offset, estimación y compensación de scatter, correcciones geométricas, reducción de ruido, realce y mapeo tonal para visualización y DICOM.
+   - Se describen algoritmos clásicos (flat-field, log-transform, corrección de scatter basada en kernels, Wiener/deconvolución, denoise) y enfoques modernos (regularización tipo TV, *compressed sensing* en tomosíntesis, deep learning para denoise/scatter).
+
+**Impacto y comparativo RX/CT/MRI**
+- **RX**: excelente para tórax y hueso; limitado por superposición 3D→2D; muy sensible a dispersión y técnica.
+- **CT**: reconstruye volumen mediante Radon/FBP/iterativa; dosis mayor; artefactos específicos (metal, anillos, beam hardening).
+- **MRI**: sin radiación ionizante; reconstrucción en $k$-espacio (FFT + paralela/CS); artefactos distintos (movimiento, susceptibilidad, inhomogeneidades).
+
+**Limitaciones críticas y recomendaciones**
+- El principal degradante de contraste en RX general es **scatter**: colimación, rejilla y/o corrección software deben ser parte del diseño del sistema.
+- En radiografía digital existe el riesgo de *dose creep*: la post-producción puede “hacer ver bien” imágenes adquiridas con más dosis de la necesaria. Controlar con **KAP/ESAK + EI/DI + auditorías**.
+- La calibración (dark/flat, uniformidad, linealidad, estabilidad) debe estar blindada por QA: si se rompe, el posprocesado puede ocultar el fallo y trasladar el riesgo al diagnóstico.
+
+---
+
+# 2. Introducción
+
+## 2.1 Modalidades (RX/CT) y cadena completa (visión de sistema)
+
+### Figura 1: Cadena de formación de imagen en RX digital (esquemática)
+\begin{figure}[H]
+\centering
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tikzpicture}[
+  node distance=7mm,
+  block/.style={draw, rounded corners, align=center, minimum height=8mm, minimum width=24mm},
+  smallblock/.style={draw, rounded corners, align=center, minimum height=7mm, minimum width=18mm},
+  arrow/.style={-Latex, thick}
+]
+\node[block] (tube) {Tubo RX\\(kVp, mAs)};
+\node[block, right=10mm of tube] (coll) {Filtración\\+ colimación\\(SID, OID)};
+\node[block, right=10mm of coll] (patient) {Paciente\\Atenuación\\+ scatter};
+\node[block, right=10mm of patient] (det) {Detector\\(CR/DR)\\PSF/MTF/NPS};
+\node[block, right=10mm of det] (adc) {Lectura + ADC\\(bit-depth)};
+\node[block, right=10mm of adc] (proc) {Correcciones\\dark/flat\\+ linealización};
+\node[block, right=10mm of proc] (post) {Posproceso\\denoise/realce\\LUT};
+\node[block, right=10mm of post] (pacs) {Salida clínica\\DICOM\\PACS};
+
+\draw[arrow] (tube) -- (coll);
+\draw[arrow] (coll) -- (patient);
+\draw[arrow] (patient) -- (det);
+\draw[arrow] (det) -- (adc);
+\draw[arrow] (adc) -- (proc);
+\draw[arrow] (proc) -- (post);
+\draw[arrow] (post) -- (pacs);
+
+\node[smallblock, above=8mm of det] (scatter) {Scatter\\(fondo)};
+\draw[arrow] (patient.north) to[out=60,in=180] (scatter.west);
+\draw[arrow] (scatter.east) to[out=0,in=120] (det.north);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Cadena físico–digital en RX: desde generación del haz hasta salida clínica. Esquema conceptual (no a escala).}
+\end{figure}
+
+Un bloque “fuente” genera energía (RX/CT: tubo; MRI: RF+gradientes). La energía interactúa con el paciente (RX/CT: atenuación+scatter; MRI: relajación). Un detector convierte a señal (FPD; detectores CT; bobinas RF). Luego hay muestreo/ADC, calibraciones (dark/flat; air-scan), reconstrucción (RX: proyección+procesado; CT: FBP/iterativa; MRI: FFT/SENSE/GRAPPA/CS), postproceso, visualización y QA.
+
+Aunque este reporte se centra en **RX**, se incluyen secciones de CT/MRI porque:
+- muchos conceptos de calidad (MTF/NPS/DQE) y QA son transversales;
+- tomosíntesis (RX) y CT comparten ideas de reconstrucción tomográfica;
+- el personal clínico suele operar flujos combinados (radiografía, tomografía, resonancia) y se benefician de un marco unificado.
+
+## 2.2 Glosario (términos clave, en lenguaje técnico sencillo)
+
+- **SNR**: $SNR=\mu/\sigma$ (promedio sobre desviación estándar).
+- **CNR**: $CNR=\lvert \mu_1-\mu_2\rvert/\sigma$ (contraste relativo al ruido).
+- **PSF**: respuesta espacial a un punto (desenfoque).
+- **MTF**: módulo de la TF de la PSF; mide conservación de detalle por frecuencia espacial.
+- **NPS**: espectro de ruido; indica textura del ruido por frecuencia.
+- **DQE**: eficiencia con la que el detector preserva SNR del haz a la imagen.
+- **Scatter**: fotones desviados (Compton) que llegan al detector fuera de la trayectoria primaria.
+- **kVp / mAs**: controlan energía (calidad) y cantidad (intensidad) del haz.
+- **HVL**: espesor que reduce a la mitad la intensidad; indicador de calidad/filtración del haz.
+- **HU (CT)**: escala de atenuación relativa al agua.
+- **TE/TR/FA (MRI)**: parámetros de secuencia; se incluyen por comparativo.
+- **k-space (MRI)**: dominio de frecuencias espaciales; la imagen se obtiene (aprox.) por FFT.
+
+---
+
+# 3. Fundamentos físicos por modalidad (énfasis RX/CT)
+
+## 3.1 Generación del haz de rayos X (tubo RX)
+
+En el tubo RX, electrones acelerados por un potencial $V$ impactan el ánodo y generan:
+
+1) **Bremsstrahlung (frenado)**: espectro continuo.
+2) **Radiación característica**: picos por transiciones electrónicas del material del ánodo (p. ej. W).
+
+Un modelo simplificado del espectro emitido puede representarse por una densidad espectral $S(E)$ (fotones/keV) que depende de:
+- $kVp$ (energía máxima $E_{\max}\approx kVp$ en keV),
+- filtración total (inherente + adicional),
+- material y ángulo del ánodo (efecto talón/heel),
+- forma de onda del generador.
+
+### Figura 2: Espectro policromático y efecto de filtración (esquemática)
+\begin{figure}[H]
+\centering
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tikzpicture}
+% Axes
+\draw[->, thick] (0,0) -- (10,0) node[below] {Energía $E$ (keV)};
+\draw[->, thick] (0,0) -- (0,5) node[left] {Fotones / keV (rel.)};
+
+% Unfiltered spectrum (schematic)
+\draw[thick] plot[smooth] coordinates {
+(0.3,0.0) (1,0.6) (2,1.8) (3,2.8) (4,3.4) (5,3.6) (6,3.2) (7,2.4) (8,1.4) (9,0.5) (9.7,0.0)
+};
+\node at (7.9,4.2) {\small Sin filtrar (idealizado)};
+
+% Characteristic peaks (schematic spikes)
+\draw[thick] (5.7,0) -- (5.7,4.1);
+\draw[thick] (6.2,0) -- (6.2,3.6);
+\node[above] at (5.7,4.1) {\scriptsize líneas};
+\node[above] at (6.2,3.6) {\scriptsize caract.};
+
+% Filtered spectrum (lower at low E)
+\draw[thick, dashed] plot[smooth] coordinates {
+(0.3,0.0) (1,0.2) (2,0.9) (3,2.0) (4,2.8) (5,3.1) (6,2.9) (7,2.2) (8,1.3) (9,0.5) (9.7,0.0)
+};
+\node at (6.9,1.2) {\small Con filtración (HVL $\uparrow$)};
+
+% Emax marker
+\draw[densely dotted] (9.7,0) -- (9.7,4.8);
+\node[below] at (9.7,0) {$E_{\max}\approx kVp$};
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Espectro policromático de RX (esquema). La filtración reduce principalmente fotones de baja energía (endurece el haz; HVL aumenta). No representa datos reales ni escalas absolutas.}
+\end{figure}
+
+Curva $S(E)$ vs $E$: sube desde bajas energías, alcanza un máximo y cae a cero en $E=E_{\max}$. Encima aparecen picos estrechos (líneas características).
+
+### 3.1.1 Filtración y calidad del haz (HVL)
+
+La filtración elimina fotones de baja energía (aumenta HVL), reduce dosis superficial “inútil” y modifica el contraste.
+
+**Definición práctica:** HVL es el espesor de material (usualmente aluminio) que reduce la intensidad a la mitad.
+
+Si la intensidad transmitida por un filtro homogéneo (aprox. monoenergético) es $I(t)=I_0 e^{-\mu t}$, entonces:
+$$
+HVL=\frac{\ln 2}{\mu}
+$$
+En haz policromático, HVL se define por medición; no hay una $\mu$ única.
+
+## 3.2 Interacción con el paciente: atenuación y dispersión
+
+En diagnóstico (≈ 20–150 keV), dominan:
+
+- **Fotoeléctrico**: crece fuertemente con $Z$ y decrece con energía; aumenta contraste (hueso vs tejido).
+- **Compton**: depende más de densidad electrónica; produce scatter; reduce contraste.
+
+### 3.2.1 Ley de Beer–Lambert (monoenergético) y extensión policromática
+
+Para un rayo con energía $E$:
+$$
+I(E)=I_0(E)\exp\left(-\int_L \mu(E,\mathbf{r})\,ds\right)
+$$
+**Símbolos:**
+- $I_0(E)$: intensidad incidente a energía $E$
+- $I(E)$: intensidad transmitida
+- $\mu(E,\mathbf{r})$: coeficiente de atenuación lineal
+- $L$: trayectoria del rayo
+
+Para haz policromático:
+$$
+I = \int_0^{E_{\max}} S(E)\exp\left(-\int_L \mu(E,\mathbf{r})\,ds\right)\,dE
+$$
+Esto conduce a **endurecimiento del haz**: las energías bajas se atenúan más, el espectro transmitido se “endurece”, y el logaritmo deja de ser estrictamente lineal con el espesor.
+
+### 3.2.2 Dispersión (scatter): naturaleza y consecuencias
+
+Modelamos señal total medida (por píxel) como:
+$$
+y = y_P + y_S
+$$
+- $y_P$: componente primaria (directa)
+- $y_S$: dispersa (generalmente de baja frecuencia espacial, pero puede tener estructura)
+
+**Efecto clínico:** disminuye CNR, crea velos (shading), reduce detectabilidad de lesiones sutiles (p.ej. nódulos pulmonares pequeños).
+
+### Figura 3: Geometría de atenuación y scatter hacia el detector (esquemática)
+\begin{figure}[H]
+\centering
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tikzpicture}[
+  arrow/.style={-Latex, thick},
+  patient/.style={draw, rounded corners, minimum width=35mm, minimum height=25mm, align=center},
+  det/.style={draw, minimum width=3mm, minimum height=40mm, fill=white},
+  src/.style={draw, circle, minimum size=6mm, fill=white}
+]
+\node[src] (S) at (0,0) {S};
+\node[patient] (P) at (5,0) {Paciente\\(tejidos)};
+\node[det] (D) at (10,0) {};
+\node[below=2mm of D] {Detector};
+
+% Primary ray
+\draw[arrow] (S) -- (P.west);
+\draw[arrow] (P.east) -- (D.west) node[midway, above] {primario};
+
+% Scatter rays
+\draw[arrow] (4.3,0.6) to[out=20,in=160] (D.west |- 1.2,0);
+\draw[arrow] (4.6,-0.5) to[out=-10,in=200] (D.west |- 0.8,-0.8);
+\node[align=left] at (7.2,1.7) {scatter\\(Compton)};
+
+% Field edges (collimation)
+\draw[densely dashed] (1,-2) -- (1,2);
+\draw[densely dashed] (9,-2) -- (9,2);
+\node[below] at (5,-2.2) {colimación (campo)};
+\end{tikzpicture}
+\end{adjustbox}
+\caption{El detector mide componente primaria + dispersa. El scatter eleva el “fondo” y reduce CNR (esquema conceptual).}
+\end{figure}
+
+El fotón primario viaja recto al píxel. Un fotón Compton cambia dirección y alcanza otro píxel, elevando su señal como “fondo”.
+
+## 3.3 Detectores RX (CR/DR) y respuesta del sistema
+
+### 3.3.1 Conversión y muestreo
+
+Para DR con panel plano (FPD), el proceso es:
+- conversión energía→carga (directo: a-Se; indirecto: CsI→luz→a-Si),
+- integración temporal,
+- lectura de matriz (TFT),
+- ADC a valores digitales (ADU).
+
+Modelo lineal espacio-invariante (ideal):
+$$
+z(\mathbf{x}) = (h * q)(\mathbf{x}) + n_e(\mathbf{x})
+$$
+- $q(\mathbf{x})$: señal cuántica (Poisson)
+- $h(\mathbf{x})$: PSF efectiva (foco + detector + movimiento)
+- $n_e$: ruido electrónico (aprox. gaussiano)
+
+### 3.3.2 MTF, NPS y DQE (núcleo de calidad en detectores)
+
+- **MTF**: mide transferencia de contraste por frecuencia espacial $f$.
+- **NPS**: describe “textura” del ruido por frecuencia.
+- **DQE**: eficiencia de detección que cuantifica cuánto SNR se conserva:
+$$
+DQE(f)=\frac{SNR^2_{\text{out}}(f)}{SNR^2_{\text{in}}(f)}
+$$
+
+**Tabla 1: Tipos de detector y consideraciones (resumen).**
+
+| Tecnología | Ventajas | Limitaciones | Artefactos típicos | Comentario clínico |
+|---|---|---|---|---|
+| CR (PSP) | robusto, retro-compatibilidad | lectura más lenta, menor DQE que DR | polvo/rasguños, variabilidad placa | útil en transición; menos ideal para baja dosis |
+| DR indirecto (CsI/a-Si) | buena DQE, buena MTF | luz lateral (depende del CsI) | lag/ghosting, píxeles muertos | estándar en general; buen balance |
+| DR directo (a-Se) | alta MTF (menos spreading) | sensibilidad a condiciones, costo | defectos de panel, saturación local | excelente detalle; requiere QA disciplinado |
+
+---
+
+# 4. Modelo matemático de adquisición
+
+## 4.1 RX: proyección 2D, blur, ruido (Poisson + electrónico) y scatter
+
+### 4.1.1 Proyección ideal y linealización por logaritmo
+
+Si el haz fuese monoenergético y sin scatter:
+$$
+p(u,v)=-\ln\left(\frac{I(u,v)}{I_0(u,v)}\right)=\int_L \mu(\mathbf{r})ds
+$$
+$p(u,v)$ sería una “imagen de proyección” proporcional a la integral de atenuación.
+
+En práctica:
+$$
+I(u,v)= \underbrace{\int S(E)\exp\left(-\int \mu(E,\mathbf{r})ds\right)dE}_{\text{primaria policromática}} + \underbrace{I_S(u,v)}_{\text{scatter}}
+$$
+El logaritmo ya no entrega una integral pura; aparece sesgo por beam hardening y por el término $I_S$.
+
+### 4.1.2 Ruido: modelo Poisson–Gaussiano
+
+Número de cuanta detectados $N$:
+$$
+N\sim \text{Poisson}(\lambda)
+$$
+Señal digital:
+$$
+y=gN+\eta,\qquad \eta\sim \mathcal{N}(0,\sigma_e^2)
+$$
+- $g$: ganancia (ADU por fotón equivalente)
+- $\eta$: ruido electrónico
+
+**Implicación:** el ruido depende de la exposición; por eso los denoise “ciegos” pueden fallar si no consideran varianza dependiente de señal.
+
+### 4.1.3 Desenfoque total (PSF compuesta)
+
+La PSF efectiva puede modelarse como convolución de PSFs:
+$$
+h_{\text{tot}} = h_{\text{foco}} * h_{\text{mov}} * h_{\text{det}}
+$$
+- foco (tamaño focal y geometría)
+- movimiento (paciente y sistema)
+- detector (spreading en centellador, difusión, integración)
+
+## 4.2 CT (comparativo): transformada de Radon, geometrías y HU
+
+Aunque el foco es RX, se incluye CT para completar “lista estándar de reconstrucción”.
+
+En CT ideal:
+$$
+p(\theta,s)=\int \mu(x,y)\,\delta(x\cos\theta+y\sin\theta - s)\,dx\,dy
+$$
+Esto es la **transformada de Radon**. La reconstrucción clásica (FBP) invierte este operador (aprox.) mediante filtrado y retroproyección.
+
+Conversión a HU:
+$$
+HU = 1000\cdot \frac{\mu-\mu_{\text{agua}}}{\mu_{\text{agua}}}
+$$
+
+Calibraciones típicas:
+- **dark**: lectura sin señal (offset),
+- **air-scan**: referencia sin objeto (ganancia/normalización),
+- correcciones por beam hardening, scatter, anillos.
+
+---
+
+# 5. Aspectos solicitados (sección repetible por cada aspecto)
+
+> **Nota importante de interpretación:**
+> En radiografía de proyección, “reconstrucción” se refiere a transformar datos crudos en imagen clínica 2D. No es reconstrucción tomográfica (como CT), salvo extensiones como tomosíntesis. Por eso, aquí se incluyen:
+> - Aspecto A: *Generación físico–matemática de la imagen RX* (formación del haz, interacción, detector)
+> - Aspecto B: *Determinación de dosis en radiografías* (KAP/ESAK/ESD, conversión a dosis efectiva)
+> - Aspecto C: *Pipeline de “reconstrucción” RX* (calibración + correcciones + denoise + realce + presentación)
+> Además se adjunta un “listado estándar” de reconstrucción en CT/MRI (para comparativo, selección y cultura técnica).
+
+---
+
+## 5.A Proceso físico–matemático de generación de imágenes por Rayos X (RX)
+
+### a) Definición formal y objetivo
+
+**Objetivo:** describir la relación entre (i) técnica radiográfica (kVp, mAs, filtración, geometría), (ii) propiedades del paciente ($\mu(E,\mathbf{r})$, espesor, composición), y (iii) respuesta del detector (PSF/MTF/NPS/DQE) para predecir señal, ruido, contraste y artefactos.
+
+Formalmente, buscamos un modelo:
+$$
+y(u,v)=\mathcal{F}\big(S(E),\ \mu(E,\mathbf{r}),\ \text{geom},\ h,\ \text{ruido},\ \text{scatter}\big)
+$$
+
+### b) Supuestos y condiciones de validez
+
+- Régimen diagnóstico (20–150 keV), interacción dominada por fotoeléctrico y Compton.
+- Detector aproximadamente lineal en el rango de operación (sin saturación).
+- Sistema casi invariante localmente (PSF no cambia mucho dentro del campo) **o** se trata con correcciones espaciales (flat-field y mapas).
+- Scatter tratable como componente adicional suave o estimable por modelo.
+
+**Cuando falla:** saturación/clipping, rejilla mal alineada, movimientos severos, colimación extrema, presencia de metal muy denso (no linealidad fuerte).
+
+### c) Derivación/explicación matemática esencial
+
+1) **Espectro emitido y filtrado**
+Sea $S_0(E)$ el espectro sin filtración adicional y $T_f(E)$ la transmitancia del filtro equivalente:
+$$
+S(E)=S_0(E)\,T_f(E)
+$$
+con $T_f(E)=\exp(-\mu_f(E)t_f)$ para filtro homogéneo equivalente.
+
+2) **Transmisión policromática por el paciente**
+$$
+I_P(u,v)=\int_0^{E_{\max}} S(E)\exp\left(-\int_{L(u,v)} \mu(E,\mathbf{r})ds\right)\,dE
+$$
+
+3) **Scatter y señal total**
+$$
+I(u,v)=I_P(u,v)+I_S(u,v)
+$$
+Modelos típicos aproximan $I_S$ como una versión suavizada de $I_P$ o de la fluencia incidente, con ganancia dependiente de espesor y campo.
+
+4) **Detector como sistema lineal**
+$$
+y(u,v)=\big(h * I\big)(u,v) + n(u,v)
+$$
+con $n$ Poisson–Gaussiano.
+
+5) **Log-transform (con advertencia)**
+En sistemas donde se forma una “imagen de atenuación”:
+$$
+p(u,v)=-\ln\left(\frac{I(u,v)-\widehat{I}_S(u,v)}{I_0(u,v)}\right)
+$$
+Esto requiere estimación $\widehat{I}_S$ y evita valores no físicos (argumento del log $\le 0$).
+
+### d) Algoritmo paso a paso + pseudocódigo (modelo de simulación/ingeniería)
+
+**Algoritmo A1 (simulación conceptual de adquisición RX por píxel):**
+1. Definir $S(E)$ (kVp + filtración).
+2. Para cada rayo/píxel, integrar atenuación polienergética a lo largo de la trayectoria.
+3. Sumar scatter estimado.
+4. Aplicar blur (PSF) y muestreo.
+5. Generar ruido Poisson–Gaussiano.
+6. Aplicar cuantización (ADC).
+
+```text
+PSEUDOCÓDIGO A1: Adquisición RX (modelo físico simplificado)
+
+Inputs:
+  - Spectrum S(E) discretizado en energías E_k con pesos w_k
+  - Geometry: fuente-detector, píxeles (u,v), trayectorias L(u,v)
+  - Patient attenuation mu(E_k, r) o mapas/materiales
+  - Scatter model parameters (alpha, kernel size, field size, thickness proxy)
+  - Detector PSF h, gain g, electronic noise sigma_e
+  - Reference I0(u,v) (air-scan)
+
+For each pixel (u,v):
+  primary = 0
+  For each energy bin k:
+      line_integral = IntegrateOverPath( mu(E_k, r), L(u,v) )
+      primary += w_k * exp( - line_integral )
+
+  scatter = ScatterEstimate(primary, params)   # p.ej. alpha * Smooth(primary)
+  intensity = primary + scatter
+
+ApplyBlurAndSampling:
+  intensity_blurred = Convolve2D(intensity_map, h)  # global or local
+
+Noise:
+  N ~ Poisson( lambda = intensity_blurred )
+  y = g*N + Normal(0, sigma_e^2)
+
+Quantize:
+  y_adc = ClipAndQuantize(y, bit_depth)
+
+Return y_adc
+```
+
+### e) Parámetros: significado físico, rangos típicos y cómo elegirlos (orientativo)
+
+> Los rangos dependen de fabricante y protocolo; los siguientes son **guías operativas**.
+
+- **kVp**: 50–90 (extremidades), 90–120 (tórax), 70–90 (abdomen pediátrico, según clínica).
+  - Sube kVp → mayor penetración, menor contraste intrínseco, potencialmente menor mAs para misma señal.
+- **mAs**: ajusta cantidad de fotones (SNR).
+- **Filtración/HVL**: según regulación; HVL mayor implica haz más duro (menor dosis superficial).
+- **SID/OID**: distancia fuente–imagen y objeto–imagen; controlan magnificación y desenfoque geométrico.
+- **Rejilla (grid)**: aumenta CNR (menos scatter) pero puede requerir más mAs; riesgo de artefactos si mala alineación.
+
+### f) Complejidad computacional y requerimientos
+
+- Modelo A1 completo (integración por energía + convoluciones): costo $\mathcal{O}(N_{\text{pix}}N_E)$ más convolución $\mathcal{O}(N_{\text{pix}}k^2)$ (o FFT).
+- En operación clínica, la “adquisición” es hardware; el cómputo es para QA/simulación/optimización.
+
+### g) Comportamiento frente a ruido/artefactos
+
+- Menor exposición (mAs) → mayor ruido cuántico → reducción de detectabilidad.
+- Scatter alto → pérdida de contraste (CNR) y “velos”.
+- Desenfoque (PSF) alto → pérdida de resolución (MTF baja).
+
+### h) Riesgos (sobre-suavizado, pérdida de detalle, alucinación, sesgos)
+
+Aunque este aspecto es físico, se conecta con posprocesado:
+- Un pipeline que compense demasiado el ruido puede inventar texturas o bordes (especialmente con DL).
+- “Compensaciones automáticas” pueden esconder errores de técnica (p.ej. sobreexposición).
+
+### i) Recomendaciones prácticas RX vs CT vs MRI
+
+- **RX**: controlar scatter (colimación + grid + corrección).
+- **CT**: control de beam hardening y calibración; reconstrucción volumétrica permite separar estructuras pero aumenta dosis.
+- **MRI**: parámetros y reconstrucción (k-space) dominan; no hay dosis ionizante, pero hay SAR/seguridad de implantes.
+
+### j) Ejemplo clínico narrativo (RX)
+
+**Caso A (hipotético): tórax PA en adulto**
+El técnico aumenta kVp para penetración (p.ej. 110 kVp) y reduce mAs para limitar dosis. Si no hay rejilla o la colimación es amplia, el scatter incrementa y “lava” el contraste del parénquima pulmonar: la lesión sutil (nódulo pequeño) puede perderse. La decisión ingeniería-clínica es balancear: usar rejilla (si el paciente/espesor lo amerita), colimar estrictamente, y evitar compensar contraste únicamente con postproceso.
+
+---
+
+## 5.B Cómo se determina la dosis de radiación en radiografías
+
+### a) Definición formal y objetivo
+
+**Objetivo:** estimar y monitorear la exposición del paciente para asegurar calidad diagnóstica con mínima dosis razonable (ALARA), usando métricas estándar y trazables.
+
+**Cantidades relevantes:**
+- **Kerma en aire** $K_a$ (Gy): energía cinética liberada por unidad de masa en aire.
+- **Dosis absorbida** $D$ (Gy): energía absorbida por unidad de masa en tejido.
+- **Dosis equivalente** $H_T$ (Sv): $H_T=\sum_R w_R D_{T,R}$ (en RX, $w_R=1$).
+- **Dosis efectiva** $E$ (Sv): $E=\sum_T w_T H_T$ (pondera radiosensibilidad por órgano).
+
+**En radiografía clínica** se usan principalmente:
+- **KAP/DAP** (Gy·cm²): kerma-área producto medido cerca del colimador.
+- **ESAK/ESD**: kerma/dosis de entrada en piel (con retrodispersión según definición local).
+- **EI/DI**: indicadores de exposición de imagen (no son dosis del paciente, pero ayudan al control de técnica).
+
+### b) Supuestos y condiciones de validez
+
+- Las estimaciones de ESD/ESAK asumen geometría conocida (distancias), técnica registrada y condiciones de retrodispersión (factor BSF).
+- La conversión a dosis efectiva requiere **coeficientes** (tablas/Monte Carlo) y tiene incertidumbre.
+- KAP es excelente para control y DRLs, pero no describe distribución de dosis en órganos.
+
+### c) Derivación/explicación matemática esencial
+
+#### Ruta 1: estimación desde salida del tubo (kerma en aire)
+
+Si el tubo tiene una salida (output) medida a una distancia de referencia $d_0$ para un $kVp$ y filtración (en condiciones de calibración):
+$$
+K_{a}(d_0)\ [\text{mGy/mAs}]
+$$
+Entonces, para una exposición con $mAs$ a una distancia $d$:
+$$
+K_{a,i}(d) = K_a(d_0)\cdot mAs \cdot \left(\frac{d_0}{d}\right)^2 \cdot C
+$$
+donde $C$ incluye correcciones (temperatura/presión si aplica, calibración, calidad del haz).
+
+Si queremos **entrada en piel** con retrodispersión:
+$$
+ESAK \approx K_{a,i}(d_{\text{piel}})\cdot BSF
+$$
+- $d_{\text{piel}}$: distancia foco–piel (aprox. $SID - OID$ si la piel está cerca del objeto).
+- $BSF$: *backscatter factor*, depende de HVL, tamaño de campo y espesor (típicamente ~1.2–1.4 en muchas condiciones generales; **usar tablas**).
+
+> En algunos entornos, “ESD” se usa como dosis absorbida en piel, mientras “ESAK” como kerma en aire en entrada; la práctica local debe definirse claramente.
+
+#### Ruta 2: KAP/DAP medido
+
+KAP se define como:
+$$
+KAP = \int_A K_a(x,y)\,dA \approx \overline{K_a}\cdot A
+$$
+Se mide con un KAP-metro integrado o externo. Es robusto para auditoría, comparación de protocolos y DRLs.
+
+**Relación cualitativa:**
+- aumentar campo (A) aumenta KAP incluso si el kerma promedio es constante.
+- KAP se correlaciona con dosis efectiva mediante coeficientes de conversión por proyección y región anatómica:
+$$
+E \approx c_{E}\cdot KAP
+$$
+donde $c_E$ depende de vista (PA/AP/Lateral), tamaño del paciente, edad, etc.
+
+### d) Algoritmo paso a paso + pseudocódigo (cálculo operativo)
+
+**Algoritmo B1 (estimación ESD/ESAK desde output + geometría):**
+1. Obtener $K_a(d_0)$ para el $kVp$/filtración (tabla de QA).
+2. Calcular distancia foco–piel $d_{\text{piel}}$.
+3. Aplicar ley del inverso del cuadrado.
+4. Multiplicar por $mAs$.
+5. Aplicar $BSF$ (de tabla).
+6. Reportar ESAK/ESD con incertidumbre.
+
+```text
+PSEUDOCÓDIGO B1: Estimación ESAK (entrada) desde output del tubo
+
+Inputs:
+  Ka_per_mAs_at_d0   # mGy/mAs medido a d0 (p.ej. 100 cm)
+  d0                 # cm
+  mAs
+  d_skin             # cm (distancia foco-piel)
+  BSF                # factor retrodispersión (tabla por HVL/campo)
+  C                  # factor correcciones (calibración, T/P)
+
+Compute:
+  Ka_incident = Ka_per_mAs_at_d0 * mAs * (d0 / d_skin)^2 * C
+  ESAK = Ka_incident * BSF
+
+Output: ESAK (mGy) + notas sobre incertidumbre
+```
+
+**Algoritmo B2 (dosis efectiva aproximada desde KAP):**
+1. Registrar KAP del equipo por examen.
+2. Seleccionar coeficiente $c_E$ según región y proyección.
+3. Estimar $E=c_E \cdot KAP$ (reportar como aproximación).
+
+```text
+PSEUDOCÓDIGO B2: Estimación E desde KAP
+
+Inputs:
+  KAP (Gy·cm^2)
+  cE (mSv / (Gy·cm^2))  # tabla Monte Carlo por región/proyección/edad
+
+Compute:
+  E_mSv = cE * KAP
+
+Output: E_mSv (aprox.) + limitaciones
+```
+
+### e) Parámetros y rangos típicos (selección y control)
+
+- **KAP**: depende de proyección y técnica; se usa para DRLs y comparación interna (no usar un único “valor normal” universal).
+- **ESAK/ESD**: útil para QA y cumplimiento; se compara con guías/DRLs.
+- **EI/DI**: control interno de exposición (evita *dose creep*). Importante: EI no es dosis, pero correlaciona con exposición al detector.
+
+**Tabla 2: Métricas de dosis en RX (qué responde cada una).**
+
+| Métrica | ¿Qué mide? | Uso principal | Ventajas | Limitaciones / “red flags” |
+|---|---|---|---|---|
+| $K_a$ (kerma en aire) | energía liberada en aire | calibración/QA | trazable y medible | no refleja retrodispersión ni órganos |
+| ESAK/ESD | entrada (con retrodispersión según convención) | QA paciente/protocolo | se relaciona con piel | depende de BSF y geometría |
+| KAP/DAP | kerma × área | DRLs, auditorías | excelente para control poblacional | no da distribución de dosis |
+| EI/DI | exposición al detector | control técnico | previene dose creep | no es dosis; depende del fabricante |
+
+### f) Complejidad computacional y requerimientos
+
+- Cálculo B1/B2 es trivial (CPU).
+- Si se usan modelos Monte Carlo o software de organ dose, el costo aumenta (pero suele ser offline).
+
+### g) Comportamiento frente a ruido/artefactos (trade-off dosis–calidad)
+
+- Reducir mAs reduce dosis y SNR; el denoise puede ayudar, pero con riesgo de borrar detalle.
+- Subir kVp reduce contraste fotoeléctrico, pero puede permitir bajar mAs y reducir dosis de entrada; la decisión depende del objetivo clínico.
+
+### h) Riesgos (sesgos y errores de interpretación)
+
+- Confundir EI con dosis del paciente.
+- Ajustar protocolos “por apariencia” (postprocesado) y terminar con sobreexposición sistemática (*dose creep*).
+- No registrar distancias, colimación, rejilla: invalidan comparaciones.
+
+### i) Recomendaciones RX vs CT vs MRI
+
+- **RX**: use KAP/ESAK + EI/DI; auditorías periódicas y DRLs locales.
+- **CT**: índices CTDIvol y DLP; optimización por iterativa y control de protocolos.
+- **MRI**: no ionizante; control de SAR y seguridad de implantes.
+
+### j) Ejemplo clínico narrativo (dosis)
+
+**Caso B (hipotético): radiografía AP de abdomen**
+Dos servicios comparan calidad. Servicio 1 usa colimación estricta y rejilla adecuada; KAP mediano. Servicio 2 colima amplio “por seguridad” (para no cortar anatomía) y compensa con postprocesado: la imagen luce bien, pero KAP es sistemáticamente mayor por aumento del área irradiada. Acción: entrenar colimación, revisar AEC, y fijar umbrales de auditoría KAP por percentiles.
+
+---
+
+## 5.C Cómo se “reconstruye” una imagen por Rayos X (radiografía de proyección)
+
+### a) Definición formal y objetivo
+
+En **RX de proyección**, la “reconstrucción” es el **pipeline de formación de imagen digital**: transformar lecturas crudas del detector $R(u,v)$ en una imagen clínica $I_{\text{clin}}(u,v)$ para diagnóstico y archivo.
+
+$$
+I_{\text{clin}}=\mathcal{P}\Big(R;\ \text{dark/flat},\ \text{linealización},\ \widehat{scatter},\ \text{denoise},\ \text{realce},\ \text{LUT}\Big)
+$$
+
+**Objetivos técnicos:**
+- corregir no uniformidades (ganancia/offset),
+- aproximar proporcionalidad con atenuación (cuando aplica),
+- controlar scatter y artefactos,
+- optimizar detectabilidad (CNR/d’) sin inventar estructuras.
+
+### b) Supuestos y condiciones de validez
+
+- Disponibilidad de calibraciones: *dark* y *flat/air scan*.
+- Detector en región lineal (sin saturación).
+- Parámetros de postprocesado validados por QA y coherentes con el objetivo clínico.
+
+### c) Derivación/explicación matemática esencial (bloques principales)
+
+#### c.1 Corrección de offset (dark) y ganancia (flat-field)
+
+Sea:
+- $R$: lectura cruda (raw)
+- $D$: dark (offset)
+- $F$: flat/air scan (respuesta a campo uniforme)
+
+Corrección clásica:
+$$
+R_c(u,v)=\frac{R(u,v)-D(u,v)}{F(u,v)-D(u,v)}
+$$
+Esto compensa variaciones de ganancia y offset por píxel.
+
+**Red flag:** si $F-D$ es muy pequeño en píxeles defectuosos, se amplifica ruido; se requiere máscara/ interpolación.
+
+#### c.2 Linealización y log-transform (si se busca “imagen de atenuación”)
+
+Si $R_c$ aproxima $I/I_0$, entonces:
+$$
+p(u,v)=-\ln\big(\max(R_c(u,v)-\widehat{S}(u,v),\epsilon)\big)
+$$
+donde $\widehat{S}$ es scatter estimado en unidades consistentes (o fracción), y $\epsilon$ evita log no definido.
+
+> En muchos sistemas clínicos, no se entrega explícitamente $p$ sino una imagen procesada para visualización. El punto es entender que el log es sensible a scatter y a errores de calibración.
+
+#### c.3 Corrección/estimación de scatter (en RX)
+
+Modelos típicos:
+- **Kernel-based**: $\widehat{S} = \alpha \cdot (K * R_c)$ donde $K$ es un kernel suavizante (p.ej. gaussiano) y $\alpha$ depende de tamaño de campo/espesor.
+- **Modelos físicos simplificados**: scatter como baja frecuencia proporcional al primario.
+- **Mediciones**: *beam-stop* (QA/investigación), rejillas/aire.
+
+**Peligro:** sobre-corrección produce *shading invertido* y realces falsos.
+
+#### c.4 Deconvolución / compensación de blur (opcional)
+
+Si se modela:
+$$
+y = h * x + n
+$$
+una deconvolución estable (Wiener) en frecuencia:
+$$
+\widehat{X}(f)=\frac{H^*(f)}{|H(f)|^2 + \frac{S_n(f)}{S_x(f)}}\,Y(f)
+$$
+- $H(f)$: MTF (TF de PSF)
+- $S_n, S_x$: espectros (ruido y señal)
+
+**Red flag:** deconvolución agresiva amplifica ruido y ringing.
+
+#### c.5 Reducción de ruido (denoise) con varianza dependiente de señal
+
+Estrategias:
+- filtrado adaptativo por varianza local,
+- transformadas (wavelet) con umbral,
+- filtros no-local means (NLM),
+- enfoques variacionales (TV):
+  $$
+  \widehat{x}=\arg\min_x \frac{1}{2}\|y-x\|_2^2 + \lambda \,TV(x)
+  $$
+- DL (si está validado y bajo control).
+
+**Riesgo central:** borrar microcalcificaciones (mama), líneas finas, neumotórax sutil; o crear patrones no reales.
+
+#### c.6 Realce y presentación (tone mapping, LUT, compresión dinámica)
+
+- Compresión de rango (log/curvas),
+- realce local (tipo CLAHE) con control,
+- LUT según región anatómica,
+- salida DICOM con metadatos de exposición.
+
+### d) Algoritmo paso a paso + pseudocódigo (pipeline implementable)
+
+**Algoritmo C1 (pipeline estándar de formación de imagen RX):**
+1. Leer $R$ (raw), $D$ (dark) y $F$ (flat).
+2. Calcular $R_c=(R-D)/(F-D)$.
+3. Enmascarar píxeles defectuosos; interpolar si procede.
+4. Estimar scatter $\widehat{S}$ (modelo).
+5. (Opcional) log-transform a dominio de atenuación.
+6. Reducir ruido con método controlado (parámetros validados).
+7. (Opcional) compensar blur suavemente (evitar deconvolución extrema).
+8. Realce y mapeo tonal (LUT) para visualización.
+9. Generar salida clínica (DICOM) + registro de parámetros.
+
+```text
+PSEUDOCÓDIGO C1: “Reconstrucción” RX (formación de imagen 2D)
+
+Inputs:
+  R(u,v): raw detector image
+  D(u,v): dark field
+  F(u,v): flat field (air scan)
+  defect_mask(u,v): píxeles defectuosos
+  scatter_params: (alpha, kernel K, thickness proxy)
+  denoise_params: (method, strength, noise model)
+  tone_params: LUT / windowing / local contrast limits
+
+Step 1: Flat-field correction
+  Rc = (R - D) / max(F - D, epsilon)
+
+Step 2: Defect handling
+  Rc = InpaintOrInterpolate(Rc, defect_mask)
+
+Step 3: Scatter estimation (simple kernel model)
+  S_hat = alpha * Convolve2D(Rc, K)        # K: kernel suave
+  P_hat = max(Rc - S_hat, epsilon)
+
+Step 4: Optional log transform (if desired)
+  p = -log(P_hat)
+
+Step 5: Denoise (choose one; avoid over-smoothing)
+  p_dn = Denoise(p, denoise_params)
+
+Step 6: Optional mild deblur / edge preservation
+  p_sharp = MildSharpen(p_dn, limits)      # bounded unsharp masking or Wiener with cap
+
+Step 7: Tone mapping / presentation
+  I_clin = ToneMap(p_sharp, tone_params)
+
+Step 8: Output
+  ExportDICOM(I_clin, metadata + parameters log)
+Return I_clin
+```
+
+### e) Parámetros: significado físico, rangos típicos y cómo elegirlos
+
+- **$\alpha$ scatter**: aumenta con campo y espesor; ajustar por QA con phantoms (no “a ojo”).
+- **Kernel $K$**: ancho relacionado con baja frecuencia del scatter; demasiado ancho → sub-corrección local; demasiado estrecho → artefactos.
+- **$\lambda$ (TV/regularización)**: controla suavizado; elegir para preservar bordes finos en tareas críticas.
+- **Parámetros de realce local**: limitar para no crear halo o exagerar ruido.
+
+### f) Complejidad computacional y requerimientos
+
+- Flat-field: $\mathcal{O}(N)$
+- Convoluciones: $\mathcal{O}(Nk^2)$ (o FFT $\mathcal{O}(N\log N)$)
+- NLM/TV: más costoso (iterativo), típicamente requiere optimización; GPU opcional.
+- DL: depende del modelo; exige validación y control de versiones.
+
+### g) Comportamiento frente a ruido/artefactos
+
+- Correcciones mejoran uniformidad; scatter-correction mejora CNR.
+- Denoise mejora apariencia y puede mejorar detectabilidad si está bien calibrado; si no, puede borrar hallazgos.
+
+### h) Riesgos: sobre-suavizado, pérdida de detalle, alucinación, sesgos
+
+- **Sobre-suavizado:** pérdida de líneas finas, microfracturas, neumotórax.
+- **Sharpen excesivo:** halos alrededor de bordes; falsa “cortical” ósea.
+- **DL sin control:** posible introducción de patrones que parecen anatomía; requiere validación clínica, documentación y límites de uso.
+
+### i) Recomendaciones prácticas RX vs CT vs MRI
+
+- **RX**: preferir correcciones que respeten física (flat-field, scatter moderado, denoise validado).
+- **CT**: reconstrucción iterativa y correcciones (BH/metal) con QA de HU.
+- **MRI**: reconstrucciones paralelas/CS con control de artefactos y mapas de sensibilidad.
+
+### j) Ejemplo clínico narrativo (pipeline)
+
+**Caso C (hipotético): radiografía de mano con sospecha de fractura fina**
+Un denoise agresivo “limpia” la textura y mejora la apariencia general, pero borra una línea de fractura no desplazada. En QA, se detecta que el parámetro de fuerza fue calibrado para tórax y aplicado a extremidades. Acción: separar pipelines por anatomía/tarea (tórax ≠ mano), y usar pruebas de detectabilidad (phantom de líneas finas) antes de liberar cambios.
+
+---
+
+## 5.D Listado estándar de métodos de reconstrucción de imágenes médicas (comparativo RX/CT/MRI)
+
+> **Propósito:** cumplir el “listado estándar” solicitado y facilitar guías de selección. En RX puro, estos métodos aparecen como extensiones (tomosíntesis, dual-energy, o postprocesado avanzado).
+
+### D.1 CT (estándar)
+
+- **FBP** (Filtered BackProjection)
+- **FDK** (cone-beam CT)
+- **ART/SIRT/SART** (algebraicos)
+- **MLEM/OSEM** (más típico de medicina nuclear, pero conceptualmente relevante)
+- **Reconstrucción iterativa estadística** (penalized likelihood / MAP)
+- **MBIR** (Model-Based Iterative Reconstruction)
+- **Regularización**: Tikhonov, TV, Huber, edge-preserving
+- **Correcciones integradas**: beam hardening, scatter, metal artifact reduction
+- **Deep learning reconstruction** (post-FBP, unrolled networks, etc.)
+
+### D.2 MRI (estándar)
+
+- **FFT directa** (cartesiano)
+- **SENSE/GRAPPA** (imagen paralela)
+- **Compressed Sensing (CS)**
+- **Recon variacional** (TV, wavelet sparsity)
+- **DL** (recon acelerada y denoise)
+- **Corrección de inhomogeneidad** (B0/B1), movimiento, EPI distortions
+
+### D.3 RX extendido
+
+- **Tomosíntesis (DBT/DT)**: shift-and-add, FBP limitada, iterativa con regularización
+- **Dual-energy**: descomposición material (bone/soft tissue separation)
+- **Scatter correction**: hardware (grid) + software (kernel/model-based/DL)
+- **Deconvolución y super-resolución** (con cautela)
+- **Bone suppression** (tórax) y realces basados en modelos (alto control)
+
+**Tabla 3: Métodos (comparativo) vs ventajas/limitaciones/costo/tiempo/artefactos.**
+
+| Modalidad | Método | Ventajas | Limitaciones | Costo/tiempo | Artefactos/riesgos |
+|---|---|---|---|---|---|
+| CT | FBP | rápido, estable | más ruido en baja dosis | bajo / muy rápido | streaks, ruido |
+| CT | Iterativa (MAP/MBIR) | baja dosis, menos ruido | mayor cómputo, tuning | medio-alto / lento | sobre-suavizado, textura artificial |
+| CT | MAR (metal) | reduce streaks | puede introducir sesgos | medio | “missing” de detalles cercanos |
+| MRI | SENSE/GRAPPA | acelera adquisición | depende de calibración | medio | ruido amplificado (g-factor) |
+| MRI | CS | acelera + preserva | requiere sparsidad/ajuste | alto | aliasing incoherente si mal ajustado |
+| RX | Pipeline clásico | trazable, robusto | limitado por proyección | bajo | halos, clipping si mal calibrado |
+| RX | DL denoise/scatter | calidad aparente alta | requiere validación fuerte | medio-alto | alucinación, sesgos |
+
+---
+
+# 6. Artefactos y fallas típicas
+
+## 6.1 RX (radiografía)
+
+- **Grid artifacts / moiré**: patrones por interferencia rejilla–muestreo; más en CR.
+- **Grid cutoff**: mala alineación (angulación) o centrado; pérdida de densidad periférica.
+- **Motion blur**: movimiento; reduce MTF efectiva.
+- **Scatter/shading**: velos, pérdida de contraste; más en campos grandes/abdomen.
+- **Saturación/clipping**: pérdida de información en altas exposiciones locales.
+- **Aliasing**: muestreo insuficiente vs detalle (frecuencias altas).
+- **Lag/ghosting**: persistencia del detector.
+
+**Red flags operativos (RX):**
+- histogramas “raros” (clipping),
+- EI sistemáticamente alto (dose creep),
+- rejilla utilizada sin necesidad (aumenta dosis), o sin correcta alineación.
+
+## 6.2 CT (comparativo)
+
+- **Streaks por metal**
+- **Beam hardening** (cupping, bandas)
+- **Ring artifacts** (calibración detectores)
+- **Partial volume**
+- **Cone-beam artifacts** (geometría)
+
+## 6.3 MRI (comparativo)
+
+- **Motion/ghosting**
+- **Susceptibility**
+- **Chemical shift**
+- **Gibbs ringing**
+- **B0/B1 inhomogeneity**
+- **Wrap-around (aliasing)**
+
+---
+
+# 7. Calidad de imagen y evaluación cuantitativa
+
+## 7.1 Métricas y definiciones
+
+- **SNR**: $SNR=\mu/\sigma$ (región homogénea).
+- **CNR**: $CNR=\lvert \mu_1-\mu_2\rvert/\sigma$ (mismo $\sigma$ de referencia).
+- **MTF**: de PSF/ESF/LSF; refleja resolución.
+- **NPS**: se estima en regiones uniformes; describe textura de ruido.
+- **Detectabilidad $d'$** (conceptual): se relaciona con la tarea (tamaño/contraste) y el sistema; útil para “tarea-específica”.
+
+## 7.2 Protocolos con phantoms (configuraciones típicas)
+
+**RX:**
+- Phantom de uniformidad (placa homogénea) para NPS/uniformidad.
+- Phantom de borde inclinado (slanted edge) para MTF.
+- Phantom de detalles de bajo contraste (discos) para CNR/tarea.
+- Phantom de líneas finas (resolución).
+
+### Figura 5: Medición de MTF por borde inclinado (slanted-edge) (esquemática)
+\begin{figure}[H]
+\centering
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tikzpicture}[
+  grid/.style={gray!50, very thin},
+  edge/.style={thick},
+  box/.style={draw, rounded corners, align=center, minimum width=34mm, minimum height=10mm},
+  arrow/.style={-Latex, thick}
+]
+% Left: pixel grid with slanted edge
+\begin{scope}
+\draw[grid] (0,0) grid (4,4);
+\draw[edge] (0.2,0.4) -- (3.8,3.6);
+\node at (2,4.4) {\small Borde inclinado sobre píxeles};
+\end{scope}
+
+% Middle: ESF -> LSF -> MTF
+\node[box] (esf) at (6.4,3.2) {Extraer ESF\\(perfil subpíxel)};
+\node[box] (lsf) at (6.4,1.8) {Derivar: LSF};
+\node[box] (mtf) at (6.4,0.4) {FFT: MTF};
+
+\draw[arrow] (4.4,2.5) -- (esf.west);
+\draw[arrow] (esf) -- (lsf);
+\draw[arrow] (lsf) -- (mtf);
+
+% Right: tiny conceptual curves
+\begin{scope}[shift={(9.1,0.5)}]
+\draw[->, thick] (0,0) -- (2.8,0) node[below] {\scriptsize $x$};
+\draw[->, thick] (0,0) -- (0,2.4) node[left] {\scriptsize rel.};
+\draw[thick] plot[smooth] coordinates {(0.1,0.2) (0.7,0.4) (1.2,1.2) (2.0,1.8) (2.6,2.0)};
+\node at (1.4,2.2) {\scriptsize ESF};
+\end{scope}
+
+\begin{scope}[shift={(9.1,3.0)}]
+\draw[->, thick] (0,0) -- (2.8,0) node[below] {\scriptsize $x$};
+\draw[->, thick] (0,0) -- (0,2.4) node[left] {\scriptsize rel.};
+\draw[thick] plot[smooth] coordinates {(0.4,0.2) (1.2,2.0) (2.0,0.3)};
+\node at (1.4,2.2) {\scriptsize LSF};
+\end{scope}
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Método slanted-edge: del borde inclinado se obtiene ESF, luego LSF (derivada) y finalmente MTF (FFT). Esquema conceptual.}
+\end{figure}
+
+Se coloca un borde metálico ligeramente inclinado respecto a la rejilla de píxeles. Se obtiene ESF, luego LSF por derivada, y MTF por FFT.
+
+## 7.3 Diseño de experimento (repetibilidad y trazabilidad)
+
+- Repetir adquisiciones para estimar varianza y estabilidad.
+- Reportar incertidumbre (intervalos de confianza).
+- Controlar variables: kVp, mAs, colimación, SID, rejilla, procesado.
+- Mantener registro de versiones de pipeline y parámetros.
+
+---
+
+# 8. Dosis y seguridad
+
+## 8.1 RX: indicadores y ALARA
+
+- Usar **KAP/ESAK** para control de dosis por examen y DRLs.
+- Optimizar protocolos: colimación, AEC, evitar repeticiones, posicionamiento.
+- Evitar *dose creep* con auditorías de EI/DI.
+
+## 8.2 CT (comparativo)
+
+- Indicadores: **CTDIvol** y **DLP**.
+- Trade-off dosis–calidad: iterativa/MBIR permite reducir dosis manteniendo detectabilidad (si se valida).
+
+## 8.3 MRI (comparativo)
+
+- Control de **SAR**, límites de gradientes, seguridad de implantes y calentamiento.
+
+---
+
+# 9. Recomendaciones de implementación (pipeline y QA)
+
+## 9.1 Pipeline sugerido por modalidad
+
+**RX (proyección 2D):**
+1. Calibración (dark/flat) + mapa de defectos.
+2. Corrección de ganancia/offset + linealización.
+3. Scatter mitigation (colimación + grid + software moderado).
+4. Denoise controlado por tarea (anatomía).
+5. Realce y LUT por región.
+6. Export DICOM + log de parámetros.
+
+**CT/MRI (resumen):**
+- CT: calibración + correcciones + reconstrucción (FBP/iterativa) + QA HU/artefactos.
+- MRI: correcciones + reconstrucción (FFT/SENSE/GRAPPA/CS) + QA artefactos.
+
+## 9.2 Checklist de validación (mínimo)
+
+- **Calibración**: dark/flat actualizados; uniformidad estable.
+- **Linealidad**: respuesta vs exposición dentro de rango.
+- **MTF/NPS/DQE**: según norma aplicable (p.ej. IEC 62220).
+- **Artefactos**: rejilla, moiré, píxeles muertos, ghosting.
+- **Dosis**: KAP/ESAK dentro de rangos; EI/DI sin deriva.
+- **Trazabilidad**: parámetros y versión de pipeline guardados.
+
+## 9.3 Buenas prácticas (operativas) y errores comunes
+
+**Buenas prácticas:**
+- Protocolos por anatomía y tarea (no “one-size-fits-all”).
+- Colimación estricta: reduce scatter y KAP.
+- Rejilla solo cuando aporta (paciente/espesor/estudio).
+- Auditorías periódicas de KAP/EI y repeticiones.
+- Cambios de software/pipeline con validación clínica y phantom.
+
+**Errores comunes:**
+- Ajustar postprocesado para “verse bonito” sin medir detectabilidad.
+- Ignorar drift de calibración.
+- Confundir EI con dosis o calidad clínica.
+- Colimar amplio para “no cortar” y aumentar dosis innecesaria.
+
+---
+
+# 10. Casos de uso y guía de selección
+
+## 10.1 Matriz de decisión (objetivo clínico vs método)
+
+**Tabla 4: “Si tu objetivo es X, usa Y” (resumen práctico).**
+
+| Objetivo | Prioridad | Recomendación técnica | Evitar |
+|---|---|---|---|
+| Reducir dosis manteniendo detectabilidad | ALARA | optimizar colimación + AEC + kVp/mAs; denoise moderado validado | denoise agresivo sin QA; subir mAs “por seguridad” |
+| Mejorar contraste en abdomen | CNR | controlar scatter (grid + colimación + corrección) | postproceso excesivo para “inventar contraste” |
+| Detectar fractura fina | resolución | minimizar movimiento; PSF baja; sharpening moderado | suavizado fuerte; halos |
+| Seguimiento seriado | consistencia | protocolos fijos + logs + QA | cambios invisibles de pipeline |
+
+---
+
+# 11. Conclusiones
+
+1. La imagen RX es el resultado de una cadena físico–digital donde los mayores degradantes prácticos son **scatter**, desenfoque y ruido dependiente de exposición.
+2. La dosimetría en radiografía debe centrarse en métricas operativas (KAP/ESAK) y control de técnica (EI/DI) para prevenir *dose creep* y sostener ALARA.
+3. La “reconstrucción RX” es un pipeline de calibración y correcciones que debe ser **tarea-específico**, medido con phantoms y gobernado por QA: el posprocesado nunca debe sustituir una adquisición físicamente correcta.
+4. La comparación con CT/MRI permite ubicar la reconstrucción tomográfica y reconstrucción en $k$-espacio como casos particulares; sin embargo, las disciplinas de trazabilidad, QA y control de riesgos son comunes.
+
+---
+
+# 12. Referencias (formato IEEE, ≥ 25)
+
+> Nota: se listan libros, estándares y reportes técnicos ampliamente usados en ingeniería clínica e imagen médica. Para aplicación formal, verificar la edición vigente y adopción local.
+
+[1] J. T. Bushberg, J. A. Seibert, E. M. Leidholdt Jr., and J. M. Boone, *The Essential Physics of Medical Imaging*, 3rd ed. Philadelphia, PA, USA: Lippincott Williams & Wilkins, 2012.
+
+[2] A. E. Burgess, “The Rose model, revisited,” *J. Opt. Soc. Am. A*, vol. 16, no. 3, pp. 633–646, 1999.
+
+[3] E. Samei and M. J. Flynn, “An experimental comparison of detector performance for direct and indirect digital radiography systems,” *Med. Phys.*, vol. 30, no. 4, pp. 608–622, 2003.
+
+[4] H. H. Barrett and K. J. Myers, *Foundations of Image Science*. Hoboken, NJ, USA: Wiley, 2004.
+
+[5] R. C. Gonzalez and R. E. Woods, *Digital Image Processing*, 4th ed. Pearson, 2018.
+
+[6] A. C. Kak and M. Slaney, *Principles of Computerized Tomographic Imaging*. SIAM, 2001.
+
+[7] W. A. Kalender, *Computed Tomography: Fundamentals, System Technology, Image Quality, Applications*, 3rd ed. Erlangen, Germany: Publicis, 2011.
+
+[8] S. Natterer, *The Mathematics of Computerized Tomography*. SIAM, 2001.
+
+[9] M. A. Anastasio, J. Zhang, and P. La Riviere, “Model-based image reconstruction,” in *Handbook of Medical Imaging*, relevant chapters, SPIE, various editions.
+
+[10] IEC 62220-1-1, “Medical electrical equipment — Characteristics of digital X-ray imaging devices — Part 1-1: Determination of the detective quantum efficiency — Detectors used in radiographic imaging,” International Electrotechnical Commission, Geneva, Switzerland.
+
+[11] IEC 61223-3-1, “Evaluation and routine testing in medical imaging departments — Part 3-1: Acceptance tests — Imaging performance of X-ray equipment for radiographic and radioscopic systems,” IEC, Geneva.
+
+[12] IEC 60601-1, “Medical electrical equipment — Part 1: General requirements for basic safety and essential performance,” IEC, Geneva.
+
+[13] ICRP Publication 103, “The 2007 Recommendations of the International Commission on Radiological Protection,” *Ann. ICRP*, 2007.
+
+[14] ICRP Publication 105, “Radiological protection in medicine,” *Ann. ICRP*, 2007.
+
+[15] IAEA, *Radiation Protection in Diagnostic and Interventional Radiology*, Safety Reports/Training materials, International Atomic Energy Agency, Vienna.
+
+[16] ICRU Report 74, “Patient dosimetry for X-rays used in medical imaging,” International Commission on Radiation Units and Measurements.
+
+[17] NCRP Report No. 160, “Ionizing Radiation Exposure of the Population of the United States,” National Council on Radiation Protection and Measurements, 2009.
+
+[18] AAPM Report (varios), “Quality control and performance evaluation of radiographic systems,” American Association of Physicists in Medicine (consultar reportes/tareas de grupo aplicables).
+
+[19] ACR, “Practice Parameter for Diagnostic Radiography,” American College of Radiology (consultar versión vigente).
+
+[20] ACR–AAPM–SIIM, “Technical Standard/Practice Parameter for Digital Radiography,” joint guidance (consultar versión vigente).
+
+[21] J. A. Seibert, “X-ray imaging physics for nuclear medicine technologists,” *J. Nucl. Med. Technol.*, vol. 32, pp. 139–147, 2004 (conceptos aplicables).
+
+[22] R. L. Siddon, “Fast calculation of the exact radiological path for a three-dimensional CT array,” *Med. Phys.*, vol. 12, no. 2, pp. 252–255, 1985.
+
+[23] L. I. Rudin, S. Osher, and E. Fatemi, “Nonlinear total variation based noise removal algorithms,” *Physica D*, vol. 60, pp. 259–268, 1992.
+
+[24] N. Wiener, *Extrapolation, Interpolation, and Smoothing of Stationary Time Series*. MIT Press, 1949 (fundamentos de filtro Wiener).
+
+[25] Z. Wang et al., “Image quality assessment: From error visibility to structural similarity,” *IEEE Trans. Image Process.*, vol. 13, no. 4, pp. 600–612, 2004.
+
+[26] S. Boyd and L. Vandenberghe, *Convex Optimization*. Cambridge Univ. Press, 2004 (base para formulaciones variacionales).
+
+[27] M. Lustig, D. Donoho, and J. M. Pauly, “Sparse MRI: The application of compressed sensing for rapid MR imaging,” *Magn. Reson. Med.*, vol. 58, no. 6, pp. 1182–1195, 2007 (comparativo MRI/CS).
+
+[28] K. Hammernik et al., “Learning a variational network for reconstruction of accelerated MRI data,” *Magn. Reson. Med.*, vol. 79, pp. 3055–3071, 2018 (comparativo DL en recon).
+
+[29] J. Hsieh, *Computed Tomography: Principles, Design, Artifacts, and Recent Advances*, 2nd ed. SPIE Press, 2009.
+
+[30] E. Samei and M. J. Flynn (eds.), *Handbook of Medical Imaging* (Image quality and system performance chapters), SPIE, various editions.
+
+---
+
+## Apéndice A: Lista corta de “red flags” para operación y QA en RX
+
+1) EI/DI derivando al alza sin justificación clínica (posible *dose creep*).
+2) KAP sistemáticamente alto por colimación amplia.
+3) Shading o bandas: sospechar scatter, rejilla, flat-field, heel effect no compensado.
+4) Moiré/patrones: rejilla vs muestreo (especialmente CR).
+5) Halos y bordes “neón”: sharpening excesivo.
+6) Textura “plástica” y pérdida de microdetalle: denoise demasiado fuerte.
+7) Saturación local: clipping (imposible recuperar detalle real).
+
+## Apéndice B: Tabla de verificación para cambios de pipeline (gobernanza técnica)
+
+- ¿Se probó con phantom (MTF, NPS, CNR) antes/después?
+- ¿Se evaluó tarea clínica específica (fractura fina, nódulo, línea pleural)?
+- ¿Se documentaron parámetros y versión?
+- ¿Se entrenó al personal y se actualizó el protocolo?
+- ¿Se definió rollback si hay degradación?
+
+

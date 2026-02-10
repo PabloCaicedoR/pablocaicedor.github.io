@@ -134,6 +134,109 @@ El paciente actúa como un filtro espacialmente variante definido por $\mu(x, y,
 
 ---
 
+## 1. El Fenómeno de Atenuación
+
+La absorción de rayos X no es un evento binario, sino un proceso estocástico de remoción de fotones del haz primario.
+
+* **Atenuación:** Suma de absorción y dispersión.
+* **Variable crítica:** Fluencia de energía que alcanza el detector.
+
+<!-- TODO: [Image of X-ray beam attenuation through different body tissues like bone, muscle, and fat] -->
+
+---
+
+## 2. Formalismo Matemático: Ley de Beer-Lambert
+
+Para un haz monoenergético en un medio homogéneo:
+
+$$I = I_0 e^{-\mu x}$$
+
+En la anatomía humana (heterogénea), el modelo se convierte en una integral de línea:
+
+$$I = I_0 \exp\left( -\int_{L} \mu(s, E) \, ds \right)$$
+
+> **Nota:** En procesamiento de imágenes, aplicamos $\ln(I_0/I)$ para linealizar la proyección.
+
+---
+
+## 3. Coeficientes de Atenuación ($\mu$)
+
+El coeficiente de atenuación lineal $\mu$ ($cm^{-1}$) depende de la densidad física $\rho$ y la energía $E$.
+
+$$\mu = \rho \cdot \left( \frac{\mu}{\rho} \right)$$
+
+* **Coeficiente másico ($\mu/\rho$):** Independiente del estado físico, disponible en tablas NIST XCOM.
+* **Dependencia de Z:** El contraste depende de la relación $\propto Z^3/E^3$.
+
+---
+
+## 4. Física de la Interacción
+
+A energías diagnósticas (20-150 keV), dominan dos mecanismos:
+
+1. **Efecto Fotoeléctrico:** Absorción total. Define el contraste radiográfico (Hueso vs. Tejido).
+2. **Efecto Compton:** Dispersión. Genera ruido y reduce la relación señal-ruido (SNR).
+
+<!-- TODO: [Image of photoelectric effect and compton scattering diagram] -->
+
+---
+
+## 5. Factores Críticos: Acumulación y Divergencia
+
+### Factor de Acumulación ($B$)
+Corrige la radiación dispersa que llega al detector:
+$$I = I_0 \cdot B \cdot e^{-\mu x}$$
+
+### Divergencia (Cuadrado Inverso)
+La intensidad decae con la distancia $d$:
+$$I \propto \frac{1}{d^2}$$
+
+---
+
+## 6. Representación en la Imagen Digital
+
+| Etapa | Variable Física |
+|:--- |:--- |
+| **Raw (Crudo)** | Exposición / Fluencia (Kerma). |
+| **Log-Transformed** | Integral de línea de $\mu$. |
+| **Clínica (DICOM)** | Índice de luminancia (No lineal). |
+
+---
+
+## 7. Simulación: Endurecimiento del Haz (Python)
+
+El "Beam Hardening" ocurre porque los fotones de baja energía se atenúan más rápido, aumentando la energía media del haz.
+
+```python
+import numpy as np
+
+# Configuración NumPy 2.0+
+E = np.linspace(10, 100, 500)
+I0 = np.maximum(74 * (100 - E), 0)
+
+# Atenuación en 2cm de Hueso
+mu_bone = 20000 * (E**-3) + 0.18
+I_trans = I0 * np.exp(-mu_bone * 2.0)
+
+# Cálculo de Energía Media (Endurecimiento)
+e_ini = np.trapezoid(I0 * E, E) / np.trapezoid(I0, E)
+e_fin = np.trapezoid(I_trans * E, E) / np.trapezoid(I_trans, E)
+
+print(f"E_media inicial: {e_ini:.2f} keV")
+print(f"E_media final: {e_fin:.2f} keV")
+```
+
+<!-- TODO: [Image of X-ray beam hardening effect on spectrum] -->
+
+---
+
+## 8. Hacia una IA Confiable
+
+Para un procesamiento de imágenes preciso, los modelos deben:
+
+1. **Compensar la Policromaticidad:** Evitar artefactos de endurecimiento.
+2. **Considerar la Causalidad:** El valor del píxel
+
 ## Flujo de la Cadena Física-Digital
 
 ```{mermaid}

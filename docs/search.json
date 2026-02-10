@@ -9714,5 +9714,61 @@
     "title": "Procesamiento Avanzado de Imágenes Médicas",
     "section": "Resumen de la Cadena",
     "text": "Resumen de la Cadena\nPara obtener una buena imagen necesitamos:\n\nSuficiente fuerza (\\(kVp\\)).\nUn muro denso (alto \\(Z\\)).\nUn filtro que limpie la mezcla (\\(I(E)\\)).\nUn punto de choque pequeño para evitar la penumbra.\nSuficientes fotones para una buena SNR."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#el-fenómeno-de-atenuación",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#el-fenómeno-de-atenuación",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "1. El Fenómeno de Atenuación",
+    "text": "1. El Fenómeno de Atenuación\nLa absorción de rayos X no es un evento binario, sino un proceso estocástico de remoción de fotones del haz primario.\n\nAtenuación: Suma de absorción y dispersión.\nVariable crítica: Fluencia de energía que alcanza el detector."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#formalismo-matemático-ley-de-beer-lambert",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#formalismo-matemático-ley-de-beer-lambert",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "2. Formalismo Matemático: Ley de Beer-Lambert",
+    "text": "2. Formalismo Matemático: Ley de Beer-Lambert\nPara un haz monoenergético en un medio homogéneo:\n\\[I = I_0 e^{-\\mu x}\\]\nEn la anatomía humana (heterogénea), el modelo se convierte en una integral de línea:\n\\[I = I_0 \\exp\\left( -\\int_{L} \\mu(s, E) \\, ds \\right)\\]\n\nNota: En procesamiento de imágenes, aplicamos \\(\\ln(I_0/I)\\) para linealizar la proyección."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#coeficientes-de-atenuación-mu",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#coeficientes-de-atenuación-mu",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "3. Coeficientes de Atenuación (\\(\\mu\\))",
+    "text": "3. Coeficientes de Atenuación (\\(\\mu\\))\nEl coeficiente de atenuación lineal \\(\\mu\\) (\\(cm^{-1}\\)) depende de la densidad física \\(\\rho\\) y la energía \\(E\\).\n\\[\\mu = \\rho \\cdot \\left( \\frac{\\mu}{\\rho} \\right)\\]\n\nCoeficiente másico (\\(\\mu/\\rho\\)): Independiente del estado físico, disponible en tablas NIST XCOM.\nDependencia de Z: El contraste depende de la relación \\(\\propto Z^3/E^3\\)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#física-de-la-interacción",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#física-de-la-interacción",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "4. Física de la Interacción",
+    "text": "4. Física de la Interacción\nA energías diagnósticas (20-150 keV), dominan dos mecanismos:\n\nEfecto Fotoeléctrico: Absorción total. Define el contraste radiográfico (Hueso vs. Tejido).\nEfecto Compton: Dispersión. Genera ruido y reduce la relación señal-ruido (SNR)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#factores-críticos-acumulación-y-divergencia",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#factores-críticos-acumulación-y-divergencia",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "5. Factores Críticos: Acumulación y Divergencia",
+    "text": "5. Factores Críticos: Acumulación y Divergencia\nFactor de Acumulación (\\(B\\))\nCorrige la radiación dispersa que llega al detector: \\[I = I_0 \\cdot B \\cdot e^{-\\mu x}\\]\nDivergencia (Cuadrado Inverso)\nLa intensidad decae con la distancia \\(d\\): \\[I \\propto \\frac{1}{d^2}\\]"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#representación-en-la-imagen-digital",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#representación-en-la-imagen-digital",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "6. Representación en la Imagen Digital",
+    "text": "6. Representación en la Imagen Digital\n\n\n\nEtapa\nVariable Física\n\n\n\n\nRaw (Crudo)\nExposición / Fluencia (Kerma).\n\n\nLog-Transformed\nIntegral de línea de \\(\\mu\\).\n\n\nClínica (DICOM)\nÍndice de luminancia (No lineal)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#simulación-endurecimiento-del-haz-python",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#simulación-endurecimiento-del-haz-python",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "7. Simulación: Endurecimiento del Haz (Python)",
+    "text": "7. Simulación: Endurecimiento del Haz (Python)\nEl “Beam Hardening” ocurre porque los fotones de baja energía se atenúan más rápido, aumentando la energía media del haz.\nimport numpy as np\n\n# Configuración NumPy 2.0+\nE = np.linspace(10, 100, 500)\nI0 = np.maximum(74 * (100 - E), 0)\n\n# Atenuación en 2cm de Hueso\nmu_bone = 20000 * (E**-3) + 0.18\nI_trans = I0 * np.exp(-mu_bone * 2.0)\n\n# Cálculo de Energía Media (Endurecimiento)\ne_ini = np.trapezoid(I0 * E, E) / np.trapezoid(I0, E)\ne_fin = np.trapezoid(I_trans * E, E) / np.trapezoid(I_trans, E)\n\nprint(f\"E_media inicial: {e_ini:.2f} keV\")\nprint(f\"E_media final: {e_fin:.2f} keV\")"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect003_RayosX.html#hacia-una-ia-confiable",
+    "href": "presentaciones/PAIM/Lect003_RayosX.html#hacia-una-ia-confiable",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "8. Hacia una IA Confiable",
+    "text": "8. Hacia una IA Confiable\nPara un procesamiento de imágenes preciso, los modelos deben:\n\nCompensar la Policromaticidad: Evitar artefactos de endurecimiento.\nConsiderar la Causalidad: El valor del píxel"
   }
 ]
