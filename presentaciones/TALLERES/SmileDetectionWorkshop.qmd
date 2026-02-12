@@ -1,0 +1,469 @@
+---
+title: "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)"
+subtitle: "Conceptos de procesamiento de imágenes para entender el script taller.py"
+author: "Pablo"
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    chalkboard: true
+    preview-links: true
+    transition: fade
+    center: false
+    width: 1280
+    height: 720
+    toc: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Objetivo de la sesión (30+ min)
+
+- Entender el flujo completo del script: **webcam → preproceso → detección rostro → ROI → detección sonrisa → overlay**
+- Extraer los **conceptos de procesamiento de imágenes** que aparecen en cada paso
+- Aprender a **ajustar parámetros** para controlar: sensibilidad, falsos positivos y rendimiento
+
+> Contexto: implementación clásica y rápida (Haar cascades) para tiempo real.
+
+---
+
+## El script en una frase
+
+- Captura frames de la webcam
+- Convierte a **grises** y mejora contraste con **ecualización de histograma**
+- Detecta **rostros** con un clasificador en cascada
+- En cada rostro (ROI) detecta **sonrisas**
+- Dibuja rectángulos y escribe texto en el frame
+
+(Referencia del código: `taller.py`) :contentReference[oaicite:0]{index=0}
+
+---
+
+## Agenda (para 30–40 min)
+
+1. Pipeline de visión en tiempo real (5 min)
+2. Imagen digital como matriz + espacios de color (5 min)
+3. Preprocesamiento: grises + ecualización (6 min)
+4. Detección Viola–Jones / Haar Cascades (10 min)
+5. Parámetros `detectMultiScale`: trade-offs (8 min)
+6. ROI y detección jerárquica (3 min)
+7. Anotación: bounding boxes y texto (3 min)
+8. Fallos típicos, buenas prácticas y extensiones (5 min)
+
+---
+
+## Pipeline típico de visión por computador
+
+1. **Adquisición**: sensor/cámara → frame
+2. **Preprocesamiento**: normalización/contraste/ruido
+3. **Detección**: localizar objetos (rostro)
+4. **Análisis local**: sub-detección (sonrisa en la ROI)
+5. **Decisión**: regla simple (hay detección vs no)
+6. **Visualización**: overlays en el frame
+
+Esto es exactamente lo que implementa el script. :contentReference[oaicite:1]{index=1}
+
+---
+
+## Tiempo real: ¿por qué importa?
+
+- En tiempo real importan dos métricas:
+  - **Latencia**: cuánto tarda en procesar un frame
+  - **FPS**: cuántos frames por segundo se sostienen
+
+La cascada Haar es popular porque es rápida en CPU, aunque no sea SOTA.
+
+---
+
+## Imagen digital: la idea mínima
+
+- Una imagen es una **matriz**:
+  - 2D: `(alto, ancho)` si es escala de grises
+  - 3D: `(alto, ancho, canales)` si es color
+
+En OpenCV, un frame de webcam suele ser `uint8` en rango **0–255** por canal.
+
+---
+
+## Espacios de color: BGR vs Gray
+
+- OpenCV usa **BGR** (no RGB) por defecto
+- El detector en cascada opera sobre **una banda** (grises)
+- Por eso aparece:
+
+`gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)` :contentReference[oaicite:2]{index=2}
+
+---
+
+## Conversión a grises: ¿qué se “pierde”?
+
+- Se reduce información cromática
+- Se conserva principalmente **estructura**: bordes, sombras, texturas
+- Para Haar/Viola–Jones, eso es suficiente:
+  - busca patrones de contraste (claro/oscuro)
+
+---
+
+## Preprocesamiento: ¿por qué tocar el contraste?
+
+Problema: en webcam real hay
+- cambios de iluminación
+- sombras parciales
+- auto-exposure
+
+Solución simple del script:
+- `gray = cv2.equalizeHist(gray)` :contentReference[oaicite:3]{index=3}
+
+---
+
+## Histograma de intensidades (recordatorio)
+
+- El histograma cuenta cuántos píxeles hay en cada nivel de gris
+- Si la imagen está “oscura”, el histograma se concentra a la izquierda
+- Si está “lavada”, se concentra a la derecha o en un rango estrecho
+
+La ecualización intenta “expandir” ese rango.
+
+---
+
+## Ecualización de histograma: intuición
+
+- Transforma la imagen para que el histograma sea más uniforme
+- Efecto:
+  - aumenta contraste global
+  - puede mejorar detectabilidad de rasgos
+  - **también** puede amplificar ruido en zonas oscuras
+
+En el script se usa como robustez general. :contentReference[oaicite:4]{index=4}
+
+---
+
+## ¿Qué alternativa moderna usarías?
+
+Para discusión:
+- CLAHE (ecualización adaptativa con límite de contraste)
+- Normalización por iluminación / homomorphic filtering
+- Modelos CNN con entrenamiento robusto
+
+Pero aquí el objetivo es entender una cadena clásica, clara y rápida.
+
+---
+
+## Detección: ¿qué es “detectar” aquí?
+
+- Entrada: imagen (grises)
+- Salida: lista de rectángulos:
+  - cada rectángulo es un **bounding box**: `(x, y, w, h)`
+
+En el código:
+- `faces = face_cascade.detectMultiScale(...)` :contentReference[oaicite:5]{index=5}
+
+---
+
+## Viola–Jones / Haar Cascades (visión general)
+
+Tres ideas clave:
+
+1. **Características Haar**: patrones rectangulares de contraste
+2. **Imagen integral**: cálculo ultrarrápido de sumas en rectángulos
+3. **Cascada**: etapas de clasificación que rechazan rápido la mayoría de ventanas
+
+Por eso funciona bien en tiempo real en CPU.
+
+---
+
+## Características Haar (intuición)
+
+- No son bordes “bonitos”; son tests tipo:
+  - “¿esta región es más clara que esta otra?”
+- Un rostro tiene regularidades:
+  - zona ojos más oscura que mejillas
+  - puente nasal, etc.
+
+Una sonrisa también genera contrastes (boca/dientes/labios).
+
+---
+
+## Imagen integral (por qué acelera)
+
+- Permite obtener la suma de intensidades de cualquier rectángulo
+  con pocas operaciones
+- Esto hace viable evaluar **miles de ventanas por frame**
+
+No lo implementas tú: OpenCV lo hace internamente.
+
+---
+
+## Cascada: la estrategia
+
+- Etapas tempranas: baratas y estrictas → rechazan rápido
+- Etapas tardías: más costosas → solo para candidatos
+
+Resultado:
+- menor carga computacional
+- pero depende mucho del dataset de entrenamiento del XML
+
+---
+
+## Ventana deslizante + escalas
+
+- El detector “mueve” una ventana por la imagen
+- Repite el proceso en múltiples escalas (para detectar objetos grandes/pequeños)
+
+Ahí entra `scaleFactor`.
+
+---
+
+## `detectMultiScale`: parámetros clave
+
+Para rostros:
+```python
+faces = self.face_cascade.detectMultiScale(
+    gray, scaleFactor=1.3, minNeighbors=5
+)
+```
+:contentReference[oaicite:6]{index=6}
+
+Para sonrisa (en ROI):
+```python
+smiles = self.smile_cascade.detectMultiScale(
+    roi_gray, scaleFactor=1.5, minNeighbors=32, minSize=(25, 25)
+)
+```
+:contentReference[oaicite:7]{index=7}
+
+---
+
+## `scaleFactor`: precisión vs velocidad
+
+- `scaleFactor = 1.3`:
+  - más niveles de escala (que 1.5)
+  - mejor cobertura de tamaños
+  - más costo computacional
+
+- `scaleFactor = 1.5` (sonrisa):
+  - menos escalas → más rápido
+  - puede perder sonrisas pequeñas
+
+---
+
+## `minNeighbors`: filtro de falsos positivos
+
+- Cuántas detecciones “consistentes” se necesitan para aceptar una
+- Bajo (p.ej. 3–5): más sensible, más falsos positivos
+- Alto (p.ej. 20–40): más estricto, menos falsos positivos
+
+El script pone **32** para sonrisa: bastante estricto. :contentReference[oaicite:8]{index=8}
+
+---
+
+## `minSize`: evitar basura
+
+- Define tamaño mínimo de objeto a aceptar
+- Para sonrisa:
+  - `minSize=(25,25)` evita detectar texturas minúsculas como “sonrisa” :contentReference[oaicite:9]{index=9}
+
+En la práctica:
+- subes `minSize` si hay muchos falsos positivos pequeños
+- bajas `minSize` si te pierdes sonrisas en gente lejos de la cámara
+
+---
+
+## Concepto central: ROI (Región de Interés)
+
+Se detecta en dos niveles:
+
+1. Rostro en toda la imagen
+2. Sonrisa **solo dentro del rostro**
+
+Código:
+- `roi_gray = gray[y:y+h, x:x+w]` :contentReference[oaicite:10]{index=10}
+
+Beneficios:
+- menos cómputo
+- menos falsos positivos
+- coherencia semántica: la sonrisa “vive” en el rostro
+
+---
+
+## ROI y coordenadas: cuidado mental
+
+- `frame` (global) tiene coordenadas `(x, y)`
+- `roi_color` tiene coordenadas locales `(sx, sy)`
+- Por eso el rectángulo de sonrisa se dibuja sobre `roi_color`:
+  - `cv2.rectangle(roi_color, (sx,sy), (sx+sw, sy+sh), ...)` :contentReference[oaicite:11]{index=11}
+
+---
+
+## Bounding boxes: representación y dibujo
+
+- Un bounding box es un rectángulo definido por:
+  - esquina superior-izquierda `(x, y)`
+  - ancho `w`, alto `h`
+
+Dibujo:
+- `cv2.rectangle(frame, (x,y), (x+w, y+h), ...)` :contentReference[oaicite:12]{index=12}
+
+---
+
+## Overlay de texto: “estado” del sistema
+
+El script implementa una regla:
+
+- si `len(smiles) > 0` → “Sonrisa Detectada”
+- si no → “No detectada / Serio”
+
+Esto es postprocesamiento mínimo y una decisión binaria simple. :contentReference[oaicite:13]{index=13}
+
+---
+
+## Decisión binaria: ¿qué significa realmente?
+
+- “Sonrisa detectada” ≠ emoción real
+- Solo significa:
+  - “se encontraron patrones compatibles con el clasificador”
+
+Importante para evitar sobreinterpretación, sobre todo en contextos biomédicos.
+
+---
+
+## Bucles de adquisición: control de flujo
+
+- `cap = cv2.VideoCapture(0)` abre la webcam :contentReference[oaicite:14]{index=14}
+- `ret, frame = cap.read()` obtiene un frame
+- `cv2.imshow(...)` muestra la salida
+- `cv2.waitKey(1)` permite refresco y captura tecla
+- `if ... == ord("q")` sale del loop :contentReference[oaicite:15]{index=15}
+
+---
+
+## Robustez: validaciones del script
+
+- Verifica que los XML cargaron:
+  - `if self.face_cascade.empty() or self.smile_cascade.empty(): raise ...` :contentReference[oaicite:16]{index=16}
+- Verifica acceso a webcam:
+  - `if not cap.isOpened(): ... return` :contentReference[oaicite:17]{index=17}
+
+Concepto de ingeniería: fallar temprano con errores claros.
+
+---
+
+## Rendimiento: ¿dónde se gasta el tiempo?
+
+- Mayor costo: `detectMultiScale`
+  - porque evalúa muchas ventanas por frame
+- Reducir costo:
+  - trabajar con ROI
+  - subir `scaleFactor` (menos escalas)
+  - subir `minSize`
+  - bajar resolución del frame antes de detectar
+
+---
+
+## Mini-experimento mental (5 min)
+
+Si hay demasiados falsos positivos de sonrisa:
+- sube `minNeighbors` (ya está alto: 32)
+- sube `minSize`
+- reduce ecualización o usa CLAHE
+- restringe ROI a zona inferior del rostro (boca) en vez de todo el rostro
+
+---
+
+## Mini-experimento mental (5 min)
+
+Si no detecta sonrisas en gente lejos:
+- baja `minSize` (p.ej. 15x15)
+- baja `scaleFactor` (p.ej. 1.3)
+- baja `minNeighbors` (p.ej. 15–25)
+- aumenta iluminación o mejora exposición
+
+Trade-off inevitable: sensibilidad vs falsos positivos.
+
+---
+
+## Errores típicos (y por qué pasan)
+
+- **Pose** (cara girada): cascada frontal falla
+- **Oclusión** (mano, mascarilla): pierde rasgos
+- **Luz dura** (contraluz): cambia contrastes → se rompe Haar
+- **Resolución baja**: rasgos poco definidos
+- **Expresiones sutiles**: patrón no coincide con entrenamiento
+
+---
+
+## ¿Qué “conceptos” debes dominar para entender el script?
+
+Checklist:
+
+- Imagen como matriz, tipo de dato `uint8`
+- Espacios de color (BGR) y conversión a grises
+- Histograma y ecualización
+- Detección de objetos vs clasificación
+- Bounding boxes y coordenadas
+- ROI (recorte) y jerarquía de detección
+- Viola–Jones: Haar features, imagen integral, cascada
+- Parámetros `detectMultiScale` y trade-offs
+- Visualización en tiempo real (imshow, waitKey)
+
+Todo aparece en el flujo del código. :contentReference[oaicite:18]{index=18}
+
+---
+
+## Actividad sugerida (para estudiantes)
+
+1. Ejecutar el script tal cual
+2. Cambiar un parámetro a la vez (registrar):
+   - `scaleFactor` (rostro)
+   - `minNeighbors` (rostro)
+   - `minNeighbors` (sonrisa)
+   - `minSize` (sonrisa)
+3. Documentar:
+   - FPS aproximado (sensación)
+   - falsos positivos
+   - falsos negativos
+
+---
+
+## Extensión 1: mejorar contraste sin amplificar tanto ruido
+
+- Sustituir `equalizeHist` por CLAHE
+- Comparar resultados con iluminación variable
+
+(Útil en escenarios biomédicos con condiciones de luz no controladas)
+
+---
+
+## Extensión 2: segmentar “zona boca” dentro del rostro
+
+- Dividir el rostro en regiones:
+  - parte inferior ~ 40%–55% del alto
+- Detectar sonrisa solo allí:
+  - menos falsos positivos
+  - mejor rendimiento
+
+---
+
+## Extensión 3: migrar a métodos modernos (discusión)
+
+- Detección facial: DNN (OpenCV DNN), MediaPipe, YOLO-face
+- Sonrisa/expresión: clasificación CNN en landmarks o en recortes
+
+Pero:
+- mayor complejidad
+- más dependencias
+- potencial necesidad de GPU
+
+---
+
+## Cierre
+
+- El script implementa un pipeline clásico, didáctico y eficiente:
+  - **preproceso simple + detector rápido + ROI + overlays**
+- Aprendizaje clave:
+  - ajustar parámetros = balancear sensibilidad/precisión/rendimiento
+- Si dominas los conceptos listados, el código se vuelve “obvio” y modificable.
+
+(Referencia del script) :contentReference[oaicite:19]{index=19}
