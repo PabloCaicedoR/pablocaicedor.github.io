@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Experto en Procesamiento de Imágenes Médicas">
+<meta name="dcterms.date" content="2026-02-09">
+
+<title>Reporte técnico: modelado de atenuación, respuesta de Flat Panel y formación de radiografías (enfoque RX y CT) – PECR Knowledge Hub</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-c40e139f9c4114c612eb61de435499b9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../recursos/estilos/styles_site.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo light-content">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#resumen-ejecutivo" id="toc-resumen-ejecutivo" class="nav-link active" data-scroll-target="#resumen-ejecutivo">Resumen Ejecutivo</a></li>
+  <li><a href="#introducción-la-cadena-de-imagen-como-sistema-de-señales" id="toc-introducción-la-cadena-de-imagen-como-sistema-de-señales" class="nav-link" data-scroll-target="#introducción-la-cadena-de-imagen-como-sistema-de-señales">Introducción: La Cadena de Imagen como Sistema de Señales</a></li>
+  <li><a href="#fundamentos-físicos-de-la-radiación" id="toc-fundamentos-físicos-de-la-radiación" class="nav-link" data-scroll-target="#fundamentos-físicos-de-la-radiación">Fundamentos Físicos de la Radiación</a></li>
+  <li><a href="#modelado-matemático-de-la-adquisición" id="toc-modelado-matemático-de-la-adquisición" class="nav-link" data-scroll-target="#modelado-matemático-de-la-adquisición">Modelado Matemático de la Adquisición</a>
+  <ul class="collapse">
+  <li><a href="#radiografía-la-proyección-polinomática" id="toc-radiografía-la-proyección-polinomática" class="nav-link" data-scroll-target="#radiografía-la-proyección-polinomática">Radiografía: La Proyección Polinomática</a></li>
+  <li><a href="#tomografía-computarizada-ct-de-radon-a-la-realidad" id="toc-tomografía-computarizada-ct-de-radon-a-la-realidad" class="nav-link" data-scroll-target="#tomografía-computarizada-ct-de-radon-a-la-realidad">Tomografía Computarizada (CT): De Radon a la Realidad</a></li>
+  </ul></li>
+  <li><a href="#métodos-de-ingeniería-y-simulación" id="toc-métodos-de-ingeniería-y-simulación" class="nav-link" data-scroll-target="#métodos-de-ingeniería-y-simulación">Métodos de Ingeniería y Simulación</a>
+  <ul class="collapse">
+  <li><a href="#método-a-el-desafío-del-endurecimiento-del-haz-beam-hardening" id="toc-método-a-el-desafío-del-endurecimiento-del-haz-beam-hardening" class="nav-link" data-scroll-target="#método-a-el-desafío-del-endurecimiento-del-haz-beam-hardening">Método A: El Desafío del Endurecimiento del Haz (Beam Hardening)</a></li>
+  <li><a href="#método-b-modelado-de-la-respuesta-del-detector-cascada-lineal" id="toc-método-b-modelado-de-la-respuesta-del-detector-cascada-lineal" class="nav-link" data-scroll-target="#método-b-modelado-de-la-respuesta-del-detector-cascada-lineal">Método B: Modelado de la Respuesta del Detector (Cascada Lineal)</a></li>
+  <li><a href="#método-c-pipeline-de-procesamiento-de-imagen" id="toc-método-c-pipeline-de-procesamiento-de-imagen" class="nav-link" data-scroll-target="#método-c-pipeline-de-procesamiento-de-imagen">Método C: Pipeline de Procesamiento de Imagen</a></li>
+  </ul></li>
+  <li><a href="#artefactos-y-evaluación-de-calidad" id="toc-artefactos-y-evaluación-de-calidad" class="nav-link" data-scroll-target="#artefactos-y-evaluación-de-calidad">Artefactos y Evaluación de Calidad</a></li>
+  <li><a href="#conclusiones-y-seguridad" id="toc-conclusiones-y-seguridad" class="nav-link" data-scroll-target="#conclusiones-y-seguridad">Conclusiones y Seguridad</a></li>
+  <li><a href="#referencias" id="toc-referencias" class="nav-link" data-scroll-target="#referencias">Referencias</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="ModeladoFisicoRadiografía_v3.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Reporte técnico: modelado de atenuación, respuesta de Flat Panel y formación de radiografías (enfoque RX y CT)</h1>
+<p class="subtitle lead">Generación/adquisición y reconstrucción de imágenes médicas con enfoque ingenieril y clínico-operativo</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Experto en Procesamiento de Imágenes Médicas </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">February 9, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="resumen-ejecutivo" class="level1">
+<h1>Resumen Ejecutivo</h1>
+<p>En el ámbito de la ingeniería biomédica moderna, la brecha entre los modelos teóricos ideales y la realidad física de la adquisición de imágenes es la fuente principal de errores diagnósticos y fallos en algoritmos de Inteligencia Artificial. [cite_start]Este reporte técnico aborda la modelización matemática—tanto determinista como estocástica—de la cadena de adquisición en Rayos X (RX) y Tomografía Computarizada (CT)[cite: 1, 11].</p>
+<p>[cite_start]Nos enfrentamos a un problema fundamental: la discrepancia entre la asunción de linealidad y monocromaticidad, frente a una realidad gobernada por espectros policromáticos, detectores con respuesta no lineal y ruido cuántico[cite: 13]. Esta discrepancia se manifiesta en artefactos críticos como el endurecimiento del haz (<em>beam hardening</em>) y degradación de la relación señal-ruido.</p>
+<p>[cite_start]El análisis presentado demuestra que la optimización de la relación dosis-calidad no puede basarse en la intuición, sino que requiere una modelización rigurosa de la Función de Transferencia de Modulación (MTF) y la Eficiencia Cuántica de Detección (DQE)[cite: 14]. [cite_start]Para el desarrollo de una IA confiable y sistemas de reconstrucción robustos, recomendamos imperativamente abandonar las simulaciones monocromáticas simples en favor de modelos que integren el espectro de energía ponderado y apliquen correcciones de segundo orden en el pre-procesamiento de los datos crudos[cite: 15, 16].</p>
+</section>
+<section id="introducción-la-cadena-de-imagen-como-sistema-de-señales" class="level1">
+<h1>Introducción: La Cadena de Imagen como Sistema de Señales</h1>
+<p>[cite_start]Desde una perspectiva estrictamente ingenieril, un sistema de imagenología médica opera como un filtro paso bajo espacial, degradado inevitablemente por ruido estocástico y distorsiones no lineales[cite: 20]. La generación de una imagen útil no es más que la medición precisa de la atenuación de un haz de fotones al atravesar un objeto biológico.</p>
+<p>[cite_start]Podemos visualizar este proceso como una cadena secuencial de transformación de energía[cite: 21, 22, 23]:</p>
+<ol type="1">
+<li><strong>Fuente:</strong> Se genera un flujo de fotones <span class="math inline">\(\Phi(E)\)</span> con una distribución energética específica.</li>
+<li><strong>Interacción:</strong> El haz interactúa con la materia, sufriendo atenuación lineal <span class="math inline">\(\mu(x,y,z,E)\)</span> y dispersión (<em>scatter</em>).</li>
+<li><strong>Detección:</strong> El detector convierte los fotones supervivientes en electrones (mediante centelleo y fotodiodos o conversión directa).</li>
+<li><strong>Electrónica:</strong> La señal analógica se amplifica, integra y digitaliza (cuantización A/D).</li>
+<li><strong>Reconstrucción:</strong> Finalmente, aplicamos logaritmos y filtrado para recuperar la proyección o el volumen tomográfico.</li>
+</ol>
+<p>[cite_start]El dominio de este flujo requiere familiaridad con métricas clave como la <strong>Fluencia</strong> (fotones por unidad de área) y la escala <strong>Hounsfield (HU)</strong> en CT, que normaliza la atenuación respecto al agua[cite: 27].</p>
+</section>
+<section id="fundamentos-físicos-de-la-radiación" class="level1">
+<h1>Fundamentos Físicos de la Radiación</h1>
+<p>Para modelar correctamente la imagen, primero debemos entender la naturaleza caótica de la fuente. [cite_start]Un tubo de rayos X no emite una energía única; genera un espectro complejo <span class="math inline">\(S(E)\)</span> compuesto por dos fenómenos[cite: 30]:</p>
+<ol type="1">
+<li>[cite_start]<strong>Bremsstrahlung (Frenado):</strong> Radiación continua que sigue la ley aproximada de Kramers, donde la intensidad es proporcional a <span class="math inline">\(Z_{anode}(E_{max}-E)\)</span>[cite: 32].</li>
+<li>[cite_start]<strong>Rayos Característicos:</strong> Picos discretos de energía resultantes de las transiciones electrónicas (capas K y L) del material del ánodo (usualmente Tungsteno)[cite: 33].</li>
+</ol>
+<p>Cuando este espectro policromático atraviesa al paciente, la atenuación se rige por la ley de Beer-Lambert generalizada. [cite_start]En el rango diagnóstico (20-140 keV), la materia actúa como un filtro selectivo mediante dos mecanismos principales[cite: 35]:</p>
+<ul>
+<li><strong>Efecto Fotoeléctrico:</strong> Absorción total del fotón. [cite_start]Su probabilidad escala con <span class="math inline">\(Z^3/E^3\)</span>, lo que explica el alto contraste del hueso y los medios yodados[cite: 36].</li>
+<li>[cite_start]<strong>Dispersión Compton:</strong> Dispersión inelástica que depende de la densidad electrónica <span class="math inline">\(\rho_e\)</span>, predominante en tejidos blandos a altas energías[cite: 37].</li>
+</ul>
+<p>La atenuación total es la suma de estas contribuciones:
+<span class="math display">\[ \mu_{total}(E) = \mu_{photo}(E) + \mu_{compton}(E) + \mu_{rayleigh}(E) \]</span></p>
+</section>
+<section id="modelado-matemático-de-la-adquisición" class="level1">
+<h1>Modelado Matemático de la Adquisición</h1>
+<section id="radiografía-la-proyección-polinomática" class="level2">
+<h2 class="anchored" data-anchor-id="radiografía-la-proyección-polinomática">Radiografía: La Proyección Polinomática</h2>
+<p>A diferencia de los libros de texto básicos, en la práctica profesional no podemos usar la versión simple de la Ley de Beer. [cite_start]La intensidad <span class="math inline">\(I(u,v)\)</span> detectada en un píxel es una integral sobre todo el espectro de energía, ponderada por la eficiencia del detector <span class="math inline">\(\eta(E)\)</span>[cite: 42, 43]:</p>
+<p><span class="math display">\[ I(u,v) = \int_{0}^{E_{max}} S(E) E \eta(E) \exp\left( - \int_{L(u,v)} \mu(x,y,z, E) \, ds \right) dE + \text{Scatter}(u,v) \]</span></p>
+<p>Es crucial notar el término <span class="math inline">\(E\)</span> dentro de la integral: la mayoría de los detectores comerciales (Flat Panels) son <strong>integradores de energía</strong>, no contadores de fotones. [cite_start]Esto significa que un fotón de alta energía contribuye más a la señal que uno de baja energía, sesgando la estadística[cite: 45].</p>
+</section>
+<section id="tomografía-computarizada-ct-de-radon-a-la-realidad" class="level2">
+<h2 class="anchored" data-anchor-id="tomografía-computarizada-ct-de-radon-a-la-realidad">Tomografía Computarizada (CT): De Radon a la Realidad</h2>
+<p>En CT, el objetivo es inverso: recuperar el mapa de atenuación <span class="math inline">\(\mu(x,y)\)</span> a partir de las proyecciones. [cite_start]Matemáticamente, esto es la inversión de la <strong>Transformada de Radon</strong>[cite: 47].</p>
+<p>La proyección logarítmica ideal <span class="math inline">\(P\)</span> se define como:
+<span class="math display">\[ P(\theta, t) = -\ln\left( \frac{I}{I_0} \right) = \int_{L(\theta, t)} \mu(x,y) \, ds \]</span></p>
+<p>Para reconstruir la imagen, el método estándar sigue siendo la <strong>Retroproyección Filtrada (FBP)</strong>. Simplemente “embarrar” las proyecciones de vuelta sobre la matriz de imagen genera una imagen borrosa (convolución con <span class="math inline">\(1/r\)</span>). [cite_start]Por ello, es obligatorio aplicar un filtro rampa (kernel Ram-Lak) <span class="math inline">\(h(t)\)</span> antes de retroproyectar[cite: 49, 50]:</p>
+<p><span class="math display">\[ \mu(x,y) = \int_{0}^{\pi} \left( P(\theta, t) * h(t) \right) d\theta \]</span></p>
+</section>
+</section>
+<section id="métodos-de-ingeniería-y-simulación" class="level1">
+<h1>Métodos de Ingeniería y Simulación</h1>
+<section id="método-a-el-desafío-del-endurecimiento-del-haz-beam-hardening" class="level2">
+<h2 class="anchored" data-anchor-id="método-a-el-desafío-del-endurecimiento-del-haz-beam-hardening">Método A: El Desafío del Endurecimiento del Haz (Beam Hardening)</h2>
+<p>El espectro policromático introduce una no-linealidad severa. A medida que el haz atraviesa el objeto, los fotones de baja energía se absorben preferentemente. Esto aumenta la energía media del haz restante (“endurecimiento”).</p>
+<p>[cite_start]La consecuencia matemática es que el logaritmo negativo de la atenuación ya no es lineal respecto al espesor <span class="math inline">\(x\)</span> del objeto[cite: 63]:
+<span class="math display">\[ P_{poly} = -\ln\left( \frac{I}{I_0} \right) \neq \mu(E_{eff}) \cdot x \]</span></p>
+<p>[cite_start]En la imagen clínica, esto provoca el artefacto de <em>cupping</em>: un objeto homogéneo parece tener menos densidad en el centro que en la periferia[cite: 163].</p>
+<p><strong>Implementación de la Corrección:</strong>
+La solución estándar en la industria es una linealización polinomial basada en una calibración previa con maniquíes de agua.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> beam_hardening_correction(sinogram_poly, coeffs):</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">    Linealiza un sinograma afectado por beam hardening usando un modelo polinomial.</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">    Args:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">        sinogram_poly: Proyecciones logarítmicas 'crudas' (afectadas por el espectro).</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">        coeffs: Lista [a0, a1, a2...] obtenida de la calibración con fantoma de agua.</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">                Modela la curva inversa: P_ideal = Poly(P_medido)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    sinogram_corr <span class="op">=</span> np.zeros_like(sinogram_poly)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Aplicación del polinomio: P_corr = a1*P + a2*P^2 + ...</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, c <span class="kw">in</span> <span class="bu">enumerate</span>(coeffs):</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        sinogram_corr <span class="op">+=</span> c <span class="op">*</span> (sinogram_poly <span class="op">**</span> (i <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sinogram_corr</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>[cite_start]<em>Nota: Los coeficientes se obtienen empíricamente ajustando la curva de atenuación medida vs.&nbsp;el espesor conocido de un cilindro de agua.</em> [cite: 82]</p>
+</section>
+<section id="método-b-modelado-de-la-respuesta-del-detector-cascada-lineal" class="level2">
+<h2 class="anchored" data-anchor-id="método-b-modelado-de-la-respuesta-del-detector-cascada-lineal">Método B: Modelado de la Respuesta del Detector (Cascada Lineal)</h2>
+<p>[cite_start]Para simular un detector de panel plano (FPD) de manera realista, utilizamos el modelo de cascada lineal (<em>Linear Cascaded Model</em>) descrito por Cunningham et al.[cite: 91]. Este modelo trata al detector como una serie de etapas donde la señal se transfiere y el ruido se añade o amplifica.</p>
+<p>[cite_start]El proceso físico sigue estos pasos [cite: 92-98]:
+1. <strong>Conversión Cuántica:</strong> Los fotones incidentes son absorbidos con una eficiencia <span class="math inline">\(\eta\)</span>.
+2. <strong>Ganancia Óptica:</strong> Cada fotón absorbido genera <span class="math inline">\(g_1\)</span> fotones de luz en el centellador (ej. CsI).
+3. <strong>Acoplamiento y Conversión:</strong> La luz viaja (<span class="math inline">\(g_2\)</span>) y se convierte en electrones en el fotodiodo (<span class="math inline">\(g_3\)</span>).
+4. <strong>Apertura:</strong> La integración de la señal en el área sensible del píxel provoca un borroneado espacial.</p>
+<p>La resolución del sistema (MTF) queda dominada por la dispersión de luz en el centellador y el tamaño del píxel:
+<span class="math display">\[ MTF_{sys}(f) = T_{scint}(f) \cdot \text{sinc}(af) \]</span></p>
+<p><strong>Ruido y Cuantización:</strong>
+El ruido no es constante. [cite_start]Se compone de ruido cuántico (dependiente de la señal, Poisson) y ruido electrónico (aditivo, Gaussiano)[cite: 102]. [cite_start]Además, el proceso de digitalización (ADC) introduce un error de cuantización <span class="math inline">\(\sigma_Q^2 = \Delta^2/12\)</span>[cite: 105].</p>
+<p>El siguiente flujo simula computacionalmente este comportamiento estocástico:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> detector_response(photon_fluence, gain, noise_elec, bit_depth, max_signal):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 1. Ruido Cuántico (Naturaleza de la luz)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    absorbed_photons <span class="op">=</span> np.random.poisson(photon_fluence)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 2. Conversión a electrones (Ganancia del sistema)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    electrons <span class="op">=</span> absorbed_photons <span class="op">*</span> gain</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3. Ruido Electrónico (Readout de la electrónica)</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    noise <span class="op">=</span> np.random.normal(<span class="dv">0</span>, noise_elec, electrons.shape)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    signal_analog <span class="op">=</span> electrons <span class="op">+</span> noise</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 4. Saturación y Cuantización (ADC)</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    signal_analog <span class="op">=</span> np.clip(signal_analog, <span class="dv">0</span>, max_signal)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    max_digital <span class="op">=</span> <span class="dv">2</span><span class="op">**</span>bit_depth <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    step_size <span class="op">=</span> max_signal <span class="op">/</span> max_digital</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># El redondeo simula la pérdida de información del ADC</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.<span class="bu">round</span>(signal_analog <span class="op">/</span> step_size).astype(np.uint16)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>[cite_start][cite: 110-135]</p>
+</section>
+<section id="método-c-pipeline-de-procesamiento-de-imagen" class="level2">
+<h2 class="anchored" data-anchor-id="método-c-pipeline-de-procesamiento-de-imagen">Método C: Pipeline de Procesamiento de Imagen</h2>
+<p>Una vez adquiridos los datos “crudos” (<span class="math inline">\(I_{raw}\)</span>), estos no son aptos para diagnóstico. [cite_start]Se requiere un pipeline de post-procesamiento estricto[cite: 144]:</p>
+<ol type="1">
+<li><strong>Corrección de Campo Plano (Flat Field):</strong> Normaliza la respuesta de cada píxel usando imágenes de referencia (oscura y brillante).
+<span class="math display">\[ I_{corr} = \frac{I_{raw} - I_{dark}}{I_{flat} - I_{dark}} \cdot \bar{I}_{flat} \]</span></li>
+<li><strong>Manejo de Defectos:</strong> Los píxeles muertos se interpolan usando la media de sus vecinos.</li>
+<li><strong>Inversión Logarítmica:</strong> Transformamos la transmisión en densidad óptica (<span class="math inline">\(I_{log} = \ln(I_{max}) - \ln(I_{corr})\)</span>).</li>
+<li><strong>Procesamiento Multiescala:</strong> Se aplican Look-Up Tables (LUT) sigmoideas y realce de bordes (<em>Unsharp Masking</em>) para adaptar el rango dinámico de la máquina (14-16 bits) al ojo humano.</li>
+</ol>
+</section>
+</section>
+<section id="artefactos-y-evaluación-de-calidad" class="level1">
+<h1>Artefactos y Evaluación de Calidad</h1>
+<p>Cualquier desviación de los modelos anteriores resulta en artefactos. [cite_start]En radiografía, el <em>aliasing</em> (patrón de Moiré) ocurre cuando la frecuencia de la rejilla anti-dispersión interfiere con la matriz de píxeles[cite: 161]. [cite_start]En CT, además del <em>cupping</em> por endurecimiento del haz, son comunes los artefactos de anillo (<em>Ring Artifacts</em>) causados por la descalibración de un solo elemento del detector[cite: 163].</p>
+<p>[cite_start]Para evaluar objetivamente la calidad, los ingenieros no confiamos en la inspección visual, sino en métricas cuantitativas [cite: 166-170]:</p>
+<ul>
+<li><strong>MTF (Modulation Transfer Function):</strong> Mide la resolución espacial (nitidez) analizando la respuesta al borde (<em>slanted edge</em>).</li>
+<li><strong>NPS (Noise Power Spectrum):</strong> Caracteriza la textura y frecuencia del ruido.</li>
+<li><strong>DQE (Detective Quantum Efficiency):</strong> La métrica dorada. Define qué tan eficientemente el sistema usa la radiación incidente para formar una imagen.
+<span class="math display">\[ DQE(f) = \frac{MTF^2(f) \cdot \Phi \cdot G^2}{NPS(f)} \]</span></li>
+</ul>
+<p>[cite_start]Un DQE bajo a altas frecuencias indica que el sistema “desperdicia” dosis sin aportar detalle diagnóstico fino[cite: 172].</p>
+</section>
+<section id="conclusiones-y-seguridad" class="level1">
+<h1>Conclusiones y Seguridad</h1>
+<p>La ingeniería de imágenes médicas es un constante compromiso (<em>trade-off</em>) gobernado por el principio ALARA (<em>As Low As Reasonably Achievable</em>). [cite_start]Reducir la dosis a la mitad conlleva penalizar la relación señal-ruido por un factor de <span class="math inline">\(\sqrt{2}\)</span>[cite: 177].</p>
+<p>Para avanzar hacia una IA confiable en medicina, es fundamental comprender que las imágenes no son fotos perfectas, sino mapas de atenuación sesgados por la física. [cite_start]Modelar correctamente el ruido de Poisson y los efectos espectrales, como el endurecimiento del haz, es el único camino para diseñar algoritmos que interpreten la anatomía real y no las alucinaciones del hardware[cite: 189, 190].</p>
+</section>
+<section id="referencias" class="level1">
+<h1>Referencias</h1>
+<p>[cite_start]1. [cite: 1] Reporte técnico: modelado de atenuación.
+[cite_start]2. [cite: 193] Bushberg, J. T., et al.&nbsp;(2020). <em>The Essential Physics of Medical Imaging</em>.
+[cite_start]3. [cite: 194] Hsieh, J. (2015). <em>Computed Tomography: Principles, Design, Artifacts</em>.
+[cite_start]4. [cite: 195] Kak, A. C., &amp; Slaney, M. (1988). <em>Principles of Computerized Tomographic Imaging</em>.
+[cite_start]5. [cite: 196] ICRU Report 87. (2012). <em>Radiation Dose and Image-Quality Assessment in Computed Tomography</em>.
+[cite_start]6. [cite: 197] Cunningham, I. A. (2000). <em>Linear-systems modeling of parallel-cascaded stochastic processes</em>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

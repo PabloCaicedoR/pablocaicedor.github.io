@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Experto en Procesamiento de Imágenes Médicas">
+<meta name="dcterms.date" content="2026-01-19">
+
+<title>Reporte técnico (extenso): Modelado de atenuación y formación del haz, respuesta de detectores Flat Panel y formación de radiografías (RX) con extensión a CT – PECR Knowledge Hub</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-c40e139f9c4114c612eb61de435499b9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+</head><body class="nav-fixed quarto-light">\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric}
+\usepackage{adjustbox}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\setcapwidth{\linewidth}
+\usepackage{microtype}
+\usepackage{hyperref}
+\sisetup{per-mode=symbol}
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../recursos/estilos/styles_site.css">
+
+
+
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo light-content">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#resumen-ejecutivo-12-páginas" id="toc-resumen-ejecutivo-12-páginas" class="nav-link active" data-scroll-target="#resumen-ejecutivo-12-páginas">1. Resumen ejecutivo (1–2 páginas)</a></li>
+  <li><a href="#introducción" id="toc-introducción" class="nav-link" data-scroll-target="#introducción">2. Introducción</a>
+  <ul class="collapse">
+  <li><a href="#modalidades-rxct-y-cadena-completa-visión-de-sistema" id="toc-modalidades-rxct-y-cadena-completa-visión-de-sistema" class="nav-link" data-scroll-target="#modalidades-rxct-y-cadena-completa-visión-de-sistema">2.1 Modalidades (RX/CT) y cadena completa (visión de sistema)</a>
+  <ul class="collapse">
+  <li><a href="#figura-1-cadena-de-formación-de-imagen-en-rx-digital-esquemática" id="toc-figura-1-cadena-de-formación-de-imagen-en-rx-digital-esquemática" class="nav-link" data-scroll-target="#figura-1-cadena-de-formación-de-imagen-en-rx-digital-esquemática">Figura 1: Cadena de formación de imagen en RX digital (esquemática)</a></li>
+  </ul></li>
+  <li><a href="#glosario-términos-clave-en-lenguaje-técnico-sencillo" id="toc-glosario-términos-clave-en-lenguaje-técnico-sencillo" class="nav-link" data-scroll-target="#glosario-términos-clave-en-lenguaje-técnico-sencillo">2.2 Glosario (términos clave, en lenguaje técnico sencillo)</a></li>
+  </ul></li>
+  <li><a href="#fundamentos-físicos-por-modalidad-énfasis-rxct" id="toc-fundamentos-físicos-por-modalidad-énfasis-rxct" class="nav-link" data-scroll-target="#fundamentos-físicos-por-modalidad-énfasis-rxct">3. Fundamentos físicos por modalidad (énfasis RX/CT)</a>
+  <ul class="collapse">
+  <li><a href="#generación-del-haz-de-rayos-x-tubo-rx" id="toc-generación-del-haz-de-rayos-x-tubo-rx" class="nav-link" data-scroll-target="#generación-del-haz-de-rayos-x-tubo-rx">3.1 Generación del haz de rayos X (tubo RX)</a>
+  <ul class="collapse">
+  <li><a href="#figura-2-espectro-policromático-y-efecto-de-filtración-esquemática" id="toc-figura-2-espectro-policromático-y-efecto-de-filtración-esquemática" class="nav-link" data-scroll-target="#figura-2-espectro-policromático-y-efecto-de-filtración-esquemática">Figura 2: Espectro policromático y efecto de filtración (esquemática)</a></li>
+  <li><a href="#filtración-y-calidad-del-haz-hvl" id="toc-filtración-y-calidad-del-haz-hvl" class="nav-link" data-scroll-target="#filtración-y-calidad-del-haz-hvl">3.1.1 Filtración y calidad del haz (HVL)</a></li>
+  </ul></li>
+  <li><a href="#interacción-con-el-paciente-atenuación-y-dispersión" id="toc-interacción-con-el-paciente-atenuación-y-dispersión" class="nav-link" data-scroll-target="#interacción-con-el-paciente-atenuación-y-dispersión">3.2 Interacción con el paciente: atenuación y dispersión</a>
+  <ul class="collapse">
+  <li><a href="#ley-de-beerlambert-monoenergético-y-extensión-policromática" id="toc-ley-de-beerlambert-monoenergético-y-extensión-policromática" class="nav-link" data-scroll-target="#ley-de-beerlambert-monoenergético-y-extensión-policromática">3.2.1 Ley de Beer–Lambert (monoenergético) y extensión policromática</a></li>
+  <li><a href="#dispersión-scatter-naturaleza-y-consecuencias" id="toc-dispersión-scatter-naturaleza-y-consecuencias" class="nav-link" data-scroll-target="#dispersión-scatter-naturaleza-y-consecuencias">3.2.2 Dispersión (scatter): naturaleza y consecuencias</a></li>
+  <li><a href="#figura-3-geometría-de-atenuación-y-scatter-hacia-el-detector-esquemática" id="toc-figura-3-geometría-de-atenuación-y-scatter-hacia-el-detector-esquemática" class="nav-link" data-scroll-target="#figura-3-geometría-de-atenuación-y-scatter-hacia-el-detector-esquemática">Figura 3: Geometría de atenuación y scatter hacia el detector (esquemática)</a></li>
+  </ul></li>
+  <li><a href="#detectores-rx-crdr-y-respuesta-del-sistema" id="toc-detectores-rx-crdr-y-respuesta-del-sistema" class="nav-link" data-scroll-target="#detectores-rx-crdr-y-respuesta-del-sistema">3.3 Detectores RX (CR/DR) y respuesta del sistema</a>
+  <ul class="collapse">
+  <li><a href="#conversión-y-muestreo" id="toc-conversión-y-muestreo" class="nav-link" data-scroll-target="#conversión-y-muestreo">3.3.1 Conversión y muestreo</a></li>
+  <li><a href="#mtf-nps-y-dqe-núcleo-de-calidad-en-detectores" id="toc-mtf-nps-y-dqe-núcleo-de-calidad-en-detectores" class="nav-link" data-scroll-target="#mtf-nps-y-dqe-núcleo-de-calidad-en-detectores">3.3.2 MTF, NPS y DQE (núcleo de calidad en detectores)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#modelo-matemático-de-adquisición" id="toc-modelo-matemático-de-adquisición" class="nav-link" data-scroll-target="#modelo-matemático-de-adquisición">4. Modelo matemático de adquisición</a>
+  <ul class="collapse">
+  <li><a href="#rx-proyección-2d-blur-ruido-poisson-electrónico-y-scatter" id="toc-rx-proyección-2d-blur-ruido-poisson-electrónico-y-scatter" class="nav-link" data-scroll-target="#rx-proyección-2d-blur-ruido-poisson-electrónico-y-scatter">4.1 RX: proyección 2D, blur, ruido (Poisson + electrónico) y scatter</a>
+  <ul class="collapse">
+  <li><a href="#proyección-ideal-y-linealización-por-logaritmo" id="toc-proyección-ideal-y-linealización-por-logaritmo" class="nav-link" data-scroll-target="#proyección-ideal-y-linealización-por-logaritmo">4.1.1 Proyección ideal y linealización por logaritmo</a></li>
+  <li><a href="#ruido-modelo-poissongaussiano" id="toc-ruido-modelo-poissongaussiano" class="nav-link" data-scroll-target="#ruido-modelo-poissongaussiano">4.1.2 Ruido: modelo Poisson–Gaussiano</a></li>
+  <li><a href="#desenfoque-total-psf-compuesta" id="toc-desenfoque-total-psf-compuesta" class="nav-link" data-scroll-target="#desenfoque-total-psf-compuesta">4.1.3 Desenfoque total (PSF compuesta)</a></li>
+  </ul></li>
+  <li><a href="#ct-comparativo-transformada-de-radon-geometrías-y-hu" id="toc-ct-comparativo-transformada-de-radon-geometrías-y-hu" class="nav-link" data-scroll-target="#ct-comparativo-transformada-de-radon-geometrías-y-hu">4.2 CT (comparativo): transformada de Radon, geometrías y HU</a></li>
+  </ul></li>
+  <li><a href="#aspectos-solicitados-sección-repetible-por-cada-aspecto" id="toc-aspectos-solicitados-sección-repetible-por-cada-aspecto" class="nav-link" data-scroll-target="#aspectos-solicitados-sección-repetible-por-cada-aspecto">5. Aspectos solicitados (sección repetible por cada aspecto)</a>
+  <ul class="collapse">
+  <li><a href="#a-proceso-físicomatemático-de-generación-de-imágenes-por-rayos-x-rx" id="toc-a-proceso-físicomatemático-de-generación-de-imágenes-por-rayos-x-rx" class="nav-link" data-scroll-target="#a-proceso-físicomatemático-de-generación-de-imágenes-por-rayos-x-rx">5.A Proceso físico–matemático de generación de imágenes por Rayos X (RX)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-formal-y-objetivo" id="toc-a-definición-formal-y-objetivo" class="nav-link" data-scroll-target="#a-definición-formal-y-objetivo">a) Definición formal y objetivo</a></li>
+  <li><a href="#b-supuestos-y-condiciones-de-validez" id="toc-b-supuestos-y-condiciones-de-validez" class="nav-link" data-scroll-target="#b-supuestos-y-condiciones-de-validez">b) Supuestos y condiciones de validez</a></li>
+  <li><a href="#c-derivaciónexplicación-matemática-esencial" id="toc-c-derivaciónexplicación-matemática-esencial" class="nav-link" data-scroll-target="#c-derivaciónexplicación-matemática-esencial">c) Derivación/explicación matemática esencial</a></li>
+  <li><a href="#d-algoritmo-paso-a-paso-pseudocódigo-modelo-de-simulacióningeniería" id="toc-d-algoritmo-paso-a-paso-pseudocódigo-modelo-de-simulacióningeniería" class="nav-link" data-scroll-target="#d-algoritmo-paso-a-paso-pseudocódigo-modelo-de-simulacióningeniería">d) Algoritmo paso a paso + pseudocódigo (modelo de simulación/ingeniería)</a></li>
+  <li><a href="#e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos-orientativo" id="toc-e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos-orientativo" class="nav-link" data-scroll-target="#e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos-orientativo">e) Parámetros: significado físico, rangos típicos y cómo elegirlos (orientativo)</a></li>
+  <li><a href="#f-complejidad-computacional-y-requerimientos" id="toc-f-complejidad-computacional-y-requerimientos" class="nav-link" data-scroll-target="#f-complejidad-computacional-y-requerimientos">f) Complejidad computacional y requerimientos</a></li>
+  <li><a href="#g-comportamiento-frente-a-ruidoartefactos" id="toc-g-comportamiento-frente-a-ruidoartefactos" class="nav-link" data-scroll-target="#g-comportamiento-frente-a-ruidoartefactos">g) Comportamiento frente a ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos" id="toc-h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos" class="nav-link" data-scroll-target="#h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos">h) Riesgos (sobre-suavizado, pérdida de detalle, alucinación, sesgos)</a></li>
+  <li><a href="#i-recomendaciones-prácticas-rx-vs-ct-vs-mri" id="toc-i-recomendaciones-prácticas-rx-vs-ct-vs-mri" class="nav-link" data-scroll-target="#i-recomendaciones-prácticas-rx-vs-ct-vs-mri">i) Recomendaciones prácticas RX vs CT vs MRI</a></li>
+  <li><a href="#j-ejemplo-clínico-narrativo-rx" id="toc-j-ejemplo-clínico-narrativo-rx" class="nav-link" data-scroll-target="#j-ejemplo-clínico-narrativo-rx">j) Ejemplo clínico narrativo (RX)</a></li>
+  </ul></li>
+  <li><a href="#b-cómo-se-determina-la-dosis-de-radiación-en-radiografías" id="toc-b-cómo-se-determina-la-dosis-de-radiación-en-radiografías" class="nav-link" data-scroll-target="#b-cómo-se-determina-la-dosis-de-radiación-en-radiografías">5.B Cómo se determina la dosis de radiación en radiografías</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-formal-y-objetivo-1" id="toc-a-definición-formal-y-objetivo-1" class="nav-link" data-scroll-target="#a-definición-formal-y-objetivo-1">a) Definición formal y objetivo</a></li>
+  <li><a href="#b-supuestos-y-condiciones-de-validez-1" id="toc-b-supuestos-y-condiciones-de-validez-1" class="nav-link" data-scroll-target="#b-supuestos-y-condiciones-de-validez-1">b) Supuestos y condiciones de validez</a></li>
+  <li><a href="#c-derivaciónexplicación-matemática-esencial-1" id="toc-c-derivaciónexplicación-matemática-esencial-1" class="nav-link" data-scroll-target="#c-derivaciónexplicación-matemática-esencial-1">c) Derivación/explicación matemática esencial</a></li>
+  <li><a href="#d-algoritmo-paso-a-paso-pseudocódigo-cálculo-operativo" id="toc-d-algoritmo-paso-a-paso-pseudocódigo-cálculo-operativo" class="nav-link" data-scroll-target="#d-algoritmo-paso-a-paso-pseudocódigo-cálculo-operativo">d) Algoritmo paso a paso + pseudocódigo (cálculo operativo)</a></li>
+  <li><a href="#e-parámetros-y-rangos-típicos-selección-y-control" id="toc-e-parámetros-y-rangos-típicos-selección-y-control" class="nav-link" data-scroll-target="#e-parámetros-y-rangos-típicos-selección-y-control">e) Parámetros y rangos típicos (selección y control)</a></li>
+  <li><a href="#f-complejidad-computacional-y-requerimientos-1" id="toc-f-complejidad-computacional-y-requerimientos-1" class="nav-link" data-scroll-target="#f-complejidad-computacional-y-requerimientos-1">f) Complejidad computacional y requerimientos</a></li>
+  <li><a href="#g-comportamiento-frente-a-ruidoartefactos-trade-off-dosiscalidad" id="toc-g-comportamiento-frente-a-ruidoartefactos-trade-off-dosiscalidad" class="nav-link" data-scroll-target="#g-comportamiento-frente-a-ruidoartefactos-trade-off-dosiscalidad">g) Comportamiento frente a ruido/artefactos (trade-off dosis–calidad)</a></li>
+  <li><a href="#h-riesgos-sesgos-y-errores-de-interpretación" id="toc-h-riesgos-sesgos-y-errores-de-interpretación" class="nav-link" data-scroll-target="#h-riesgos-sesgos-y-errores-de-interpretación">h) Riesgos (sesgos y errores de interpretación)</a></li>
+  <li><a href="#i-recomendaciones-rx-vs-ct-vs-mri" id="toc-i-recomendaciones-rx-vs-ct-vs-mri" class="nav-link" data-scroll-target="#i-recomendaciones-rx-vs-ct-vs-mri">i) Recomendaciones RX vs CT vs MRI</a></li>
+  <li><a href="#j-ejemplo-clínico-narrativo-dosis" id="toc-j-ejemplo-clínico-narrativo-dosis" class="nav-link" data-scroll-target="#j-ejemplo-clínico-narrativo-dosis">j) Ejemplo clínico narrativo (dosis)</a></li>
+  </ul></li>
+  <li><a href="#c-cómo-se-reconstruye-una-imagen-por-rayos-x-radiografía-de-proyección" id="toc-c-cómo-se-reconstruye-una-imagen-por-rayos-x-radiografía-de-proyección" class="nav-link" data-scroll-target="#c-cómo-se-reconstruye-una-imagen-por-rayos-x-radiografía-de-proyección">5.C Cómo se “reconstruye” una imagen por Rayos X (radiografía de proyección)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-formal-y-objetivo-2" id="toc-a-definición-formal-y-objetivo-2" class="nav-link" data-scroll-target="#a-definición-formal-y-objetivo-2">a) Definición formal y objetivo</a></li>
+  <li><a href="#b-supuestos-y-condiciones-de-validez-2" id="toc-b-supuestos-y-condiciones-de-validez-2" class="nav-link" data-scroll-target="#b-supuestos-y-condiciones-de-validez-2">b) Supuestos y condiciones de validez</a></li>
+  <li><a href="#c-derivaciónexplicación-matemática-esencial-bloques-principales" id="toc-c-derivaciónexplicación-matemática-esencial-bloques-principales" class="nav-link" data-scroll-target="#c-derivaciónexplicación-matemática-esencial-bloques-principales">c) Derivación/explicación matemática esencial (bloques principales)</a></li>
+  <li><a href="#d-algoritmo-paso-a-paso-pseudocódigo-pipeline-implementable" id="toc-d-algoritmo-paso-a-paso-pseudocódigo-pipeline-implementable" class="nav-link" data-scroll-target="#d-algoritmo-paso-a-paso-pseudocódigo-pipeline-implementable">d) Algoritmo paso a paso + pseudocódigo (pipeline implementable)</a></li>
+  <li><a href="#e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos" id="toc-e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos" class="nav-link" data-scroll-target="#e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos">e) Parámetros: significado físico, rangos típicos y cómo elegirlos</a></li>
+  <li><a href="#f-complejidad-computacional-y-requerimientos-2" id="toc-f-complejidad-computacional-y-requerimientos-2" class="nav-link" data-scroll-target="#f-complejidad-computacional-y-requerimientos-2">f) Complejidad computacional y requerimientos</a></li>
+  <li><a href="#g-comportamiento-frente-a-ruidoartefactos-1" id="toc-g-comportamiento-frente-a-ruidoartefactos-1" class="nav-link" data-scroll-target="#g-comportamiento-frente-a-ruidoartefactos-1">g) Comportamiento frente a ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos-1" id="toc-h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos-1" class="nav-link" data-scroll-target="#h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos-1">h) Riesgos: sobre-suavizado, pérdida de detalle, alucinación, sesgos</a></li>
+  <li><a href="#i-recomendaciones-prácticas-rx-vs-ct-vs-mri-1" id="toc-i-recomendaciones-prácticas-rx-vs-ct-vs-mri-1" class="nav-link" data-scroll-target="#i-recomendaciones-prácticas-rx-vs-ct-vs-mri-1">i) Recomendaciones prácticas RX vs CT vs MRI</a></li>
+  <li><a href="#j-ejemplo-clínico-narrativo-pipeline" id="toc-j-ejemplo-clínico-narrativo-pipeline" class="nav-link" data-scroll-target="#j-ejemplo-clínico-narrativo-pipeline">j) Ejemplo clínico narrativo (pipeline)</a></li>
+  </ul></li>
+  <li><a href="#d-listado-estándar-de-métodos-de-reconstrucción-de-imágenes-médicas-comparativo-rxctmri" id="toc-d-listado-estándar-de-métodos-de-reconstrucción-de-imágenes-médicas-comparativo-rxctmri" class="nav-link" data-scroll-target="#d-listado-estándar-de-métodos-de-reconstrucción-de-imágenes-médicas-comparativo-rxctmri">5.D Listado estándar de métodos de reconstrucción de imágenes médicas (comparativo RX/CT/MRI)</a>
+  <ul class="collapse">
+  <li><a href="#d.1-ct-estándar" id="toc-d.1-ct-estándar" class="nav-link" data-scroll-target="#d.1-ct-estándar">D.1 CT (estándar)</a></li>
+  <li><a href="#d.2-mri-estándar" id="toc-d.2-mri-estándar" class="nav-link" data-scroll-target="#d.2-mri-estándar">D.2 MRI (estándar)</a></li>
+  <li><a href="#d.3-rx-extendido" id="toc-d.3-rx-extendido" class="nav-link" data-scroll-target="#d.3-rx-extendido">D.3 RX extendido</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#artefactos-y-fallas-típicas" id="toc-artefactos-y-fallas-típicas" class="nav-link" data-scroll-target="#artefactos-y-fallas-típicas">6. Artefactos y fallas típicas</a>
+  <ul class="collapse">
+  <li><a href="#rx-radiografía" id="toc-rx-radiografía" class="nav-link" data-scroll-target="#rx-radiografía">6.1 RX (radiografía)</a></li>
+  <li><a href="#ct-comparativo" id="toc-ct-comparativo" class="nav-link" data-scroll-target="#ct-comparativo">6.2 CT (comparativo)</a></li>
+  <li><a href="#mri-comparativo" id="toc-mri-comparativo" class="nav-link" data-scroll-target="#mri-comparativo">6.3 MRI (comparativo)</a></li>
+  </ul></li>
+  <li><a href="#calidad-de-imagen-y-evaluación-cuantitativa" id="toc-calidad-de-imagen-y-evaluación-cuantitativa" class="nav-link" data-scroll-target="#calidad-de-imagen-y-evaluación-cuantitativa">7. Calidad de imagen y evaluación cuantitativa</a>
+  <ul class="collapse">
+  <li><a href="#métricas-y-definiciones" id="toc-métricas-y-definiciones" class="nav-link" data-scroll-target="#métricas-y-definiciones">7.1 Métricas y definiciones</a></li>
+  <li><a href="#protocolos-con-phantoms-configuraciones-típicas" id="toc-protocolos-con-phantoms-configuraciones-típicas" class="nav-link" data-scroll-target="#protocolos-con-phantoms-configuraciones-típicas">7.2 Protocolos con phantoms (configuraciones típicas)</a>
+  <ul class="collapse">
+  <li><a href="#figura-5-medición-de-mtf-por-borde-inclinado-slanted-edge-esquemática" id="toc-figura-5-medición-de-mtf-por-borde-inclinado-slanted-edge-esquemática" class="nav-link" data-scroll-target="#figura-5-medición-de-mtf-por-borde-inclinado-slanted-edge-esquemática">Figura 5: Medición de MTF por borde inclinado (slanted-edge) (esquemática)</a></li>
+  </ul></li>
+  <li><a href="#diseño-de-experimento-repetibilidad-y-trazabilidad" id="toc-diseño-de-experimento-repetibilidad-y-trazabilidad" class="nav-link" data-scroll-target="#diseño-de-experimento-repetibilidad-y-trazabilidad">7.3 Diseño de experimento (repetibilidad y trazabilidad)</a></li>
+  </ul></li>
+  <li><a href="#dosis-y-seguridad" id="toc-dosis-y-seguridad" class="nav-link" data-scroll-target="#dosis-y-seguridad">8. Dosis y seguridad</a>
+  <ul class="collapse">
+  <li><a href="#rx-indicadores-y-alara" id="toc-rx-indicadores-y-alara" class="nav-link" data-scroll-target="#rx-indicadores-y-alara">8.1 RX: indicadores y ALARA</a></li>
+  <li><a href="#ct-comparativo-1" id="toc-ct-comparativo-1" class="nav-link" data-scroll-target="#ct-comparativo-1">8.2 CT (comparativo)</a></li>
+  <li><a href="#mri-comparativo-1" id="toc-mri-comparativo-1" class="nav-link" data-scroll-target="#mri-comparativo-1">8.3 MRI (comparativo)</a></li>
+  </ul></li>
+  <li><a href="#recomendaciones-de-implementación-pipeline-y-qa" id="toc-recomendaciones-de-implementación-pipeline-y-qa" class="nav-link" data-scroll-target="#recomendaciones-de-implementación-pipeline-y-qa">9. Recomendaciones de implementación (pipeline y QA)</a>
+  <ul class="collapse">
+  <li><a href="#pipeline-sugerido-por-modalidad" id="toc-pipeline-sugerido-por-modalidad" class="nav-link" data-scroll-target="#pipeline-sugerido-por-modalidad">9.1 Pipeline sugerido por modalidad</a></li>
+  <li><a href="#checklist-de-validación-mínimo" id="toc-checklist-de-validación-mínimo" class="nav-link" data-scroll-target="#checklist-de-validación-mínimo">9.2 Checklist de validación (mínimo)</a></li>
+  <li><a href="#buenas-prácticas-operativas-y-errores-comunes" id="toc-buenas-prácticas-operativas-y-errores-comunes" class="nav-link" data-scroll-target="#buenas-prácticas-operativas-y-errores-comunes">9.3 Buenas prácticas (operativas) y errores comunes</a></li>
+  </ul></li>
+  <li><a href="#casos-de-uso-y-guía-de-selección" id="toc-casos-de-uso-y-guía-de-selección" class="nav-link" data-scroll-target="#casos-de-uso-y-guía-de-selección">10. Casos de uso y guía de selección</a>
+  <ul class="collapse">
+  <li><a href="#matriz-de-decisión-objetivo-clínico-vs-método" id="toc-matriz-de-decisión-objetivo-clínico-vs-método" class="nav-link" data-scroll-target="#matriz-de-decisión-objetivo-clínico-vs-método">10.1 Matriz de decisión (objetivo clínico vs método)</a></li>
+  </ul></li>
+  <li><a href="#conclusiones" id="toc-conclusiones" class="nav-link" data-scroll-target="#conclusiones">11. Conclusiones</a></li>
+  <li><a href="#referencias-formato-ieee-25" id="toc-referencias-formato-ieee-25" class="nav-link" data-scroll-target="#referencias-formato-ieee-25">12. Referencias (formato IEEE, ≥ 25)</a>
+  <ul class="collapse">
+  <li><a href="#apéndice-a-lista-corta-de-red-flags-para-operación-y-qa-en-rx" id="toc-apéndice-a-lista-corta-de-red-flags-para-operación-y-qa-en-rx" class="nav-link" data-scroll-target="#apéndice-a-lista-corta-de-red-flags-para-operación-y-qa-en-rx">Apéndice A: Lista corta de “red flags” para operación y QA en RX</a></li>
+  <li><a href="#apéndice-b-tabla-de-verificación-para-cambios-de-pipeline-gobernanza-técnica" id="toc-apéndice-b-tabla-de-verificación-para-cambios-de-pipeline-gobernanza-técnica" class="nav-link" data-scroll-target="#apéndice-b-tabla-de-verificación-para-cambios-de-pipeline-gobernanza-técnica">Apéndice B: Tabla de verificación para cambios de pipeline (gobernanza técnica)</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="ModeladoFisicoRadiografía002.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Reporte técnico (extenso): Modelado de atenuación y formación del haz, respuesta de detectores Flat Panel y formación de radiografías (RX) con extensión a CT</h1>
+<p class="subtitle lead">Enfoque ingenieril y clínico-operativo para adquisición, reconstrucción, QA y seguridad en RX/CT</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Experto en Procesamiento de Imágenes Médicas </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 19, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- ---
+title: "Reporte técnico EXTENSO: Física, dosimetría y “reconstrucción” en Radiografía Digital por Rayos X (RX)"
+subtitle: "Enfoque ingenieril y clínico-operativo (modalidad principal: RX; comparativos: CT/MRI)"
+author: "Rol: Ingeniero biomédico / físico médico senior"
+date: "2026-02-10"
+format:
+  pdf:
+    pdf-engine: xelatex
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    colorlinks: true
+    geometry: margin=2.2cm
+    fontsize: 11pt
+    linestretch: 1.12
+    fig-pos: "H"
+header-includes:
+  - \usepackage{amsmath,amssymb}
+  - \usepackage{siunitx}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{graphicx}
+  - \usepackage{float}
+  - \usepackage{caption}
+  - \usepackage{microtype}
+  - \usepackage{hyperref}
+  - \sisetup{per-mode=symbol}
+--- -->
+<blockquote class="blockquote">
+<p><strong>Cómo generar el PDF</strong>: guarde este archivo como <code>reporte_rx_extenso.qmd</code> y ejecute:
+<code>quarto render reporte_rx_extenso.qmd --to pdf</code></p>
+<p><strong>Supuestos explícitos (si no se indica lo contrario):</strong>
+- Sistema RX digital tipo DR (FPD) con AEC disponible; generador convencional 40–150 kVp.
+- Población mixta (adulto/pediatría); se enfatiza <strong>ALARA</strong> y control de <em>dose creep</em>.
+- Restricciones típicas: <strong>baja dosis cuando sea posible</strong>, flujo clínico rápido, hardware hospitalario estándar (CPU; GPU opcional para algoritmos avanzados).
+- Nivel matemático: <strong>medio</strong> (se prioriza trazabilidad e interpretación física).</p>
+</blockquote>
+<section id="resumen-ejecutivo-12-páginas" class="level1">
+<h1>1. Resumen ejecutivo (1–2 páginas)</h1>
+<p>La radiografía (RX) es la modalidad de imagen médica más utilizada por su rapidez, costo-efectividad y disponibilidad. Su esencia física es simple de enunciar pero compleja de controlar: un <strong>haz policromático</strong> de fotones X atraviesa un paciente, se atenúa y se dispersa, y un detector convierte la energía incidente en señal digital. La “imagen radiográfica” es un mapa 2D que representa, de manera aproximada, <strong>integrales de atenuación</strong> a lo largo de trayectorias, contaminadas por <strong>dispersión (scatter)</strong>, desenfoque (foco, movimiento, PSF del detector) y ruido (cuántico + electrónico).</p>
+<p>Este reporte resuelve tres necesidades operativas de ingeniería clínica:</p>
+<ol type="1">
+<li><strong>Proceso físico–matemático de generación de imágenes por RX</strong>
+<ul>
+<li>Modela el espectro del tubo y su filtración; describe la interacción (fotoeléctrico y Compton), el endurecimiento del haz y la dispersión; formaliza el detector como un sistema lineal con PSF/MTF y ruido.</li>
+<li>Resultado: un modelo de adquisición útil para diseño de protocolos, QA, y diagnóstico de artefactos.</li>
+</ul></li>
+<li><strong>Determinación de dosis en radiografías</strong>
+<ul>
+<li>Diferencia cantidades físicas (kerma en aire, dosis absorbida) de cantidades de protección (equivalente/efectiva).</li>
+<li>En RX clínica se gestionan principalmente <strong>KAP/DAP</strong> y <strong>ESAK/ESD</strong> (según convención), más índices como <strong>Exposure Index (EI)</strong> para control interno.</li>
+<li>Se entregan rutas prácticas: medición con cámara de ionización/KAP-metro, o estimación desde salida del tubo + geometría + factor de retrodispersión.</li>
+</ul></li>
+<li><strong>“Reconstrucción” de una imagen por RX</strong> (radiografía de proyección)
+<ul>
+<li>A diferencia de CT/MRI, en RX no se reconstruye un volumen: la imagen es una proyección 2D directa. En ingeniería, “reconstrucción RX” se refiere al <strong>pipeline</strong> que convierte lecturas crudas del detector en imagen clínica: correcciones <em>dark/flat</em>, linealización, corrección de ganancia/offset, estimación y compensación de scatter, correcciones geométricas, reducción de ruido, realce y mapeo tonal para visualización y DICOM.</li>
+<li>Se describen algoritmos clásicos (flat-field, log-transform, corrección de scatter basada en kernels, Wiener/deconvolución, denoise) y enfoques modernos (regularización tipo TV, <em>compressed sensing</em> en tomosíntesis, deep learning para denoise/scatter).</li>
+</ul></li>
+</ol>
+<p><strong>Impacto y comparativo RX/CT/MRI</strong>
+- <strong>RX</strong>: excelente para tórax y hueso; limitado por superposición 3D→2D; muy sensible a dispersión y técnica.
+- <strong>CT</strong>: reconstruye volumen mediante Radon/FBP/iterativa; dosis mayor; artefactos específicos (metal, anillos, beam hardening).
+- <strong>MRI</strong>: sin radiación ionizante; reconstrucción en <span class="math inline">\(k\)</span>-espacio (FFT + paralela/CS); artefactos distintos (movimiento, susceptibilidad, inhomogeneidades).</p>
+<p><strong>Limitaciones críticas y recomendaciones</strong>
+- El principal degradante de contraste en RX general es <strong>scatter</strong>: colimación, rejilla y/o corrección software deben ser parte del diseño del sistema.
+- En radiografía digital existe el riesgo de <em>dose creep</em>: la post-producción puede “hacer ver bien” imágenes adquiridas con más dosis de la necesaria. Controlar con <strong>KAP/ESAK + EI/DI + auditorías</strong>.
+- La calibración (dark/flat, uniformidad, linealidad, estabilidad) debe estar blindada por QA: si se rompe, el posprocesado puede ocultar el fallo y trasladar el riesgo al diagnóstico.</p>
+<hr>
+</section>
+<section id="introducción" class="level1">
+<h1>2. Introducción</h1>
+<section id="modalidades-rxct-y-cadena-completa-visión-de-sistema" class="level2">
+<h2 class="anchored" data-anchor-id="modalidades-rxct-y-cadena-completa-visión-de-sistema">2.1 Modalidades (RX/CT) y cadena completa (visión de sistema)</h2>
+<section id="figura-1-cadena-de-formación-de-imagen-en-rx-digital-esquemática" class="level3">
+<h3 class="anchored" data-anchor-id="figura-1-cadena-de-formación-de-imagen-en-rx-digital-esquemática">Figura 1: Cadena de formación de imagen en RX digital (esquemática)</h3>
+<p>Un bloque “fuente” genera energía (RX/CT: tubo; MRI: RF+gradientes). La energía interactúa con el paciente (RX/CT: atenuación+scatter; MRI: relajación). Un detector convierte a señal (FPD; detectores CT; bobinas RF). Luego hay muestreo/ADC, calibraciones (dark/flat; air-scan), reconstrucción (RX: proyección+procesado; CT: FBP/iterativa; MRI: FFT/SENSE/GRAPPA/CS), postproceso, visualización y QA.</p>
+<p>Aunque este reporte se centra en <strong>RX</strong>, se incluyen secciones de CT/MRI porque:
+- muchos conceptos de calidad (MTF/NPS/DQE) y QA son transversales;
+- tomosíntesis (RX) y CT comparten ideas de reconstrucción tomográfica;
+- el personal clínico suele operar flujos combinados (radiografía, tomografía, resonancia) y se benefician de un marco unificado.</p>
+</section>
+</section>
+<section id="glosario-términos-clave-en-lenguaje-técnico-sencillo" class="level2">
+<h2 class="anchored" data-anchor-id="glosario-términos-clave-en-lenguaje-técnico-sencillo">2.2 Glosario (términos clave, en lenguaje técnico sencillo)</h2>
+<ul>
+<li><strong>SNR</strong>: <span class="math inline">\(SNR=\mu/\sigma\)</span> (promedio sobre desviación estándar).</li>
+<li><strong>CNR</strong>: <span class="math inline">\(CNR=\lvert \mu_1-\mu_2\rvert/\sigma\)</span> (contraste relativo al ruido).</li>
+<li><strong>PSF</strong>: respuesta espacial a un punto (desenfoque).</li>
+<li><strong>MTF</strong>: módulo de la TF de la PSF; mide conservación de detalle por frecuencia espacial.</li>
+<li><strong>NPS</strong>: espectro de ruido; indica textura del ruido por frecuencia.</li>
+<li><strong>DQE</strong>: eficiencia con la que el detector preserva SNR del haz a la imagen.</li>
+<li><strong>Scatter</strong>: fotones desviados (Compton) que llegan al detector fuera de la trayectoria primaria.</li>
+<li><strong>kVp / mAs</strong>: controlan energía (calidad) y cantidad (intensidad) del haz.</li>
+<li><strong>HVL</strong>: espesor que reduce a la mitad la intensidad; indicador de calidad/filtración del haz.</li>
+<li><strong>HU (CT)</strong>: escala de atenuación relativa al agua.</li>
+<li><strong>TE/TR/FA (MRI)</strong>: parámetros de secuencia; se incluyen por comparativo.</li>
+<li><strong>k-space (MRI)</strong>: dominio de frecuencias espaciales; la imagen se obtiene (aprox.) por FFT.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="fundamentos-físicos-por-modalidad-énfasis-rxct" class="level1">
+<h1>3. Fundamentos físicos por modalidad (énfasis RX/CT)</h1>
+<section id="generación-del-haz-de-rayos-x-tubo-rx" class="level2">
+<h2 class="anchored" data-anchor-id="generación-del-haz-de-rayos-x-tubo-rx">3.1 Generación del haz de rayos X (tubo RX)</h2>
+<p>En el tubo RX, electrones acelerados por un potencial <span class="math inline">\(V\)</span> impactan el ánodo y generan:</p>
+<ol type="1">
+<li><strong>Bremsstrahlung (frenado)</strong>: espectro continuo.</li>
+<li><strong>Radiación característica</strong>: picos por transiciones electrónicas del material del ánodo (p.&nbsp;ej. W).</li>
+</ol>
+<p>Un modelo simplificado del espectro emitido puede representarse por una densidad espectral <span class="math inline">\(S(E)\)</span> (fotones/keV) que depende de:
+- <span class="math inline">\(kVp\)</span> (energía máxima <span class="math inline">\(E_{\max}\approx kVp\)</span> en keV),
+- filtración total (inherente + adicional),
+- material y ángulo del ánodo (efecto talón/heel),
+- forma de onda del generador.</p>
+<section id="figura-2-espectro-policromático-y-efecto-de-filtración-esquemática" class="level3">
+<h3 class="anchored" data-anchor-id="figura-2-espectro-policromático-y-efecto-de-filtración-esquemática">Figura 2: Espectro policromático y efecto de filtración (esquemática)</h3>
+<p>Curva <span class="math inline">\(S(E)\)</span> vs <span class="math inline">\(E\)</span>: sube desde bajas energías, alcanza un máximo y cae a cero en <span class="math inline">\(E=E_{\max}\)</span>. Encima aparecen picos estrechos (líneas características).</p>
+</section>
+<section id="filtración-y-calidad-del-haz-hvl" class="level3">
+<h3 class="anchored" data-anchor-id="filtración-y-calidad-del-haz-hvl">3.1.1 Filtración y calidad del haz (HVL)</h3>
+<p>La filtración elimina fotones de baja energía (aumenta HVL), reduce dosis superficial “inútil” y modifica el contraste.</p>
+<p><strong>Definición práctica:</strong> HVL es el espesor de material (usualmente aluminio) que reduce la intensidad a la mitad.</p>
+<p>Si la intensidad transmitida por un filtro homogéneo (aprox. monoenergético) es <span class="math inline">\(I(t)=I_0 e^{-\mu t}\)</span>, entonces:
+<span class="math display">\[
+HVL=\frac{\ln 2}{\mu}
+\]</span>
+En haz policromático, HVL se define por medición; no hay una <span class="math inline">\(\mu\)</span> única.</p>
+</section>
+</section>
+<section id="interacción-con-el-paciente-atenuación-y-dispersión" class="level2">
+<h2 class="anchored" data-anchor-id="interacción-con-el-paciente-atenuación-y-dispersión">3.2 Interacción con el paciente: atenuación y dispersión</h2>
+<p>En diagnóstico (≈ 20–150 keV), dominan:</p>
+<ul>
+<li><strong>Fotoeléctrico</strong>: crece fuertemente con <span class="math inline">\(Z\)</span> y decrece con energía; aumenta contraste (hueso vs tejido).</li>
+<li><strong>Compton</strong>: depende más de densidad electrónica; produce scatter; reduce contraste.</li>
+</ul>
+<section id="ley-de-beerlambert-monoenergético-y-extensión-policromática" class="level3">
+<h3 class="anchored" data-anchor-id="ley-de-beerlambert-monoenergético-y-extensión-policromática">3.2.1 Ley de Beer–Lambert (monoenergético) y extensión policromática</h3>
+<p>Para un rayo con energía <span class="math inline">\(E\)</span>:
+<span class="math display">\[
+I(E)=I_0(E)\exp\left(-\int_L \mu(E,\mathbf{r})\,ds\right)
+\]</span>
+<strong>Símbolos:</strong>
+- <span class="math inline">\(I_0(E)\)</span>: intensidad incidente a energía <span class="math inline">\(E\)</span>
+- <span class="math inline">\(I(E)\)</span>: intensidad transmitida
+- <span class="math inline">\(\mu(E,\mathbf{r})\)</span>: coeficiente de atenuación lineal
+- <span class="math inline">\(L\)</span>: trayectoria del rayo</p>
+<p>Para haz policromático:
+<span class="math display">\[
+I = \int_0^{E_{\max}} S(E)\exp\left(-\int_L \mu(E,\mathbf{r})\,ds\right)\,dE
+\]</span>
+Esto conduce a <strong>endurecimiento del haz</strong>: las energías bajas se atenúan más, el espectro transmitido se “endurece”, y el logaritmo deja de ser estrictamente lineal con el espesor.</p>
+</section>
+<section id="dispersión-scatter-naturaleza-y-consecuencias" class="level3">
+<h3 class="anchored" data-anchor-id="dispersión-scatter-naturaleza-y-consecuencias">3.2.2 Dispersión (scatter): naturaleza y consecuencias</h3>
+<p>Modelamos señal total medida (por píxel) como:
+<span class="math display">\[
+y = y_P + y_S
+\]</span>
+- <span class="math inline">\(y_P\)</span>: componente primaria (directa)
+- <span class="math inline">\(y_S\)</span>: dispersa (generalmente de baja frecuencia espacial, pero puede tener estructura)</p>
+<p><strong>Efecto clínico:</strong> disminuye CNR, crea velos (shading), reduce detectabilidad de lesiones sutiles (p.ej. nódulos pulmonares pequeños).</p>
+</section>
+<section id="figura-3-geometría-de-atenuación-y-scatter-hacia-el-detector-esquemática" class="level3">
+<h3 class="anchored" data-anchor-id="figura-3-geometría-de-atenuación-y-scatter-hacia-el-detector-esquemática">Figura 3: Geometría de atenuación y scatter hacia el detector (esquemática)</h3>
+<p>El fotón primario viaja recto al píxel. Un fotón Compton cambia dirección y alcanza otro píxel, elevando su señal como “fondo”.</p>
+</section>
+</section>
+<section id="detectores-rx-crdr-y-respuesta-del-sistema" class="level2">
+<h2 class="anchored" data-anchor-id="detectores-rx-crdr-y-respuesta-del-sistema">3.3 Detectores RX (CR/DR) y respuesta del sistema</h2>
+<section id="conversión-y-muestreo" class="level3">
+<h3 class="anchored" data-anchor-id="conversión-y-muestreo">3.3.1 Conversión y muestreo</h3>
+<p>Para DR con panel plano (FPD), el proceso es:
+- conversión energía→carga (directo: a-Se; indirecto: CsI→luz→a-Si),
+- integración temporal,
+- lectura de matriz (TFT),
+- ADC a valores digitales (ADU).</p>
+<p>Modelo lineal espacio-invariante (ideal):
+<span class="math display">\[
+z(\mathbf{x}) = (h * q)(\mathbf{x}) + n_e(\mathbf{x})
+\]</span>
+- <span class="math inline">\(q(\mathbf{x})\)</span>: señal cuántica (Poisson)
+- <span class="math inline">\(h(\mathbf{x})\)</span>: PSF efectiva (foco + detector + movimiento)
+- <span class="math inline">\(n_e\)</span>: ruido electrónico (aprox. gaussiano)</p>
+</section>
+<section id="mtf-nps-y-dqe-núcleo-de-calidad-en-detectores" class="level3">
+<h3 class="anchored" data-anchor-id="mtf-nps-y-dqe-núcleo-de-calidad-en-detectores">3.3.2 MTF, NPS y DQE (núcleo de calidad en detectores)</h3>
+<ul>
+<li><strong>MTF</strong>: mide transferencia de contraste por frecuencia espacial <span class="math inline">\(f\)</span>.</li>
+<li><strong>NPS</strong>: describe “textura” del ruido por frecuencia.</li>
+<li><strong>DQE</strong>: eficiencia de detección que cuantifica cuánto SNR se conserva:
+<span class="math display">\[
+DQE(f)=\frac{SNR^2_{\text{out}}(f)}{SNR^2_{\text{in}}(f)}
+\]</span></li>
+</ul>
+<p><strong>Tabla 1: Tipos de detector y consideraciones (resumen).</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tecnología</th>
+<th>Ventajas</th>
+<th>Limitaciones</th>
+<th>Artefactos típicos</th>
+<th>Comentario clínico</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CR (PSP)</td>
+<td>robusto, retro-compatibilidad</td>
+<td>lectura más lenta, menor DQE que DR</td>
+<td>polvo/rasguños, variabilidad placa</td>
+<td>útil en transición; menos ideal para baja dosis</td>
+</tr>
+<tr class="even">
+<td>DR indirecto (CsI/a-Si)</td>
+<td>buena DQE, buena MTF</td>
+<td>luz lateral (depende del CsI)</td>
+<td>lag/ghosting, píxeles muertos</td>
+<td>estándar en general; buen balance</td>
+</tr>
+<tr class="odd">
+<td>DR directo (a-Se)</td>
+<td>alta MTF (menos spreading)</td>
+<td>sensibilidad a condiciones, costo</td>
+<td>defectos de panel, saturación local</td>
+<td>excelente detalle; requiere QA disciplinado</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+</section>
+<section id="modelo-matemático-de-adquisición" class="level1">
+<h1>4. Modelo matemático de adquisición</h1>
+<section id="rx-proyección-2d-blur-ruido-poisson-electrónico-y-scatter" class="level2">
+<h2 class="anchored" data-anchor-id="rx-proyección-2d-blur-ruido-poisson-electrónico-y-scatter">4.1 RX: proyección 2D, blur, ruido (Poisson + electrónico) y scatter</h2>
+<section id="proyección-ideal-y-linealización-por-logaritmo" class="level3">
+<h3 class="anchored" data-anchor-id="proyección-ideal-y-linealización-por-logaritmo">4.1.1 Proyección ideal y linealización por logaritmo</h3>
+<p>Si el haz fuese monoenergético y sin scatter:
+<span class="math display">\[
+p(u,v)=-\ln\left(\frac{I(u,v)}{I_0(u,v)}\right)=\int_L \mu(\mathbf{r})ds
+\]</span>
+<span class="math inline">\(p(u,v)\)</span> sería una “imagen de proyección” proporcional a la integral de atenuación.</p>
+<p>En práctica:
+<span class="math display">\[
+I(u,v)= \underbrace{\int S(E)\exp\left(-\int \mu(E,\mathbf{r})ds\right)dE}_{\text{primaria policromática}} + \underbrace{I_S(u,v)}_{\text{scatter}}
+\]</span>
+El logaritmo ya no entrega una integral pura; aparece sesgo por beam hardening y por el término <span class="math inline">\(I_S\)</span>.</p>
+</section>
+<section id="ruido-modelo-poissongaussiano" class="level3">
+<h3 class="anchored" data-anchor-id="ruido-modelo-poissongaussiano">4.1.2 Ruido: modelo Poisson–Gaussiano</h3>
+<p>Número de cuanta detectados <span class="math inline">\(N\)</span>:
+<span class="math display">\[
+N\sim \text{Poisson}(\lambda)
+\]</span>
+Señal digital:
+<span class="math display">\[
+y=gN+\eta,\qquad \eta\sim \mathcal{N}(0,\sigma_e^2)
+\]</span>
+- <span class="math inline">\(g\)</span>: ganancia (ADU por fotón equivalente)
+- <span class="math inline">\(\eta\)</span>: ruido electrónico</p>
+<p><strong>Implicación:</strong> el ruido depende de la exposición; por eso los denoise “ciegos” pueden fallar si no consideran varianza dependiente de señal.</p>
+</section>
+<section id="desenfoque-total-psf-compuesta" class="level3">
+<h3 class="anchored" data-anchor-id="desenfoque-total-psf-compuesta">4.1.3 Desenfoque total (PSF compuesta)</h3>
+<p>La PSF efectiva puede modelarse como convolución de PSFs:
+<span class="math display">\[
+h_{\text{tot}} = h_{\text{foco}} * h_{\text{mov}} * h_{\text{det}}
+\]</span>
+- foco (tamaño focal y geometría)
+- movimiento (paciente y sistema)
+- detector (spreading en centellador, difusión, integración)</p>
+</section>
+</section>
+<section id="ct-comparativo-transformada-de-radon-geometrías-y-hu" class="level2">
+<h2 class="anchored" data-anchor-id="ct-comparativo-transformada-de-radon-geometrías-y-hu">4.2 CT (comparativo): transformada de Radon, geometrías y HU</h2>
+<p>Aunque el foco es RX, se incluye CT para completar “lista estándar de reconstrucción”.</p>
+<p>En CT ideal:
+<span class="math display">\[
+p(\theta,s)=\int \mu(x,y)\,\delta(x\cos\theta+y\sin\theta - s)\,dx\,dy
+\]</span>
+Esto es la <strong>transformada de Radon</strong>. La reconstrucción clásica (FBP) invierte este operador (aprox.) mediante filtrado y retroproyección.</p>
+<p>Conversión a HU:
+<span class="math display">\[
+HU = 1000\cdot \frac{\mu-\mu_{\text{agua}}}{\mu_{\text{agua}}}
+\]</span></p>
+<p>Calibraciones típicas:
+- <strong>dark</strong>: lectura sin señal (offset),
+- <strong>air-scan</strong>: referencia sin objeto (ganancia/normalización),
+- correcciones por beam hardening, scatter, anillos.</p>
+<hr>
+</section>
+</section>
+<section id="aspectos-solicitados-sección-repetible-por-cada-aspecto" class="level1">
+<h1>5. Aspectos solicitados (sección repetible por cada aspecto)</h1>
+<blockquote class="blockquote">
+<p><strong>Nota importante de interpretación:</strong>
+En radiografía de proyección, “reconstrucción” se refiere a transformar datos crudos en imagen clínica 2D. No es reconstrucción tomográfica (como CT), salvo extensiones como tomosíntesis. Por eso, aquí se incluyen:
+- Aspecto A: <em>Generación físico–matemática de la imagen RX</em> (formación del haz, interacción, detector)
+- Aspecto B: <em>Determinación de dosis en radiografías</em> (KAP/ESAK/ESD, conversión a dosis efectiva)
+- Aspecto C: <em>Pipeline de “reconstrucción” RX</em> (calibración + correcciones + denoise + realce + presentación)
+Además se adjunta un “listado estándar” de reconstrucción en CT/MRI (para comparativo, selección y cultura técnica).</p>
+</blockquote>
+<hr>
+<section id="a-proceso-físicomatemático-de-generación-de-imágenes-por-rayos-x-rx" class="level2">
+<h2 class="anchored" data-anchor-id="a-proceso-físicomatemático-de-generación-de-imágenes-por-rayos-x-rx">5.A Proceso físico–matemático de generación de imágenes por Rayos X (RX)</h2>
+<section id="a-definición-formal-y-objetivo" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-formal-y-objetivo">a) Definición formal y objetivo</h3>
+<p><strong>Objetivo:</strong> describir la relación entre (i) técnica radiográfica (kVp, mAs, filtración, geometría), (ii) propiedades del paciente (<span class="math inline">\(\mu(E,\mathbf{r})\)</span>, espesor, composición), y (iii) respuesta del detector (PSF/MTF/NPS/DQE) para predecir señal, ruido, contraste y artefactos.</p>
+<p>Formalmente, buscamos un modelo:
+<span class="math display">\[
+y(u,v)=\mathcal{F}\big(S(E),\ \mu(E,\mathbf{r}),\ \text{geom},\ h,\ \text{ruido},\ \text{scatter}\big)
+\]</span></p>
+</section>
+<section id="b-supuestos-y-condiciones-de-validez" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-y-condiciones-de-validez">b) Supuestos y condiciones de validez</h3>
+<ul>
+<li>Régimen diagnóstico (20–150 keV), interacción dominada por fotoeléctrico y Compton.</li>
+<li>Detector aproximadamente lineal en el rango de operación (sin saturación).</li>
+<li>Sistema casi invariante localmente (PSF no cambia mucho dentro del campo) <strong>o</strong> se trata con correcciones espaciales (flat-field y mapas).</li>
+<li>Scatter tratable como componente adicional suave o estimable por modelo.</li>
+</ul>
+<p><strong>Cuando falla:</strong> saturación/clipping, rejilla mal alineada, movimientos severos, colimación extrema, presencia de metal muy denso (no linealidad fuerte).</p>
+</section>
+<section id="c-derivaciónexplicación-matemática-esencial" class="level3">
+<h3 class="anchored" data-anchor-id="c-derivaciónexplicación-matemática-esencial">c) Derivación/explicación matemática esencial</h3>
+<ol type="1">
+<li><p><strong>Espectro emitido y filtrado</strong>
+Sea <span class="math inline">\(S_0(E)\)</span> el espectro sin filtración adicional y <span class="math inline">\(T_f(E)\)</span> la transmitancia del filtro equivalente:
+<span class="math display">\[
+S(E)=S_0(E)\,T_f(E)
+\]</span>
+con <span class="math inline">\(T_f(E)=\exp(-\mu_f(E)t_f)\)</span> para filtro homogéneo equivalente.</p></li>
+<li><p><strong>Transmisión policromática por el paciente</strong>
+<span class="math display">\[
+I_P(u,v)=\int_0^{E_{\max}} S(E)\exp\left(-\int_{L(u,v)} \mu(E,\mathbf{r})ds\right)\,dE
+\]</span></p></li>
+<li><p><strong>Scatter y señal total</strong>
+<span class="math display">\[
+I(u,v)=I_P(u,v)+I_S(u,v)
+\]</span>
+Modelos típicos aproximan <span class="math inline">\(I_S\)</span> como una versión suavizada de <span class="math inline">\(I_P\)</span> o de la fluencia incidente, con ganancia dependiente de espesor y campo.</p></li>
+<li><p><strong>Detector como sistema lineal</strong>
+<span class="math display">\[
+y(u,v)=\big(h * I\big)(u,v) + n(u,v)
+\]</span>
+con <span class="math inline">\(n\)</span> Poisson–Gaussiano.</p></li>
+<li><p><strong>Log-transform (con advertencia)</strong>
+En sistemas donde se forma una “imagen de atenuación”:
+<span class="math display">\[
+p(u,v)=-\ln\left(\frac{I(u,v)-\widehat{I}_S(u,v)}{I_0(u,v)}\right)
+\]</span>
+Esto requiere estimación <span class="math inline">\(\widehat{I}_S\)</span> y evita valores no físicos (argumento del log <span class="math inline">\(\le 0\)</span>).</p></li>
+</ol>
+</section>
+<section id="d-algoritmo-paso-a-paso-pseudocódigo-modelo-de-simulacióningeniería" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-paso-a-paso-pseudocódigo-modelo-de-simulacióningeniería">d) Algoritmo paso a paso + pseudocódigo (modelo de simulación/ingeniería)</h3>
+<p><strong>Algoritmo A1 (simulación conceptual de adquisición RX por píxel):</strong>
+1. Definir <span class="math inline">\(S(E)\)</span> (kVp + filtración).
+2. Para cada rayo/píxel, integrar atenuación polienergética a lo largo de la trayectoria.
+3. Sumar scatter estimado.
+4. Aplicar blur (PSF) y muestreo.
+5. Generar ruido Poisson–Gaussiano.
+6. Aplicar cuantización (ADC).</p>
+<pre class="text"><code>PSEUDOCÓDIGO A1: Adquisición RX (modelo físico simplificado)
+
+Inputs:
+  - Spectrum S(E) discretizado en energías E_k con pesos w_k
+  - Geometry: fuente-detector, píxeles (u,v), trayectorias L(u,v)
+  - Patient attenuation mu(E_k, r) o mapas/materiales
+  - Scatter model parameters (alpha, kernel size, field size, thickness proxy)
+  - Detector PSF h, gain g, electronic noise sigma_e
+  - Reference I0(u,v) (air-scan)
+
+For each pixel (u,v):
+  primary = 0
+  For each energy bin k:
+      line_integral = IntegrateOverPath( mu(E_k, r), L(u,v) )
+      primary += w_k * exp( - line_integral )
+
+  scatter = ScatterEstimate(primary, params)   # p.ej. alpha * Smooth(primary)
+  intensity = primary + scatter
+
+ApplyBlurAndSampling:
+  intensity_blurred = Convolve2D(intensity_map, h)  # global or local
+
+Noise:
+  N ~ Poisson( lambda = intensity_blurred )
+  y = g*N + Normal(0, sigma_e^2)
+
+Quantize:
+  y_adc = ClipAndQuantize(y, bit_depth)
+
+Return y_adc</code></pre>
+</section>
+<section id="e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos-orientativo" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos-orientativo">e) Parámetros: significado físico, rangos típicos y cómo elegirlos (orientativo)</h3>
+<blockquote class="blockquote">
+<p>Los rangos dependen de fabricante y protocolo; los siguientes son <strong>guías operativas</strong>.</p>
+</blockquote>
+<ul>
+<li><strong>kVp</strong>: 50–90 (extremidades), 90–120 (tórax), 70–90 (abdomen pediátrico, según clínica).
+<ul>
+<li>Sube kVp → mayor penetración, menor contraste intrínseco, potencialmente menor mAs para misma señal.</li>
+</ul></li>
+<li><strong>mAs</strong>: ajusta cantidad de fotones (SNR).</li>
+<li><strong>Filtración/HVL</strong>: según regulación; HVL mayor implica haz más duro (menor dosis superficial).</li>
+<li><strong>SID/OID</strong>: distancia fuente–imagen y objeto–imagen; controlan magnificación y desenfoque geométrico.</li>
+<li><strong>Rejilla (grid)</strong>: aumenta CNR (menos scatter) pero puede requerir más mAs; riesgo de artefactos si mala alineación.</li>
+</ul>
+</section>
+<section id="f-complejidad-computacional-y-requerimientos" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-computacional-y-requerimientos">f) Complejidad computacional y requerimientos</h3>
+<ul>
+<li>Modelo A1 completo (integración por energía + convoluciones): costo <span class="math inline">\(\mathcal{O}(N_{\text{pix}}N_E)\)</span> más convolución <span class="math inline">\(\mathcal{O}(N_{\text{pix}}k^2)\)</span> (o FFT).</li>
+<li>En operación clínica, la “adquisición” es hardware; el cómputo es para QA/simulación/optimización.</li>
+</ul>
+</section>
+<section id="g-comportamiento-frente-a-ruidoartefactos" class="level3">
+<h3 class="anchored" data-anchor-id="g-comportamiento-frente-a-ruidoartefactos">g) Comportamiento frente a ruido/artefactos</h3>
+<ul>
+<li>Menor exposición (mAs) → mayor ruido cuántico → reducción de detectabilidad.</li>
+<li>Scatter alto → pérdida de contraste (CNR) y “velos”.</li>
+<li>Desenfoque (PSF) alto → pérdida de resolución (MTF baja).</li>
+</ul>
+</section>
+<section id="h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos">h) Riesgos (sobre-suavizado, pérdida de detalle, alucinación, sesgos)</h3>
+<p>Aunque este aspecto es físico, se conecta con posprocesado:
+- Un pipeline que compense demasiado el ruido puede inventar texturas o bordes (especialmente con DL).
+- “Compensaciones automáticas” pueden esconder errores de técnica (p.ej. sobreexposición).</p>
+</section>
+<section id="i-recomendaciones-prácticas-rx-vs-ct-vs-mri" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-prácticas-rx-vs-ct-vs-mri">i) Recomendaciones prácticas RX vs CT vs MRI</h3>
+<ul>
+<li><strong>RX</strong>: controlar scatter (colimación + grid + corrección).</li>
+<li><strong>CT</strong>: control de beam hardening y calibración; reconstrucción volumétrica permite separar estructuras pero aumenta dosis.</li>
+<li><strong>MRI</strong>: parámetros y reconstrucción (k-space) dominan; no hay dosis ionizante, pero hay SAR/seguridad de implantes.</li>
+</ul>
+</section>
+<section id="j-ejemplo-clínico-narrativo-rx" class="level3">
+<h3 class="anchored" data-anchor-id="j-ejemplo-clínico-narrativo-rx">j) Ejemplo clínico narrativo (RX)</h3>
+<p><strong>Caso A (hipotético): tórax PA en adulto</strong>
+El técnico aumenta kVp para penetración (p.ej. 110 kVp) y reduce mAs para limitar dosis. Si no hay rejilla o la colimación es amplia, el scatter incrementa y “lava” el contraste del parénquima pulmonar: la lesión sutil (nódulo pequeño) puede perderse. La decisión ingeniería-clínica es balancear: usar rejilla (si el paciente/espesor lo amerita), colimar estrictamente, y evitar compensar contraste únicamente con postproceso.</p>
+<hr>
+</section>
+</section>
+<section id="b-cómo-se-determina-la-dosis-de-radiación-en-radiografías" class="level2">
+<h2 class="anchored" data-anchor-id="b-cómo-se-determina-la-dosis-de-radiación-en-radiografías">5.B Cómo se determina la dosis de radiación en radiografías</h2>
+<section id="a-definición-formal-y-objetivo-1" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-formal-y-objetivo-1">a) Definición formal y objetivo</h3>
+<p><strong>Objetivo:</strong> estimar y monitorear la exposición del paciente para asegurar calidad diagnóstica con mínima dosis razonable (ALARA), usando métricas estándar y trazables.</p>
+<p><strong>Cantidades relevantes:</strong>
+- <strong>Kerma en aire</strong> <span class="math inline">\(K_a\)</span> (Gy): energía cinética liberada por unidad de masa en aire.
+- <strong>Dosis absorbida</strong> <span class="math inline">\(D\)</span> (Gy): energía absorbida por unidad de masa en tejido.
+- <strong>Dosis equivalente</strong> <span class="math inline">\(H_T\)</span> (Sv): <span class="math inline">\(H_T=\sum_R w_R D_{T,R}\)</span> (en RX, <span class="math inline">\(w_R=1\)</span>).
+- <strong>Dosis efectiva</strong> <span class="math inline">\(E\)</span> (Sv): <span class="math inline">\(E=\sum_T w_T H_T\)</span> (pondera radiosensibilidad por órgano).</p>
+<p><strong>En radiografía clínica</strong> se usan principalmente:
+- <strong>KAP/DAP</strong> (Gy·cm²): kerma-área producto medido cerca del colimador.
+- <strong>ESAK/ESD</strong>: kerma/dosis de entrada en piel (con retrodispersión según definición local).
+- <strong>EI/DI</strong>: indicadores de exposición de imagen (no son dosis del paciente, pero ayudan al control de técnica).</p>
+</section>
+<section id="b-supuestos-y-condiciones-de-validez-1" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-y-condiciones-de-validez-1">b) Supuestos y condiciones de validez</h3>
+<ul>
+<li>Las estimaciones de ESD/ESAK asumen geometría conocida (distancias), técnica registrada y condiciones de retrodispersión (factor BSF).</li>
+<li>La conversión a dosis efectiva requiere <strong>coeficientes</strong> (tablas/Monte Carlo) y tiene incertidumbre.</li>
+<li>KAP es excelente para control y DRLs, pero no describe distribución de dosis en órganos.</li>
+</ul>
+</section>
+<section id="c-derivaciónexplicación-matemática-esencial-1" class="level3">
+<h3 class="anchored" data-anchor-id="c-derivaciónexplicación-matemática-esencial-1">c) Derivación/explicación matemática esencial</h3>
+<section id="ruta-1-estimación-desde-salida-del-tubo-kerma-en-aire" class="level4">
+<h4 class="anchored" data-anchor-id="ruta-1-estimación-desde-salida-del-tubo-kerma-en-aire">Ruta 1: estimación desde salida del tubo (kerma en aire)</h4>
+<p>Si el tubo tiene una salida (output) medida a una distancia de referencia <span class="math inline">\(d_0\)</span> para un <span class="math inline">\(kVp\)</span> y filtración (en condiciones de calibración):
+<span class="math display">\[
+K_{a}(d_0)\ [\text{mGy/mAs}]
+\]</span>
+Entonces, para una exposición con <span class="math inline">\(mAs\)</span> a una distancia <span class="math inline">\(d\)</span>:
+<span class="math display">\[
+K_{a,i}(d) = K_a(d_0)\cdot mAs \cdot \left(\frac{d_0}{d}\right)^2 \cdot C
+\]</span>
+donde <span class="math inline">\(C\)</span> incluye correcciones (temperatura/presión si aplica, calibración, calidad del haz).</p>
+<p>Si queremos <strong>entrada en piel</strong> con retrodispersión:
+<span class="math display">\[
+ESAK \approx K_{a,i}(d_{\text{piel}})\cdot BSF
+\]</span>
+- <span class="math inline">\(d_{\text{piel}}\)</span>: distancia foco–piel (aprox. <span class="math inline">\(SID - OID\)</span> si la piel está cerca del objeto).
+- <span class="math inline">\(BSF\)</span>: <em>backscatter factor</em>, depende de HVL, tamaño de campo y espesor (típicamente ~1.2–1.4 en muchas condiciones generales; <strong>usar tablas</strong>).</p>
+<blockquote class="blockquote">
+<p>En algunos entornos, “ESD” se usa como dosis absorbida en piel, mientras “ESAK” como kerma en aire en entrada; la práctica local debe definirse claramente.</p>
+</blockquote>
+</section>
+<section id="ruta-2-kapdap-medido" class="level4">
+<h4 class="anchored" data-anchor-id="ruta-2-kapdap-medido">Ruta 2: KAP/DAP medido</h4>
+<p>KAP se define como:
+<span class="math display">\[
+KAP = \int_A K_a(x,y)\,dA \approx \overline{K_a}\cdot A
+\]</span>
+Se mide con un KAP-metro integrado o externo. Es robusto para auditoría, comparación de protocolos y DRLs.</p>
+<p><strong>Relación cualitativa:</strong>
+- aumentar campo (A) aumenta KAP incluso si el kerma promedio es constante.
+- KAP se correlaciona con dosis efectiva mediante coeficientes de conversión por proyección y región anatómica:
+<span class="math display">\[
+E \approx c_{E}\cdot KAP
+\]</span>
+donde <span class="math inline">\(c_E\)</span> depende de vista (PA/AP/Lateral), tamaño del paciente, edad, etc.</p>
+</section>
+</section>
+<section id="d-algoritmo-paso-a-paso-pseudocódigo-cálculo-operativo" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-paso-a-paso-pseudocódigo-cálculo-operativo">d) Algoritmo paso a paso + pseudocódigo (cálculo operativo)</h3>
+<p><strong>Algoritmo B1 (estimación ESD/ESAK desde output + geometría):</strong>
+1. Obtener <span class="math inline">\(K_a(d_0)\)</span> para el <span class="math inline">\(kVp\)</span>/filtración (tabla de QA).
+2. Calcular distancia foco–piel <span class="math inline">\(d_{\text{piel}}\)</span>.
+3. Aplicar ley del inverso del cuadrado.
+4. Multiplicar por <span class="math inline">\(mAs\)</span>.
+5. Aplicar <span class="math inline">\(BSF\)</span> (de tabla).
+6. Reportar ESAK/ESD con incertidumbre.</p>
+<pre class="text"><code>PSEUDOCÓDIGO B1: Estimación ESAK (entrada) desde output del tubo
+
+Inputs:
+  Ka_per_mAs_at_d0   # mGy/mAs medido a d0 (p.ej. 100 cm)
+  d0                 # cm
+  mAs
+  d_skin             # cm (distancia foco-piel)
+  BSF                # factor retrodispersión (tabla por HVL/campo)
+  C                  # factor correcciones (calibración, T/P)
+
+Compute:
+  Ka_incident = Ka_per_mAs_at_d0 * mAs * (d0 / d_skin)^2 * C
+  ESAK = Ka_incident * BSF
+
+Output: ESAK (mGy) + notas sobre incertidumbre</code></pre>
+<p><strong>Algoritmo B2 (dosis efectiva aproximada desde KAP):</strong>
+1. Registrar KAP del equipo por examen.
+2. Seleccionar coeficiente <span class="math inline">\(c_E\)</span> según región y proyección.
+3. Estimar <span class="math inline">\(E=c_E \cdot KAP\)</span> (reportar como aproximación).</p>
+<pre class="text"><code>PSEUDOCÓDIGO B2: Estimación E desde KAP
+
+Inputs:
+  KAP (Gy·cm^2)
+  cE (mSv / (Gy·cm^2))  # tabla Monte Carlo por región/proyección/edad
+
+Compute:
+  E_mSv = cE * KAP
+
+Output: E_mSv (aprox.) + limitaciones</code></pre>
+</section>
+<section id="e-parámetros-y-rangos-típicos-selección-y-control" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-y-rangos-típicos-selección-y-control">e) Parámetros y rangos típicos (selección y control)</h3>
+<ul>
+<li><strong>KAP</strong>: depende de proyección y técnica; se usa para DRLs y comparación interna (no usar un único “valor normal” universal).</li>
+<li><strong>ESAK/ESD</strong>: útil para QA y cumplimiento; se compara con guías/DRLs.</li>
+<li><strong>EI/DI</strong>: control interno de exposición (evita <em>dose creep</em>). Importante: EI no es dosis, pero correlaciona con exposición al detector.</li>
+</ul>
+<p><strong>Tabla 2: Métricas de dosis en RX (qué responde cada una).</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Métrica</th>
+<th>¿Qué mide?</th>
+<th>Uso principal</th>
+<th>Ventajas</th>
+<th>Limitaciones / “red flags”</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(K_a\)</span> (kerma en aire)</td>
+<td>energía liberada en aire</td>
+<td>calibración/QA</td>
+<td>trazable y medible</td>
+<td>no refleja retrodispersión ni órganos</td>
+</tr>
+<tr class="even">
+<td>ESAK/ESD</td>
+<td>entrada (con retrodispersión según convención)</td>
+<td>QA paciente/protocolo</td>
+<td>se relaciona con piel</td>
+<td>depende de BSF y geometría</td>
+</tr>
+<tr class="odd">
+<td>KAP/DAP</td>
+<td>kerma × área</td>
+<td>DRLs, auditorías</td>
+<td>excelente para control poblacional</td>
+<td>no da distribución de dosis</td>
+</tr>
+<tr class="even">
+<td>EI/DI</td>
+<td>exposición al detector</td>
+<td>control técnico</td>
+<td>previene dose creep</td>
+<td>no es dosis; depende del fabricante</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="f-complejidad-computacional-y-requerimientos-1" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-computacional-y-requerimientos-1">f) Complejidad computacional y requerimientos</h3>
+<ul>
+<li>Cálculo B1/B2 es trivial (CPU).</li>
+<li>Si se usan modelos Monte Carlo o software de organ dose, el costo aumenta (pero suele ser offline).</li>
+</ul>
+</section>
+<section id="g-comportamiento-frente-a-ruidoartefactos-trade-off-dosiscalidad" class="level3">
+<h3 class="anchored" data-anchor-id="g-comportamiento-frente-a-ruidoartefactos-trade-off-dosiscalidad">g) Comportamiento frente a ruido/artefactos (trade-off dosis–calidad)</h3>
+<ul>
+<li>Reducir mAs reduce dosis y SNR; el denoise puede ayudar, pero con riesgo de borrar detalle.</li>
+<li>Subir kVp reduce contraste fotoeléctrico, pero puede permitir bajar mAs y reducir dosis de entrada; la decisión depende del objetivo clínico.</li>
+</ul>
+</section>
+<section id="h-riesgos-sesgos-y-errores-de-interpretación" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-sesgos-y-errores-de-interpretación">h) Riesgos (sesgos y errores de interpretación)</h3>
+<ul>
+<li>Confundir EI con dosis del paciente.</li>
+<li>Ajustar protocolos “por apariencia” (postprocesado) y terminar con sobreexposición sistemática (<em>dose creep</em>).</li>
+<li>No registrar distancias, colimación, rejilla: invalidan comparaciones.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-rx-vs-ct-vs-mri" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-rx-vs-ct-vs-mri">i) Recomendaciones RX vs CT vs MRI</h3>
+<ul>
+<li><strong>RX</strong>: use KAP/ESAK + EI/DI; auditorías periódicas y DRLs locales.</li>
+<li><strong>CT</strong>: índices CTDIvol y DLP; optimización por iterativa y control de protocolos.</li>
+<li><strong>MRI</strong>: no ionizante; control de SAR y seguridad de implantes.</li>
+</ul>
+</section>
+<section id="j-ejemplo-clínico-narrativo-dosis" class="level3">
+<h3 class="anchored" data-anchor-id="j-ejemplo-clínico-narrativo-dosis">j) Ejemplo clínico narrativo (dosis)</h3>
+<p><strong>Caso B (hipotético): radiografía AP de abdomen</strong>
+Dos servicios comparan calidad. Servicio 1 usa colimación estricta y rejilla adecuada; KAP mediano. Servicio 2 colima amplio “por seguridad” (para no cortar anatomía) y compensa con postprocesado: la imagen luce bien, pero KAP es sistemáticamente mayor por aumento del área irradiada. Acción: entrenar colimación, revisar AEC, y fijar umbrales de auditoría KAP por percentiles.</p>
+<hr>
+</section>
+</section>
+<section id="c-cómo-se-reconstruye-una-imagen-por-rayos-x-radiografía-de-proyección" class="level2">
+<h2 class="anchored" data-anchor-id="c-cómo-se-reconstruye-una-imagen-por-rayos-x-radiografía-de-proyección">5.C Cómo se “reconstruye” una imagen por Rayos X (radiografía de proyección)</h2>
+<section id="a-definición-formal-y-objetivo-2" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-formal-y-objetivo-2">a) Definición formal y objetivo</h3>
+<p>En <strong>RX de proyección</strong>, la “reconstrucción” es el <strong>pipeline de formación de imagen digital</strong>: transformar lecturas crudas del detector <span class="math inline">\(R(u,v)\)</span> en una imagen clínica <span class="math inline">\(I_{\text{clin}}(u,v)\)</span> para diagnóstico y archivo.</p>
+<p><span class="math display">\[
+I_{\text{clin}}=\mathcal{P}\Big(R;\ \text{dark/flat},\ \text{linealización},\ \widehat{scatter},\ \text{denoise},\ \text{realce},\ \text{LUT}\Big)
+\]</span></p>
+<p><strong>Objetivos técnicos:</strong>
+- corregir no uniformidades (ganancia/offset),
+- aproximar proporcionalidad con atenuación (cuando aplica),
+- controlar scatter y artefactos,
+- optimizar detectabilidad (CNR/d’) sin inventar estructuras.</p>
+</section>
+<section id="b-supuestos-y-condiciones-de-validez-2" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-y-condiciones-de-validez-2">b) Supuestos y condiciones de validez</h3>
+<ul>
+<li>Disponibilidad de calibraciones: <em>dark</em> y <em>flat/air scan</em>.</li>
+<li>Detector en región lineal (sin saturación).</li>
+<li>Parámetros de postprocesado validados por QA y coherentes con el objetivo clínico.</li>
+</ul>
+</section>
+<section id="c-derivaciónexplicación-matemática-esencial-bloques-principales" class="level3">
+<h3 class="anchored" data-anchor-id="c-derivaciónexplicación-matemática-esencial-bloques-principales">c) Derivación/explicación matemática esencial (bloques principales)</h3>
+<section id="c.1-corrección-de-offset-dark-y-ganancia-flat-field" class="level4">
+<h4 class="anchored" data-anchor-id="c.1-corrección-de-offset-dark-y-ganancia-flat-field">c.1 Corrección de offset (dark) y ganancia (flat-field)</h4>
+<p>Sea:
+- <span class="math inline">\(R\)</span>: lectura cruda (raw)
+- <span class="math inline">\(D\)</span>: dark (offset)
+- <span class="math inline">\(F\)</span>: flat/air scan (respuesta a campo uniforme)</p>
+<p>Corrección clásica:
+<span class="math display">\[
+R_c(u,v)=\frac{R(u,v)-D(u,v)}{F(u,v)-D(u,v)}
+\]</span>
+Esto compensa variaciones de ganancia y offset por píxel.</p>
+<p><strong>Red flag:</strong> si <span class="math inline">\(F-D\)</span> es muy pequeño en píxeles defectuosos, se amplifica ruido; se requiere máscara/ interpolación.</p>
+</section>
+<section id="c.2-linealización-y-log-transform-si-se-busca-imagen-de-atenuación" class="level4">
+<h4 class="anchored" data-anchor-id="c.2-linealización-y-log-transform-si-se-busca-imagen-de-atenuación">c.2 Linealización y log-transform (si se busca “imagen de atenuación”)</h4>
+<p>Si <span class="math inline">\(R_c\)</span> aproxima <span class="math inline">\(I/I_0\)</span>, entonces:
+<span class="math display">\[
+p(u,v)=-\ln\big(\max(R_c(u,v)-\widehat{S}(u,v),\epsilon)\big)
+\]</span>
+donde <span class="math inline">\(\widehat{S}\)</span> es scatter estimado en unidades consistentes (o fracción), y <span class="math inline">\(\epsilon\)</span> evita log no definido.</p>
+<blockquote class="blockquote">
+<p>En muchos sistemas clínicos, no se entrega explícitamente <span class="math inline">\(p\)</span> sino una imagen procesada para visualización. El punto es entender que el log es sensible a scatter y a errores de calibración.</p>
+</blockquote>
+</section>
+<section id="c.3-correcciónestimación-de-scatter-en-rx" class="level4">
+<h4 class="anchored" data-anchor-id="c.3-correcciónestimación-de-scatter-en-rx">c.3 Corrección/estimación de scatter (en RX)</h4>
+<p>Modelos típicos:
+- <strong>Kernel-based</strong>: <span class="math inline">\(\widehat{S} = \alpha \cdot (K * R_c)\)</span> donde <span class="math inline">\(K\)</span> es un kernel suavizante (p.ej. gaussiano) y <span class="math inline">\(\alpha\)</span> depende de tamaño de campo/espesor.
+- <strong>Modelos físicos simplificados</strong>: scatter como baja frecuencia proporcional al primario.
+- <strong>Mediciones</strong>: <em>beam-stop</em> (QA/investigación), rejillas/aire.</p>
+<p><strong>Peligro:</strong> sobre-corrección produce <em>shading invertido</em> y realces falsos.</p>
+</section>
+<section id="c.4-deconvolución-compensación-de-blur-opcional" class="level4">
+<h4 class="anchored" data-anchor-id="c.4-deconvolución-compensación-de-blur-opcional">c.4 Deconvolución / compensación de blur (opcional)</h4>
+<p>Si se modela:
+<span class="math display">\[
+y = h * x + n
+\]</span>
+una deconvolución estable (Wiener) en frecuencia:
+<span class="math display">\[
+\widehat{X}(f)=\frac{H^*(f)}{|H(f)|^2 + \frac{S_n(f)}{S_x(f)}}\,Y(f)
+\]</span>
+- <span class="math inline">\(H(f)\)</span>: MTF (TF de PSF)
+- <span class="math inline">\(S_n, S_x\)</span>: espectros (ruido y señal)</p>
+<p><strong>Red flag:</strong> deconvolución agresiva amplifica ruido y ringing.</p>
+</section>
+<section id="c.5-reducción-de-ruido-denoise-con-varianza-dependiente-de-señal" class="level4">
+<h4 class="anchored" data-anchor-id="c.5-reducción-de-ruido-denoise-con-varianza-dependiente-de-señal">c.5 Reducción de ruido (denoise) con varianza dependiente de señal</h4>
+<p>Estrategias:
+- filtrado adaptativo por varianza local,
+- transformadas (wavelet) con umbral,
+- filtros no-local means (NLM),
+- enfoques variacionales (TV):
+<span class="math display">\[
+  \widehat{x}=\arg\min_x \frac{1}{2}\|y-x\|_2^2 + \lambda \,TV(x)
+  \]</span>
+- DL (si está validado y bajo control).</p>
+<p><strong>Riesgo central:</strong> borrar microcalcificaciones (mama), líneas finas, neumotórax sutil; o crear patrones no reales.</p>
+</section>
+<section id="c.6-realce-y-presentación-tone-mapping-lut-compresión-dinámica" class="level4">
+<h4 class="anchored" data-anchor-id="c.6-realce-y-presentación-tone-mapping-lut-compresión-dinámica">c.6 Realce y presentación (tone mapping, LUT, compresión dinámica)</h4>
+<ul>
+<li>Compresión de rango (log/curvas),</li>
+<li>realce local (tipo CLAHE) con control,</li>
+<li>LUT según región anatómica,</li>
+<li>salida DICOM con metadatos de exposición.</li>
+</ul>
+</section>
+</section>
+<section id="d-algoritmo-paso-a-paso-pseudocódigo-pipeline-implementable" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-paso-a-paso-pseudocódigo-pipeline-implementable">d) Algoritmo paso a paso + pseudocódigo (pipeline implementable)</h3>
+<p><strong>Algoritmo C1 (pipeline estándar de formación de imagen RX):</strong>
+1. Leer <span class="math inline">\(R\)</span> (raw), <span class="math inline">\(D\)</span> (dark) y <span class="math inline">\(F\)</span> (flat).
+2. Calcular <span class="math inline">\(R_c=(R-D)/(F-D)\)</span>.
+3. Enmascarar píxeles defectuosos; interpolar si procede.
+4. Estimar scatter <span class="math inline">\(\widehat{S}\)</span> (modelo).
+5. (Opcional) log-transform a dominio de atenuación.
+6. Reducir ruido con método controlado (parámetros validados).
+7. (Opcional) compensar blur suavemente (evitar deconvolución extrema).
+8. Realce y mapeo tonal (LUT) para visualización.
+9. Generar salida clínica (DICOM) + registro de parámetros.</p>
+<pre class="text"><code>PSEUDOCÓDIGO C1: “Reconstrucción” RX (formación de imagen 2D)
+
+Inputs:
+  R(u,v): raw detector image
+  D(u,v): dark field
+  F(u,v): flat field (air scan)
+  defect_mask(u,v): píxeles defectuosos
+  scatter_params: (alpha, kernel K, thickness proxy)
+  denoise_params: (method, strength, noise model)
+  tone_params: LUT / windowing / local contrast limits
+
+Step 1: Flat-field correction
+  Rc = (R - D) / max(F - D, epsilon)
+
+Step 2: Defect handling
+  Rc = InpaintOrInterpolate(Rc, defect_mask)
+
+Step 3: Scatter estimation (simple kernel model)
+  S_hat = alpha * Convolve2D(Rc, K)        # K: kernel suave
+  P_hat = max(Rc - S_hat, epsilon)
+
+Step 4: Optional log transform (if desired)
+  p = -log(P_hat)
+
+Step 5: Denoise (choose one; avoid over-smoothing)
+  p_dn = Denoise(p, denoise_params)
+
+Step 6: Optional mild deblur / edge preservation
+  p_sharp = MildSharpen(p_dn, limits)      # bounded unsharp masking or Wiener with cap
+
+Step 7: Tone mapping / presentation
+  I_clin = ToneMap(p_sharp, tone_params)
+
+Step 8: Output
+  ExportDICOM(I_clin, metadata + parameters log)
+Return I_clin</code></pre>
+</section>
+<section id="e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-significado-físico-rangos-típicos-y-cómo-elegirlos">e) Parámetros: significado físico, rangos típicos y cómo elegirlos</h3>
+<ul>
+<li><strong><span class="math inline">\(\alpha\)</span> scatter</strong>: aumenta con campo y espesor; ajustar por QA con phantoms (no “a ojo”).</li>
+<li><strong>Kernel <span class="math inline">\(K\)</span></strong>: ancho relacionado con baja frecuencia del scatter; demasiado ancho → sub-corrección local; demasiado estrecho → artefactos.</li>
+<li><strong><span class="math inline">\(\lambda\)</span> (TV/regularización)</strong>: controla suavizado; elegir para preservar bordes finos en tareas críticas.</li>
+<li><strong>Parámetros de realce local</strong>: limitar para no crear halo o exagerar ruido.</li>
+</ul>
+</section>
+<section id="f-complejidad-computacional-y-requerimientos-2" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-computacional-y-requerimientos-2">f) Complejidad computacional y requerimientos</h3>
+<ul>
+<li>Flat-field: <span class="math inline">\(\mathcal{O}(N)\)</span></li>
+<li>Convoluciones: <span class="math inline">\(\mathcal{O}(Nk^2)\)</span> (o FFT <span class="math inline">\(\mathcal{O}(N\log N)\)</span>)</li>
+<li>NLM/TV: más costoso (iterativo), típicamente requiere optimización; GPU opcional.</li>
+<li>DL: depende del modelo; exige validación y control de versiones.</li>
+</ul>
+</section>
+<section id="g-comportamiento-frente-a-ruidoartefactos-1" class="level3">
+<h3 class="anchored" data-anchor-id="g-comportamiento-frente-a-ruidoartefactos-1">g) Comportamiento frente a ruido/artefactos</h3>
+<ul>
+<li>Correcciones mejoran uniformidad; scatter-correction mejora CNR.</li>
+<li>Denoise mejora apariencia y puede mejorar detectabilidad si está bien calibrado; si no, puede borrar hallazgos.</li>
+</ul>
+</section>
+<section id="h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos-1" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-sobre-suavizado-pérdida-de-detalle-alucinación-sesgos-1">h) Riesgos: sobre-suavizado, pérdida de detalle, alucinación, sesgos</h3>
+<ul>
+<li><strong>Sobre-suavizado:</strong> pérdida de líneas finas, microfracturas, neumotórax.</li>
+<li><strong>Sharpen excesivo:</strong> halos alrededor de bordes; falsa “cortical” ósea.</li>
+<li><strong>DL sin control:</strong> posible introducción de patrones que parecen anatomía; requiere validación clínica, documentación y límites de uso.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-prácticas-rx-vs-ct-vs-mri-1" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-prácticas-rx-vs-ct-vs-mri-1">i) Recomendaciones prácticas RX vs CT vs MRI</h3>
+<ul>
+<li><strong>RX</strong>: preferir correcciones que respeten física (flat-field, scatter moderado, denoise validado).</li>
+<li><strong>CT</strong>: reconstrucción iterativa y correcciones (BH/metal) con QA de HU.</li>
+<li><strong>MRI</strong>: reconstrucciones paralelas/CS con control de artefactos y mapas de sensibilidad.</li>
+</ul>
+</section>
+<section id="j-ejemplo-clínico-narrativo-pipeline" class="level3">
+<h3 class="anchored" data-anchor-id="j-ejemplo-clínico-narrativo-pipeline">j) Ejemplo clínico narrativo (pipeline)</h3>
+<p><strong>Caso C (hipotético): radiografía de mano con sospecha de fractura fina</strong>
+Un denoise agresivo “limpia” la textura y mejora la apariencia general, pero borra una línea de fractura no desplazada. En QA, se detecta que el parámetro de fuerza fue calibrado para tórax y aplicado a extremidades. Acción: separar pipelines por anatomía/tarea (tórax ≠ mano), y usar pruebas de detectabilidad (phantom de líneas finas) antes de liberar cambios.</p>
+<hr>
+</section>
+</section>
+<section id="d-listado-estándar-de-métodos-de-reconstrucción-de-imágenes-médicas-comparativo-rxctmri" class="level2">
+<h2 class="anchored" data-anchor-id="d-listado-estándar-de-métodos-de-reconstrucción-de-imágenes-médicas-comparativo-rxctmri">5.D Listado estándar de métodos de reconstrucción de imágenes médicas (comparativo RX/CT/MRI)</h2>
+<blockquote class="blockquote">
+<p><strong>Propósito:</strong> cumplir el “listado estándar” solicitado y facilitar guías de selección. En RX puro, estos métodos aparecen como extensiones (tomosíntesis, dual-energy, o postprocesado avanzado).</p>
+</blockquote>
+<section id="d.1-ct-estándar" class="level3">
+<h3 class="anchored" data-anchor-id="d.1-ct-estándar">D.1 CT (estándar)</h3>
+<ul>
+<li><strong>FBP</strong> (Filtered BackProjection)</li>
+<li><strong>FDK</strong> (cone-beam CT)</li>
+<li><strong>ART/SIRT/SART</strong> (algebraicos)</li>
+<li><strong>MLEM/OSEM</strong> (más típico de medicina nuclear, pero conceptualmente relevante)</li>
+<li><strong>Reconstrucción iterativa estadística</strong> (penalized likelihood / MAP)</li>
+<li><strong>MBIR</strong> (Model-Based Iterative Reconstruction)</li>
+<li><strong>Regularización</strong>: Tikhonov, TV, Huber, edge-preserving</li>
+<li><strong>Correcciones integradas</strong>: beam hardening, scatter, metal artifact reduction</li>
+<li><strong>Deep learning reconstruction</strong> (post-FBP, unrolled networks, etc.)</li>
+</ul>
+</section>
+<section id="d.2-mri-estándar" class="level3">
+<h3 class="anchored" data-anchor-id="d.2-mri-estándar">D.2 MRI (estándar)</h3>
+<ul>
+<li><strong>FFT directa</strong> (cartesiano)</li>
+<li><strong>SENSE/GRAPPA</strong> (imagen paralela)</li>
+<li><strong>Compressed Sensing (CS)</strong></li>
+<li><strong>Recon variacional</strong> (TV, wavelet sparsity)</li>
+<li><strong>DL</strong> (recon acelerada y denoise)</li>
+<li><strong>Corrección de inhomogeneidad</strong> (B0/B1), movimiento, EPI distortions</li>
+</ul>
+</section>
+<section id="d.3-rx-extendido" class="level3">
+<h3 class="anchored" data-anchor-id="d.3-rx-extendido">D.3 RX extendido</h3>
+<ul>
+<li><strong>Tomosíntesis (DBT/DT)</strong>: shift-and-add, FBP limitada, iterativa con regularización</li>
+<li><strong>Dual-energy</strong>: descomposición material (bone/soft tissue separation)</li>
+<li><strong>Scatter correction</strong>: hardware (grid) + software (kernel/model-based/DL)</li>
+<li><strong>Deconvolución y super-resolución</strong> (con cautela)</li>
+<li><strong>Bone suppression</strong> (tórax) y realces basados en modelos (alto control)</li>
+</ul>
+<p><strong>Tabla 3: Métodos (comparativo) vs ventajas/limitaciones/costo/tiempo/artefactos.</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Modalidad</th>
+<th>Método</th>
+<th>Ventajas</th>
+<th>Limitaciones</th>
+<th>Costo/tiempo</th>
+<th>Artefactos/riesgos</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CT</td>
+<td>FBP</td>
+<td>rápido, estable</td>
+<td>más ruido en baja dosis</td>
+<td>bajo / muy rápido</td>
+<td>streaks, ruido</td>
+</tr>
+<tr class="even">
+<td>CT</td>
+<td>Iterativa (MAP/MBIR)</td>
+<td>baja dosis, menos ruido</td>
+<td>mayor cómputo, tuning</td>
+<td>medio-alto / lento</td>
+<td>sobre-suavizado, textura artificial</td>
+</tr>
+<tr class="odd">
+<td>CT</td>
+<td>MAR (metal)</td>
+<td>reduce streaks</td>
+<td>puede introducir sesgos</td>
+<td>medio</td>
+<td>“missing” de detalles cercanos</td>
+</tr>
+<tr class="even">
+<td>MRI</td>
+<td>SENSE/GRAPPA</td>
+<td>acelera adquisición</td>
+<td>depende de calibración</td>
+<td>medio</td>
+<td>ruido amplificado (g-factor)</td>
+</tr>
+<tr class="odd">
+<td>MRI</td>
+<td>CS</td>
+<td>acelera + preserva</td>
+<td>requiere sparsidad/ajuste</td>
+<td>alto</td>
+<td>aliasing incoherente si mal ajustado</td>
+</tr>
+<tr class="even">
+<td>RX</td>
+<td>Pipeline clásico</td>
+<td>trazable, robusto</td>
+<td>limitado por proyección</td>
+<td>bajo</td>
+<td>halos, clipping si mal calibrado</td>
+</tr>
+<tr class="odd">
+<td>RX</td>
+<td>DL denoise/scatter</td>
+<td>calidad aparente alta</td>
+<td>requiere validación fuerte</td>
+<td>medio-alto</td>
+<td>alucinación, sesgos</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+</section>
+<section id="artefactos-y-fallas-típicas" class="level1">
+<h1>6. Artefactos y fallas típicas</h1>
+<section id="rx-radiografía" class="level2">
+<h2 class="anchored" data-anchor-id="rx-radiografía">6.1 RX (radiografía)</h2>
+<ul>
+<li><strong>Grid artifacts / moiré</strong>: patrones por interferencia rejilla–muestreo; más en CR.</li>
+<li><strong>Grid cutoff</strong>: mala alineación (angulación) o centrado; pérdida de densidad periférica.</li>
+<li><strong>Motion blur</strong>: movimiento; reduce MTF efectiva.</li>
+<li><strong>Scatter/shading</strong>: velos, pérdida de contraste; más en campos grandes/abdomen.</li>
+<li><strong>Saturación/clipping</strong>: pérdida de información en altas exposiciones locales.</li>
+<li><strong>Aliasing</strong>: muestreo insuficiente vs detalle (frecuencias altas).</li>
+<li><strong>Lag/ghosting</strong>: persistencia del detector.</li>
+</ul>
+<p><strong>Red flags operativos (RX):</strong>
+- histogramas “raros” (clipping),
+- EI sistemáticamente alto (dose creep),
+- rejilla utilizada sin necesidad (aumenta dosis), o sin correcta alineación.</p>
+</section>
+<section id="ct-comparativo" class="level2">
+<h2 class="anchored" data-anchor-id="ct-comparativo">6.2 CT (comparativo)</h2>
+<ul>
+<li><strong>Streaks por metal</strong></li>
+<li><strong>Beam hardening</strong> (cupping, bandas)</li>
+<li><strong>Ring artifacts</strong> (calibración detectores)</li>
+<li><strong>Partial volume</strong></li>
+<li><strong>Cone-beam artifacts</strong> (geometría)</li>
+</ul>
+</section>
+<section id="mri-comparativo" class="level2">
+<h2 class="anchored" data-anchor-id="mri-comparativo">6.3 MRI (comparativo)</h2>
+<ul>
+<li><strong>Motion/ghosting</strong></li>
+<li><strong>Susceptibility</strong></li>
+<li><strong>Chemical shift</strong></li>
+<li><strong>Gibbs ringing</strong></li>
+<li><strong>B0/B1 inhomogeneity</strong></li>
+<li><strong>Wrap-around (aliasing)</strong></li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="calidad-de-imagen-y-evaluación-cuantitativa" class="level1">
+<h1>7. Calidad de imagen y evaluación cuantitativa</h1>
+<section id="métricas-y-definiciones" class="level2">
+<h2 class="anchored" data-anchor-id="métricas-y-definiciones">7.1 Métricas y definiciones</h2>
+<ul>
+<li><strong>SNR</strong>: <span class="math inline">\(SNR=\mu/\sigma\)</span> (región homogénea).</li>
+<li><strong>CNR</strong>: <span class="math inline">\(CNR=\lvert \mu_1-\mu_2\rvert/\sigma\)</span> (mismo <span class="math inline">\(\sigma\)</span> de referencia).</li>
+<li><strong>MTF</strong>: de PSF/ESF/LSF; refleja resolución.</li>
+<li><strong>NPS</strong>: se estima en regiones uniformes; describe textura de ruido.</li>
+<li><strong>Detectabilidad <span class="math inline">\(d'\)</span></strong> (conceptual): se relaciona con la tarea (tamaño/contraste) y el sistema; útil para “tarea-específica”.</li>
+</ul>
+</section>
+<section id="protocolos-con-phantoms-configuraciones-típicas" class="level2">
+<h2 class="anchored" data-anchor-id="protocolos-con-phantoms-configuraciones-típicas">7.2 Protocolos con phantoms (configuraciones típicas)</h2>
+<p><strong>RX:</strong>
+- Phantom de uniformidad (placa homogénea) para NPS/uniformidad.
+- Phantom de borde inclinado (slanted edge) para MTF.
+- Phantom de detalles de bajo contraste (discos) para CNR/tarea.
+- Phantom de líneas finas (resolución).</p>
+<section id="figura-5-medición-de-mtf-por-borde-inclinado-slanted-edge-esquemática" class="level3">
+<h3 class="anchored" data-anchor-id="figura-5-medición-de-mtf-por-borde-inclinado-slanted-edge-esquemática">Figura 5: Medición de MTF por borde inclinado (slanted-edge) (esquemática)</h3>
+<p>Se coloca un borde metálico ligeramente inclinado respecto a la rejilla de píxeles. Se obtiene ESF, luego LSF por derivada, y MTF por FFT.</p>
+</section>
+</section>
+<section id="diseño-de-experimento-repetibilidad-y-trazabilidad" class="level2">
+<h2 class="anchored" data-anchor-id="diseño-de-experimento-repetibilidad-y-trazabilidad">7.3 Diseño de experimento (repetibilidad y trazabilidad)</h2>
+<ul>
+<li>Repetir adquisiciones para estimar varianza y estabilidad.</li>
+<li>Reportar incertidumbre (intervalos de confianza).</li>
+<li>Controlar variables: kVp, mAs, colimación, SID, rejilla, procesado.</li>
+<li>Mantener registro de versiones de pipeline y parámetros.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="dosis-y-seguridad" class="level1">
+<h1>8. Dosis y seguridad</h1>
+<section id="rx-indicadores-y-alara" class="level2">
+<h2 class="anchored" data-anchor-id="rx-indicadores-y-alara">8.1 RX: indicadores y ALARA</h2>
+<ul>
+<li>Usar <strong>KAP/ESAK</strong> para control de dosis por examen y DRLs.</li>
+<li>Optimizar protocolos: colimación, AEC, evitar repeticiones, posicionamiento.</li>
+<li>Evitar <em>dose creep</em> con auditorías de EI/DI.</li>
+</ul>
+</section>
+<section id="ct-comparativo-1" class="level2">
+<h2 class="anchored" data-anchor-id="ct-comparativo-1">8.2 CT (comparativo)</h2>
+<ul>
+<li>Indicadores: <strong>CTDIvol</strong> y <strong>DLP</strong>.</li>
+<li>Trade-off dosis–calidad: iterativa/MBIR permite reducir dosis manteniendo detectabilidad (si se valida).</li>
+</ul>
+</section>
+<section id="mri-comparativo-1" class="level2">
+<h2 class="anchored" data-anchor-id="mri-comparativo-1">8.3 MRI (comparativo)</h2>
+<ul>
+<li>Control de <strong>SAR</strong>, límites de gradientes, seguridad de implantes y calentamiento.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="recomendaciones-de-implementación-pipeline-y-qa" class="level1">
+<h1>9. Recomendaciones de implementación (pipeline y QA)</h1>
+<section id="pipeline-sugerido-por-modalidad" class="level2">
+<h2 class="anchored" data-anchor-id="pipeline-sugerido-por-modalidad">9.1 Pipeline sugerido por modalidad</h2>
+<p><strong>RX (proyección 2D):</strong>
+1. Calibración (dark/flat) + mapa de defectos.
+2. Corrección de ganancia/offset + linealización.
+3. Scatter mitigation (colimación + grid + software moderado).
+4. Denoise controlado por tarea (anatomía).
+5. Realce y LUT por región.
+6. Export DICOM + log de parámetros.</p>
+<p><strong>CT/MRI (resumen):</strong>
+- CT: calibración + correcciones + reconstrucción (FBP/iterativa) + QA HU/artefactos.
+- MRI: correcciones + reconstrucción (FFT/SENSE/GRAPPA/CS) + QA artefactos.</p>
+</section>
+<section id="checklist-de-validación-mínimo" class="level2">
+<h2 class="anchored" data-anchor-id="checklist-de-validación-mínimo">9.2 Checklist de validación (mínimo)</h2>
+<ul>
+<li><strong>Calibración</strong>: dark/flat actualizados; uniformidad estable.</li>
+<li><strong>Linealidad</strong>: respuesta vs exposición dentro de rango.</li>
+<li><strong>MTF/NPS/DQE</strong>: según norma aplicable (p.ej. IEC 62220).</li>
+<li><strong>Artefactos</strong>: rejilla, moiré, píxeles muertos, ghosting.</li>
+<li><strong>Dosis</strong>: KAP/ESAK dentro de rangos; EI/DI sin deriva.</li>
+<li><strong>Trazabilidad</strong>: parámetros y versión de pipeline guardados.</li>
+</ul>
+</section>
+<section id="buenas-prácticas-operativas-y-errores-comunes" class="level2">
+<h2 class="anchored" data-anchor-id="buenas-prácticas-operativas-y-errores-comunes">9.3 Buenas prácticas (operativas) y errores comunes</h2>
+<p><strong>Buenas prácticas:</strong>
+- Protocolos por anatomía y tarea (no “one-size-fits-all”).
+- Colimación estricta: reduce scatter y KAP.
+- Rejilla solo cuando aporta (paciente/espesor/estudio).
+- Auditorías periódicas de KAP/EI y repeticiones.
+- Cambios de software/pipeline con validación clínica y phantom.</p>
+<p><strong>Errores comunes:</strong>
+- Ajustar postprocesado para “verse bonito” sin medir detectabilidad.
+- Ignorar drift de calibración.
+- Confundir EI con dosis o calidad clínica.
+- Colimar amplio para “no cortar” y aumentar dosis innecesaria.</p>
+<hr>
+</section>
+</section>
+<section id="casos-de-uso-y-guía-de-selección" class="level1">
+<h1>10. Casos de uso y guía de selección</h1>
+<section id="matriz-de-decisión-objetivo-clínico-vs-método" class="level2">
+<h2 class="anchored" data-anchor-id="matriz-de-decisión-objetivo-clínico-vs-método">10.1 Matriz de decisión (objetivo clínico vs método)</h2>
+<p><strong>Tabla 4: “Si tu objetivo es X, usa Y” (resumen práctico).</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Objetivo</th>
+<th>Prioridad</th>
+<th>Recomendación técnica</th>
+<th>Evitar</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Reducir dosis manteniendo detectabilidad</td>
+<td>ALARA</td>
+<td>optimizar colimación + AEC + kVp/mAs; denoise moderado validado</td>
+<td>denoise agresivo sin QA; subir mAs “por seguridad”</td>
+</tr>
+<tr class="even">
+<td>Mejorar contraste en abdomen</td>
+<td>CNR</td>
+<td>controlar scatter (grid + colimación + corrección)</td>
+<td>postproceso excesivo para “inventar contraste”</td>
+</tr>
+<tr class="odd">
+<td>Detectar fractura fina</td>
+<td>resolución</td>
+<td>minimizar movimiento; PSF baja; sharpening moderado</td>
+<td>suavizado fuerte; halos</td>
+</tr>
+<tr class="even">
+<td>Seguimiento seriado</td>
+<td>consistencia</td>
+<td>protocolos fijos + logs + QA</td>
+<td>cambios invisibles de pipeline</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="conclusiones" class="level1">
+<h1>11. Conclusiones</h1>
+<ol type="1">
+<li>La imagen RX es el resultado de una cadena físico–digital donde los mayores degradantes prácticos son <strong>scatter</strong>, desenfoque y ruido dependiente de exposición.</li>
+<li>La dosimetría en radiografía debe centrarse en métricas operativas (KAP/ESAK) y control de técnica (EI/DI) para prevenir <em>dose creep</em> y sostener ALARA.</li>
+<li>La “reconstrucción RX” es un pipeline de calibración y correcciones que debe ser <strong>tarea-específico</strong>, medido con phantoms y gobernado por QA: el posprocesado nunca debe sustituir una adquisición físicamente correcta.</li>
+<li>La comparación con CT/MRI permite ubicar la reconstrucción tomográfica y reconstrucción en <span class="math inline">\(k\)</span>-espacio como casos particulares; sin embargo, las disciplinas de trazabilidad, QA y control de riesgos son comunes.</li>
+</ol>
+<hr>
+</section>
+<section id="referencias-formato-ieee-25" class="level1">
+<h1>12. Referencias (formato IEEE, ≥ 25)</h1>
+<blockquote class="blockquote">
+<p>Nota: se listan libros, estándares y reportes técnicos ampliamente usados en ingeniería clínica e imagen médica. Para aplicación formal, verificar la edición vigente y adopción local.</p>
+</blockquote>
+<p>[1] J. T. Bushberg, J. A. Seibert, E. M. Leidholdt Jr., and J. M. Boone, <em>The Essential Physics of Medical Imaging</em>, 3rd ed.&nbsp;Philadelphia, PA, USA: Lippincott Williams &amp; Wilkins, 2012.</p>
+<p>[2] A. E. Burgess, “The Rose model, revisited,” <em>J. Opt. Soc. Am. A</em>, vol.&nbsp;16, no. 3, pp.&nbsp;633–646, 1999.</p>
+<p>[3] E. Samei and M. J. Flynn, “An experimental comparison of detector performance for direct and indirect digital radiography systems,” <em>Med. Phys.</em>, vol.&nbsp;30, no. 4, pp.&nbsp;608–622, 2003.</p>
+<p>[4] H. H. Barrett and K. J. Myers, <em>Foundations of Image Science</em>. Hoboken, NJ, USA: Wiley, 2004.</p>
+<p>[5] R. C. Gonzalez and R. E. Woods, <em>Digital Image Processing</em>, 4th ed.&nbsp;Pearson, 2018.</p>
+<p>[6] A. C. Kak and M. Slaney, <em>Principles of Computerized Tomographic Imaging</em>. SIAM, 2001.</p>
+<p>[7] W. A. Kalender, <em>Computed Tomography: Fundamentals, System Technology, Image Quality, Applications</em>, 3rd ed.&nbsp;Erlangen, Germany: Publicis, 2011.</p>
+<p>[8] S. Natterer, <em>The Mathematics of Computerized Tomography</em>. SIAM, 2001.</p>
+<p>[9] M. A. Anastasio, J. Zhang, and P. La Riviere, “Model-based image reconstruction,” in <em>Handbook of Medical Imaging</em>, relevant chapters, SPIE, various editions.</p>
+<p>[10] IEC 62220-1-1, “Medical electrical equipment — Characteristics of digital X-ray imaging devices — Part 1-1: Determination of the detective quantum efficiency — Detectors used in radiographic imaging,” International Electrotechnical Commission, Geneva, Switzerland.</p>
+<p>[11] IEC 61223-3-1, “Evaluation and routine testing in medical imaging departments — Part 3-1: Acceptance tests — Imaging performance of X-ray equipment for radiographic and radioscopic systems,” IEC, Geneva.</p>
+<p>[12] IEC 60601-1, “Medical electrical equipment — Part 1: General requirements for basic safety and essential performance,” IEC, Geneva.</p>
+<p>[13] ICRP Publication 103, “The 2007 Recommendations of the International Commission on Radiological Protection,” <em>Ann. ICRP</em>, 2007.</p>
+<p>[14] ICRP Publication 105, “Radiological protection in medicine,” <em>Ann. ICRP</em>, 2007.</p>
+<p>[15] IAEA, <em>Radiation Protection in Diagnostic and Interventional Radiology</em>, Safety Reports/Training materials, International Atomic Energy Agency, Vienna.</p>
+<p>[16] ICRU Report 74, “Patient dosimetry for X-rays used in medical imaging,” International Commission on Radiation Units and Measurements.</p>
+<p>[17] NCRP Report No.&nbsp;160, “Ionizing Radiation Exposure of the Population of the United States,” National Council on Radiation Protection and Measurements, 2009.</p>
+<p>[18] AAPM Report (varios), “Quality control and performance evaluation of radiographic systems,” American Association of Physicists in Medicine (consultar reportes/tareas de grupo aplicables).</p>
+<p>[19] ACR, “Practice Parameter for Diagnostic Radiography,” American College of Radiology (consultar versión vigente).</p>
+<p>[20] ACR–AAPM–SIIM, “Technical Standard/Practice Parameter for Digital Radiography,” joint guidance (consultar versión vigente).</p>
+<p>[21] J. A. Seibert, “X-ray imaging physics for nuclear medicine technologists,” <em>J. Nucl. Med. Technol.</em>, vol.&nbsp;32, pp.&nbsp;139–147, 2004 (conceptos aplicables).</p>
+<p>[22] R. L. Siddon, “Fast calculation of the exact radiological path for a three-dimensional CT array,” <em>Med. Phys.</em>, vol.&nbsp;12, no. 2, pp.&nbsp;252–255, 1985.</p>
+<p>[23] L. I. Rudin, S. Osher, and E. Fatemi, “Nonlinear total variation based noise removal algorithms,” <em>Physica D</em>, vol.&nbsp;60, pp.&nbsp;259–268, 1992.</p>
+<p>[24] N. Wiener, <em>Extrapolation, Interpolation, and Smoothing of Stationary Time Series</em>. MIT Press, 1949 (fundamentos de filtro Wiener).</p>
+<p>[25] Z. Wang et al., “Image quality assessment: From error visibility to structural similarity,” <em>IEEE Trans. Image Process.</em>, vol.&nbsp;13, no. 4, pp.&nbsp;600–612, 2004.</p>
+<p>[26] S. Boyd and L. Vandenberghe, <em>Convex Optimization</em>. Cambridge Univ. Press, 2004 (base para formulaciones variacionales).</p>
+<p>[27] M. Lustig, D. Donoho, and J. M. Pauly, “Sparse MRI: The application of compressed sensing for rapid MR imaging,” <em>Magn. Reson. Med.</em>, vol.&nbsp;58, no. 6, pp.&nbsp;1182–1195, 2007 (comparativo MRI/CS).</p>
+<p>[28] K. Hammernik et al., “Learning a variational network for reconstruction of accelerated MRI data,” <em>Magn. Reson. Med.</em>, vol.&nbsp;79, pp.&nbsp;3055–3071, 2018 (comparativo DL en recon).</p>
+<p>[29] J. Hsieh, <em>Computed Tomography: Principles, Design, Artifacts, and Recent Advances</em>, 2nd ed.&nbsp;SPIE Press, 2009.</p>
+<p>[30] E. Samei and M. J. Flynn (eds.), <em>Handbook of Medical Imaging</em> (Image quality and system performance chapters), SPIE, various editions.</p>
+<hr>
+<section id="apéndice-a-lista-corta-de-red-flags-para-operación-y-qa-en-rx" class="level2">
+<h2 class="anchored" data-anchor-id="apéndice-a-lista-corta-de-red-flags-para-operación-y-qa-en-rx">Apéndice A: Lista corta de “red flags” para operación y QA en RX</h2>
+<ol type="1">
+<li>EI/DI derivando al alza sin justificación clínica (posible <em>dose creep</em>).</li>
+<li>KAP sistemáticamente alto por colimación amplia.</li>
+<li>Shading o bandas: sospechar scatter, rejilla, flat-field, heel effect no compensado.</li>
+<li>Moiré/patrones: rejilla vs muestreo (especialmente CR).</li>
+<li>Halos y bordes “neón”: sharpening excesivo.</li>
+<li>Textura “plástica” y pérdida de microdetalle: denoise demasiado fuerte.</li>
+<li>Saturación local: clipping (imposible recuperar detalle real).</li>
+</ol>
+</section>
+<section id="apéndice-b-tabla-de-verificación-para-cambios-de-pipeline-gobernanza-técnica" class="level2">
+<h2 class="anchored" data-anchor-id="apéndice-b-tabla-de-verificación-para-cambios-de-pipeline-gobernanza-técnica">Apéndice B: Tabla de verificación para cambios de pipeline (gobernanza técnica)</h2>
+<ul>
+<li>¿Se probó con phantom (MTF, NPS, CNR) antes/después?</li>
+<li>¿Se evaluó tarea clínica específica (fractura fina, nódulo, línea pleural)?</li>
+<li>¿Se documentaron parámetros y versión?</li>
+<li>¿Se entrenó al personal y se actualizó el protocolo?</li>
+<li>¿Se definió rollback si hay degradación?</li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
