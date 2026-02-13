@@ -9774,274 +9774,400 @@
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#objetivo-de-la-sesión-30-min",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#objetivo-de-la-sesión-30-min",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Objetivo de la sesión (30+ min)",
     "text": "Objetivo de la sesión (30+ min)\n\nEntender el flujo completo del script: webcam → preproceso → detección rostro → ROI → detección sonrisa → overlay\nExtraer los conceptos de procesamiento de imágenes que aparecen en cada paso\nAprender a ajustar parámetros para controlar: sensibilidad, falsos positivos y rendimiento\n\n\nContexto: implementación clásica y rápida (Haar cascades) para tiempo real."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#el-script-en-una-frase",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#el-script-en-una-frase",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "El script en una frase",
-    "text": "El script en una frase\n\nCaptura frames de la webcam\nConvierte a grises y mejora contraste con ecualización de histograma\nDetecta rostros con un clasificador en cascada\nEn cada rostro (ROI) detecta sonrisas\nDibuja rectángulos y escribe texto en el frame\n\n(Referencia del código: taller.py) :contentReferenceoaicite:0"
+    "text": "El script en una frase\n\nCaptura frames de la webcam\nConvierte a grises y mejora contraste con ecualización de histograma\nDetecta rostros con un clasificador en cascada\nEn cada rostro (ROI) detecta sonrisas\nDibuja rectángulos y escribe texto en el frame"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#agenda-para-3040-min",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#agenda-para-3040-min",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Agenda (para 30–40 min)",
     "text": "Agenda (para 30–40 min)\n\nPipeline de visión en tiempo real (5 min)\nImagen digital como matriz + espacios de color (5 min)\nPreprocesamiento: grises + ecualización (6 min)\nDetección Viola–Jones / Haar Cascades (10 min)\nParámetros detectMultiScale: trade-offs (8 min)\nROI y detección jerárquica (3 min)\nAnotación: bounding boxes y texto (3 min)\nFallos típicos, buenas prácticas y extensiones (5 min)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#pipeline-típico-de-visión-por-computador",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#pipeline-típico-de-visión-por-computador",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Pipeline típico de visión por computador",
-    "text": "Pipeline típico de visión por computador\n\nAdquisición: sensor/cámara → frame\nPreprocesamiento: normalización/contraste/ruido\nDetección: localizar objetos (rostro)\nAnálisis local: sub-detección (sonrisa en la ROI)\nDecisión: regla simple (hay detección vs no)\nVisualización: overlays en el frame\n\nEsto es exactamente lo que implementa el script. :contentReferenceoaicite:1"
+    "text": "Pipeline típico de visión por computador\n\nAdquisición: sensor/cámara → frame\nPreprocesamiento: normalización/contraste/ruido\nDetección: localizar objetos (rostro)\nAnálisis local: sub-detección (sonrisa en la ROI)\nDecisión: regla simple (hay detección vs no)\nVisualización: overlays en el frame"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#tiempo-real-por-qué-importa",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#tiempo-real-por-qué-importa",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Tiempo real: ¿por qué importa?",
     "text": "Tiempo real: ¿por qué importa?\n\nEn tiempo real importan dos métricas:\n\nLatencia: cuánto tarda en procesar un frame\nFPS: cuántos frames por segundo se sostienen\n\n\nLa cascada Haar es popular porque es rápida en CPU, aunque no sea SOTA."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#imagen-digital-la-idea-mínima",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#imagen-digital-la-idea-mínima",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Imagen digital: la idea mínima",
     "text": "Imagen digital: la idea mínima\n\nUna imagen es una matriz:\n\n2D: (alto, ancho) si es escala de grises\n3D: (alto, ancho, canales) si es color\n\n\nEn OpenCV, un frame de webcam suele ser uint8 en rango 0–255 por canal."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#espacios-de-color-bgr-vs-gray",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#espacios-de-color-bgr-vs-gray",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Espacios de color: BGR vs Gray",
-    "text": "Espacios de color: BGR vs Gray\n\nOpenCV usa BGR (no RGB) por defecto\nEl detector en cascada opera sobre una banda (grises)\nPor eso aparece:\n\ngray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) :contentReferenceoaicite:2"
+    "text": "Espacios de color: BGR vs Gray\n\nOpenCV usa BGR (no RGB) por defecto\nEl detector en cascada opera sobre una banda (grises)\nPor eso aparece:\n\ngray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#conversión-a-grises-qué-se-pierde",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#conversión-a-grises-qué-se-pierde",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Conversión a grises: ¿qué se “pierde”?",
     "text": "Conversión a grises: ¿qué se “pierde”?\n\nSe reduce información cromática\nSe conserva principalmente estructura: bordes, sombras, texturas\nPara Haar/Viola–Jones, eso es suficiente:\n\nbusca patrones de contraste (claro/oscuro)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#preprocesamiento-por-qué-tocar-el-contraste",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#preprocesamiento-por-qué-tocar-el-contraste",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Preprocesamiento: ¿por qué tocar el contraste?",
-    "text": "Preprocesamiento: ¿por qué tocar el contraste?\nProblema: en webcam real hay - cambios de iluminación - sombras parciales - auto-exposure\nSolución simple del script: - gray = cv2.equalizeHist(gray) :contentReferenceoaicite:3"
+    "text": "Preprocesamiento: ¿por qué tocar el contraste?\nProblema: en webcam real hay - cambios de iluminación - sombras parciales - auto-exposure\nSolución simple del script: - gray = cv2.equalizeHist(gray)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#histograma-de-intensidades-recordatorio",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#histograma-de-intensidades-recordatorio",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Histograma de intensidades (recordatorio)",
     "text": "Histograma de intensidades (recordatorio)\n\nEl histograma cuenta cuántos píxeles hay en cada nivel de gris\nSi la imagen está “oscura”, el histograma se concentra a la izquierda\nSi está “lavada”, se concentra a la derecha o en un rango estrecho\n\nLa ecualización intenta “expandir” ese rango."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#ecualización-de-histograma-intuición",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#ecualización-de-histograma-intuición",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Ecualización de histograma: intuición",
-    "text": "Ecualización de histograma: intuición\n\nTransforma la imagen para que el histograma sea más uniforme\nEfecto:\n\naumenta contraste global\npuede mejorar detectabilidad de rasgos\ntambién puede amplificar ruido en zonas oscuras\n\n\nEn el script se usa como robustez general. :contentReferenceoaicite:4"
+    "text": "Ecualización de histograma: intuición\n\nTransforma la imagen para que el histograma sea más uniforme\nEfecto:\n\naumenta contraste global\npuede mejorar detectabilidad de rasgos\ntambién puede amplificar ruido en zonas oscuras\n\n\nEn el script se usa como robustez general."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#qué-alternativa-moderna-usarías",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#qué-alternativa-moderna-usarías",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "¿Qué alternativa moderna usarías?",
     "text": "¿Qué alternativa moderna usarías?\nPara discusión: - CLAHE (ecualización adaptativa con límite de contraste) - Normalización por iluminación / homomorphic filtering - Modelos CNN con entrenamiento robusto\nPero aquí el objetivo es entender una cadena clásica, clara y rápida."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#detección-qué-es-detectar-aquí",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#detección-qué-es-detectar-aquí",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Detección: ¿qué es “detectar” aquí?",
-    "text": "Detección: ¿qué es “detectar” aquí?\n\nEntrada: imagen (grises)\nSalida: lista de rectángulos:\n\ncada rectángulo es un bounding box: (x, y, w, h)\n\n\nEn el código: - faces = face_cascade.detectMultiScale(...) :contentReferenceoaicite:5"
+    "text": "Detección: ¿qué es “detectar” aquí?\n\nEntrada: imagen (grises)\nSalida: lista de rectángulos:\n\ncada rectángulo es un bounding box: (x, y, w, h)\n\n\nEn el código: - faces = face_cascade.detectMultiScale(...)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#violajones-haar-cascades-visión-general",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#violajones-haar-cascades-visión-general",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Viola–Jones / Haar Cascades (visión general)",
     "text": "Viola–Jones / Haar Cascades (visión general)\nTres ideas clave:\n\nCaracterísticas Haar: patrones rectangulares de contraste\nImagen integral: cálculo ultrarrápido de sumas en rectángulos\nCascada: etapas de clasificación que rechazan rápido la mayoría de ventanas\n\nPor eso funciona bien en tiempo real en CPU."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#características-haar-intuición",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#características-haar-intuición",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Características Haar (intuición)",
     "text": "Características Haar (intuición)\n\nNo son bordes “bonitos”; son tests tipo:\n\n“¿esta región es más clara que esta otra?”\n\nUn rostro tiene regularidades:\n\nzona ojos más oscura que mejillas\npuente nasal, etc.\n\n\nUna sonrisa también genera contrastes (boca/dientes/labios)."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#imagen-integral-por-qué-acelera",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#imagen-integral-por-qué-acelera",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Imagen integral (por qué acelera)",
     "text": "Imagen integral (por qué acelera)\n\nPermite obtener la suma de intensidades de cualquier rectángulo con pocas operaciones\nEsto hace viable evaluar miles de ventanas por frame\n\nNo lo implementas tú: OpenCV lo hace internamente."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#cascada-la-estrategia",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#cascada-la-estrategia",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Cascada: la estrategia",
     "text": "Cascada: la estrategia\n\nEtapas tempranas: baratas y estrictas → rechazan rápido\nEtapas tardías: más costosas → solo para candidatos\n\nResultado: - menor carga computacional - pero depende mucho del dataset de entrenamiento del XML"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#ventana-deslizante-escalas",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#ventana-deslizante-escalas",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Ventana deslizante + escalas",
     "text": "Ventana deslizante + escalas\n\nEl detector “mueve” una ventana por la imagen\nRepite el proceso en múltiples escalas (para detectar objetos grandes/pequeños)\n\nAhí entra scaleFactor."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#detectmultiscale-parámetros-clave",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#detectmultiscale-parámetros-clave",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "detectMultiScale: parámetros clave",
-    "text": "detectMultiScale: parámetros clave\nPara rostros:\nfaces = self.face_cascade.detectMultiScale(\n    gray, scaleFactor=1.3, minNeighbors=5\n)\n:contentReferenceoaicite:6\nPara sonrisa (en ROI):\nsmiles = self.smile_cascade.detectMultiScale(\n    roi_gray, scaleFactor=1.5, minNeighbors=32, minSize=(25, 25)\n)\n:contentReferenceoaicite:7"
+    "text": "detectMultiScale: parámetros clave\nPara rostros:\nfaces = self.face_cascade.detectMultiScale(\n    gray, scaleFactor=1.3, minNeighbors=5\n)\nPara sonrisa (en ROI):\nsmiles = self.smile_cascade.detectMultiScale(\n    roi_gray, scaleFactor=1.5, minNeighbors=32, minSize=(25, 25)\n)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#scalefactor-precisión-vs-velocidad",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#scalefactor-precisión-vs-velocidad",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "scaleFactor: precisión vs velocidad",
     "text": "scaleFactor: precisión vs velocidad\n\nscaleFactor = 1.3:\n\nmás niveles de escala (que 1.5)\nmejor cobertura de tamaños\nmás costo computacional\n\nscaleFactor = 1.5 (sonrisa):\n\nmenos escalas → más rápido\npuede perder sonrisas pequeñas"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#minneighbors-filtro-de-falsos-positivos",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#minneighbors-filtro-de-falsos-positivos",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "minNeighbors: filtro de falsos positivos",
-    "text": "minNeighbors: filtro de falsos positivos\n\nCuántas detecciones “consistentes” se necesitan para aceptar una\nBajo (p.ej. 3–5): más sensible, más falsos positivos\nAlto (p.ej. 20–40): más estricto, menos falsos positivos\n\nEl script pone 32 para sonrisa: bastante estricto. :contentReferenceoaicite:8"
+    "text": "minNeighbors: filtro de falsos positivos\n\nCuántas detecciones “consistentes” se necesitan para aceptar una\nBajo (p.ej. 3–5): más sensible, más falsos positivos\nAlto (p.ej. 20–40): más estricto, menos falsos positivos\n\nEl script pone 32 para sonrisa: bastante estricto."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#minsize-evitar-basura",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#minsize-evitar-basura",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "minSize: evitar basura",
-    "text": "minSize: evitar basura\n\nDefine tamaño mínimo de objeto a aceptar\nPara sonrisa:\n\nminSize=(25,25) evita detectar texturas minúsculas como “sonrisa” :contentReferenceoaicite:9\n\n\nEn la práctica: - subes minSize si hay muchos falsos positivos pequeños - bajas minSize si te pierdes sonrisas en gente lejos de la cámara"
+    "text": "minSize: evitar basura\n\nDefine tamaño mínimo de objeto a aceptar\nPara sonrisa:\n\nminSize=(25,25) evita detectar texturas minúsculas como “sonrisa”\n\n\nEn la práctica: - subes minSize si hay muchos falsos positivos pequeños - bajas minSize si te pierdes sonrisas en gente lejos de la cámara"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#concepto-central-roi-región-de-interés",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#concepto-central-roi-región-de-interés",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Concepto central: ROI (Región de Interés)",
-    "text": "Concepto central: ROI (Región de Interés)\nSe detecta en dos niveles:\n\nRostro en toda la imagen\nSonrisa solo dentro del rostro\n\nCódigo: - roi_gray = gray[y:y+h, x:x+w] :contentReferenceoaicite:10\nBeneficios: - menos cómputo - menos falsos positivos - coherencia semántica: la sonrisa “vive” en el rostro"
+    "text": "Concepto central: ROI (Región de Interés)\nSe detecta en dos niveles:\n\nRostro en toda la imagen\nSonrisa solo dentro del rostro\n\nCódigo: - roi_gray = gray[y:y+h, x:x+w] :\nBeneficios: - menos cómputo - menos falsos positivos - coherencia semántica: la sonrisa “vive” en el rostro"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#roi-y-coordenadas-cuidado-mental",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#roi-y-coordenadas-cuidado-mental",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "ROI y coordenadas: cuidado mental",
-    "text": "ROI y coordenadas: cuidado mental\n\nframe (global) tiene coordenadas (x, y)\nroi_color tiene coordenadas locales (sx, sy)\nPor eso el rectángulo de sonrisa se dibuja sobre roi_color:\n\ncv2.rectangle(roi_color, (sx,sy), (sx+sw, sy+sh), ...) :contentReferenceoaicite:11"
+    "text": "ROI y coordenadas: cuidado mental\n\nframe (global) tiene coordenadas (x, y)\nroi_color tiene coordenadas locales (sx, sy)\nPor eso el rectángulo de sonrisa se dibuja sobre roi_color:\ncv2.rectangle(roi_color, (sx,sy), (sx+sw, sy+sh), ...)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#bounding-boxes-representación-y-dibujo",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#bounding-boxes-representación-y-dibujo",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Bounding boxes: representación y dibujo",
-    "text": "Bounding boxes: representación y dibujo\n\nUn bounding box es un rectángulo definido por:\n\nesquina superior-izquierda (x, y)\nancho w, alto h\n\n\nDibujo: - cv2.rectangle(frame, (x,y), (x+w, y+h), ...) :contentReferenceoaicite:12"
+    "text": "Bounding boxes: representación y dibujo\n\nUn bounding box es un rectángulo definido por:\n\nesquina superior-izquierda (x, y)\nancho w, alto h\n\n\nDibujo: - cv2.rectangle(frame, (x,y), (x+w, y+h), ...)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#overlay-de-texto-estado-del-sistema",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#overlay-de-texto-estado-del-sistema",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Overlay de texto: “estado” del sistema",
-    "text": "Overlay de texto: “estado” del sistema\nEl script implementa una regla:\n\nsi len(smiles) &gt; 0 → “Sonrisa Detectada”\nsi no → “No detectada / Serio”\n\nEsto es postprocesamiento mínimo y una decisión binaria simple. :contentReferenceoaicite:13"
+    "text": "Overlay de texto: “estado” del sistema\nEl script implementa una regla:\n\nsi len(smiles) &gt; 0 → “Sonrisa Detectada”\nsi no → “No detectada / Serio”\n\nEsto es postprocesamiento mínimo y una decisión binaria simple."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#decisión-binaria-qué-significa-realmente",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#decisión-binaria-qué-significa-realmente",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Decisión binaria: ¿qué significa realmente?",
     "text": "Decisión binaria: ¿qué significa realmente?\n\n“Sonrisa detectada” ≠ emoción real\nSolo significa:\n\n“se encontraron patrones compatibles con el clasificador”\n\n\nImportante para evitar sobreinterpretación, sobre todo en contextos biomédicos."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#bucles-de-adquisición-control-de-flujo",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#bucles-de-adquisición-control-de-flujo",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Bucles de adquisición: control de flujo",
-    "text": "Bucles de adquisición: control de flujo\n\ncap = cv2.VideoCapture(0) abre la webcam :contentReferenceoaicite:14\nret, frame = cap.read() obtiene un frame\ncv2.imshow(...) muestra la salida\ncv2.waitKey(1) permite refresco y captura tecla\nif ... == ord(\"q\") sale del loop :contentReferenceoaicite:15"
+    "text": "Bucles de adquisición: control de flujo\n\ncap = cv2.VideoCapture(0) abre la webcam\nret, frame = cap.read() obtiene un frame\ncv2.imshow(...) muestra la salida\ncv2.waitKey(1) permite refresco y captura tecla\nif ... == ord(\"q\") sale del loop"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#robustez-validaciones-del-script",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#robustez-validaciones-del-script",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Robustez: validaciones del script",
-    "text": "Robustez: validaciones del script\n\nVerifica que los XML cargaron:\n\nif self.face_cascade.empty() or self.smile_cascade.empty(): raise ... :contentReferenceoaicite:16\n\nVerifica acceso a webcam:\n\nif not cap.isOpened(): ... return :contentReferenceoaicite:17\n\n\nConcepto de ingeniería: fallar temprano con errores claros."
+    "text": "Robustez: validaciones del script\n\nVerifica que los XML cargaron:\n\nif self.face_cascade.empty() or self.smile_cascade.empty(): raise ... :content\n\nVerifica acceso a webcam:\n\nif not cap.isOpened(): ... return\n\n\nConcepto de ingeniería: fallar temprano con errores claros."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#rendimiento-dónde-se-gasta-el-tiempo",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#rendimiento-dónde-se-gasta-el-tiempo",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Rendimiento: ¿dónde se gasta el tiempo?",
     "text": "Rendimiento: ¿dónde se gasta el tiempo?\n\nMayor costo: detectMultiScale\n\nporque evalúa muchas ventanas por frame\n\nReducir costo:\n\ntrabajar con ROI\nsubir scaleFactor (menos escalas)\nsubir minSize\nbajar resolución del frame antes de detectar"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#mini-experimento-mental-5-min",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#mini-experimento-mental-5-min",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Mini-experimento mental (5 min)",
     "text": "Mini-experimento mental (5 min)\nSi hay demasiados falsos positivos de sonrisa: - sube minNeighbors (ya está alto: 32) - sube minSize - reduce ecualización o usa CLAHE - restringe ROI a zona inferior del rostro (boca) en vez de todo el rostro"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#mini-experimento-mental-5-min-1",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#mini-experimento-mental-5-min-1",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Mini-experimento mental (5 min)",
     "text": "Mini-experimento mental (5 min)\nSi no detecta sonrisas en gente lejos: - baja minSize (p.ej. 15x15) - baja scaleFactor (p.ej. 1.3) - baja minNeighbors (p.ej. 15–25) - aumenta iluminación o mejora exposición\nTrade-off inevitable: sensibilidad vs falsos positivos."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#errores-típicos-y-por-qué-pasan",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#errores-típicos-y-por-qué-pasan",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Errores típicos (y por qué pasan)",
     "text": "Errores típicos (y por qué pasan)\n\nPose (cara girada): cascada frontal falla\nOclusión (mano, mascarilla): pierde rasgos\nLuz dura (contraluz): cambia contrastes → se rompe Haar\nResolución baja: rasgos poco definidos\nExpresiones sutiles: patrón no coincide con entrenamiento"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#qué-conceptos-debes-dominar-para-entender-el-script",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#qué-conceptos-debes-dominar-para-entender-el-script",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "¿Qué “conceptos” debes dominar para entender el script?",
-    "text": "¿Qué “conceptos” debes dominar para entender el script?\nChecklist:\n\nImagen como matriz, tipo de dato uint8\nEspacios de color (BGR) y conversión a grises\nHistograma y ecualización\nDetección de objetos vs clasificación\nBounding boxes y coordenadas\nROI (recorte) y jerarquía de detección\nViola–Jones: Haar features, imagen integral, cascada\nParámetros detectMultiScale y trade-offs\nVisualización en tiempo real (imshow, waitKey)\n\nTodo aparece en el flujo del código. :contentReferenceoaicite:18"
+    "text": "¿Qué “conceptos” debes dominar para entender el script?\nChecklist:\n\nImagen como matriz, tipo de dato uint8\nEspacios de color (BGR) y conversión a grises\nHistograma y ecualización\nDetección de objetos vs clasificación\nBounding boxes y coordenadas\nROI (recorte) y jerarquía de detección\nViola–Jones: Haar features, imagen integral, cascada\nParámetros detectMultiScale y trade-offs\nVisualización en tiempo real (imshow, waitKey)\n\nTodo aparece en el flujo del código."
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#actividad-sugerida-para-estudiantes",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#actividad-sugerida-para-estudiantes",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Actividad sugerida (para estudiantes)",
     "text": "Actividad sugerida (para estudiantes)\n\nEjecutar el script tal cual\nCambiar un parámetro a la vez (registrar):\n\nscaleFactor (rostro)\nminNeighbors (rostro)\nminNeighbors (sonrisa)\nminSize (sonrisa)\n\nDocumentar:\n\nFPS aproximado (sensación)\nfalsos positivos\nfalsos negativos"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#extensión-1-mejorar-contraste-sin-amplificar-tanto-ruido",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#extensión-1-mejorar-contraste-sin-amplificar-tanto-ruido",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Extensión 1: mejorar contraste sin amplificar tanto ruido",
     "text": "Extensión 1: mejorar contraste sin amplificar tanto ruido\n\nSustituir equalizeHist por CLAHE\nComparar resultados con iluminación variable\n\n(Útil en escenarios biomédicos con condiciones de luz no controladas)"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#extensión-2-segmentar-zona-boca-dentro-del-rostro",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#extensión-2-segmentar-zona-boca-dentro-del-rostro",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Extensión 2: segmentar “zona boca” dentro del rostro",
     "text": "Extensión 2: segmentar “zona boca” dentro del rostro\n\nDividir el rostro en regiones:\n\nparte inferior ~ 40%–55% del alto\n\nDetectar sonrisa solo allí:\n\nmenos falsos positivos\nmejor rendimiento"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#extensión-3-migrar-a-métodos-modernos-discusión",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#extensión-3-migrar-a-métodos-modernos-discusión",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Extensión 3: migrar a métodos modernos (discusión)",
     "text": "Extensión 3: migrar a métodos modernos (discusión)\n\nDetección facial: DNN (OpenCV DNN), MediaPipe, YOLO-face\nSonrisa/expresión: clasificación CNN en landmarks o en recortes\n\nPero: - mayor complejidad - más dependencias - potencial necesidad de GPU"
   },
   {
     "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#cierre",
     "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#cierre",
-    "title": "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
     "section": "Cierre",
-    "text": "Cierre\n\nEl script implementa un pipeline clásico, didáctico y eficiente:\n\npreproceso simple + detector rápido + ROI + overlays\n\nAprendizaje clave:\n\najustar parámetros = balancear sensibilidad/precisión/rendimiento\n\nSi dominas los conceptos listados, el código se vuelve “obvio” y modificable.\n\n(Referencia del script) :contentReferenceoaicite:19"
+    "text": "Cierre\n\nEl script implementa un pipeline clásico, didáctico y eficiente:\n\npreproceso simple + detector rápido + ROI + overlays\n\nAprendizaje clave:\n\najustar parámetros = balancear sensibilidad/precisión/rendimiento\n\nSi dominas los conceptos listados, el código se vuelve “obvio” y modificable."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-adquisición-sensorcámara-frame-una-foto",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-adquisición-sensorcámara-frame-una-foto",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "1A) Adquisición: sensor/cámara → frame (una “foto”)",
+    "text": "1A) Adquisición: sensor/cámara → frame (una “foto”)\n\nUna cámara no “ve” continuo: toma muchas fotos por segundo.\nCada foto se llama frame (cuadro).\nUn video es una secuencia de frames.\nEjemplo: 30 fps = 30 frames por segundo.\n\nIdea clave: Primero capturamos una imagen. Luego la analizamos."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-adquisición-qué-puede-salir-mal",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-adquisición-qué-puede-salir-mal",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "1B) Adquisición: ¿qué puede salir mal?",
+    "text": "1B) Adquisición: ¿qué puede salir mal?\n\nLuz baja → frame oscuro.\nMovimiento → frame borroso.\nResolución baja → menos detalles.\nMuchos frames/segundo → más “suave”, pero cuesta más procesar.\n\nRegla simple: mejor iluminación + cámara estable = mejor punto de partida."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-preprocesamiento-arreglar-el-frame-para-que-sea-más-fácil",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-preprocesamiento-arreglar-el-frame-para-que-sea-más-fácil",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "2A) Preprocesamiento: “arreglar” el frame para que sea más fácil",
+    "text": "2A) Preprocesamiento: “arreglar” el frame para que sea más fácil\n\nEs como limpiar unas gafas antes de leer.\nObjetivo: que lo importante se vea más claro.\nCosas típicas:\n\nNormalización: poner valores en un rango “parecido”.\nContraste: separar mejor claro/oscuro.\nRuido: quitar “granito” o puntos raros."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-preprocesamiento-ejemplos-sencillos",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-preprocesamiento-ejemplos-sencillos",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "2B) Preprocesamiento: ejemplos sencillos",
+    "text": "2B) Preprocesamiento: ejemplos sencillos\n\nNormalizar: hacer que la imagen quede entre 0 y 1.\nAumentar contraste: que la cara se diferencie del fondo.\nSuavizar ruido: un “filtro” que promedia vecinos.\n\nOjo: si suavizas demasiado, puedes borrar detalles (como la boca)."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-detección-localizar-objetos-por-ejemplo-un-rostro",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-detección-localizar-objetos-por-ejemplo-un-rostro",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "3A) Detección: localizar objetos (por ejemplo, un rostro)",
+    "text": "3A) Detección: localizar objetos (por ejemplo, un rostro)\n\n“Detectar” = responder: ¿dónde está el objeto?\nResultado típico:\n\nUn rectángulo (caja) alrededor del rostro.\nUn nivel de confianza (qué tan seguro está el sistema).\n\n\nEjemplo: “Encontré 1 cara en (x, y, ancho, alto) con 0.92 de confianza”."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-detección-cómo-pensarla-sin-entrar-en-cosas-difíciles",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-detección-cómo-pensarla-sin-entrar-en-cosas-difíciles",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "3B) Detección: cómo pensarla (sin entrar en cosas difíciles)",
+    "text": "3B) Detección: cómo pensarla (sin entrar en cosas difíciles)\n\nLa computadora busca patrones que se parezcan a “rostro”.\nPuede usar:\n\nMétodos clásicos (formas, bordes).\nMétodos modernos (modelos entrenados con muchas fotos).\n\n\nIdea clave: Detectar no es “entender”, es “ubicar”."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-análisis-local-sub-detección-dentro-de-una-roi",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-análisis-local-sub-detección-dentro-de-una-roi",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "4A) Análisis local: sub-detección dentro de una ROI",
+    "text": "4A) Análisis local: sub-detección dentro de una ROI\n\nROI = Región de Interés (una parte del frame).\nSi ya encontraste el rostro, puedes mirar solo una parte:\n\nLa boca para detectar sonrisa.\n\nVentaja: menos área → más rápido y más simple."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-análisis-local-ejemplo-sonrisa-en-la-boca",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-análisis-local-ejemplo-sonrisa-en-la-boca",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "4B) Análisis local: ejemplo “sonrisa en la boca”",
+    "text": "4B) Análisis local: ejemplo “sonrisa en la boca”\n\nDetectas el rostro (caja grande).\nRecortas la ROI de la boca (caja pequeña).\nEjecutas un “mini detector” de sonrisa.\nSale un número: smile_score (0 a 1).\n\nIdea clave: primero grande (rostro), luego pequeño (boca)."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-decisión-regla-simple-hay-detección-vs-no",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-decisión-regla-simple-hay-detección-vs-no",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "5A) Decisión: regla simple (hay detección vs no)",
+    "text": "5A) Decisión: regla simple (hay detección vs no)\n\nAquí el sistema decide una salida final.\nEjemplo de regla muy simple:\n\nSi confianza del rostro ≥ 0.6 → “hay rostro”.\nSi no → “no hay rostro”.\n\n\nEsto es una regla, no magia. A veces se equivoca."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-decisión-ejemplo-con-rostro-sonrisa",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-decisión-ejemplo-con-rostro-sonrisa",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "5B) Decisión: ejemplo con “rostro + sonrisa”",
+    "text": "5B) Decisión: ejemplo con “rostro + sonrisa”\n\nReglas de ejemplo:\n\nSi rostro ≥ 0.6 y sonrisa ≥ 0.7 → “Sonrisa detectada”\nSi rostro ≥ 0.6 y sonrisa &lt; 0.7 → “Rostro sin sonrisa”\nSi rostro &lt; 0.6 → “Sin rostro”\n\n\nPalabras útiles: - Falso positivo = detecta algo que no era. - Falso negativo = no detecta algo que sí estaba."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-visualización-overlays-dibujos-encima-del-frame",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#a-visualización-overlays-dibujos-encima-del-frame",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "6A) Visualización: overlays (dibujos encima del frame)",
+    "text": "6A) Visualización: overlays (dibujos encima del frame)\n\nOverlays = “capas” dibujadas sobre la imagen:\n\nRectángulos alrededor de objetos.\nPuntos (ojos, nariz).\nTexto (“Rostro: 0.92”, “Sonrisa: sí”).\n\nSirve para que un humano entienda rápido qué vio el sistema."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-visualización-mini-ejemplo-pseudo-código",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-visualización-mini-ejemplo-pseudo-código",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "6B) Visualización: mini ejemplo (pseudo-código)",
+    "text": "6B) Visualización: mini ejemplo (pseudo-código)\n# frame: imagen original\n# face_box: (x, y, w, h)\n# score_face: 0.92\n\ndraw_rectangle(frame, face_box)\ndraw_text(frame, f\"Rostro {score_face:.2f}\", position=(x, y-10))\n\n# si también hay sonrisa:\n# draw_text(frame, \"Sonrisa: SI\", position=(x, y+h+20))\nshow(frame)"
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#objetivo",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#objetivo",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "Objetivo",
+    "text": "Objetivo\n\nEntender el flujo del procesamiento de imágenes: webcam → preproceso → detección rostro → ROI → detección sonrisa → overlay\nExtraer los conceptos de procesamiento de imágenes que aparecen en cada paso\nAprender a ajustar parámetros para controlar: sensibilidad, falsos positivos y rendimiento\n\n\nContexto: implementación clásica y rápida (Haar cascades) para tiempo real."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#agenda",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#agenda",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "Agenda",
+    "text": "Agenda\n\nPipeline de visión en tiempo real\nImagen digital como matriz + espacios de color\nPreprocesamiento: grises + ecualización\nDetección Viola–Jones / Haar Cascades\nParámetros detectMultiScale: trade-offs\nROI y detección jerárquica\nAnotación: bounding boxes y texto\nFallos típicos, buenas prácticas y extensiones"
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#adquisición-de-imágenes",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#adquisición-de-imágenes",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "Adquisición de imágenes",
+    "text": "Adquisición de imágenes\n\n\n\n\n\n\n\n\n\nDefinición\n\n\nLa adquisición de imágenes es el paso en el que capturas una imagen usando un dispositivo, para poder guardarla o analizarla después.\n\n\n\n\n\n\n\n\n\n\n\nCaracterísticas\n\n\nQuién captura: una cámara (celular, webcam), un escáner, o un equipo médico (RX, TAC, RM).\nQué obtienes: una imagen digital, que es una cuadrícula de punticos llamados píxeles.\nSi es video: no es una sola imagen, sino muchas imágenes seguidas. Cada una se llama frame (cuadro)."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#adquisición-de-imágenes-1",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#adquisición-de-imágenes-1",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "Adquisición de imágenes",
+    "text": "Adquisición de imágenes\n\n\n\n\nEjemplo sencillo:\n\nCuando abres la cámara del celular y tomas una foto, eso es adquisición. Si grabas un video, estás adquiriendo muchos frames por segundo."
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-preprocesamiento-ejemplos-sencillos-1",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-preprocesamiento-ejemplos-sencillos-1",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "2B) Preprocesamiento: ejemplos sencillos",
+    "text": "2B) Preprocesamiento: ejemplos sencillos"
+  },
+  {
+    "objectID": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-detección-cómo-pensarla-sin-entrar-en-cosas-difíciles-1",
+    "href": "presentaciones/TALLERES/SmileDetectionWorkshop.html#b-detección-cómo-pensarla-sin-entrar-en-cosas-difíciles-1",
+    "title": "Detección de Sonrisa en Tiempo Real con OpenCV",
+    "section": "3B) Detección: cómo pensarla (sin entrar en cosas difíciles)",
+    "text": "3B) Detección: cómo pensarla (sin entrar en cosas difíciles)"
   }
 ]

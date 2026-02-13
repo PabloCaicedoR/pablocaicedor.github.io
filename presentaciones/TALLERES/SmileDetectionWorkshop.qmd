@@ -1,27 +1,32 @@
 ---
-title: "Detección de Sonrisa en Tiempo Real con OpenCV (Viola–Jones / Haar Cascades)"
-subtitle: "Conceptos de procesamiento de imágenes para entender el script taller.py"
-author: "Pablo"
+title: "Detección de Sonrisa en Tiempo Real con OpenCV"
+subtitle: "Conceptos de procesamiento de imágenes"
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
 format:
-  revealjs:
-    theme: simple
-    slide-number: true
-    chalkboard: true
-    preview-links: true
-    transition: fade
-    center: false
-    width: 1280
-    height: 720
-    toc: false
-execute:
-  echo: true
-  warning: false
-  message: false
+    revealjs:
+        code-tools: true
+        code-overflow: wrap
+        code-line-numbers: true
+        code-copy: true
+        fig-align: center
+        self-contained: true
+        theme:
+        - simple
+        - ../../recursos/estilos/metropolis.scss
+        slide-number: true
+        preview-links: auto
+        logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+        css: ../../recursos/estilos/styles_pres.scss
+        footer: <https://pablocaicedor.github.io/>
+        transition: fade
+        progress: true
+        scrollable: true
+        mainfont: "Fira Code"
 ---
 
-## Objetivo de la sesión (30+ min)
+## Objetivo
 
-- Entender el flujo completo del script: **webcam → preproceso → detección rostro → ROI → detección sonrisa → overlay**
+- Entender el flujo del procesamiento de imágenes: **webcam → preproceso → detección rostro → ROI → detección sonrisa → overlay**
 - Extraer los **conceptos de procesamiento de imágenes** que aparecen en cada paso
 - Aprender a **ajustar parámetros** para controlar: sensibilidad, falsos positivos y rendimiento
 
@@ -37,20 +42,18 @@ execute:
 - En cada rostro (ROI) detecta **sonrisas**
 - Dibuja rectángulos y escribe texto en el frame
 
-(Referencia del código: `taller.py`) :contentReference[oaicite:0]{index=0}
-
 ---
 
-## Agenda (para 30–40 min)
+## Agenda
 
-1. Pipeline de visión en tiempo real (5 min)
-2. Imagen digital como matriz + espacios de color (5 min)
-3. Preprocesamiento: grises + ecualización (6 min)
-4. Detección Viola–Jones / Haar Cascades (10 min)
-5. Parámetros `detectMultiScale`: trade-offs (8 min)
-6. ROI y detección jerárquica (3 min)
-7. Anotación: bounding boxes y texto (3 min)
-8. Fallos típicos, buenas prácticas y extensiones (5 min)
+1. Pipeline de visión en tiempo real
+2. Imagen digital como matriz + espacios de color
+3. Preprocesamiento: grises + ecualización
+4. Detección Viola–Jones / Haar Cascades
+5. Parámetros `detectMultiScale`: trade-offs
+6. ROI y detección jerárquica
+7. Anotación: bounding boxes y texto
+8. Fallos típicos, buenas prácticas y extensiones
 
 ---
 
@@ -63,9 +66,203 @@ execute:
 5. **Decisión**: regla simple (hay detección vs no)
 6. **Visualización**: overlays en el frame
 
-Esto es exactamente lo que implementa el script. :contentReference[oaicite:1]{index=1}
+---
+
+
+
+## Adquisición de imágenes
+
+:::{.columns}
+
+:::{.column width="45%"}
+
+::: {.callout-important title="Definición"}
+
+La adquisición de imágenes es el paso en el que capturas una imagen usando un dispositivo, para poder guardarla o analizarla después.
+
+:::
+
+:::{.callout-note title="Características"}
+
+Quién captura: una cámara (celular, webcam), un escáner, o un equipo médico (RX, TAC, RM).
+
+Qué obtienes: una imagen digital, que es una cuadrícula de punticos llamados píxeles.
+
+Si es video: no es una sola imagen, sino muchas imágenes seguidas. Cada una se llama frame (cuadro).
+
+:::
+
+:::
+
+:::{.column width="45%"}
+
+![](../../recursos/imagenes/Talleres/Smiles/imagen001.jpeg)
+
+:::
+
+:::
+
+## Adquisición de imágenes
+
+:::: {.columns}
+
+::: {.column width="45%"}
+
+![](../../recursos/imagenes/Talleres/Smiles/imagen002.jpg)
+
+:::
+
+::: {.column width="45%"}
+
+### Ejemplo sencillo:
+
+> Cuando abres la cámara del celular y tomas una foto, eso es adquisición. Si grabas un video, estás adquiriendo muchos frames por segundo.
+
+:::
+::::
+
+
+## 1A) Adquisición: sensor/cámara → frame (una “foto”)
+
+- Una cámara no “ve” continuo: toma **muchas fotos por segundo**.
+- Cada foto se llama **frame** (cuadro).
+- Un video es una **secuencia** de frames.
+- Ejemplo: 30 fps = **30 frames por segundo**.
+
+**Idea clave:** *Primero capturamos una imagen. Luego la analizamos.*
 
 ---
+
+## 1B) Adquisición: ¿qué puede salir mal?
+
+- **Luz baja** → frame oscuro.
+- **Movimiento** → frame borroso.
+- **Resolución baja** → menos detalles.
+- **Muchos frames/segundo** → más “suave”, pero cuesta más procesar.
+
+**Regla simple:** mejor iluminación + cámara estable = mejor punto de partida.
+
+---
+
+## 2A) Preprocesamiento: “arreglar” el frame para que sea más fácil
+
+- Es como **limpiar unas gafas** antes de leer.
+- Objetivo: que lo importante se vea **más claro**.
+- Cosas típicas:
+  - **Normalización**: poner valores en un rango “parecido”.
+  - **Contraste**: separar mejor claro/oscuro.
+  - **Ruido**: quitar “granito” o puntos raros.
+
+---
+
+## 2B) Preprocesamiento: ejemplos sencillos
+
+- **Normalizar**: hacer que la imagen quede entre 0 y 1.
+- **Aumentar contraste**: que la cara se diferencie del fondo.
+- **Suavizar ruido**: un “filtro” que promedia vecinos.
+
+**Ojo:** si suavizas demasiado, puedes borrar detalles (como la boca).
+
+## 2B) Preprocesamiento: ejemplos sencillos
+
+![](../../recursos/imagenes/Talleres/Smiles/imagen003.jpg)
+
+---
+
+## 3A) Detección: localizar objetos (por ejemplo, un rostro)
+
+- “Detectar” = responder: **¿dónde está el objeto?**
+- Resultado típico:
+  - Un **rectángulo** (caja) alrededor del rostro.
+  - Un **nivel de confianza** (qué tan seguro está el sistema).
+
+**Ejemplo:** “Encontré 1 cara en (x, y, ancho, alto) con 0.92 de confianza”.
+
+---
+
+## 3B) Detección: cómo pensarla (sin entrar en cosas difíciles)
+
+- La computadora busca **patrones** que se parezcan a “rostro”.
+- Puede usar:
+  - Métodos clásicos (formas, bordes).
+  - Métodos modernos (modelos entrenados con muchas fotos).
+
+**Idea clave:** *Detectar no es “entender”, es “ubicar”.*
+
+---
+
+## 3B) Detección: cómo pensarla (sin entrar en cosas difíciles)
+
+![](../../recursos/imagenes/Talleres/Smiles/imagen003.jpg)
+
+## 4A) Análisis local: sub-detección dentro de una ROI
+
+- ROI = **Región de Interés** (una parte del frame).
+- Si ya encontraste el rostro, puedes mirar solo una parte:
+  - La **boca** para detectar **sonrisa**.
+- Ventaja: menos área → **más rápido y más simple**.
+
+---
+
+## 4B) Análisis local: ejemplo “sonrisa en la boca”
+
+1. Detectas el **rostro** (caja grande).
+2. Recortas la **ROI de la boca** (caja pequeña).
+3. Ejecutas un “mini detector” de sonrisa.
+4. Sale un número: **smile_score** (0 a 1).
+
+**Idea clave:** primero grande (rostro), luego pequeño (boca).
+
+---
+
+## 5A) Decisión: regla simple (hay detección vs no)
+
+- Aquí el sistema decide una salida final.
+- Ejemplo de regla muy simple:
+  - Si **confianza del rostro ≥ 0.6** → “hay rostro”.
+  - Si no → “no hay rostro”.
+
+**Esto es una regla**, no magia. A veces se equivoca.
+
+---
+
+## 5B) Decisión: ejemplo con “rostro + sonrisa”
+
+- Reglas de ejemplo:
+  - Si rostro ≥ 0.6 **y** sonrisa ≥ 0.7 → “Sonrisa detectada”
+  - Si rostro ≥ 0.6 **y** sonrisa < 0.7 → “Rostro sin sonrisa”
+  - Si rostro < 0.6 → “Sin rostro”
+
+**Palabras útiles:**
+- Falso positivo = detecta algo que no era.
+- Falso negativo = no detecta algo que sí estaba.
+
+---
+
+## 6A) Visualización: overlays (dibujos encima del frame)
+
+- Overlays = “capas” dibujadas **sobre** la imagen:
+  - Rectángulos alrededor de objetos.
+  - Puntos (ojos, nariz).
+  - Texto (“Rostro: 0.92”, “Sonrisa: sí”).
+- Sirve para que un humano **entienda rápido** qué vio el sistema.
+
+---
+
+## 6B) Visualización: mini ejemplo (pseudo-código)
+
+```python
+# frame: imagen original
+# face_box: (x, y, w, h)
+# score_face: 0.92
+
+draw_rectangle(frame, face_box)
+draw_text(frame, f"Rostro {score_face:.2f}", position=(x, y-10))
+
+# si también hay sonrisa:
+# draw_text(frame, "Sonrisa: SI", position=(x, y+h+20))
+show(frame)
+```
 
 ## Tiempo real: ¿por qué importa?
 
@@ -93,7 +290,7 @@ En OpenCV, un frame de webcam suele ser `uint8` en rango **0–255** por canal.
 - El detector en cascada opera sobre **una banda** (grises)
 - Por eso aparece:
 
-`gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)` :contentReference[oaicite:2]{index=2}
+`gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)`
 
 ---
 
@@ -114,7 +311,7 @@ Problema: en webcam real hay
 - auto-exposure
 
 Solución simple del script:
-- `gray = cv2.equalizeHist(gray)` :contentReference[oaicite:3]{index=3}
+- `gray = cv2.equalizeHist(gray)`
 
 ---
 
@@ -136,7 +333,7 @@ La ecualización intenta “expandir” ese rango.
   - puede mejorar detectabilidad de rasgos
   - **también** puede amplificar ruido en zonas oscuras
 
-En el script se usa como robustez general. :contentReference[oaicite:4]{index=4}
+En el script se usa como robustez general.
 
 ---
 
@@ -158,7 +355,7 @@ Pero aquí el objetivo es entender una cadena clásica, clara y rápida.
   - cada rectángulo es un **bounding box**: `(x, y, w, h)`
 
 En el código:
-- `faces = face_cascade.detectMultiScale(...)` :contentReference[oaicite:5]{index=5}
+- `faces = face_cascade.detectMultiScale(...)`
 
 ---
 
@@ -224,7 +421,7 @@ faces = self.face_cascade.detectMultiScale(
     gray, scaleFactor=1.3, minNeighbors=5
 )
 ```
-:contentReference[oaicite:6]{index=6}
+
 
 Para sonrisa (en ROI):
 ```python
@@ -232,7 +429,7 @@ smiles = self.smile_cascade.detectMultiScale(
     roi_gray, scaleFactor=1.5, minNeighbors=32, minSize=(25, 25)
 )
 ```
-:contentReference[oaicite:7]{index=7}
+
 
 ---
 
@@ -255,7 +452,7 @@ smiles = self.smile_cascade.detectMultiScale(
 - Bajo (p.ej. 3–5): más sensible, más falsos positivos
 - Alto (p.ej. 20–40): más estricto, menos falsos positivos
 
-El script pone **32** para sonrisa: bastante estricto. :contentReference[oaicite:8]{index=8}
+El script pone **32** para sonrisa: bastante estricto.
 
 ---
 
@@ -263,7 +460,7 @@ El script pone **32** para sonrisa: bastante estricto. :contentReference[oaicite
 
 - Define tamaño mínimo de objeto a aceptar
 - Para sonrisa:
-  - `minSize=(25,25)` evita detectar texturas minúsculas como “sonrisa” :contentReference[oaicite:9]{index=9}
+  - `minSize=(25,25)` evita detectar texturas minúsculas como “sonrisa”
 
 En la práctica:
 - subes `minSize` si hay muchos falsos positivos pequeños
@@ -279,7 +476,7 @@ Se detecta en dos niveles:
 2. Sonrisa **solo dentro del rostro**
 
 Código:
-- `roi_gray = gray[y:y+h, x:x+w]` :contentReference[oaicite:10]{index=10}
+- `roi_gray = gray[y:y+h, x:x+w]` :
 
 Beneficios:
 - menos cómputo
@@ -293,7 +490,7 @@ Beneficios:
 - `frame` (global) tiene coordenadas `(x, y)`
 - `roi_color` tiene coordenadas locales `(sx, sy)`
 - Por eso el rectángulo de sonrisa se dibuja sobre `roi_color`:
-  - `cv2.rectangle(roi_color, (sx,sy), (sx+sw, sy+sh), ...)` :contentReference[oaicite:11]{index=11}
+- `cv2.rectangle(roi_color, (sx,sy), (sx+sw, sy+sh), ...)`
 
 ---
 
@@ -304,7 +501,7 @@ Beneficios:
   - ancho `w`, alto `h`
 
 Dibujo:
-- `cv2.rectangle(frame, (x,y), (x+w, y+h), ...)` :contentReference[oaicite:12]{index=12}
+- `cv2.rectangle(frame, (x,y), (x+w, y+h), ...)`
 
 ---
 
@@ -315,7 +512,7 @@ El script implementa una regla:
 - si `len(smiles) > 0` → “Sonrisa Detectada”
 - si no → “No detectada / Serio”
 
-Esto es postprocesamiento mínimo y una decisión binaria simple. :contentReference[oaicite:13]{index=13}
+Esto es postprocesamiento mínimo y una decisión binaria simple.
 
 ---
 
@@ -331,20 +528,20 @@ Importante para evitar sobreinterpretación, sobre todo en contextos biomédicos
 
 ## Bucles de adquisición: control de flujo
 
-- `cap = cv2.VideoCapture(0)` abre la webcam :contentReference[oaicite:14]{index=14}
+- `cap = cv2.VideoCapture(0)` abre la webcam
 - `ret, frame = cap.read()` obtiene un frame
 - `cv2.imshow(...)` muestra la salida
 - `cv2.waitKey(1)` permite refresco y captura tecla
-- `if ... == ord("q")` sale del loop :contentReference[oaicite:15]{index=15}
+- `if ... == ord("q")` sale del loop
 
 ---
 
 ## Robustez: validaciones del script
 
 - Verifica que los XML cargaron:
-  - `if self.face_cascade.empty() or self.smile_cascade.empty(): raise ...` :contentReference[oaicite:16]{index=16}
+  - `if self.face_cascade.empty() or self.smile_cascade.empty(): raise ...` :content
 - Verifica acceso a webcam:
-  - `if not cap.isOpened(): ... return` :contentReference[oaicite:17]{index=17}
+  - `if not cap.isOpened(): ... return`
 
 Concepto de ingeniería: fallar temprano con errores claros.
 
@@ -408,7 +605,7 @@ Checklist:
 - Parámetros `detectMultiScale` y trade-offs
 - Visualización en tiempo real (imshow, waitKey)
 
-Todo aparece en el flujo del código. :contentReference[oaicite:18]{index=18}
+Todo aparece en el flujo del código.
 
 ---
 
@@ -458,12 +655,3 @@ Pero:
 
 ---
 
-## Cierre
-
-- El script implementa un pipeline clásico, didáctico y eficiente:
-  - **preproceso simple + detector rápido + ROI + overlays**
-- Aprendizaje clave:
-  - ajustar parámetros = balancear sensibilidad/precisión/rendimiento
-- Si dominas los conceptos listados, el código se vuelve “obvio” y modificable.
-
-(Referencia del script) :contentReference[oaicite:19]{index=19}
