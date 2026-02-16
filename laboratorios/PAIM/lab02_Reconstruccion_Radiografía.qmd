@@ -3,7 +3,7 @@ title: "Laboratorio (hands-on): Reconstrucción básica de una radiografía (Bee
 subtitle: "Fuente → Objeto → Detector → (normalización + log) → Radiografía lista para ver"
 lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
-date: "`r Sys.Date()`"
+date: last-modified
 format:
   html:
     toc: true
@@ -15,16 +15,6 @@ format:
     code-copy: true
     fig-align: center
     self-contained: true
-    theme:
-      - simple
-      - ../../recursos/estilos/metropolis.scss
-    preview-links: auto
-    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
-    css: ../../recursos/estilos/styles_pres.scss
-    footer: <https://pablocaicedor.github.io/>
-    transition: fade
-    progress: true
-    scrollable: true
 execute:
   echo: true
   warning: false
@@ -34,22 +24,51 @@ jupyter: python3
 
 ## 1) Introducción
 
-Una radiografía (en este laboratorio) es una **imagen de “cuánta atenuación”** produjo un objeto cuando un haz ideal lo atravesó.
-Entradas: **fuente** (cuántos fotones salen), **objeto** (qué tan “bloqueador” es cada zona), **detector** (cuántos llegan).
-Salida: una imagen final donde **zonas más atenuantes** aparecen con valores más altos (más “densas” en la imagen).
+En este laboratorio vas a construir una “radiografía” sintética desde cero, entendiendo la cadena **fuente → objeto → detector**.
+La idea central es simple: **si un rayo atraviesa más material (o material más atenuante), llegan menos fotones al detector**.
 
-**Cadena conceptual (muy simple):**
-**Fuente** $(I_0) → atraviesa **objeto** ($\mu$) → llega al **detector** $(I) → aplico $-log\left(\frac{I}{I_0}\right)$ → obtengo “radiografía” (proporcional a atenuación proyectada).
+### ¿Qué entra y qué sale?
 
-> Importante: aquí NO hay ruido, NO hay dispersión (scatter), NO hay endurecimiento de haz. Solo Beer–Lambert.
+- **Entra (fuente):** cuántos fotones salen (lo llamaremos `I0`).
+- **Entra (objeto):** un mapa 2D `mu[y,x]` que dice qué tan atenuante es cada zona.
+- **Sale (detector):** cuántos fotones llegan por rayo (lo llamaremos `I_det`).
+- **Sale (radiografía):** una imagen final `rad = -log(I_det/I0)` que es proporcional a “cuánta atenuación acumuló” cada rayo.
+
+### Objetivos de aprendizaje (al finalizar deberías poder)
+
+1) Explicar con palabras simples Beer–Lambert.
+2) Construir phantoms 2D con regiones de distintos materiales.
+3) Simular proyecciones con **haz paralelo** (sumas en filas).
+4) Interpretar `I_det` (más fotones vs menos fotones) y `rad` (más atenuación vs menos).
+
+### Mapa del pipeline (una sola vista)
+
+```
+I0 (fuente)  →  tau (suma de μ en el camino)  →  I_det = I0·exp(-tau)  →  rad = -log(I_det/I0)
+```
+
+### Glosario rápido (lo mínimo para no perderse)
+
+| Símbolo/variable | Qué es | Cómo se interpreta |
+|---|---|---|
+| `mu` (μ) | Mapa 2D del objeto | μ grande = material más atenuante |
+| `tau` (τ) | Atenuación acumulada por rayo | τ grande = el rayo vio “más bloqueo” |
+| `I0` | Intensidad sin objeto | referencia (brillo de la fuente) |
+| `I_det` (I) | Intensidad medida con objeto | baja cuando τ sube |
+| `rad` | `-log(I_det/I0)` | sube cuando τ sube (radiografía) |
+
+::: {.callout-note}
+**Regla mental que usarás todo el tiempo**
+Más `mu` (o más “recorrido” dentro del objeto) → mayor atenuación acumulada `tau` → menor intensidad en el detector `I_det` → mayor valor en la radiografía `rad` (después del log).
+:::
 
 ---
 
 ## 2) Preparación (imports y parámetros)
 
-Idea clave: trabajaremos en 2D con un mapa `mu[y,x]` de tamaño `N×N`.
-En geometría 2D, el detector real sería una línea 1D (un valor por rayo).
-Para **verlo como imagen**, repetiremos (tile) esa línea en la dirección horizontal.
+Trabajaremos con arreglos 2D `N×N`.
+En 2D, el detector “natural” es una señal 1D (un valor por fila).
+Para visualizarlo como imagen, repetiremos esa señal (tiling) y la mostraremos como 2D.
 
 ```{python}
 import numpy as np
@@ -57,58 +76,111 @@ import matplotlib.pyplot as plt
 
 plt.rcParams["figure.dpi"] = 120
 
-N = 256         # tamaño del phantom (rápido)
-dx = 1.0        # tamaño de pixel (unidades arbitrarias)
-eps = 1e-12     # para evitar log(0)
+N = 256       # tamaño del phantom (rápido en laptop)
+dx = 1.0      # tamaño de pixel (unidades arbitrarias)
+eps = 1e-12   # evita log(0) si hay valores muy pequeños
 ```
 
 ---
 
-## 3) Modelo físico: Beer–Lambert (en palabras simples)
+## 3) Modelo físico: Beer–Lambert (muy claro y sin extras)
 
-Piensa en el objeto como una “**niebla**”: si es más densa, más fotones se pierden.
-`μ(x,y)` mide esa “densidad de bloqueo” (atenuación): más μ → menos fotones pasan.
-Al atravesar una fila del objeto, se acumula atenuación: eso es la **integral de línea**.
-Resultado: el detector mide menos intensidad donde el camino atraviesa más material.
+### 3.1 La idea (en palabras)
+
+Imagina el objeto como una **cortina** entre la fuente y el detector.
+- Cortina “ligera” (μ pequeño) → pasan más fotones.
+- Cortina “pesada” (μ grande) → pasan menos fotones.
+
+`μ(x,y)` es un número que indica qué tan “bloqueador” es el material en ese punto.
+Un rayo no ve un solo punto: atraviesa una **ruta** y va acumulando bloqueo.
+
+### 3.2 La ecuación
 
 $$
-I = I_0 \exp\left(-\int \mu(x,y)\,dl\right)
+I = I_0 \, \exp\left(-\int \mu(x,y)\,dl\right)
 $$
 
-**Traducción directa:**
-- `I0`: fotones que **saldrían** si no hubiera objeto.
-- `I`: fotones que **llegan** al detector después del objeto.
-- `∫ μ dl`: “atenuación total” vista por ese rayo (camino óptico).
+**Traducción directa (sin misterio):**
+- `I0`: fotones que llegarían si NO hubiera objeto.
+- `I`: fotones que llegan DESPUÉS de atravesar el objeto.
+- `∫ μ dl` (lo llamaremos `tau`): “bloqueo total” acumulado a lo largo del camino del rayo.
+
+### 3.3 Por qué luego usamos log
+
+Si definimos
+
+$$
+\tau = \int \mu\,dl,
+$$
+
+entonces
+
+$$
+\frac{I}{I_0} = e^{-\tau}
+\quad\Rightarrow\quad
+-\log\left(\frac{I}{I_0}\right)=\tau.
+$$
+
+O sea: el **log** “deshace” la exponencial y nos devuelve algo proporcional a la atenuación acumulada.
+Eso es lo que aquí llamamos “radiografía reconstruida”.
+
+::: {.callout-warning}
+**Qué NO incluye este laboratorio (a propósito):**
+no hay scatter, no hay ruido Poisson, no hay endurecimiento de haz, no hay blur del detector.
+Esto es para aprender el esqueleto del pipeline sin distracciones.
+:::
 
 ---
 
-## 4) Construcción de un phantom (objetos sintéticos)
+## 4) Construcción de un phantom (mapa 2D de materiales μ)
 
-Un *phantom* aquí es un mapa 2D de `μ` (como un “mapa de materiales”).
-El fondo tendrá un μ pequeño (poco atenuante).
-Las formas internas tendrán μ más grande (más atenuantes) para crear contraste.
+### 4.1 Qué es un phantom (didáctico)
+
+Un *phantom* es un “objeto inventado” para practicar.
+Aquí es una imagen 2D de números `mu[y,x]`: cada pixel dice “qué material hay” (qué tanto atenúa).
+- `mu` pequeño → zona más “transparente” (deja pasar más fotones).
+- `mu` grande → zona más “opaca” (deja pasar menos fotones).
+
+El fondo representa un material base (`mu_fondo`).
+Las formas internas tienen otro μ para crear **contraste**.
+
+### 4.2 Cómo “dibujamos” materiales con máscaras
+
+En NumPy podemos construir una **máscara booleana** (True/False).
+- True = “píntalo con el material del círculo/bloque”.
+- False = “déjalo como fondo”.
+
+En el siguiente bloque creamos dos phantoms:
+A) fondo + círculo, B) fondo + bloque + círculo.
 
 ```{python}
 def crear_phantom_circulo(N, mu_fondo=0.02, mu_circulo=0.06, radio_frac=0.25, centro=None):
-    """Phantom A: fondo + círculo."""
+    """Phantom A: fondo uniforme + un círculo."""
     if centro is None:
         centro = (N//2, N//2)  # (y, x)
 
+    # Grid de coordenadas
     y = np.arange(N)[:, None]
     x = np.arange(N)[None, :]
+
     cy, cx = centro
     r = radio_frac * N
 
+    # 1) Empieza con fondo
     phantom = np.full((N, N), mu_fondo, dtype=float)
+
+    # 2) Máscara del círculo (True dentro del círculo)
     mascara = (x - cx)**2 + (y - cy)**2 <= r**2
+
+    # 3) "Pinta" el círculo cambiando mu
     phantom[mascara] = mu_circulo
     return phantom
 
 def crear_phantom_dos_materiales(N, mu_fondo=0.02, mu_bloque=0.10, mu_circulo=0.05):
-    """Phantom B: fondo + bloque + círculo."""
+    """Phantom B: fondo + bloque (más atenuante) + círculo (intermedio)."""
     phantom = np.full((N, N), mu_fondo, dtype=float)
 
-    # Bloque (material más atenuante)
+    # Bloque rectangular (material más atenuante)
     y1, y2 = int(0.35*N), int(0.75*N)
     x1, x2 = int(0.15*N), int(0.45*N)
     phantom[y1:y2, x1:x2] = mu_bloque
@@ -127,12 +199,13 @@ mu_A = crear_phantom_circulo(N)
 mu_B = crear_phantom_dos_materiales(N)
 
 fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+
 im0 = ax[0].imshow(mu_A, cmap="gray")
-ax[0].set_title("Phantom A: círculo en fondo")
+ax[0].set_title("Phantom A: círculo en fondo (mapa μ)")
 plt.colorbar(im0, ax=ax[0], fraction=0.046)
 
 im1 = ax[1].imshow(mu_B, cmap="gray")
-ax[1].set_title("Phantom B: dos materiales")
+ax[1].set_title("Phantom B: dos materiales (mapa μ)")
 plt.colorbar(im1, ax=ax[1], fraction=0.046)
 
 for a in ax:
@@ -142,16 +215,31 @@ plt.tight_layout()
 plt.show()
 ```
 
-**Ejercicio guiado 1:**
-Cambia `mu_circulo` y `mu_bloque`. Predice: ¿sube o baja la intensidad en el detector dentro de esas zonas?
+::: {.callout-tip}
+**Lectura rápida del phantom**
+En la imagen del phantom NO estás viendo una radiografía. Estás viendo “materiales”: dónde μ es mayor, ese material atenúa más.
+:::
+
+### Ejercicio guiado 1 (predicción antes de correr el pipeline)
+
+1) Si aumentas `mu_circulo`, ¿la intensidad `I_det` en esas filas sube o baja? ¿por qué?
+2) Si aumentas `mu_bloque`, ¿qué esperas que pase con `I_det` y con `rad`?
+
+Escribe tu predicción en 2–3 líneas. Luego la comprobarás cuando veas `I_det` y `rad`.
 
 ---
 
 ## 5) Generador polienergético idealizado (espectro simple)
 
-En la vida real, el tubo emite fotones con **muchas energías** (espectro).
-Aquí lo simplificamos a 3 energías con pesos (solo para “imaginar” polienergía).
-Como **no** hacemos μ dependiente de energía, este espectro se reduce a un `I0` total efectivo.
+### 5.1 Qué significa “polienergético” aquí
+
+En rayos X reales, la fuente emite fotones con diferentes energías (un espectro).
+Aquí lo simplificamos a **3 energías discretas** con **pesos**. Esto es didáctico.
+
+**Importante:** en este laboratorio NO hacemos que μ dependa de energía.
+Por eso, el “espectro” se reduce a un `I0_total` efectivo, pero nos sirve para entender la idea de “sumar contribuciones”.
+
+### 5.2 Implementación (3 energías + pesos)
 
 ```{python}
 energias_keV = np.array([30, 60, 90], dtype=float)
@@ -165,26 +253,41 @@ print("Energías (keV):", energias_keV)
 print("Pesos:", pesos)
 print("I0 por energía:", I0_por_energia)
 print("I0 efectivo:", I0_por_energia.sum())
+
+# Visualización del espectro discreto (solo para ver pesos)
+fig, ax = plt.subplots(figsize=(5.5, 3.2))
+ax.bar(energias_keV.astype(int), pesos)
+ax.set_title("Espectro simple (discreto): pesos por energía")
+ax.set_xlabel("Energía (keV)")
+ax.set_ylabel("Peso (suma = 1)")
+plt.tight_layout()
+plt.show()
 ```
 
-**Chequeo mental:** si el objeto “bloquea” igual a todas las energías, entonces cambiar los pesos casi no cambia `-log(I/I0)`.
+**Pregunta corta (1 línea):**
+Si μ no cambia con energía, ¿por qué esperarías que `rad = -log(I/I0)` cambie muy poco al cambiar `pesos`?
 
 ---
 
 ## 6) Simulación de proyecciones (haz paralelo, integral discreta)
 
-Haz paralelo (2D) significa: muchos rayos horizontales, uno por cada fila `y`.
-Cada rayo “ve” una fila completa del phantom y acumula atenuación.
-Aproximamos la integral como suma: `tau(y) = sum_x mu(y,x)*dx`.
-`tau` es la “cantidad total de material” que atravesó el rayo (en ese modelo).
+### 6.1 Qué es “proyectar” en este laboratorio
+
+Con **haz paralelo** y en 2D, usaremos rayos horizontales.
+Para cada fila `y`, el rayo atraviesa todos los pixeles `x` y acumula atenuación:
+
+$$
+\tau(y) \approx \sum_x \mu(y,x)\,\Delta x
+$$
+
+`tau(y)` es una señal 1D: un valor por fila (un valor por rayo).
+
+### 6.2 Implementación (sumar en x)
 
 ```{python}
 def proyectar_haz_paralelo(mu, dx=1.0):
-    """
-    Proyección 2D→1D (izquierda→derecha):
-    tau[y] = sum_x mu[y,x]*dx
-    """
-    tau = np.sum(mu, axis=1) * dx  # suma en x (columnas)
+    """Proyección 2D→1D: tau[y] = sum_x mu[y,x]*dx"""
+    tau = np.sum(mu, axis=1) * dx
     return tau
 
 tau_A = proyectar_haz_paralelo(mu_A, dx=dx)
@@ -192,20 +295,58 @@ tau_B = proyectar_haz_paralelo(mu_B, dx=dx)
 
 fig, ax = plt.subplots(1, 2, figsize=(9, 3.2))
 ax[0].plot(tau_A)
-ax[0].set_title("Camino óptico τ(y) - Phantom A")
+ax[0].set_title("Camino óptico τ(y) - A")
 ax[0].set_xlabel("índice y (pixel)")
 ax[0].set_ylabel("τ (aprox.)")
 
 ax[1].plot(tau_B)
-ax[1].set_title("Camino óptico τ(y) - Phantom B")
+ax[1].set_title("Camino óptico τ(y) - B")
 ax[1].set_xlabel("índice y (pixel)")
 
 plt.tight_layout()
 plt.show()
 ```
 
-**Para visualizar como imagen 2D (solo por comodidad visual):**
-Esto NO agrega física; solo repite la señal 1D para verla en forma de imagen.
+### 6.2b Conectar “una fila del phantom” con un valor de τ
+
+Para que no se vuelva abstracto: el rayo de la fila `y0` atraviesa todos los pixeles de esa fila.
+Entonces `tau[y0]` es literalmente la suma de `mu[y0, :]` (por `dx`).
+En el siguiente bloque miramos una fila y verificamos la suma.
+
+```{python}
+# Escoge una fila (rayo) para inspeccionar
+y0 = N // 2
+
+# Perfil de mu en esa fila
+perfil_A = mu_A[y0, :]
+perfil_B = mu_B[y0, :]
+
+print(f"Fila y0={y0}: tau_A[y0]={tau_A[y0]:.4f}  (suma discreta)")
+print(f"Fila y0={y0}: tau_B[y0]={tau_B[y0]:.4f}  (suma discreta)")
+
+fig, ax = plt.subplots(1, 2, figsize=(9, 3))
+ax[0].plot(perfil_A)
+ax[0].set_title("Perfil μ en una fila (A)")
+ax[0].set_xlabel("x (pixel)")
+ax[0].set_ylabel("μ")
+
+ax[1].plot(perfil_B)
+ax[1].set_title("Perfil μ en una fila (B)")
+ax[1].set_xlabel("x (pixel)")
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-note}
+**Interpretación de τ(y)**
+Si en cierta fila el rayo cruza el círculo o el bloque, τ(y) sube (porque suma μ más grande).
+Más τ → menos intensidad en el detector (por la exponencial).
+:::
+
+### 6.3 Para ver 1D como “imagen” (solo visual)
+
+Esto NO agrega física: solo repite la señal 1D en columnas para verla como imagen.
 
 ```{python}
 def tile_a_imagen(signal_1d, N):
@@ -235,17 +376,26 @@ plt.show()
 
 ## 7) Detector ideal (sin blur, sin ruido)
 
-El detector ideal solo “cuenta” fotones que llegaron: más atenuación → menos conteos.
-Para cada energía `k`: `I_k(y) = I0_k * exp(-tau(y))`.
-Luego sumamos energías: `I(y)=sum_k I_k(y)`.
-En este laboratorio, eso es equivalente a `I0_total * exp(-tau)`.
+### 7.1 Qué calcula el detector
+
+El detector ideal “cuenta” fotones que llegan por rayo.
+Para cada energía `k`:
+
+$$
+I_k(y) = I0_k\,e^{-\tau(y)}
+$$
+
+y luego sumamos todas las energías:
+
+$$
+I(y) = \sum_k I_k(y).
+$$
+
+### 7.2 Implementación
 
 ```{python}
 def detector_ideal_polienergetico(tau, I0_por_energia):
-    """
-    Detector ideal:
-    I(y) = sum_k I0_k * exp(-tau(y))
-    """
+    """I(y) = sum_k I0_k * exp(-tau(y))"""
     I = np.zeros_like(tau, dtype=float)
     for I0_k in I0_por_energia:
         I += I0_k * np.exp(-tau)
@@ -268,14 +418,47 @@ plt.tight_layout()
 plt.show()
 ```
 
+### 7.2b Ver la exponencial con tus ojos (τ vs I)
+
+Si Beer–Lambert es correcto, al aumentar `tau` la intensidad debe caer de forma exponencial.
+En este bloque graficamos `I_det` contra `tau` para ver esa caída.
+
+```{python}
+fig, ax = plt.subplots(figsize=(5.8, 4))
+ax.scatter(tau_A, I_det_A, s=10, alpha=0.6, label="A")
+ax.scatter(tau_B, I_det_B, s=10, alpha=0.6, label="B")
+ax.set_title("Relación exponencial: I_det vs τ")
+ax.set_xlabel("τ (atenuación acumulada)")
+ax.set_ylabel("I_det (conteos ideales)")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip}
+**Cómo “leer” I_det**
+Picos altos = llegaron muchos fotones (poca atenuación).
+Valles bajos = llegaron pocos fotones (mucha atenuación).
+:::
+
+### Ejercicio guiado 2 (comprobación de tu predicción)
+
+Vuelve al Ejercicio 1.
+Ahora que ves `I_det`, confirma si tu predicción fue correcta y escribe 2 líneas:
+- “Subí μ en X → I_det en esa zona **bajó/subió** porque …”.
+
 ---
 
 ## 8) Reconstrucción tipo radiografía: normalización + log
 
-¿Por qué normalizar? Porque el detector depende de cuántos fotones salieron (`I0`).
-Al usar `I/I0`, “quitamos” el brillo de la fuente y nos quedamos con efecto del objeto.
-¿Por qué el log? Porque Beer–Lambert tiene `exp(-tau)`; el log “deshace” la exponencial.
-Así: `rad = -log(I/I0)` ≈ `tau` (atenuación proyectada).
+### 8.1 Por qué hacemos estos dos pasos
+
+1) **Normalización:** `I_det/I0` elimina el “brillo” de la fuente y deja solo el efecto del objeto.
+2) **Log negativo:** como `I/I0 = exp(-tau)`, entonces `-log(I/I0) = tau`.
+
+Esto es clave: la radiografía reconstruida `rad` es proporcional al “camino óptico” `tau`.
+
+### 8.2 Implementación
 
 ```{python}
 def reconstruir_radiografia(I_det, I0_total, eps=1e-12):
@@ -287,6 +470,7 @@ def reconstruir_radiografia(I_det, I0_total, eps=1e-12):
 rad_A, I_norm_A = reconstruir_radiografia(I_det_A, I0_total, eps=eps)
 rad_B, I_norm_B = reconstruir_radiografia(I_det_B, I0_total, eps=eps)
 
+# Verificación visual: rad ~ tau
 fig, ax = plt.subplots(1, 2, figsize=(9, 3.2))
 ax[0].plot(tau_A, label="tau (verdad)")
 ax[0].plot(rad_A, "--", label="rad (-log)")
@@ -302,17 +486,30 @@ plt.tight_layout()
 plt.show()
 ```
 
-**Ejercicio guiado 2:**
-Cambia `I0_total` a `1e6`. ¿Qué pasa con `I_det`? ¿Qué pasa con `rad`? (Pista: `rad` debería cambiar muy poco).
+::: {.callout-note}
+**Interpretación de rad**
+Valores altos en `rad` significan: el rayo vio más material (o material más atenuante).
+Esto suele ser lo que queremos “ver” en una radiografía.
+:::
+
+### Ejercicio guiado 3 (invarianza a I0)
+
+Multiplica `I0_total` por 10 (por ejemplo `1e6`) y repite el pipeline.
+- ¿`I_det` cambia? (sí)
+- ¿`rad` cambia mucho? (debería cambiar muy poco)
 
 ---
 
 ## 9) Visualización: ventaneo (contraste simple)
 
-Una “radiografía” es un arreglo de números; para verla bien, ajustamos el rango visible.
-Ventaneo = escoger un intervalo `[low, high]` y mapearlo a la pantalla (0 a 1).
-Si el ancho es pequeño, aumentas contraste pero puedes saturar zonas.
-Si el ancho es grande, se ven más tonos pero con menos contraste local.
+### 9.1 Por qué ventaneamos
+
+Una radiografía es una matriz de valores, pero el ojo necesita un rango limitado para ver detalles.
+Ventaneo = escoger un intervalo `[low, high]` y mapearlo a [0,1].
+- Ancho pequeño → más contraste, pero se saturan zonas.
+- Ancho grande → menos contraste, más tonos visibles.
+
+### 9.2 Implementación
 
 ```{python}
 def ventaneo_lineal(img, centro, ancho):
@@ -327,15 +524,13 @@ def ventaneo_lineal(img, centro, ancho):
     out = (out - low) / (high - low + 1e-12)
     return out
 
-def tile_a_imagen(signal_1d, N):
-    return np.tile(signal_1d[:, None], (1, N))
-
+# Convertimos señales 1D a imágenes 2D (tiling) para visualizar
 rad_A_img = tile_a_imagen(rad_A, N)
 rad_B_img = tile_a_imagen(rad_B, N)
 
+# Ventaneo automático simple con percentiles
 centro_A = float(np.median(rad_A))
 ancho_A = float(np.percentile(rad_A, 95) - np.percentile(rad_A, 5))
-
 centro_B = float(np.median(rad_B))
 ancho_B = float(np.percentile(rad_B, 95) - np.percentile(rad_B, 5))
 
@@ -355,27 +550,52 @@ plt.tight_layout()
 plt.show()
 ```
 
-**Ejercicio guiado 3:**
-Pon `ancho` más pequeño (por ejemplo la mitad). ¿Qué detalle aparece más claro y qué se satura?
+### 9.3 ¿Qué está haciendo el ventaneo? (histograma)
+
+El histograma te muestra cuántos pixeles tienen cierto valor de `rad`.
+Al ventanear, elegimos un rango `[low, high]` y todo lo demás se recorta.
+Aquí dibujamos ese rango sobre el histograma para entenderlo.
+
+```{python}
+low_A = centro_A - ancho_A/2
+high_A = centro_A + ancho_A/2
+
+fig, ax = plt.subplots(figsize=(6.2, 3.6))
+ax.hist(rad_A, bins=40)
+ax.axvline(low_A, linestyle='--', label='low (A)')
+ax.axvline(high_A, linestyle='--', label='high (A)')
+ax.set_title("Histograma de rad (A) y rango de ventaneo")
+ax.set_xlabel("rad")
+ax.set_ylabel("número de filas (pixeles en 1D)")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+### Ejercicio guiado 4 (control de contraste)
+
+Prueba estos cambios y describe en 2–3 líneas qué notas:
+- Reduce `ancho_A` a la mitad. ¿Qué detalle aparece y qué se satura?
+- Aumenta `ancho_A` al doble. ¿Qué se ve más “plano” y por qué?
 
 ---
 
 ## 10) Comparación final: phantom vs detector vs radiografía
 
-En una frase:
-- `mu` = “cómo es el objeto” (verdad).
-- `I_det` = “qué midió el detector” (más oscuro = menos fotones).
-- `rad` = “radiografía” tras deshacer la exponencial (más alto = más atenuación).
+Aquí juntamos todo para leer el pipeline de un vistazo:
+- `mu` = “qué hay” (materiales).
+- `I_det` = “qué midió el detector” (conteos).
+- `rad` = “radiografía” (atenuación acumulada).
 
 ```{python}
-def resumen_pipeline(mu, I0_total, I0_por_energia, dx=1.0):
+def resumen_pipeline(mu, I0_total, I0_por_energia, dx=1.0, eps=1e-12):
     tau = np.sum(mu, axis=1) * dx
     I_det = detector_ideal_polienergetico(tau, I0_por_energia)
     rad, _ = reconstruir_radiografia(I_det, I0_total, eps=eps)
     return tau, I_det, rad
 
-tauA, IA, radA = resumen_pipeline(mu_A, I0_total, I0_por_energia, dx=dx)
-tauB, IB, radB = resumen_pipeline(mu_B, I0_total, I0_por_energia, dx=dx)
+tauA, IA, radA = resumen_pipeline(mu_A, I0_total, I0_por_energia, dx=dx, eps=eps)
+tauB, IB, radB = resumen_pipeline(mu_B, I0_total, I0_por_energia, dx=dx, eps=eps)
 
 fig, ax = plt.subplots(2, 3, figsize=(10, 6))
 
@@ -399,19 +619,19 @@ plt.show()
 
 ## 11) Mini-proyecto final (entregable)
 
-Tu objetivo: crear un phantom nuevo (al menos 2 materiales) y correr el pipeline.
-Debes mostrar 3 figuras: phantom, detector ideal, radiografía final ventaneada.
-En 5–8 líneas, interpreta: “más atenuación” ↔ “menos fotones” ↔ “rad más alto”.
+Tu objetivo: crear tu propio phantom (al menos 2 materiales) y generar su radiografía.
+Debes incluir 3 figuras: (1) phantom, (2) intensidad del detector, (3) radiografía final ventaneada.
+Luego escribe un párrafo corto interpretando (5–8 líneas) qué zonas atenúan más y cómo se ven.
 
 ```{python}
 def crear_phantom_estudiante(N):
     mu_fondo = 0.02
     phantom = np.full((N, N), mu_fondo, dtype=float)
 
-    # TODO: forma 1 (más atenuante)
+    # TODO: forma 1 (más atenuante): bloque
     phantom[int(0.30*N):int(0.60*N), int(0.20*N):int(0.35*N)] = 0.09
 
-    # TODO: forma 2 (atenuación intermedia)
+    # TODO: forma 2 (intermedia): círculo
     y = np.arange(N)[:, None]
     x = np.arange(N)[None, :]
     cy, cx = int(0.65*N), int(0.65*N)
@@ -436,6 +656,7 @@ centro_est = float(np.median(rad_est))
 ancho_est = float(np.percentile(rad_est, 95) - np.percentile(rad_est, 5))
 rad_est_win = ventaneo_lineal(rad_est_img, centro_est, ancho_est)
 
+# 3 figuras requeridas
 fig, ax = plt.subplots(1, 3, figsize=(12, 4))
 
 ax[0].imshow(mu_est, cmap="gray")
@@ -468,16 +689,16 @@ plt.show()
   - [ ] Phantom (`mu_est`)
   - [ ] Intensidad en detector (`I_det_est`)
   - [ ] Radiografía final (`rad_est` con ventaneo)
-- [ ] Interpretación corta (5–8 líneas).
+- [ ] Interpretación corta (5–8 líneas) en lenguaje claro.
 - [ ] (Opcional) Cambia el “espectro simple” (`pesos`) y comenta qué cambia.
-  - Pista: con este modelo (sin μ dependiente de energía), la radiografía `rad` debería cambiar muy poco.
+  - Pista: con este modelo (sin μ dependiente de energía), `rad` debería cambiar muy poco.
 
 ---
 
 ## Apéndice (opcional): exportar figuras a PNG
 
 Si necesitas entregar archivos, usa `savefig`.
-Esto no es obligatorio si ya quedan visibles en el HTML.
+No es obligatorio si todo queda visible en el HTML.
 
 ```{python}
 # Ejemplo (descomenta si quieres guardar):
