@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -30,3 +30,429 @@ resources:
 ---
 
 # Procesado Avanzado de Imágenes Médicas - PAIM
+<!-- ---
+title: "Tomografía computarizada"
+subtitle: "Geometría, adquisición, métodos y reconstrucción (síntesis didáctica basada en dos documentos)"
+author: "Pablo Caicedo"
+date: 2026-02-24
+lang: es
+format:
+  revealjs:
+    theme: serif
+    slide-number: true
+    transition: fade
+    chalkboard: true
+    controls: true
+    progress: true
+    preview-links: true
+    center: true
+    hash: true
+    navigation-mode: linear
+    history: true
+    pdf-separate-fragments: false
+html-math-method: mathjax
+--- -->
+
+## Mapa de la sesión
+
+Hoy vamos a conectar tres ideas, en orden.
+
+- Geometría y medición: **qué mide el detector y por qué la geometría manda**.
+- Reconstrucción: **cómo pasamos de mediciones a cortes** (sinograma, retroproyección filtrada y reconstrucción iterativa).
+- Métodos y tecnología: **métodos de adquisición, generaciones de escáneres, aplicaciones, y preocupaciones prácticas** (incluyendo dosis).
+
+---
+
+## Propósito o pregunta central
+
+¿Cómo un escáner de tomografía computarizada convierte muchas mediciones de rayos X tomadas desde distintos ángulos en una imagen interna en cortes, y cómo cambian el proceso y las implicaciones cuando cambian el método de adquisición o la arquitectura del escáner?
+
+---
+
+## Qué mide realmente la tomografía computarizada
+
+El detector no “ve” órganos ni tejidos: mide **intensidad de radiación** que llega después de atravesar el cuerpo.
+
+Cuando una región atenúa mucho (por ejemplo, hueso), llega menos radiación al detector. Cuando atenúa poco (por ejemplo, aire), llega más.
+
+La imagen final aparece porque el sistema toma muchas “sombras” desde muchos ángulos y luego reconstruye una explicación interna coherente.
+
+---
+
+## De intensidad a una proyección útil
+
+La atenuación se acumula de forma multiplicativa a lo largo del camino del rayo. Para volverla más “sumable”, el sistema usa una transformación logarítmica que convierte multiplicaciones en sumas.
+
+Una forma estándar de expresar esa idea (medición idealizada) es:
+
+$$
+p = -\ln\left(\frac{I}{I_0}\right)
+$$
+
+donde $I$ es la intensidad medida con el paciente y $I_0$ es la intensidad de referencia sin el paciente.
+
+Interpretación: $p$ se comporta como una **suma a lo largo del camino del rayo** de cuánto atenúa cada pequeña región atravesada.
+
+---
+
+## Componentes del escáner (enfoque geométrico)
+
+Hay un “circuito” físico repetitivo.
+
+La estructura giratoria (gantry) rota alrededor del paciente.
+
+La fuente de rayos X emite el haz; su energía se controla principalmente con el voltaje del tubo.
+
+El colimador da forma al haz y ayuda a limitar irradiación innecesaria y a controlar dispersión.
+
+Un filtro de forma busca equilibrar señal en el detector (más atenuación en bordes del haz y menos en el centro, según la anatomía).
+
+La mesa posiciona al paciente; en adquisición helicoidal avanza mientras el gantry gira.
+
+---
+
+## Geometrías básicas del haz: paralelo, abanico y cono
+
+- **Haz paralelo**: modelo conceptual útil para entender proyecciones y sinogramas.
+- **Haz en abanico**: representativo de muchos sistemas clínicos para cortes; un abanico en el plano del corte.
+- **Haz en cono**: aparece con múltiples filas de detectores; captura volumen más rápido, pero exige más del proceso de reconstrucción.
+
+---
+
+## Flujo completo: del escaneo a la imagen
+
+```{mermaid}
+flowchart TD
+  A["Fuente de rayos X\n(emisión)"] --> B["Colimación y filtración\n(forma del haz)"]
+  B --> C["Interacción con el paciente\n(atenuación, dispersión, policromía)"]
+  C --> D["Detectores\n(miden intensidad)"]
+  D --> E["Conversión a proyecciones\n(p = -ln(I/I0))"]
+  E --> F["Organización en sinograma\n(ángulo vs canal)"]
+  F --> G["Reconstrucción\n(retroproyección filtrada o iterativa)"]
+  G --> H["Corte reconstruido\n(píxeles) y volumen\n(vóxeles)"]
+```
+
+---
+
+## Proyección y sinograma
+
+Una **proyección** (para un ángulo fijo) es el conjunto de mediciones de todos los canales del detector, ya transformadas para comportarse como “sumas por líneas”.
+
+Un **sinograma** es apilar proyecciones a medida que gira el gantry: una matriz donde un eje es el ángulo y el otro eje es la posición del detector.
+
+Además de ser la “memoria” de la adquisición, el sinograma sirve para entender errores: movimiento, metal o fallas de detector dejan patrones característicos que luego aparecen como artefactos en imagen.
+
+---
+
+## Transformada de Radon (idea mínima)
+
+La transformada de Radon es el nombre formal para:
+
+“Tomar una imagen de un corte y convertirla en todas sus sumas por líneas para muchos ángulos”.
+
+La reconstrucción busca el camino inverso: recuperar el mapa interno a partir de esas sumas por líneas.
+
+---
+
+## Retroproyección: “pintar de vuelta” lo medido
+
+Idea operacional:
+
+Se toma el valor medido de cada rayo y se reparte a lo largo de la línea por donde pasó ese rayo en el corte. Luego se repite para muchos ángulos y se suman contribuciones.
+
+Esto reconstruye formas generales, pero deja un efecto sistemático: la imagen sale borrosa (con un “velo”).
+
+---
+
+## Retroproyección filtrada: por qué se filtra
+
+La retroproyección simple produce borrosidad esperada. Para compensarla, se filtra cada proyección antes de retroproyectar.
+
+Receta conceptual:
+
+1) Convertir intensidades a proyecciones.
+2) Filtrar cada proyección para compensar borrosidad.
+3) Retroproyectar y sumar sobre ángulos.
+
+En frecuencia, una forma de expresar la idea del filtro ideal (mínima, conceptual) es que su respuesta se relaciona con $|\omega|$, lo que equivale a dar más peso a cambios rápidos para recuperar bordes, con control de ruido.
+
+---
+
+## Ventanas: nitidez versus ruido
+
+Si se realzan demasiado los componentes “rápidos” (detalles), también se amplifica el ruido.
+
+Por eso se usan **ventanas** (suavizados del filtro): controlan el extremo más “agudo” para evitar imágenes demasiado ruidosas.
+
+Consecuencia práctica: hay un compromiso inevitable entre nitidez y ruido visible.
+
+---
+
+## Reconstrucción iterativa: ciclo de ajuste
+
+La reconstrucción iterativa construye la imagen por aproximaciones.
+
+```{mermaid}
+flowchart LR
+  A["Imagen inicial\n(puede ser en blanco)"] --> B["Proyección hacia adelante\n(simular mediciones)"]
+  B --> C["Comparar con mediciones reales\n(error)"]
+  C --> D["Actualizar la imagen\n(reducir error)"]
+  D --> B
+```
+
+Ventaja conceptual: puede incorporar un modelo más realista del sistema (geometría real, ruido, parte de la física) y estabilizar la imagen, especialmente cuando hay poca señal.
+
+---
+
+## Comparación: retroproyección filtrada vs reconstrucción iterativa
+
+| Aspecto | Retroproyección filtrada | Reconstrucción iterativa |
+|---|---|---|
+| Idea central | Filtrar proyecciones y retroproyectar | Ajustar una imagen para que reproduzca mediciones |
+| Fortaleza típica | Rapidez y claridad conceptual | Mejor control de ruido y algunos artefactos (según modelo) |
+| Costo computacional | Bajo | Mayor |
+| Riesgo conceptual | Filtrado puede amplificar ruido | Depende de supuestos del modelo; puede cambiar textura/apariencia |
+
+---
+
+## Tomografía helicoidal: qué cambia
+
+En adquisición helicoidal, el gantry gira continuamente mientras la mesa avanza, formando una hélice alrededor del cuerpo.
+
+Consecuencia clave: los datos ya no pertenecen a un único plano “estático”. Para reconstruir un corte en una posición específica, el sistema debe seleccionar o interpolar datos cercanos.
+
+Compromiso operacional: si la mesa avanza mucho por giro, se cubre rápido pero con menos redundancia de datos por región; si avanza poco, hay más superposición (más datos por región), con implicaciones en calidad, tiempo y dosis.
+
+---
+
+## Artefactos comunes: mapa causa–efecto (nivel conceptual)
+
+| Artefacto | Causa dominante (idea) | Efecto típico en imagen |
+|---|---|---|
+| Endurecimiento del haz | Haz policromático: se “pierden” primero fotones de baja energía | Bandas / sombreado; “cuencas” en regiones centrales |
+| Movimiento | Las proyecciones no corresponden al mismo objeto estático | Bordes dobles, sombras, borrosidad |
+| Metal | Atenuación extrema y falta de fotones + endurecimiento intensificado | Rayas brillantes y oscuras, pérdida de detalle |
+| Anillos | Respuesta anómala de un canal del detector repetida con la rotación | Círculos concéntricos |
+| Volumen parcial | Un vóxel mezcla tejidos diferentes y promedia | Bordes menos definidos; densidades intermedias engañosas |
+
+---
+
+## Dosimetría: indicadores operativos
+
+La dosis (energía depositada por la radiación en el cuerpo) se gestiona con indicadores estandarizados útiles para control y comparación.
+
+- El **índice de dosis de tomografía computarizada por volumen** resume el nivel de exposición del protocolo en un marco estandarizado.
+- El **producto dosis–longitud** combina la exposición por longitud con la longitud total escaneada.
+- No son la dosis exacta del paciente porque se basan en objetos de prueba estándar y la dosis real depende del tamaño y anatomía del paciente, además de modulación automática en algunos equipos.
+
+Principio operativo: mantener la dosis tan baja como sea razonablemente posible, con calidad suficiente para responder la pregunta clínica.
+
+---
+
+## Métodos de adquisición en tomografía computarizada: panorama
+
+En una revisión se describen métodos basados en distintos fenómenos físicos de interacción de rayos X con el objeto.
+
+| Método | Qué se mide (idea) | Qué se reconstruye (idea) |
+|---|---|---|
+| Transmisión | Atenuación del haz al atravesar el objeto | Distribución de coeficientes de atenuación |
+| Contraste de fase | Cambios de fase (convertidos a variaciones de intensidad) | Estructura ligada a densidad de electrones (según enfoque) |
+| Dispersión | Dispersión en un rango angular | Distribución de densidad de electrones |
+| Difracción | Patrones de difracción; ángulo de Bragg | Discriminación selectiva de componentes |
+| Doble energía | Atenuación con dos espectros de energía | Separación de contribuciones materiales (según modelo) |
+| Tomografía compresiva | Medidas codificadas y reducidas (muestreo por debajo de Nyquist) | Reconstrucción a partir de dispersidad e incoherencia |
+
+---
+
+## Tomografía de transmisión: modelo mínimo
+
+La intensidad medida depende de cuánto material atraviesa el rayo y de la atenuación local a lo largo de su trayectoria.
+
+Una forma estándar de escribirlo (modelo idealizado) es:
+
+$$
+I = I_0 \exp\left(-\int \mu(s)\, ds\right)
+$$
+
+La reconstrucción busca estimar $\mu(\cdot)$, el mapa interno de coeficientes de atenuación, a partir de muchas mediciones desde muchos ángulos.
+
+---
+
+## Contraste de fase: índice de refracción y tres clases de sistemas
+
+En contraste de fase, los rayos X se tratan como ondas electromagnéticas y el objeto se describe con un índice de refracción:
+
+$$
+n = 1 - \delta + i\beta
+$$
+
+La parte asociada a $\beta$ se relaciona con absorción y la asociada a $\delta$ con cambios de fase. La reconstrucción puede plantearse usando la información de cambio de fase.
+
+Tabla de clases de sistemas descritas en la revisión:
+
+| Sistema | Descripción (síntesis) |
+|---|---|
+| Imagen basada en analizador | Usa cristal(es) para analizar desviaciones y medir en detector |
+| Imagen basada en propagación | Depende de interferencia en propagación libre; requiere coherencia y detector de alta resolución; serie de distancias |
+| Imagen basada en rejillas | Rejillas convierten haz incoherente en haces coherentes; patrón de interferencia se muestrea con rejilla de absorción frente al detector |
+
+---
+
+## Difracción: idea y rol del ángulo de Bragg
+
+La tomografía por difracción mide desviaciones del haz por interacción con el objeto y permite discriminar selectivamente componentes al fijar un ángulo de Bragg que produzca un pico de interferencia.
+
+La reconstrucción se plantea a partir de patrones de difracción, usualmente bajo supuestos simplificadores para hacer el problema tratable.
+
+---
+
+## Dispersión: reconstruir densidad de electrones
+
+Parte de los fotones se desvían de su dirección original dentro del tejido. La dirección e intensidad de esos fotones dispersados se relaciona con la distribución interna.
+
+La tomografía por dispersión se plantea como reconstrucción de la distribución de densidad de electrones a partir de la dispersión medida dentro de un rango angular específico.
+
+---
+
+## Doble energía: dos espectros, más información material
+
+En el rango típico clínico (decenas a cientos de kilo-electrón-voltios), se destaca la influencia de dispersión Compton y efecto fotoeléctrico, con dependencias en energía y material.
+
+Se describen tres mecanismos de adquisición:
+
+- Conmutación rápida de voltaje (variar energía dentro de un rango).
+- Doble fuente (dos fuentes independientes para cubrir el campo de visión).
+- Detector multicapa (dos capas con diferente sensibilidad).
+
+---
+
+## Tomografía compresiva: reducir medidas, tiempo y dosis (idea)
+
+El muestreo compresivo propone reconstruir señales con menos medidas si se cumplen dos condiciones: que la señal sea dispersa (o dispersificable con una transformación adecuada) y que la medición sea incoherente.
+
+Modelo típico:
+
+$$
+y = \Phi f
+$$
+
+y una representación dispersa:
+
+$$
+f = \Psi x
+$$
+
+En tomografía, se describen configuraciones que incorporan aperturas codificadas para modular el haz y obtener medidas comprimidas, con la motivación de reducir número de medidas, tiempo de adquisición y exposición.
+
+---
+
+## Generaciones de escáneres: geometría y compromisos
+
+Se describen siete generaciones, clasificadas por disposición de componentes y movimiento mecánico necesario para adquirir datos (el número no implica “mejor” por sí mismo).
+
+| Generación (año) | Geometría (síntesis) | Ventaja / desventaja (síntesis) |
+|---|---|---|
+| Primera (1970) | Haz delgado + un detector, movimiento alrededor del objeto | Menos dispersión captada / adquisición lenta por muchas proyecciones |
+| Segunda (1972) | Abanico + vector de detectores | Menos dispersión captada / aún tiempos prolongados (menores que primera) |
+| Tercera (1978) | Abanico cubre región completa + muchos detectores | Poco movimiento y menor tiempo de adquisición |
+| Cuarta (1978) | Fuente rotatoria + anillo de detectores estáticos | Detección amplia / problemas por dispersión (detectores no restringidos) |
+| Quinta (1979) | Haz de electrones barrido sobre ánodo semicircular + detectores estacionarios | Reduce tiempo / campo de visión limitado |
+| Sexta (1987) | Giro continuo con anillo deslizante (adquisición continua) | Datos rápidos / patrón helicoidal sin secciones completas directas |
+| Séptima (1998) | Matriz de detectores + haz en cono | Mucha información en poco tiempo / reconstrucción más exigente |
+
+---
+
+## Reconstrucción (visión desde la revisión)
+
+El problema de reconstrucción se plantea como recuperar la estructura interna a partir de medidas de intensidad, determinadas por fenómenos como efecto fotoeléctrico, dispersión y difracción.
+
+Se señala el sinograma como matriz de datos de adquisición, desde la cual se reconstruye el corte.
+
+Se distinguen:
+
+- Métodos analíticos: herramientas del análisis de Fourier; incluyen retroproyección y retroproyección filtrada.
+- Métodos iterativos: incluyen métodos algebraicos y métodos estadísticos.
+
+---
+
+## Casos de prueba: simulación y comparación cuantitativa
+
+Se describe el uso de una herramienta de simulación para generar datos sintéticos, definir geometría de proyección, calcular proyecciones y generar el sinograma; luego se define el algoritmo de reconstrucción.
+
+Ejemplo descrito:
+
+- Imágenes de 128 × 128 píxeles.
+- 256 detectores.
+- 500 ángulos en 360 grados.
+- Reconstrucción con retroproyección filtrada para geometría paralela y geometría en abanico.
+
+Comparación cuantitativa reportada con relación pico-señal a ruido (en decibelios):
+
+- Geometría paralela: 27,81 dB.
+- Geometría en abanico: 32,47 dB.
+
+Interpretación propuesta: la configuración en abanico toma más medidas por ángulo y se espera mejor reconstrucción, coherente con esos valores.
+
+---
+
+## Aplicaciones: medicina, geología e industria
+
+En medicina, se describen usos en diagnóstico, guía de procedimientos y monitoreo, incluyendo fluoroscopia, visualización tridimensional, angiografía e imágenes cardíacas; también se menciona exploración en personas asintomáticas (tamizaje por tomografía computarizada).
+
+En geología, se describen usos en inspección de muestras (alta resolución, micro y nano), con ejemplos en ciencia del suelo, meteoritos, paleontología, geotecnia y geología del petróleo.
+
+En industria, se describen usos en ensayos no destructivos, detección de explosivos, control de calidad y manejo de residuos peligrosos.
+
+---
+
+## Tendencias y preocupaciones destacadas
+
+Se enfatiza una preocupación persistente: la dosis de radiación.
+
+Se describe que parte de desarrollos recientes buscan disminuir tiempos de adquisición y aumentar nivel de detalle, y se menciona el interés en métodos basados en muestreo compresivo.
+
+También se plantea como expectativa que próximos avances se enfoquen en el uso de múltiples fuentes de rayos X para reducir tiempos de adquisición y, potencialmente, contribuir a reducción de dosis.
+
+---
+
+## Limitaciones y puntos pendientes
+
+Pendiente técnico: información insuficiente en los PDF adjuntos para completar esta sección.
+
+(Sección objetivo: valores numéricos de referencia por protocolo para los indicadores de dosis, comparables entre regiones anatómicas y poblaciones; los documentos describen conceptos e indicadores, pero no entregan tablas de valores típicos por protocolo.)
+
+---
+
+## Limitaciones y puntos pendientes (continuación)
+
+Pendiente técnico: información insuficiente en los PDF adjuntos para completar esta sección.
+
+(Sección objetivo: descripción operativa detallada de correcciones de calibración específicas, como correcciones cuantitativas de endurecimiento del haz, dispersión y no linealidades del detector, con pasos y validación.)
+
+---
+
+## Conclusiones accionables
+
+- La tomografía computarizada es una cadena geométrica y computacional: la geometría define qué se mide, el sinograma organiza lo medido, y la reconstrucción traduce mediciones en cortes.
+- La retroproyección filtrada es la receta clásica (filtrar y retroproyectar); la reconstrucción iterativa ajusta una imagen para reproducir mediciones y puede controlar mejor ruido y algunos artefactos, con mayor complejidad.
+- Cambios en método de adquisición (transmisión, fase, dispersión, difracción, doble energía, tomografía compresiva) cambian qué fenómeno se mide y qué tipo de información interna se busca reconstruir.
+- La práctica segura exige tratar calidad de imagen como un compromiso entre nitidez, ruido, tiempo, cobertura y dosis.
+
+---
+
+## Cierre: mensajes clave
+
+La fidelidad de la imagen final depende de tres coherencias: coherencia geométrica (centrado y movimiento), coherencia de medición (intensidad a proyección) y coherencia de reconstrucción (modelo y método).
+
+Los artefactos suelen ser “huellas” de una ruptura de esas coherencias.
+
+La tecnología (generaciones, detectores, geometrías y métodos) existe para empujar el equilibrio entre detalle, tiempo y dosis, sin perder interpretabilidad clínica o técnica.
+
+---
+
+## Documentos base (para trazabilidad interna)
+
+- Revisión: “Tomografía computarizada: proceso de adquisición, tecnología y estado actual”, Revista Tecnura, 2016. Identificador persistente: 10.14483/udistrital.jour.tecnura.2016.1.a10.
+- Reporte didáctico: “Tomografía axial computarizada: geometría, adquisición y reconstrucción explicadas desde cero”, 2026-02-23.
+
+<!-- :contentReference[oaicite:0]{index=0} :contentReference[oaicite:1]{index=1} -->

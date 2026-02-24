@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: "`r Sys.Date()`"
 format:
-  html: 
+  html:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -83,10 +83,10 @@ Al finalizar, el estudiante será capaz de:
 
 - **Cuantización.** Para una señal $x\in[X_{\min},X_{\max}]$, la cuantización uniforme escalar con $b$ bits tiene $L=2^{b}$ niveles y paso $\Delta=\dfrac{X_{\max}-X_{\min}}{L}$. El error de cuantización $e=x-\hat{x}\in[-\Delta/2,\Delta/2]$ (mid-tread).
 - **Rango dinámico.** En $b$ bits sin signo: $[0,\,2^{b}-1]$ (en 8 bits: $[0,255]$).
-- **Espacios de color (OpenCV).**  
-  - **BGR** (lectura por defecto en OpenCV).  
-  - **HSV:** `cv2.COLOR_BGR2HSV` (H en [0,179] para uint8).  
-  - **Lab:** `cv2.COLOR_BGR2LAB` (uint8: $L^\*\in[0,255]$, $a^\*,b^\*\approx[0,255]$ con 128 ≈ neutro).  
+- **Espacios de color (OpenCV).**
+  - **BGR** (lectura por defecto en OpenCV).
+  - **HSV:** `cv2.COLOR_BGR2HSV` (H en [0,179] para uint8).
+  - **Lab:** `cv2.COLOR_BGR2LAB` (uint8: $L^\*\in[0,255]$, $a^\*,b^\*\approx[0,255]$ con 128 ≈ neutro).
   - **YCrCb:** `cv2.COLOR_BGR2YCrCb` (orden de cromas: **Y, Cr, Cb**).
 
 > ::: {.callout-warning}
@@ -105,9 +105,9 @@ Al finalizar, el estudiante será capaz de:
 
 ## **Protocolo de adquisición (documentar en el informe)**
 
-1. **Montaje de escena (iluminación constante).** Fondo neutro; evitar brillos especulares.  
-2. **Conjunto A (referencia, 8 bits sin pérdidas).** Guardar una imagen nítida y bien expuesta en PNG/TIFF.  
-3. **Conjunto B (bracketing de exposición).** ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.  
+1. **Montaje de escena (iluminación constante).** Fondo neutro; evitar brillos especulares.
+2. **Conjunto A (referencia, 8 bits sin pérdidas).** Guardar una imagen nítida y bien expuesta en PNG/TIFF.
+3. **Conjunto B (bracketing de exposición).** ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.
 
 ::: {.callout-warning}
 Mantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB confunden los análisis de profundidad de bit y espacio de color.
@@ -117,9 +117,9 @@ Mantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB co
 
 ## **Actividad 1 — Exploración inicial y chequeos**
 
-1. Cargar la **imagen de referencia**. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.  
+1. Cargar la **imagen de referencia**. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.
 2. Estimar el **uso efectivo de bits** contando valores distintos por canal.
-3. Cuente cuantos pixeles hay, por cada canal y nivel del canal 
+3. Cuente cuantos pixeles hay, por cada canal y nivel del canal
 
 ```{python}
 #| echo: false
@@ -166,7 +166,7 @@ print("Guardados: figs/referencia.png, figs/hist_B.png, figs/hist_G.png, figs/hi
 
 -Explique que es el error cuadrático medio (MSE, por sus siglas en inglés) y la relación señal a rudio pico (PSNR, por sus siglas en inglés), Cuantice la **imagen BGR de referencia** a $b\in\{1,2,\dots,7\}$ bits (por canal). Para cada $b$:
 
-- Calcule $\mathrm{MSE}$ y $\mathrm{PSNR}$ respecto a la referencia ($b=8).
+- Calcule $\mathrm{MSE}$ y $\mathrm{PSNR}$ respecto a la referencia ($b=8$).
 - Genere y guarde la imagen cuantizada y un **mapa de error** visual (colormap).
 
 ```{python}
@@ -212,8 +212,8 @@ print("Imágenes guardadas en figs/quant/")
 
 ## **Actividad 3 — Transformaciones de espacio de color y semántica de canales**
 
-1. Convertir la imagen de referencia a **HSV**, **Lab** y **YCrCb** (OpenCV).  
-2. Cuantizar **solo un canal** a $b\in\{2,4\}$ (mantener los otros en 8 bits), revertir a BGR y guardar resultados.  
+1. Convertir la imagen de referencia a **HSV**, **Lab** y **YCrCb** (OpenCV).
+2. Cuantizar **solo un canal** a $b\in\{2,4\}$ (mantener los otros en 8 bits), revertir a BGR y guardar resultados.
 3. Comparar perceptualmente artefactos entre cuantizar luminancia (Y) y crominancias (Cr/Cb), y entre canales de HSV/Lab.
 
 ```{python}
@@ -268,10 +268,10 @@ print("Guardados ejemplos en figs/space/")
 ## **Entregables**
 
 1. **Informe Latex** (PDF) con:
-   - Protocolo de adquisición, metadatos y fotos de la escena.  
-   - Resultados de Actividades 1–3 (figuras, histogramas, tablas).  
-   - Tabla que resuma **qué espacio/canal** soporta mayor cuantización con artefactos mínimos (justifique).  
-   - Tabla con MSE vs. $b$ (sin PSNR).  
+   - Protocolo de adquisición, metadatos y fotos de la escena.
+   - Resultados de Actividades 1–3 (figuras, histogramas, tablas).
+   - Tabla que resuma **qué espacio/canal** soporta mayor cuantización con artefactos mínimos (justifique).
+   - Tabla con MSE vs. $b$ (sin PSNR).
 2. **Carpeta reproducible** con código e imágenes originales (preferir PNG/TIFF).
 
 ---
@@ -291,6 +291,6 @@ print("Guardados ejemplos en figs/space/")
 | **Claridad y comunicación** | 5 | Lenguaje técnico claro, voz y ritmo adecuados, contacto visual. | Generalmente claro con momentos de ambigüedad. | Dificultades frecuentes de expresión. | Incomprensible o lectura de diapositivas. |
 
 **Recomendaciones de preparación (no evaluadas, pero sugeridas):**
-- Ensayar con cronómetro (marcas en 3–6–9 min).  
-- Limitar texto por diapositiva; priorizar comparativas claras (antes/después, por espacio y por $b$).  
+- Ensayar con cronómetro (marcas en 3–6–9 min).
+- Limitar texto por diapositiva; priorizar comparativas claras (antes/después, por espacio y por $b$).
 - Anticipar dos preguntas técnicas (supuestos y limitaciones).

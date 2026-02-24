@@ -4267,7 +4267,7 @@
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "Al finalizar, el estudiante será capaz de:\n1. Explicar la relación entre la profundidad de bit \\(b\\), los niveles representables \\(L=2^{b}\\) y el paso de cuantización \\(\\Delta\\) en una imagen digital.\n2. Adquirir y documentar imágenes bajo condiciones controladas para analizar rango dinámico, histogramas y artefactos de cuantización (banding, posterización).\n3. Convertir imágenes RGB a espacios HSV, CIE L*a*b* y Y’CrCb (formato OpenCV) e interpretar la semántica de canales e histogramas.\n4. Cuantizar imágenes a distintas profundidades de bit y evaluar distorsión con \\(\\mathrm{MSE}\\); discutir perceptualmente los cambios.\n5. Justificar la elección de espacio de color según la tarea (robustez a iluminación, segmentación, compresión) con evidencia cualitativa y cuantitativa.\n\n\n\n\n\nCuantización. Para una señal \\(x\\in[X_{\\min},X_{\\max}]\\), la cuantización uniforme escalar con \\(b\\) bits tiene \\(L=2^{b}\\) niveles y paso \\(\\Delta=\\dfrac{X_{\\max}-X_{\\min}}{L}\\). El error de cuantización \\(e=x-\\hat{x}\\in[-\\Delta/2,\\Delta/2]\\) (mid-tread).\nRango dinámico. En \\(b\\) bits sin signo: \\([0,\\,2^{b}-1]\\) (en 8 bits: \\([0,255]\\)).\nEspacios de color (OpenCV).\n\nBGR (lectura por defecto en OpenCV).\n\nHSV: cv2.COLOR_BGR2HSV (H en [0,179] para uint8).\n\nLab: cv2.COLOR_BGR2LAB (uint8: \\(L^\\*\\in[0,255]\\), \\(a^\\*,b^\\*\\approx[0,255]\\) con 128 ≈ neutro).\n\nYCrCb: cv2.COLOR_BGR2YCrCb (orden de cromas: Y, Cr, Cb).\n\n\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nOpenCV trabaja en BGR (no RGB) cuando lee/escribe imágenes con cv2.imread y cv2.imwrite. Para mostrar correctamente en archivos guardados, no es necesario convertir a RGB; sin embargo, documente siempre el orden de canales.\n\n\n\n\n\n\n\n\nCámara de teléfono u ordenador. Fijar ISO, tiempo de exposición y balance de blancos. Preferir PNG/TIFF (sin pérdidas); si es posible, capturar RAW+JPEG.\nEscena estática con colores saturados y neutros (p. ej., cuadrícula de color y rampa en escala de grises en un monitor). Iluminación difusa y estable.\nPython 3.12 con: opencv-python y numpy. No use otras librerías de imagen/visualización.\n\n\n\n\n\n\nMontaje de escena (iluminación constante). Fondo neutro; evitar brillos especulares.\n\nConjunto A (referencia, 8 bits sin pérdidas). Guardar una imagen nítida y bien expuesta en PNG/TIFF.\n\nConjunto B (bracketing de exposición). ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nMantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB confunden los análisis de profundidad de bit y espacio de color.\n\n\n\n\n\n\n\nCargar la imagen de referencia. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.\n\nEstimar el uso efectivo de bits contando valores distintos por canal.\nCuente cuantos pixeles hay, por cada canal y nivel del canal\n\n\n\n\n\n-Explique que es el error cuadrático medio (MSE, por sus siglas en inglés) y la relación señal a rudio pico (PSNR, por sus siglas en inglés), Cuantice la imagen BGR de referencia a \\(b\\in\\{1,2,\\dots,7\\}\\) bits (por canal). Para cada \\(b\\):\n\nCalcule \\(\\mathrm{MSE}\\) y \\(\\mathrm{PSNR}\\) respecto a la referencia ($b=8).\nGenere y guarde la imagen cuantizada y un mapa de error visual (colormap).\n\n\n\n\n\n\nConvertir la imagen de referencia a HSV, Lab y YCrCb (OpenCV).\n\nCuantizar solo un canal a \\(b\\in\\{2,4\\}\\) (mantener los otros en 8 bits), revertir a BGR y guardar resultados.\n\nComparar perceptualmente artefactos entre cuantizar luminancia (Y) y crominancias (Cr/Cb), y entre canales de HSV/Lab.\n\n\n\n\n\n\nInforme Latex (PDF) con:\n\nProtocolo de adquisición, metadatos y fotos de la escena.\n\nResultados de Actividades 1–3 (figuras, histogramas, tablas).\n\nTabla que resuma qué espacio/canal soporta mayor cuantización con artefactos mínimos (justifique).\n\nTabla con MSE vs. \\(b\\) (sin PSNR).\n\n\nCarpeta reproducible con código e imágenes originales (preferir PNG/TIFF).\n\n\n\n\n\nFormato: 10 minutos de presentación + 2–3 minutos de preguntas. Puntuación total: 100 puntos.\n\n\n\n\n\n\n\n\n\n\n\nCriterio\nPeso\nExcelente (A) (7puntos)\nBueno (B) (5puntos)\nA mejorar (C) (3puntos)\nInsuficiente (D/E) (0puntos)\n\n\n\n\nEstructura y narrativa\n15\nObjetivo, método y resultados se articulan con coherencia; introducción y cierre precisos en tiempo.\nSecuencia mayormente clara con leves transiciones débiles.\nOrden irregular; faltan transiciones clave.\nDesorganizada; propósito no se comprende.\n\n\nRigor técnico\n25\nDefiniciones y ecuaciones (\\(L=2^{b}\\), \\(\\Delta\\), \\(\\mathrm{MSE}\\)) correctas; supuestos declarados y validados.\nMenores imprecisiones sin afectar conclusiones.\nVarias imprecisiones o supuestos no justificados.\nErrores conceptuales graves o confusión sostenida.\n\n\nMetodología y adquisición\n15\nParámetros de cámara controlados; protocolo replicable; evidencia fotográfica clara.\nControl adecuado con una omisión menor.\nControl parcial; documentación incompleta.\nSin control de variables; documentación escasa.\n\n\nAnálisis y resultados\n20\nComparaciones entre espacios (HSV/Lab/YCrCb) con figuras pertinentes; conclusiones sustentadas.\nAnálisis correcto pero poco profundo o con pocas figuras.\nAnálisis superficial; conclusiones poco justificadas.\nSin análisis; afirmaciones sin evidencia.\n\n\nVisualización\n10\nFiguras legibles, ejes/leyendas correctas (en imágenes generadas con OpenCV); mapas de error bien presentados.\nVisualización adecuada con detalles mejorables.\nGráficos confusos o mal rotulados.\nVisualizaciones ausentes o incorrectas.\n\n\nGestión del tiempo\n10\nCulmina en 9–10 min; distribuye tiempo equilibradamente.\nLeve desviación (±1 min).\nDesviación moderada (±2 min).\nDesviación severa (&gt;±2 min) o no concluye.\n\n\nClaridad y comunicación\n5\nLenguaje técnico claro, voz y ritmo adecuados, contacto visual.\nGeneralmente claro con momentos de ambigüedad.\nDificultades frecuentes de expresión.\nIncomprensible o lectura de diapositivas.\n\n\n\nRecomendaciones de preparación (no evaluadas, pero sugeridas):\n- Ensayar con cronómetro (marcas en 3–6–9 min).\n- Limitar texto por diapositiva; priorizar comparativas claras (antes/después, por espacio y por \\(b\\)).\n- Anticipar dos preguntas técnicas (supuestos y limitaciones)."
+    "text": "Al finalizar, el estudiante será capaz de:\n1. Explicar la relación entre la profundidad de bit \\(b\\), los niveles representables \\(L=2^{b}\\) y el paso de cuantización \\(\\Delta\\) en una imagen digital.\n2. Adquirir y documentar imágenes bajo condiciones controladas para analizar rango dinámico, histogramas y artefactos de cuantización (banding, posterización).\n3. Convertir imágenes RGB a espacios HSV, CIE L*a*b* y Y’CrCb (formato OpenCV) e interpretar la semántica de canales e histogramas.\n4. Cuantizar imágenes a distintas profundidades de bit y evaluar distorsión con \\(\\mathrm{MSE}\\); discutir perceptualmente los cambios.\n5. Justificar la elección de espacio de color según la tarea (robustez a iluminación, segmentación, compresión) con evidencia cualitativa y cuantitativa.\n\n\n\n\n\nCuantización. Para una señal \\(x\\in[X_{\\min},X_{\\max}]\\), la cuantización uniforme escalar con \\(b\\) bits tiene \\(L=2^{b}\\) niveles y paso \\(\\Delta=\\dfrac{X_{\\max}-X_{\\min}}{L}\\). El error de cuantización \\(e=x-\\hat{x}\\in[-\\Delta/2,\\Delta/2]\\) (mid-tread).\nRango dinámico. En \\(b\\) bits sin signo: \\([0,\\,2^{b}-1]\\) (en 8 bits: \\([0,255]\\)).\nEspacios de color (OpenCV).\n\nBGR (lectura por defecto en OpenCV).\nHSV: cv2.COLOR_BGR2HSV (H en [0,179] para uint8).\nLab: cv2.COLOR_BGR2LAB (uint8: \\(L^\\*\\in[0,255]\\), \\(a^\\*,b^\\*\\approx[0,255]\\) con 128 ≈ neutro).\nYCrCb: cv2.COLOR_BGR2YCrCb (orden de cromas: Y, Cr, Cb).\n\n\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nOpenCV trabaja en BGR (no RGB) cuando lee/escribe imágenes con cv2.imread y cv2.imwrite. Para mostrar correctamente en archivos guardados, no es necesario convertir a RGB; sin embargo, documente siempre el orden de canales.\n\n\n\n\n\n\n\n\nCámara de teléfono u ordenador. Fijar ISO, tiempo de exposición y balance de blancos. Preferir PNG/TIFF (sin pérdidas); si es posible, capturar RAW+JPEG.\nEscena estática con colores saturados y neutros (p. ej., cuadrícula de color y rampa en escala de grises en un monitor). Iluminación difusa y estable.\nPython 3.12 con: opencv-python y numpy. No use otras librerías de imagen/visualización.\n\n\n\n\n\n\nMontaje de escena (iluminación constante). Fondo neutro; evitar brillos especulares.\nConjunto A (referencia, 8 bits sin pérdidas). Guardar una imagen nítida y bien expuesta en PNG/TIFF.\nConjunto B (bracketing de exposición). ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nMantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB confunden los análisis de profundidad de bit y espacio de color.\n\n\n\n\n\n\n\nCargar la imagen de referencia. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.\nEstimar el uso efectivo de bits contando valores distintos por canal.\nCuente cuantos pixeles hay, por cada canal y nivel del canal\n\n\n\n\n\n-Explique que es el error cuadrático medio (MSE, por sus siglas en inglés) y la relación señal a rudio pico (PSNR, por sus siglas en inglés), Cuantice la imagen BGR de referencia a \\(b\\in\\{1,2,\\dots,7\\}\\) bits (por canal). Para cada \\(b\\):\n\nCalcule \\(\\mathrm{MSE}\\) y \\(\\mathrm{PSNR}\\) respecto a la referencia (\\(b=8\\)).\nGenere y guarde la imagen cuantizada y un mapa de error visual (colormap).\n\n\n\n\n\n\nConvertir la imagen de referencia a HSV, Lab y YCrCb (OpenCV).\nCuantizar solo un canal a \\(b\\in\\{2,4\\}\\) (mantener los otros en 8 bits), revertir a BGR y guardar resultados.\nComparar perceptualmente artefactos entre cuantizar luminancia (Y) y crominancias (Cr/Cb), y entre canales de HSV/Lab.\n\n\n\n\n\n\nInforme Latex (PDF) con:\n\nProtocolo de adquisición, metadatos y fotos de la escena.\nResultados de Actividades 1–3 (figuras, histogramas, tablas).\nTabla que resuma qué espacio/canal soporta mayor cuantización con artefactos mínimos (justifique).\nTabla con MSE vs. \\(b\\) (sin PSNR).\n\nCarpeta reproducible con código e imágenes originales (preferir PNG/TIFF).\n\n\n\n\n\nFormato: 10 minutos de presentación + 2–3 minutos de preguntas. Puntuación total: 100 puntos.\n\n\n\n\n\n\n\n\n\n\n\nCriterio\nPeso\nExcelente (A) (7puntos)\nBueno (B) (5puntos)\nA mejorar (C) (3puntos)\nInsuficiente (D/E) (0puntos)\n\n\n\n\nEstructura y narrativa\n15\nObjetivo, método y resultados se articulan con coherencia; introducción y cierre precisos en tiempo.\nSecuencia mayormente clara con leves transiciones débiles.\nOrden irregular; faltan transiciones clave.\nDesorganizada; propósito no se comprende.\n\n\nRigor técnico\n25\nDefiniciones y ecuaciones (\\(L=2^{b}\\), \\(\\Delta\\), \\(\\mathrm{MSE}\\)) correctas; supuestos declarados y validados.\nMenores imprecisiones sin afectar conclusiones.\nVarias imprecisiones o supuestos no justificados.\nErrores conceptuales graves o confusión sostenida.\n\n\nMetodología y adquisición\n15\nParámetros de cámara controlados; protocolo replicable; evidencia fotográfica clara.\nControl adecuado con una omisión menor.\nControl parcial; documentación incompleta.\nSin control de variables; documentación escasa.\n\n\nAnálisis y resultados\n20\nComparaciones entre espacios (HSV/Lab/YCrCb) con figuras pertinentes; conclusiones sustentadas.\nAnálisis correcto pero poco profundo o con pocas figuras.\nAnálisis superficial; conclusiones poco justificadas.\nSin análisis; afirmaciones sin evidencia.\n\n\nVisualización\n10\nFiguras legibles, ejes/leyendas correctas (en imágenes generadas con OpenCV); mapas de error bien presentados.\nVisualización adecuada con detalles mejorables.\nGráficos confusos o mal rotulados.\nVisualizaciones ausentes o incorrectas.\n\n\nGestión del tiempo\n10\nCulmina en 9–10 min; distribuye tiempo equilibradamente.\nLeve desviación (±1 min).\nDesviación moderada (±2 min).\nDesviación severa (&gt;±2 min) o no concluye.\n\n\nClaridad y comunicación\n5\nLenguaje técnico claro, voz y ritmo adecuados, contacto visual.\nGeneralmente claro con momentos de ambigüedad.\nDificultades frecuentes de expresión.\nIncomprensible o lectura de diapositivas.\n\n\n\nRecomendaciones de preparación (no evaluadas, pero sugeridas):\n- Ensayar con cronómetro (marcas en 3–6–9 min).\n- Limitar texto por diapositiva; priorizar comparativas claras (antes/después, por espacio y por \\(b\\)).\n- Anticipar dos preguntas técnicas (supuestos y limitaciones)."
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#resultados-de-aprendizaje",
@@ -4281,7 +4281,7 @@
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#conceptos-clave-conciso",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "Cuantización. Para una señal \\(x\\in[X_{\\min},X_{\\max}]\\), la cuantización uniforme escalar con \\(b\\) bits tiene \\(L=2^{b}\\) niveles y paso \\(\\Delta=\\dfrac{X_{\\max}-X_{\\min}}{L}\\). El error de cuantización \\(e=x-\\hat{x}\\in[-\\Delta/2,\\Delta/2]\\) (mid-tread).\nRango dinámico. En \\(b\\) bits sin signo: \\([0,\\,2^{b}-1]\\) (en 8 bits: \\([0,255]\\)).\nEspacios de color (OpenCV).\n\nBGR (lectura por defecto en OpenCV).\n\nHSV: cv2.COLOR_BGR2HSV (H en [0,179] para uint8).\n\nLab: cv2.COLOR_BGR2LAB (uint8: \\(L^\\*\\in[0,255]\\), \\(a^\\*,b^\\*\\approx[0,255]\\) con 128 ≈ neutro).\n\nYCrCb: cv2.COLOR_BGR2YCrCb (orden de cromas: Y, Cr, Cb).\n\n\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nOpenCV trabaja en BGR (no RGB) cuando lee/escribe imágenes con cv2.imread y cv2.imwrite. Para mostrar correctamente en archivos guardados, no es necesario convertir a RGB; sin embargo, documente siempre el orden de canales."
+    "text": "Cuantización. Para una señal \\(x\\in[X_{\\min},X_{\\max}]\\), la cuantización uniforme escalar con \\(b\\) bits tiene \\(L=2^{b}\\) niveles y paso \\(\\Delta=\\dfrac{X_{\\max}-X_{\\min}}{L}\\). El error de cuantización \\(e=x-\\hat{x}\\in[-\\Delta/2,\\Delta/2]\\) (mid-tread).\nRango dinámico. En \\(b\\) bits sin signo: \\([0,\\,2^{b}-1]\\) (en 8 bits: \\([0,255]\\)).\nEspacios de color (OpenCV).\n\nBGR (lectura por defecto en OpenCV).\nHSV: cv2.COLOR_BGR2HSV (H en [0,179] para uint8).\nLab: cv2.COLOR_BGR2LAB (uint8: \\(L^\\*\\in[0,255]\\), \\(a^\\*,b^\\*\\approx[0,255]\\) con 128 ≈ neutro).\nYCrCb: cv2.COLOR_BGR2YCrCb (orden de cromas: Y, Cr, Cb).\n\n\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nOpenCV trabaja en BGR (no RGB) cuando lee/escribe imágenes con cv2.imread y cv2.imwrite. Para mostrar correctamente en archivos guardados, no es necesario convertir a RGB; sin embargo, documente siempre el orden de canales."
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#materiales",
@@ -4295,35 +4295,35 @@
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#protocolo-de-adquisición-documentar-en-el-informe",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "Montaje de escena (iluminación constante). Fondo neutro; evitar brillos especulares.\n\nConjunto A (referencia, 8 bits sin pérdidas). Guardar una imagen nítida y bien expuesta en PNG/TIFF.\n\nConjunto B (bracketing de exposición). ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nMantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB confunden los análisis de profundidad de bit y espacio de color."
+    "text": "Montaje de escena (iluminación constante). Fondo neutro; evitar brillos especulares.\nConjunto A (referencia, 8 bits sin pérdidas). Guardar una imagen nítida y bien expuesta en PNG/TIFF.\nConjunto B (bracketing de exposición). ±1 y ±2 EV respecto a la referencia para discutir recorte (clipping) vs. cuantización.\n\n\n\n\n\n\n\nAdvertencia\n\n\n\nMantenga fijos los parámetros de cámara entre capturas. Cambios en ISO o WB confunden los análisis de profundidad de bit y espacio de color."
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#actividad-1-exploración-inicial-y-chequeos",
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#actividad-1-exploración-inicial-y-chequeos",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "Cargar la imagen de referencia. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.\n\nEstimar el uso efectivo de bits contando valores distintos por canal.\nCuente cuantos pixeles hay, por cada canal y nivel del canal"
+    "text": "Cargar la imagen de referencia. Inspeccionar forma, dtype, mínimos/máximos usando únicamente OpenCV.\nEstimar el uso efectivo de bits contando valores distintos por canal.\nCuente cuantos pixeles hay, por cada canal y nivel del canal"
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#actividad-2-reducción-de-profundidad-de-bit-y-calidad-mse",
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#actividad-2-reducción-de-profundidad-de-bit-y-calidad-mse",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "-Explique que es el error cuadrático medio (MSE, por sus siglas en inglés) y la relación señal a rudio pico (PSNR, por sus siglas en inglés), Cuantice la imagen BGR de referencia a \\(b\\in\\{1,2,\\dots,7\\}\\) bits (por canal). Para cada \\(b\\):\n\nCalcule \\(\\mathrm{MSE}\\) y \\(\\mathrm{PSNR}\\) respecto a la referencia ($b=8).\nGenere y guarde la imagen cuantizada y un mapa de error visual (colormap)."
+    "text": "-Explique que es el error cuadrático medio (MSE, por sus siglas en inglés) y la relación señal a rudio pico (PSNR, por sus siglas en inglés), Cuantice la imagen BGR de referencia a \\(b\\in\\{1,2,\\dots,7\\}\\) bits (por canal). Para cada \\(b\\):\n\nCalcule \\(\\mathrm{MSE}\\) y \\(\\mathrm{PSNR}\\) respecto a la referencia (\\(b=8\\)).\nGenere y guarde la imagen cuantizada y un mapa de error visual (colormap)."
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#actividad-3-transformaciones-de-espacio-de-color-y-semántica-de-canales",
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#actividad-3-transformaciones-de-espacio-de-color-y-semántica-de-canales",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "Convertir la imagen de referencia a HSV, Lab y YCrCb (OpenCV).\n\nCuantizar solo un canal a \\(b\\in\\{2,4\\}\\) (mantener los otros en 8 bits), revertir a BGR y guardar resultados.\n\nComparar perceptualmente artefactos entre cuantizar luminancia (Y) y crominancias (Cr/Cb), y entre canales de HSV/Lab."
+    "text": "Convertir la imagen de referencia a HSV, Lab y YCrCb (OpenCV).\nCuantizar solo un canal a \\(b\\in\\{2,4\\}\\) (mantener los otros en 8 bits), revertir a BGR y guardar resultados.\nComparar perceptualmente artefactos entre cuantizar luminancia (Y) y crominancias (Cr/Cb), y entre canales de HSV/Lab."
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#entregables",
     "href": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#entregables",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "",
-    "text": "Informe Latex (PDF) con:\n\nProtocolo de adquisición, metadatos y fotos de la escena.\n\nResultados de Actividades 1–3 (figuras, histogramas, tablas).\n\nTabla que resuma qué espacio/canal soporta mayor cuantización con artefactos mínimos (justifique).\n\nTabla con MSE vs. \\(b\\) (sin PSNR).\n\n\nCarpeta reproducible con código e imágenes originales (preferir PNG/TIFF)."
+    "text": "Informe Latex (PDF) con:\n\nProtocolo de adquisición, metadatos y fotos de la escena.\nResultados de Actividades 1–3 (figuras, histogramas, tablas).\nTabla que resuma qué espacio/canal soporta mayor cuantización con artefactos mínimos (justifique).\nTabla con MSE vs. \\(b\\) (sin PSNR).\n\nCarpeta reproducible con código e imágenes originales (preferir PNG/TIFF)."
   },
   {
     "objectID": "laboratorios/PSIM/lab002_adquisicion_bit_color.html#rúbrica-de-evaluación-para-exposiciones-orales-10-minutos",
@@ -11863,5 +11863,600 @@
     "title": "Laboratorio (hands-on): Reconstrucción básica de una radiografía (Beer–Lambert + haz paralelo)",
     "section": "Apéndice (opcional): exportar figuras a PNG",
     "text": "Apéndice (opcional): exportar figuras a PNG\nSi necesitas entregar archivos, usa savefig.\nNo es obligatorio si todo queda visible en el HTML.\n\n\nCódigo\n# Ejemplo (descomenta si quieres guardar):\n# plt.figure()\n# plt.imshow(mu_est, cmap=\"gray\")\n# plt.axis(\"off\")\n# plt.title(\"Phantom del estudiante\")\n# plt.savefig(\"phantom_est.png\", dpi=150, bbox_inches=\"tight\")\n# plt.close()"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#introducción-y-fundamentos",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#introducción-y-fundamentos",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Introducción y Fundamentos",
+    "text": "Introducción y Fundamentos\n\nDefinición: Técnica de escaneo no invasiva para la reconstrucción tridimensional de la estructura interna de un objeto iluminado con rayos X.\nUnidades de Información:\n\nPíxel: Pequeño cuadrado en una imagen bidimensional que guarda un número de intensidad.\nVóxel: Elemento de volumen (“píxel en 3D”) que representa la atenuación de una región específica.\n\nPrincipio Físico: Medición de fenómenos como la atenuación, dispersión y difracción resultantes de la interacción con el objeto."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#geometría-del-sistema-de-adquisición",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#geometría-del-sistema-de-adquisición",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Geometría del Sistema de Adquisición",
+    "text": "Geometría del Sistema de Adquisición\nComponentes Principales\n\nGantry: Estructura circular donde se montan la fuente y los detectores; su giro permite mediciones desde múltiples ángulos.\nTubo de Rayos X: Genera el haz cuya energía se controla por voltaje (kV) y la cantidad de fotones por corriente (mA).\nColimador: Conjunto de láminas que restringen el haz, definen el espesor de corte y controlan la radiación dispersa.\nFiltro de Forma: Ajusta la intensidad del haz según la anatomía para equilibrar la señal recibida por el detector."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#configuraciones-del-haz-de-radiación",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#configuraciones-del-haz-de-radiación",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Configuraciones del Haz de Radiación",
+    "text": "Configuraciones del Haz de Radiación\nLa disposición geométrica es fundamental para el modelo de reconstrucción:\n\nHaz Paralelo: Modelo matemático donde todos los rayos son paralelos entre sí; ideal para fines didácticos.\nHaz en Abanico (Fan-Beam): La fuente emite rayos que se abren en un plano; típico de sistemas multidetector modernos.\nHaz en Cono (Cone-Beam): El haz se abre en dirección transversal y longitudinal; permite cubrir grandes volúmenes rápidamente.\n\n[Image of CT scanning geometries: parallel, fan, and cone beam]"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#métodos-de-adquisición-de-imagen",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#métodos-de-adquisición-de-imagen",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Métodos de Adquisición de Imagen",
+    "text": "Métodos de Adquisición de Imagen\n\n\n\n\n\n\n\n\nMétodo\nPrincipio Físico\nAplicación\n\n\n\n\nTransmisión\nAtenuación según Ley de Lambert-Beer\nClínica estándar, control de calidad\n\n\nContraste de Fase\nCambios de fase (índice de refracción)\nBioestructuras de bajo contraste\n\n\nDoble Energía (DECT)\nMedición a dos niveles de energía (kVp)\nDetección de explosivos y diferenciación tisular\n\n\nDifracción/Dispersión\nPropiedades de interferencia y Bragg\nCiencia de materiales y oncología"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#proyecciones-y-sinograma",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#proyecciones-y-sinograma",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Proyecciones y Sinograma",
+    "text": "Proyecciones y Sinograma\n\nProyección: Conjunto de mediciones de atenuación acumulada a lo largo de trayectorias lineales para un ángulo fijo.\nTransformada de Radon: Puente conceptual que describe la obtención de proyecciones a partir de un mapa de atenuación \\(f(x,y)\\). \\[R\\{f\\}(\\theta, s) = \\int_{L} f(x, y) ds\\]\nSinograma: Matriz organizada de proyecciones (ángulo vs. canal). Es la “memoria” de la adquisición donde se detectan errores de movimiento o calibración."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-analítica-fbp",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-analítica-fbp",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Reconstrucción Analítica: FBP",
+    "text": "Reconstrucción Analítica: FBP\nLa Retroproyección Filtrada (FBP) es el algoritmo clásico basado en el análisis de Fourier:\n\nFiltrado: Antes de retroproyectar, se procesa cada proyección para compensar la borrosidad inherente (filtro rampa).\nRetroproyección: Se “reparte” el valor medido a lo largo de la trayectoria del rayo en la imagen.\nVentanas: Funciones de suavizado que limitan las altas frecuencias para controlar el ruido sin perder excesiva nitidez."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-iterativa-ir",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-iterativa-ir",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Reconstrucción Iterativa (IR)",
+    "text": "Reconstrucción Iterativa (IR)\nFamilia de métodos que obtienen la imagen mediante aproximaciones sucesivas:\n\nCiclo Iterativo: Propuesta de imagen \\(\\to\\) Proyección hacia adelante (simulación) \\(\\to\\) Comparación con datos reales \\(\\to\\) Ajuste.\nVentajas:\n\nPermite reducir la dosis de radiación manteniendo la calidad de imagen.\nIncorpora modelos físicos detallados del sistema y del ruido.\nReduce artefactos donde los métodos analíticos fallan."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#adquisición-helicoidal-y-pitch",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#adquisición-helicoidal-y-pitch",
+    "title": "Tomografía Computarizada: Adquisición, Geometría y Reconstrucción",
+    "section": "Adquisición Helicoidal y Pitch",
+    "text": "Adquisición Helicoidal y Pitch\n\nMecánica: Giro continuo del gantry mientras la mesa avanza longitudinalmente, generando una trayectoria en hélice.\nPitch: Parámetro que define la relación entre el avance de la mesa y la colimación del haz."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#propósito-de-la-sesión",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#propósito-de-la-sesión",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Propósito de la sesión",
+    "text": "Propósito de la sesión\nEsta presentación busca construir una comprensión operativa (sin depender de matemáticas avanzadas) de:\n\nQué mide realmente un escáner de tomografía axial computarizada y por qué no “fotografía” el interior.\n\n\nCómo la geometría y la adquisición (fuente, detectores, giro y mesa) determinan la calidad de la información.\n\n\nCómo se reconstruye una imagen a partir de proyecciones (sinograma, retroproyección filtrada y reconstrucción iterativa).\n\n\nQué compromisos gobiernan calidad de imagen, artefactos y prácticas seguras de dosis.\n\nFuentes: PDF 1 (reporte “Tomografía axial computarizada: geometría, adquisición y reconstrucción explicadas desde cero”), p. 4–30; PDF 2 (artículo Tecnura 2016), p. 1–17."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#fuentes-analizadas-y-regla-de-fidelidad",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#fuentes-analizadas-y-regla-de-fidelidad",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Fuentes analizadas y regla de fidelidad",
+    "text": "Fuentes analizadas y regla de fidelidad\nTrabajamos solo con dos documentos:\n\nPDF 1: Documento pedagógico que explica desde cero geometría, adquisición, sinograma, reconstrucción, artefactos y dosimetría. (PDF 1, p. 4–30)\n\n\nPDF 2: Revisión del estado de técnicas de tomografía computarizada: métodos de adquisición, generaciones de escáneres, aplicaciones y un caso de simulación. (PDF 2, p. 1–17)\n\n\nRegla de fidelidad: no se inventan cifras, resultados, referencias ni conclusiones. Si hay vacíos, se declara explícitamente."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#qué-es-tomografía-axial-computarizada-y-por-qué-cortes",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#qué-es-tomografía-axial-computarizada-y-por-qué-cortes",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Qué es tomografía axial computarizada y por qué “cortes”",
+    "text": "Qué es tomografía axial computarizada y por qué “cortes”\nLa tomografía axial computarizada es un método para ver el interior del cuerpo usando rayos X y un computador, produciendo cortes (secciones) que pueden apilarse para formar un volumen.\n\nPíxel: cuadrado pequeño de una imagen bidimensional; guarda un número por posición.\n\n\nVóxel: “píxel en tres dimensiones”; bloque pequeño del volumen; guarda un número relacionado con la atenuación de rayos X.\n\n\nIdea clave: el sistema adquiere “sombras” desde muchos ángulos y luego reconstruye el interior a partir de esas mediciones.\n\nFuente: PDF 1, p. 4–5."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#qué-mide-realmente-el-sistema",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#qué-mide-realmente-el-sistema",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Qué mide realmente el sistema",
+    "text": "Qué mide realmente el sistema\nEl detector mide intensidad de radiación recibida después de atravesar el paciente: llega menos radiación cuando el material atenúa más (por ejemplo, hueso) y llega más cuando atenúa menos (por ejemplo, aire).\n\nLa tomografía axial computarizada no mide “órganos” directamente: mide debilitamiento del haz a lo largo de trayectorias y desde muchos ángulos.\n\n\nEl “rompecabezas” se resuelve en reconstrucción: una imagen es aquella que explica esas mediciones.\n\nFuente: PDF 1, p. 5."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#componentes-del-escáner-mirada-geométrica",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#componentes-del-escáner-mirada-geométrica",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Componentes del escáner: mirada geométrica",
+    "text": "Componentes del escáner: mirada geométrica\n\nGantry: estructura circular que sostiene fuente y detectores y gira alrededor del paciente.\n\n\nFuente de rayos X: genera radiación; la energía del haz se controla principalmente con el voltaje del tubo (en kilovoltios). La cantidad emitida se controla con corriente y tiempo (producto corriente–tiempo).\n\n\nColimador: “puertas” que restringen el haz; define espesor de corte y ayuda a controlar radiación dispersa.\n\n\nFiltro de forma: ajusta la intensidad del haz según la anatomía para equilibrar señal en el detector.\n\n\nMesa y centrado: el centrado afecta caminos del haz, calidad y dosis; la mesa puede quedarse quieta (por pasos) o moverse (helicoidal).\n\nFuente: PDF 1, p. 5–7."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#circuito-mental-del-sistema-completo-diagrama",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#circuito-mental-del-sistema-completo-diagrama",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Circuito mental del sistema completo (diagrama)",
+    "text": "Circuito mental del sistema completo (diagrama)\n\n\n\n\n\nflowchart LR\n  A[Fuente de rayos X] --&gt; B[Colimador: define grosor y ancho del haz]\n  B --&gt; C[Paciente: el haz se atenúa]\n  C --&gt; D[Detectores: miden intensidad recibida]\n  D --&gt; E[Computador: organiza mediciones]\n  E --&gt; F[Reconstrucción: imagen de corte / volumen]\n  G[Gantry: gira] --- A\n  G --- D\n  H[Mesa: posiciona / avanza] --- C\n\n\n\n\n\n\nFuente: “figura mental” descrita en PDF 1, p. 8."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#geometrías-básicas-del-haz",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#geometrías-básicas-del-haz",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Geometrías básicas del haz",
+    "text": "Geometrías básicas del haz\nTres geometrías conceptuales ayudan a entender adquisición y reconstrucción:\n\nHaz paralelo: modelo mental útil para explicar proyecciones y sinogramas (no típico clínico moderno).\n\n\nHaz en abanico: representativo de muchos escáneres; el haz se abre en el plano del corte.\n\n\nHaz en cono: se abre también en dirección longitudinal; aparece con múltiples filas de detectores y añade desafíos de reconstrucción.\n\nFuente: PDF 1, p. 7–8."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#del-detector-a-proyecciones-útiles",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#del-detector-a-proyecciones-útiles",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Del detector a “proyecciones” útiles",
+    "text": "Del detector a “proyecciones” útiles\nEl detector mide intensidad. Para reconstrucción conviene transformar esa intensidad en un dato más lineal, usando el logaritmo.\n\nIntuición: cuando la atenuación acumula reducciones multiplicativas, el logaritmo ayuda a convertirlo en “sumas” de contribuciones a lo largo del camino del rayo.\n\n\nEcuación de referencia usada con frecuencia: \\[\np = -\\ln\\left(\\frac{I}{I_0}\\right)\n\\] donde (I) es la intensidad con paciente e (I_0) sin paciente.\n\nFuente: PDF 1, p. 9."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#qué-es-una-línea-dentro-del-cuerpo",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#qué-es-una-línea-dentro-del-cuerpo",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Qué es una “línea” dentro del cuerpo",
+    "text": "Qué es una “línea” dentro del cuerpo\nCada medición corresponde aproximadamente a un rayo que viaja desde la fuente hasta un detector: una trayectoria casi recta dentro del cuerpo (primera aproximación).\n\nCada rayo entrega “atenuación acumulada” en esa línea.\n\n\nAl repetir para muchos detectores y muchos ángulos se obtiene un conjunto grande de “sumas por líneas” suficiente para reconstruir un corte.\n\nFuente: PDF 1, p. 10."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#distorsiones-del-modelo-ideal",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#distorsiones-del-modelo-ideal",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Distorsiones del modelo ideal",
+    "text": "Distorsiones del modelo ideal\nEn la práctica, la medición no es una suma perfecta por línea debido a:\n\nDispersión: radiación que cambia de dirección y llega al detector por caminos no deseados.\n\n\nPolicromía: el haz tiene un rango de energías; distintos tejidos atenúan distinto según energía.\n\n\nSaturación o no linealidad del detector y movimiento del paciente entre vistas.\n\nFuente: PDF 1, p. 10."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#sinograma-la-fotografía-de-todas-las-mediciones",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#sinograma-la-fotografía-de-todas-las-mediciones",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Sinograma: “la fotografía de todas las mediciones”",
+    "text": "Sinograma: “la fotografía de todas las mediciones”\nUn sinograma es la matriz que resulta de apilar proyecciones a medida que gira el gantry (ángulo versus posición del detector).\n\nCada punto del sinograma corresponde a una medición: un ángulo y un canal del detector.\n\n\nAdemás de servir para reconstrucción, el sinograma ayuda a diagnosticar problemas: movimiento, metal, descalibraciones, etc.\n\nFuente: PDF 1, p. 11–12; PDF 2, p. 10 (sinograma como matriz de adquisición)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#transformada-de-radon-como-puente-conceptual",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#transformada-de-radon-como-puente-conceptual",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Transformada de Radon como puente conceptual",
+    "text": "Transformada de Radon como puente conceptual\nLa transformada de Radon es el nombre formal de la idea:\n\n“Tomar una imagen y convertirla en el conjunto de todas sus sumas por líneas, para muchos ángulos.”\n\n\nReconstruir, conceptualmente, es hacer el camino inverso: recuperar el mapa interno a partir de esas sumas por líneas.\n\nFuente: PDF 1, p. 11–12."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-por-retroproyección-filtrada-idea-central",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-por-retroproyección-filtrada-idea-central",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Reconstrucción por retroproyección filtrada: idea central",
+    "text": "Reconstrucción por retroproyección filtrada: idea central\nLa retroproyección consiste en “pintar de vuelta” lo medido: repartir el valor de cada rayo a lo largo de su trayectoria y sumar sobre ángulos.\n\nProblema: la retroproyección simple produce una imagen borrosa (un “velo” alrededor de bordes).\n\n\nSolución: filtrar cada proyección antes de retroproyectar para compensar esa borrosidad.\n\nFuente: PDF 1, p. 13–14."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#retroproyección-filtrada-como-receta-diagrama",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#retroproyección-filtrada-como-receta-diagrama",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Retroproyección filtrada como receta (diagrama)",
+    "text": "Retroproyección filtrada como receta (diagrama)\n\n\n\n\n\nflowchart TD\n  A[Intensidades medidas] --&gt; B[Transformación a proyecciones: p = -ln(I/I0)]\n  B --&gt; C[Organización por ángulo: sinograma]\n  C --&gt; D[Filtrado de cada proyección: corrige borrosidad]\n  D --&gt; E[Retroproyección: redistribuir sobre líneas de rayos]\n  E --&gt; F[Suma sobre todos los ángulos]\n  F --&gt; G[Corte reconstruido]\n\n\n\n\n\n\nFuente: pasos descritos en PDF 1, p. 15."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#qué-significa-filtrar-aquí-sin-jerga",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#qué-significa-filtrar-aquí-sin-jerga",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Qué significa “filtrar” aquí (sin jerga)",
+    "text": "Qué significa “filtrar” aquí (sin jerga)\nFiltrar es cambiar el contenido de una señal para resaltar unas partes y atenuar otras.\n\nEn una proyección hay cambios suaves (variaciones lentas) y cambios rápidos (bordes y detalles).\n\n\nLa retroproyección filtrada usa un filtro que realza lo que ayuda a recuperar detalles y compensa el “velo” de la retroproyección simple.\n\n\nPara controlar cuánto ruido se amplifica, se usan ventanas que suavizan el filtro en componentes muy rápidas.\n\nFuente: PDF 1, p. 14–15."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-iterativa-intuición-de-ajuste",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-iterativa-intuición-de-ajuste",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Reconstrucción iterativa: intuición de “ajuste”",
+    "text": "Reconstrucción iterativa: intuición de “ajuste”\nLa reconstrucción iterativa construye la imagen por aproximaciones sucesivas:\n\nSe propone una imagen inicial.\n\n\nSe simula qué proyecciones produciría el escáner con esa imagen (proyección hacia adelante).\n\n\nSe compara con lo medido, se calcula error y se actualiza la imagen para reducirlo; se repite.\n\nFuente: PDF 1, p. 16–17; PDF 2, p. 10 (métodos analíticos vs iterativos, en general)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#ciclo-iterativo-como-diagrama",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#ciclo-iterativo-como-diagrama",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Ciclo iterativo como diagrama",
+    "text": "Ciclo iterativo como diagrama\n\n\n\n\n\nflowchart LR\n  A[Imagen inicial] --&gt; B[Simular mediciones (proyección hacia adelante)]\n  B --&gt; C[Comparar con mediciones reales]\n  C --&gt; D[Actualizar imagen para reducir error]\n  D --&gt;|Repetir| B\n  D --&gt; E[Imagen final (criterio de parada)]\n\n\n\n\n\n\nFuente: ciclo descrito en PDF 1, p. 16."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#comparación-conceptual-retroproyección-filtrada-vs-iterativa",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#comparación-conceptual-retroproyección-filtrada-vs-iterativa",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Comparación conceptual: retroproyección filtrada vs iterativa",
+    "text": "Comparación conceptual: retroproyección filtrada vs iterativa\n\n\n\n\n\n\n\n\nPregunta\nRetroproyección filtrada\nReconstrucción iterativa\n\n\n\n\nEnfoque\n“Receta” de filtrar y retroproyectar\nAjuste por iteraciones usando un modelo\n\n\nSupuesto dominante\nModelo más idealizado\nModelo más explícito (geometría, ruido, etc.)\n\n\nVentaja típica\nRapidez y claridad\nMejor manejo de ruido / algunos artefactos (especialmente en dosis reducida)\n\n\nPrecaución\nEl filtrado puede amplificar ruido\nDepende de supuestos; puede verse “demasiado suave” y requiere validación\n\n\n\nFuente: PDF 1, p. 17–18."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-helicoidal-qué-cambia-en-adquisición",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-helicoidal-qué-cambia-en-adquisición",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Tomografía helicoidal: qué cambia en adquisición",
+    "text": "Tomografía helicoidal: qué cambia en adquisición\nEn adquisición helicoidal el gantry gira continuamente mientras la mesa avanza: la trayectoria combinada forma una hélice alrededor del cuerpo.\n\nConsecuencia: los datos de una rotación ya no pertenecen a un único plano; reconstruir un corte exige seleccionar o interpolar datos “alrededor” de esa posición.\n\n\nCompromiso operativo: avance de mesa por giro controla rapidez y redundancia de datos (más avance → más cobertura, pero potencialmente más ruido/artefactos).\n\nFuente: PDF 1, p. 18–20."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#hélice-de-adquisición-esquema-conceptual",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#hélice-de-adquisición-esquema-conceptual",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Hélice de adquisición (esquema conceptual)",
+    "text": "Hélice de adquisición (esquema conceptual)\n\n\n\n\n\nflowchart TB\n  A[Giro del gantry (ángulo)] --&gt; C[Trayectoria helicoidal]\n  B[Avance de mesa (eje longitudinal)] --&gt; C\n  C --&gt; D[Datos no pertenecen a un solo plano]\n  D --&gt; E[Selección / interpolación para reconstruir cortes]\n\n\n\n\n\n\nFuente: explicación conceptual en PDF 1, p. 18–19."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#parámetros-de-adquisición-y-sus-compromisos",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#parámetros-de-adquisición-y-sus-compromisos",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Parámetros de adquisición y sus compromisos",
+    "text": "Parámetros de adquisición y sus compromisos\nLa calidad de imagen depende de compromisos entre nitidez, contraste, ruido, tiempo y dosis.\n\nResolución espacial: detalle pequeño; depende de foco, detectores, geometría, muestreo angular y configuración de reconstrucción (nitidez vs ruido).\n\n\nResolución de contraste: distinguir diferencias sutiles; manda el ruido (más señal reduce ruido; cortes más gruesos promedian y reducen ruido, pero pierden detalle longitudinal).\n\n\nTiempo: rotación, longitud del estudio, avance helicoidal y preparación del paciente; el tiempo afecta artefactos por movimiento.\n\nFuente: PDF 1, p. 20–22."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#energía-del-haz-espesor-de-corte-y-tamaño-del-píxel",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#energía-del-haz-espesor-de-corte-y-tamaño-del-píxel",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Energía del haz, espesor de corte y tamaño del píxel",
+    "text": "Energía del haz, espesor de corte y tamaño del píxel\n\nVoltaje del tubo: energía más alta atraviesa mejor materiales densos, pero puede afectar contraste; energía más baja puede aumentar contraste en ciertos escenarios, pero puede aumentar ruido y endurecimiento del haz si no se compensa.\n\n\nEspesor de corte: cortes delgados mejoran detalle longitudinal pero aumentan ruido; cortes gruesos reducen ruido pero pueden ocultar estructuras finas.\n\n\nCampo de visión y matriz: determinan tamaño del píxel; a igual matriz, un campo de visión mayor implica píxel más grande y potencial pérdida de detalle fino.\n\nFuente: PDF 1, p. 21–22."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#artefactos-comunes-lectura-causaefecto",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#artefactos-comunes-lectura-causaefecto",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Artefactos comunes: lectura causa–efecto",
+    "text": "Artefactos comunes: lectura causa–efecto\nUn artefacto es una estructura visible que no corresponde a anatomía real, sino a limitaciones físicas o inconsistencias del modelo.\n\n\n\n\n\n\n\n\nArtefacto\nCausa (idea simple)\nSeñal típica en imagen\n\n\n\n\nEndurecimiento del haz\nEl haz es policromático; se “pierden” primero fotones de baja energía\nBandas, sombreado, “cuencas” en regiones centrales\n\n\nMovimiento\nLas vistas no ven el mismo objeto estático\nBordes dobles, sombras, borrosidad direccional\n\n\nMetal\nAtenuación extrema; “falta de fotones” y distorsiones\nRayas brillantes y oscuras; pérdida de detalle cercano\n\n\nHelicoidal\nInterpolación difícil (avance alto, cortes delgados)\nPatrones tipo “molinete”\n\n\nAnillo\nCanales del detector con respuesta anómala\nCírculos concéntricos\n\n\nVolumen parcial\nUn vóxel promedia tejidos distintos\nBordes menos definidos; densidades intermedias engañosas\n\n\n\nFuente: PDF 1, p. 22–25."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#recomendaciones-operativas-básicas-frente-a-artefactos",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#recomendaciones-operativas-básicas-frente-a-artefactos",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Recomendaciones operativas básicas frente a artefactos",
+    "text": "Recomendaciones operativas básicas frente a artefactos\n\nMovimiento: instrucciones claras (apnea, evitar tragar), reducir tiempo cuando sea posible, comodidad y sujeción.\n\n\nMetal: si se puede, posicionar fuera del área de interés; usar configuraciones de adquisición/reconstrucción disponibles para metal; interpretar con cautela.\n\n\nAnillo: calibración y control de calidad del equipo; reportar y documentar para mantenimiento.\n\n\nHelicoidal: evitar combinaciones extremas (avance muy alto con cortes muy delgados) si no son necesarias.\n\nFuente: PDF 1, p. 23–25."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#dosimetría-qué-significa-dosis-aquí",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#dosimetría-qué-significa-dosis-aquí",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Dosimetría: qué significa “dosis” aquí",
+    "text": "Dosimetría: qué significa “dosis” aquí\nEn este contexto, dosis es cuánta energía de radiación se deposita en el cuerpo, con potencial aumento de riesgo biológico; por eso debe usarse la mínima necesaria para una imagen útil.\n\nLos equipos reportan indicadores de dosis (útiles para control y comparación), pero la dosis real en órganos depende del paciente y del estudio.\n\nFuente: PDF 1, p. 25–26."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#indicadores-usados-en-práctica",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#indicadores-usados-en-práctica",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Indicadores usados en práctica",
+    "text": "Indicadores usados en práctica\n\nÍndice de dosis de tomografía computarizada por volumen: indicador estandarizado asociado al protocolo, basado en referencia con objeto de prueba (fantoma). Útil para control de calidad y comparación, no es la dosis exacta del paciente.\n\n\nProducto dosis–longitud: combina el indicador por longitud con la longitud total escaneada; crece con estudios más largos y ayuda a vigilar que el barrido sea el necesario.\n\nFuente: PDF 1, p. 26–27."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#práctica-segura-tan-baja-como-sea-razonablemente-posible",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#práctica-segura-tan-baja-como-sea-razonablemente-posible",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Práctica segura: “tan baja como sea razonablemente posible”",
+    "text": "Práctica segura: “tan baja como sea razonablemente posible”\nEl principio de mantener la dosis tan baja como sea razonablemente posible implica:\n\nNo usar más radiación que la necesaria para responder la pregunta clínica.\n\n\nOptimizar protocolo, centrado y longitud de escaneo; evitar repeticiones por mala preparación o movimiento.\n\n\nNo significa bajar dosis “a cualquier costo”: una imagen inútil puede llevar a repetir el estudio.\n\nFuente: PDF 1, p. 27."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#segunda-mirada-pdf-2-alcance-y-enfoque",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#segunda-mirada-pdf-2-alcance-y-enfoque",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Segunda mirada (PDF 2): alcance y enfoque",
+    "text": "Segunda mirada (PDF 2): alcance y enfoque\nEl artículo de Tecnura describe:\n\nMétodos de adquisición basados en fenómenos como atenuación, dispersión, difracción y cambios de fase.\n\n\nArquitecturas de escáner clasificadas en generaciones, según disposición de componentes y movimiento mecánico.\n\n\nGeneralidades de reconstrucción (analítica e iterativa), aplicaciones y un ejemplo de simulación con métricas cuantitativas.\n\nFuente: PDF 2, p. 1–3."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#método-tradicional-tomografía-de-transmisión",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#método-tradicional-tomografía-de-transmisión",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Método tradicional: tomografía de transmisión",
+    "text": "Método tradicional: tomografía de transmisión\nEn tomografía de transmisión se estima la estructura espacial a partir de medidas de atenuación de rayos X al atravesar el objeto, descrita con la ley de Lambert–Beer.\n\nLa reconstrucción busca estimar la distribución de coeficientes de atenuación del objeto.\n\nFuente: PDF 2, p. 3–4."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#métodos-de-adquisición-revisados-en-pdf-2",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#métodos-de-adquisición-revisados-en-pdf-2",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Métodos de adquisición revisados en PDF 2",
+    "text": "Métodos de adquisición revisados en PDF 2\nAdemás de transmisión, el PDF 2 menciona:\n\nTomografía de contraste de fase (usa cambios de fase del haz, transformados en variaciones de intensidad).\n\n\nTomografía de dispersión (reconstruye distribución de densidad de electrones a partir de dispersión en un rango angular).\n\n\nTomografía de difracción (usa patrones de difracción; permite discriminación selectiva de componentes).\n\n\nTomografía de doble energía (dos conjuntos de proyecciones con diferente energía para diferenciación de materiales).\n\n\nTomografía compresiva (aplica muestreo compresivo para reducir medidas, tiempo y dosis; requiere dispersidad en una base adecuada).\n\nFuente: PDF 2, p. 2–8."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#sistemas-de-contraste-de-fase-tabla-resumida",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#sistemas-de-contraste-de-fase-tabla-resumida",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Sistemas de contraste de fase (tabla resumida)",
+    "text": "Sistemas de contraste de fase (tabla resumida)\nResumen fiel de los sistemas descritos:\n\n\n\n\n\n\n\nSistema\nDescripción operacional (según el PDF)\n\n\n\n\nImagen basada en analizador\nUsa cristal asimétrico, cristal analizador y detector; haces monocromatizados; la luz transmitida se difracta en el analizador y se mide.\n\n\nImagen basada en propagación\nUsa franjas de interferencia por propagación en espacio libre (régimen de Fresnel); requiere fuente coherente y detector de alta resolución; se toman imágenes a distintas distancias para determinar fase.\n\n\nImagen basada en rejillas\nLa rejilla en la fuente genera haces espacialmente coherentes; otra rejilla divide haces en dos fuera de fase; el patrón de interferencia se muestrea con una rejilla de absorción frente al detector.\n\n\n\nFuente: PDF 2, p. 4–5 (Tabla 1)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#generaciones-de-escáneres-criterio-de-clasificación",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#generaciones-de-escáneres-criterio-de-clasificación",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Generaciones de escáneres: criterio de clasificación",
+    "text": "Generaciones de escáneres: criterio de clasificación\nEl PDF 2 clasifica siete generaciones por la disposición de fuente y detectores y por el movimiento mecánico requerido para recopilar datos.\n\nNota del propio PDF: el número de generación no implica automáticamente que un sistema sea superior a otro.\n\nFuente: PDF 2, p. 2 y p. 8–9."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#tabla-comparativa-de-generaciones-síntesis",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#tabla-comparativa-de-generaciones-síntesis",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Tabla comparativa de generaciones (síntesis)",
+    "text": "Tabla comparativa de generaciones (síntesis)\n\n\n\n\n\n\n\n\nGeneración\nGeometría / movimiento (descripción del PDF)\nVentaja / desventaja destacada\n\n\n\n\n1 (1970)\nFuente y detector con haz en línea; se mueven alrededor del objeto\nNo capta dispersión / tiempos prolongados\n\n\n2 (1972)\nHaz en abanico a un vector de detectores, restringidos\nNo capta dispersión / tiempos prolongados (menores que 1)\n\n\n3 (1978)\nHaz en abanico cubre región completa a muchos detectores\nPoco movimiento / reduce tiempo\n\n\n4 (1978)\nFuente rotatoria y anillo de detectores estáticos\nÁrea amplia / problemas por dispersión\n\n\n5 (1979)\nDetectores estacionarios; haz de electrones se dispersa sobre ánodo semicircular\nReduce tiempo / campo de visión limitado\n\n\n6 (1987)\nAnillo de deslizamiento permite giro continuo; adquisición helicoidal\nDatos continuos / patrón helicoidal, no secciones completas disponibles\n\n\n7 (1998)\nMatriz de múltiples detectores; haz en cono\nMucha info en poco tiempo / reconstrucción más exigente\n\n\n\nFuente: PDF 2, p. 9 (Tabla 2)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-según-el-pdf-2",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-según-el-pdf-2",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Reconstrucción según el PDF 2",
+    "text": "Reconstrucción según el PDF 2\nEl PDF 2 enmarca la reconstrucción como el cálculo de la estructura del objeto desde medidas de intensidad, generando un sinograma y luego un corte transversal.\n\nMenciona métodos analíticos (con herramientas del análisis de Fourier, teorema de proyecciones y convolución; incluye retroproyección y retroproyección filtrada).\n\n\nMenciona métodos iterativos (método algebraico y métodos estadísticos).\n\nFuente: PDF 2, p. 10."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#comparación-de-métodos-de-adquisición-y-aplicaciones-tabla",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#comparación-de-métodos-de-adquisición-y-aplicaciones-tabla",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Comparación de métodos de adquisición y aplicaciones (tabla)",
+    "text": "Comparación de métodos de adquisición y aplicaciones (tabla)\nTabla basada en la comparación del PDF 2:\n\n\n\n\n\n\n\n\nMétodo\nQué estima (según el PDF)\nEjemplos de aplicaciones listadas\n\n\n\n\nTransmisión\nEstructura espacial desde atenuación\nMedicina, control de calidad, residuos peligrosos, suelos\n\n\nContraste de fase\nEstructura espacial desde cambios de fase\nEstudios médicos, rocas, materiales\n\n\nDispersión\nDistribución de densidad de electrones\nEstudios médicos, materiales cristalinos, detección de enfermedades\n\n\nDifracción\nDiscriminación selectiva por interferencia\nMedicina, biomédica, materiales\n\n\nDoble energía\nDistribución espacial de varios objetos desde atenuaciones con distinta energía\nDetección de explosivos, materiales, medicina\n\n\n\nFuente: PDF 2, p. 12 (Tabla 3)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#aplicaciones-destacadas-en-el-pdf-2",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#aplicaciones-destacadas-en-el-pdf-2",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Aplicaciones destacadas en el PDF 2",
+    "text": "Aplicaciones destacadas en el PDF 2\nEl PDF 2 resume aplicaciones en:\n\nMedicina: diagnóstico, guía de procedimientos y monitoreo; menciona fluoroscopia, visualización tridimensional, angiografía e imágenes cardiacas.\n\n\nGeología: inspección de muestras para exploración; menciona micro y nano tomografía computarizada y ejemplos como porosidad en rocas.\n\n\nIndustria: ensayos no destructivos; detección de explosivos en equipaje; control de calidad; manejo de residuos peligrosos.\n\nFuente: PDF 2, p. 10–11."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#caso-de-simulación-en-el-pdf-2-qué-se-hizo",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#caso-de-simulación-en-el-pdf-2-qué-se-hizo",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Caso de simulación en el PDF 2: qué se hizo",
+    "text": "Caso de simulación en el PDF 2: qué se hizo\nEl PDF 2 describe simulación con una herramienta de tomografía (Astra Tomography Toolbox) para:\n\nGenerar datos sintéticos del objeto y definir geometría de proyección.\n\n\nCalcular proyecciones, formar sinograma y reconstruir.\n\n\nComparar geometrías en paralelo y en abanico, con retroproyección filtrada como algoritmo de reconstrucción del ejemplo.\n\nFuente: PDF 2, p. 12–13."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#caso-de-simulación-parámetros-y-resultado-cuantitativo",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#caso-de-simulación-parámetros-y-resultado-cuantitativo",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Caso de simulación: parámetros y resultado cuantitativo",
+    "text": "Caso de simulación: parámetros y resultado cuantitativo\nParámetros reportados:\n\nImágenes de 128 × 128 píxeles, 256 detectores, 500 ángulos y rango de 360 grados.\n\n\nMétrica usada: relación pico señal a ruido (PSNR), en decibelios.\n\nResultados reportados:\n\nPSNR de 27,81 dB (geometría en paralelo) y 32,47 dB (geometría en abanico), atribuida a diferencias en cantidad de medidas por ángulo en la configuración descrita.\n\nFuente: PDF 2, p. 13."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#contraste-técnico-entre-pdfs-sin-forzar-conciliación",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#contraste-técnico-entre-pdfs-sin-forzar-conciliación",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Contraste técnico entre PDFs (sin forzar conciliación)",
+    "text": "Contraste técnico entre PDFs (sin forzar conciliación)\n\nPDF 1 prioriza explicación desde cero y toma como eje: proyección → sinograma → reconstrucción, con énfasis en geometría clínica y compromisos operativos. (PDF 1, p. 4–28)\n\n\nPDF 2 amplía el panorama a múltiples métodos de adquisición, generaciones de escáner y aplicaciones (incluyendo no médicas), y muestra un ejemplo de simulación con métricas. (PDF 2, p. 1–13)\n\nNo se identifican contradicciones directas en los conceptos centrales; sí diferencias de alcance y nivel de detalle."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#mapa-mental-del-proceso-completo-síntesis-final",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#mapa-mental-del-proceso-completo-síntesis-final",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Mapa mental del proceso completo (síntesis final)",
+    "text": "Mapa mental del proceso completo (síntesis final)\n\n\n\n\n\nflowchart TD\n  A[Geometría y adquisición\\n(fuente, colimación, detectores, gantry, mesa)] --&gt; B[Medición\\n(intensidad en el detector)]\n  B --&gt; C[Transformación\\n(intensidad → proyecciones tipo suma por líneas)]\n  C --&gt; D[Sinograma\\n(ángulo vs canal)]\n  D --&gt; E[Reconstrucción\\n(retroproyección filtrada o iterativa)]\n  E --&gt; F[Imagen\\n(corte / volumen)]\n  F --&gt; G[Evaluación\\n(calidad, artefactos, dosis y prácticas seguras)]\n\n\n\n\n\n\nFuente: síntesis explícita en PDF 1, p. 28 (Conclusiones)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#limitaciones-y-puntos-pendientes",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#limitaciones-y-puntos-pendientes",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Limitaciones y puntos pendientes",
+    "text": "Limitaciones y puntos pendientes\nPendiente técnico: información insuficiente en los PDF adjuntos para completar esta sección.\n(Sección objetivo: valores numéricos de referencia por protocolo para los indicadores de dosis, comparables entre regiones anatómicas y poblaciones; los documentos describen conceptos e indicadores, pero no entregan tablas de valores típicos por protocolo.)"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#referencias-internas-solo-las-contenidas-en-los-pdf",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#referencias-internas-solo-las-contenidas-en-los-pdf",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Referencias internas (solo las contenidas en los PDF)",
+    "text": "Referencias internas (solo las contenidas en los PDF)\n\nPDF 1: Bibliografía básica y glosario incluidos en el propio documento. (PDF 1, p. 28–30)\n\n\nPDF 2: Artículo “Tomografía computarizada: proceso de adquisición, tecnología y estado actual”, Revista Tecnura (2016). DOI: 10.14483/udistrital.jour.tecnura.2016.1.a10 (PDF 2, p. 1)\n\n\nEjemplos de identificadores persistentes citados en PDF 1: DOI 10.1137/1.9780898719284; DOI 10.1364/JOSAA.1.000612; DOI 10.1016/j.jmir.2014.02.002; DOI 10.2214/AJR.14.12590; DOI 10.1177/0146645317717209. (PDF 1, p. 29)"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#cierre-tres-mensajes-clave",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#cierre-tres-mensajes-clave",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Cierre: tres mensajes clave",
+    "text": "Cierre: tres mensajes clave\n\nLa tomografía axial computarizada es una cadena: geometría → medición → sinograma → reconstrucción → evaluación; cada eslabón condiciona el resultado. (PDF 1, p. 28)\n\n\nLa retroproyección filtrada es una solución práctica y rápida; la reconstrucción iterativa puede mejorar ruido y algunos artefactos, especialmente en dosis reducida, pero depende de modelos y validación. (PDF 1, p. 15–18)\n\n\nExisten múltiples métodos de adquisición y arquitecturas; el método de transmisión es el más explotado según la revisión, y hay interés en reducción de tiempo y dosis, incluyendo muestreo compresivo. (PDF 2, p. 13–14)"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#procesado-avanzado-de-imágenes-médicas---paim",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#procesado-avanzado-de-imágenes-médicas---paim",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "# Procesado Avanzado de Imágenes Médicas - PAIM",
+    "text": "# Procesado Avanzado de Imágenes Médicas - PAIM\ntitle: “Tomografía computarizada” subtitle: “Geometría, adquisición, métodos y reconstrucción (síntesis didáctica basada en dos documentos)” author: “Pablo Caicedo” date: 2026-02-24 lang: es format: revealjs: theme: serif slide-number: true transition: fade chalkboard: true controls: true progress: true preview-links: true center: true hash: true navigation-mode: linear history: true pdf-separate-fragments: false html-math-method: mathjax —"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#mapa-de-la-sesión",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#mapa-de-la-sesión",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Mapa de la sesión",
+    "text": "Mapa de la sesión\nHoy vamos a conectar tres ideas, en orden.\n\nGeometría y medición: qué mide el detector y por qué la geometría manda.\nReconstrucción: cómo pasamos de mediciones a cortes (sinograma, retroproyección filtrada y reconstrucción iterativa).\nMétodos y tecnología: métodos de adquisición, generaciones de escáneres, aplicaciones, y preocupaciones prácticas (incluyendo dosis)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#propósito-o-pregunta-central",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#propósito-o-pregunta-central",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Propósito o pregunta central",
+    "text": "Propósito o pregunta central\n¿Cómo un escáner de tomografía computarizada convierte muchas mediciones de rayos X tomadas desde distintos ángulos en una imagen interna en cortes, y cómo cambian el proceso y las implicaciones cuando cambian el método de adquisición o la arquitectura del escáner?"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#qué-mide-realmente-la-tomografía-computarizada",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#qué-mide-realmente-la-tomografía-computarizada",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Qué mide realmente la tomografía computarizada",
+    "text": "Qué mide realmente la tomografía computarizada\nEl detector no “ve” órganos ni tejidos: mide intensidad de radiación que llega después de atravesar el cuerpo.\nCuando una región atenúa mucho (por ejemplo, hueso), llega menos radiación al detector. Cuando atenúa poco (por ejemplo, aire), llega más.\nLa imagen final aparece porque el sistema toma muchas “sombras” desde muchos ángulos y luego reconstruye una explicación interna coherente."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#de-intensidad-a-una-proyección-útil",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#de-intensidad-a-una-proyección-útil",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "De intensidad a una proyección útil",
+    "text": "De intensidad a una proyección útil\nLa atenuación se acumula de forma multiplicativa a lo largo del camino del rayo. Para volverla más “sumable”, el sistema usa una transformación logarítmica que convierte multiplicaciones en sumas.\nUna forma estándar de expresar esa idea (medición idealizada) es:\n\\[\np = -\\ln\\left(\\frac{I}{I_0}\\right)\n\\]\ndonde \\(I\\) es la intensidad medida con el paciente y \\(I_0\\) es la intensidad de referencia sin el paciente.\nInterpretación: \\(p\\) se comporta como una suma a lo largo del camino del rayo de cuánto atenúa cada pequeña región atravesada."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#componentes-del-escáner-enfoque-geométrico",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#componentes-del-escáner-enfoque-geométrico",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Componentes del escáner (enfoque geométrico)",
+    "text": "Componentes del escáner (enfoque geométrico)\nHay un “circuito” físico repetitivo.\nLa estructura giratoria (gantry) rota alrededor del paciente.\nLa fuente de rayos X emite el haz; su energía se controla principalmente con el voltaje del tubo.\nEl colimador da forma al haz y ayuda a limitar irradiación innecesaria y a controlar dispersión.\nUn filtro de forma busca equilibrar señal en el detector (más atenuación en bordes del haz y menos en el centro, según la anatomía).\nLa mesa posiciona al paciente; en adquisición helicoidal avanza mientras el gantry gira."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#geometrías-básicas-del-haz-paralelo-abanico-y-cono",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#geometrías-básicas-del-haz-paralelo-abanico-y-cono",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Geometrías básicas del haz: paralelo, abanico y cono",
+    "text": "Geometrías básicas del haz: paralelo, abanico y cono\n\nHaz paralelo: modelo conceptual útil para entender proyecciones y sinogramas.\nHaz en abanico: representativo de muchos sistemas clínicos para cortes; un abanico en el plano del corte.\nHaz en cono: aparece con múltiples filas de detectores; captura volumen más rápido, pero exige más del proceso de reconstrucción."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#flujo-completo-del-escaneo-a-la-imagen",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#flujo-completo-del-escaneo-a-la-imagen",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Flujo completo: del escaneo a la imagen",
+    "text": "Flujo completo: del escaneo a la imagen\n\n\n\n\n\nflowchart TD\n  A[\"Fuente de rayos X\\n(emisión)\"] --&gt; B[\"Colimación y filtración\\n(forma del haz)\"]\n  B --&gt; C[\"Interacción con el paciente\\n(atenuación, dispersión, policromía)\"]\n  C --&gt; D[\"Detectores\\n(miden intensidad)\"]\n  D --&gt; E[\"Conversión a proyecciones\\n(p = -ln(I/I0))\"]\n  E --&gt; F[\"Organización en sinograma\\n(ángulo vs canal)\"]\n  F --&gt; G[\"Reconstrucción\\n(retroproyección filtrada o iterativa)\"]\n  G --&gt; H[\"Corte reconstruido\\n(píxeles) y volumen\\n(vóxeles)\"]"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#proyección-y-sinograma",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#proyección-y-sinograma",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Proyección y sinograma",
+    "text": "Proyección y sinograma\nUna proyección (para un ángulo fijo) es el conjunto de mediciones de todos los canales del detector, ya transformadas para comportarse como “sumas por líneas”.\nUn sinograma es apilar proyecciones a medida que gira el gantry: una matriz donde un eje es el ángulo y el otro eje es la posición del detector.\nAdemás de ser la “memoria” de la adquisición, el sinograma sirve para entender errores: movimiento, metal o fallas de detector dejan patrones característicos que luego aparecen como artefactos en imagen."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#transformada-de-radon-idea-mínima",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#transformada-de-radon-idea-mínima",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Transformada de Radon (idea mínima)",
+    "text": "Transformada de Radon (idea mínima)\nLa transformada de Radon es el nombre formal para:\n“Tomar una imagen de un corte y convertirla en todas sus sumas por líneas para muchos ángulos”.\nLa reconstrucción busca el camino inverso: recuperar el mapa interno a partir de esas sumas por líneas."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#retroproyección-pintar-de-vuelta-lo-medido",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#retroproyección-pintar-de-vuelta-lo-medido",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Retroproyección: “pintar de vuelta” lo medido",
+    "text": "Retroproyección: “pintar de vuelta” lo medido\nIdea operacional:\nSe toma el valor medido de cada rayo y se reparte a lo largo de la línea por donde pasó ese rayo en el corte. Luego se repite para muchos ángulos y se suman contribuciones.\nEsto reconstruye formas generales, pero deja un efecto sistemático: la imagen sale borrosa (con un “velo”)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#retroproyección-filtrada-por-qué-se-filtra",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#retroproyección-filtrada-por-qué-se-filtra",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Retroproyección filtrada: por qué se filtra",
+    "text": "Retroproyección filtrada: por qué se filtra\nLa retroproyección simple produce borrosidad esperada. Para compensarla, se filtra cada proyección antes de retroproyectar.\nReceta conceptual:\n\nConvertir intensidades a proyecciones.\nFiltrar cada proyección para compensar borrosidad.\nRetroproyectar y sumar sobre ángulos.\n\nEn frecuencia, una forma de expresar la idea del filtro ideal (mínima, conceptual) es que su respuesta se relaciona con \\(|\\omega|\\), lo que equivale a dar más peso a cambios rápidos para recuperar bordes, con control de ruido."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#ventanas-nitidez-versus-ruido",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#ventanas-nitidez-versus-ruido",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Ventanas: nitidez versus ruido",
+    "text": "Ventanas: nitidez versus ruido\nSi se realzan demasiado los componentes “rápidos” (detalles), también se amplifica el ruido.\nPor eso se usan ventanas (suavizados del filtro): controlan el extremo más “agudo” para evitar imágenes demasiado ruidosas.\nConsecuencia práctica: hay un compromiso inevitable entre nitidez y ruido visible."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-iterativa-ciclo-de-ajuste",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-iterativa-ciclo-de-ajuste",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Reconstrucción iterativa: ciclo de ajuste",
+    "text": "Reconstrucción iterativa: ciclo de ajuste\nLa reconstrucción iterativa construye la imagen por aproximaciones.\n\n\n\n\n\nflowchart LR\n  A[\"Imagen inicial\\n(puede ser en blanco)\"] --&gt; B[\"Proyección hacia adelante\\n(simular mediciones)\"]\n  B --&gt; C[\"Comparar con mediciones reales\\n(error)\"]\n  C --&gt; D[\"Actualizar la imagen\\n(reducir error)\"]\n  D --&gt; B\n\n\n\n\n\n\nVentaja conceptual: puede incorporar un modelo más realista del sistema (geometría real, ruido, parte de la física) y estabilizar la imagen, especialmente cuando hay poca señal."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#comparación-retroproyección-filtrada-vs-reconstrucción-iterativa",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#comparación-retroproyección-filtrada-vs-reconstrucción-iterativa",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Comparación: retroproyección filtrada vs reconstrucción iterativa",
+    "text": "Comparación: retroproyección filtrada vs reconstrucción iterativa\n\n\n\n\n\n\n\n\nAspecto\nRetroproyección filtrada\nReconstrucción iterativa\n\n\n\n\nIdea central\nFiltrar proyecciones y retroproyectar\nAjustar una imagen para que reproduzca mediciones\n\n\nFortaleza típica\nRapidez y claridad conceptual\nMejor control de ruido y algunos artefactos (según modelo)\n\n\nCosto computacional\nBajo\nMayor\n\n\nRiesgo conceptual\nFiltrado puede amplificar ruido\nDepende de supuestos del modelo; puede cambiar textura/apariencia"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-helicoidal-qué-cambia",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-helicoidal-qué-cambia",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Tomografía helicoidal: qué cambia",
+    "text": "Tomografía helicoidal: qué cambia\nEn adquisición helicoidal, el gantry gira continuamente mientras la mesa avanza, formando una hélice alrededor del cuerpo.\nConsecuencia clave: los datos ya no pertenecen a un único plano “estático”. Para reconstruir un corte en una posición específica, el sistema debe seleccionar o interpolar datos cercanos.\nCompromiso operacional: si la mesa avanza mucho por giro, se cubre rápido pero con menos redundancia de datos por región; si avanza poco, hay más superposición (más datos por región), con implicaciones en calidad, tiempo y dosis."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#artefactos-comunes-mapa-causaefecto-nivel-conceptual",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#artefactos-comunes-mapa-causaefecto-nivel-conceptual",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Artefactos comunes: mapa causa–efecto (nivel conceptual)",
+    "text": "Artefactos comunes: mapa causa–efecto (nivel conceptual)\n\n\n\n\n\n\n\n\nArtefacto\nCausa dominante (idea)\nEfecto típico en imagen\n\n\n\n\nEndurecimiento del haz\nHaz policromático: se “pierden” primero fotones de baja energía\nBandas / sombreado; “cuencas” en regiones centrales\n\n\nMovimiento\nLas proyecciones no corresponden al mismo objeto estático\nBordes dobles, sombras, borrosidad\n\n\nMetal\nAtenuación extrema y falta de fotones + endurecimiento intensificado\nRayas brillantes y oscuras, pérdida de detalle\n\n\nAnillos\nRespuesta anómala de un canal del detector repetida con la rotación\nCírculos concéntricos\n\n\nVolumen parcial\nUn vóxel mezcla tejidos diferentes y promedia\nBordes menos definidos; densidades intermedias engañosas"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#dosimetría-indicadores-operativos",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#dosimetría-indicadores-operativos",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Dosimetría: indicadores operativos",
+    "text": "Dosimetría: indicadores operativos\nLa dosis (energía depositada por la radiación en el cuerpo) se gestiona con indicadores estandarizados útiles para control y comparación.\n\nEl índice de dosis de tomografía computarizada por volumen resume el nivel de exposición del protocolo en un marco estandarizado.\nEl producto dosis–longitud combina la exposición por longitud con la longitud total escaneada.\nNo son la dosis exacta del paciente porque se basan en objetos de prueba estándar y la dosis real depende del tamaño y anatomía del paciente, además de modulación automática en algunos equipos.\n\nPrincipio operativo: mantener la dosis tan baja como sea razonablemente posible, con calidad suficiente para responder la pregunta clínica."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#métodos-de-adquisición-en-tomografía-computarizada-panorama",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#métodos-de-adquisición-en-tomografía-computarizada-panorama",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Métodos de adquisición en tomografía computarizada: panorama",
+    "text": "Métodos de adquisición en tomografía computarizada: panorama\nEn una revisión se describen métodos basados en distintos fenómenos físicos de interacción de rayos X con el objeto.\n\n\n\n\n\n\n\n\nMétodo\nQué se mide (idea)\nQué se reconstruye (idea)\n\n\n\n\nTransmisión\nAtenuación del haz al atravesar el objeto\nDistribución de coeficientes de atenuación\n\n\nContraste de fase\nCambios de fase (convertidos a variaciones de intensidad)\nEstructura ligada a densidad de electrones (según enfoque)\n\n\nDispersión\nDispersión en un rango angular\nDistribución de densidad de electrones\n\n\nDifracción\nPatrones de difracción; ángulo de Bragg\nDiscriminación selectiva de componentes\n\n\nDoble energía\nAtenuación con dos espectros de energía\nSeparación de contribuciones materiales (según modelo)\n\n\nTomografía compresiva\nMedidas codificadas y reducidas (muestreo por debajo de Nyquist)\nReconstrucción a partir de dispersidad e incoherencia"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-de-transmisión-modelo-mínimo",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-de-transmisión-modelo-mínimo",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Tomografía de transmisión: modelo mínimo",
+    "text": "Tomografía de transmisión: modelo mínimo\nLa intensidad medida depende de cuánto material atraviesa el rayo y de la atenuación local a lo largo de su trayectoria.\nUna forma estándar de escribirlo (modelo idealizado) es:\n\\[\nI = I_0 \\exp\\left(-\\int \\mu(s)\\, ds\\right)\n\\]\nLa reconstrucción busca estimar \\(\\mu(\\cdot)\\), el mapa interno de coeficientes de atenuación, a partir de muchas mediciones desde muchos ángulos."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#contraste-de-fase-índice-de-refracción-y-tres-clases-de-sistemas",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#contraste-de-fase-índice-de-refracción-y-tres-clases-de-sistemas",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Contraste de fase: índice de refracción y tres clases de sistemas",
+    "text": "Contraste de fase: índice de refracción y tres clases de sistemas\nEn contraste de fase, los rayos X se tratan como ondas electromagnéticas y el objeto se describe con un índice de refracción:\n\\[\nn = 1 - \\delta + i\\beta\n\\]\nLa parte asociada a \\(\\beta\\) se relaciona con absorción y la asociada a \\(\\delta\\) con cambios de fase. La reconstrucción puede plantearse usando la información de cambio de fase.\nTabla de clases de sistemas descritas en la revisión:\n\n\n\n\n\n\n\nSistema\nDescripción (síntesis)\n\n\n\n\nImagen basada en analizador\nUsa cristal(es) para analizar desviaciones y medir en detector\n\n\nImagen basada en propagación\nDepende de interferencia en propagación libre; requiere coherencia y detector de alta resolución; serie de distancias\n\n\nImagen basada en rejillas\nRejillas convierten haz incoherente en haces coherentes; patrón de interferencia se muestrea con rejilla de absorción frente al detector"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#difracción-idea-y-rol-del-ángulo-de-bragg",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#difracción-idea-y-rol-del-ángulo-de-bragg",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Difracción: idea y rol del ángulo de Bragg",
+    "text": "Difracción: idea y rol del ángulo de Bragg\nLa tomografía por difracción mide desviaciones del haz por interacción con el objeto y permite discriminar selectivamente componentes al fijar un ángulo de Bragg que produzca un pico de interferencia.\nLa reconstrucción se plantea a partir de patrones de difracción, usualmente bajo supuestos simplificadores para hacer el problema tratable."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#dispersión-reconstruir-densidad-de-electrones",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#dispersión-reconstruir-densidad-de-electrones",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Dispersión: reconstruir densidad de electrones",
+    "text": "Dispersión: reconstruir densidad de electrones\nParte de los fotones se desvían de su dirección original dentro del tejido. La dirección e intensidad de esos fotones dispersados se relaciona con la distribución interna.\nLa tomografía por dispersión se plantea como reconstrucción de la distribución de densidad de electrones a partir de la dispersión medida dentro de un rango angular específico."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#doble-energía-dos-espectros-más-información-material",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#doble-energía-dos-espectros-más-información-material",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Doble energía: dos espectros, más información material",
+    "text": "Doble energía: dos espectros, más información material\nEn el rango típico clínico (decenas a cientos de kilo-electrón-voltios), se destaca la influencia de dispersión Compton y efecto fotoeléctrico, con dependencias en energía y material.\nSe describen tres mecanismos de adquisición:\n\nConmutación rápida de voltaje (variar energía dentro de un rango).\nDoble fuente (dos fuentes independientes para cubrir el campo de visión).\nDetector multicapa (dos capas con diferente sensibilidad)."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-compresiva-reducir-medidas-tiempo-y-dosis-idea",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#tomografía-compresiva-reducir-medidas-tiempo-y-dosis-idea",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Tomografía compresiva: reducir medidas, tiempo y dosis (idea)",
+    "text": "Tomografía compresiva: reducir medidas, tiempo y dosis (idea)\nEl muestreo compresivo propone reconstruir señales con menos medidas si se cumplen dos condiciones: que la señal sea dispersa (o dispersificable con una transformación adecuada) y que la medición sea incoherente.\nModelo típico:\n\\[\ny = \\Phi f\n\\]\ny una representación dispersa:\n\\[\nf = \\Psi x\n\\]\nEn tomografía, se describen configuraciones que incorporan aperturas codificadas para modular el haz y obtener medidas comprimidas, con la motivación de reducir número de medidas, tiempo de adquisición y exposición."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#generaciones-de-escáneres-geometría-y-compromisos",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#generaciones-de-escáneres-geometría-y-compromisos",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Generaciones de escáneres: geometría y compromisos",
+    "text": "Generaciones de escáneres: geometría y compromisos\nSe describen siete generaciones, clasificadas por disposición de componentes y movimiento mecánico necesario para adquirir datos (el número no implica “mejor” por sí mismo).\n\n\n\n\n\n\n\n\nGeneración (año)\nGeometría (síntesis)\nVentaja / desventaja (síntesis)\n\n\n\n\nPrimera (1970)\nHaz delgado + un detector, movimiento alrededor del objeto\nMenos dispersión captada / adquisición lenta por muchas proyecciones\n\n\nSegunda (1972)\nAbanico + vector de detectores\nMenos dispersión captada / aún tiempos prolongados (menores que primera)\n\n\nTercera (1978)\nAbanico cubre región completa + muchos detectores\nPoco movimiento y menor tiempo de adquisición\n\n\nCuarta (1978)\nFuente rotatoria + anillo de detectores estáticos\nDetección amplia / problemas por dispersión (detectores no restringidos)\n\n\nQuinta (1979)\nHaz de electrones barrido sobre ánodo semicircular + detectores estacionarios\nReduce tiempo / campo de visión limitado\n\n\nSexta (1987)\nGiro continuo con anillo deslizante (adquisición continua)\nDatos rápidos / patrón helicoidal sin secciones completas directas\n\n\nSéptima (1998)\nMatriz de detectores + haz en cono\nMucha información en poco tiempo / reconstrucción más exigente"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-visión-desde-la-revisión",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#reconstrucción-visión-desde-la-revisión",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Reconstrucción (visión desde la revisión)",
+    "text": "Reconstrucción (visión desde la revisión)\nEl problema de reconstrucción se plantea como recuperar la estructura interna a partir de medidas de intensidad, determinadas por fenómenos como efecto fotoeléctrico, dispersión y difracción.\nSe señala el sinograma como matriz de datos de adquisición, desde la cual se reconstruye el corte.\nSe distinguen:\n\nMétodos analíticos: herramientas del análisis de Fourier; incluyen retroproyección y retroproyección filtrada.\nMétodos iterativos: incluyen métodos algebraicos y métodos estadísticos."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#casos-de-prueba-simulación-y-comparación-cuantitativa",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#casos-de-prueba-simulación-y-comparación-cuantitativa",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Casos de prueba: simulación y comparación cuantitativa",
+    "text": "Casos de prueba: simulación y comparación cuantitativa\nSe describe el uso de una herramienta de simulación para generar datos sintéticos, definir geometría de proyección, calcular proyecciones y generar el sinograma; luego se define el algoritmo de reconstrucción.\nEjemplo descrito:\n\nImágenes de 128 × 128 píxeles.\n256 detectores.\n500 ángulos en 360 grados.\nReconstrucción con retroproyección filtrada para geometría paralela y geometría en abanico.\n\nComparación cuantitativa reportada con relación pico-señal a ruido (en decibelios):\n\nGeometría paralela: 27,81 dB.\nGeometría en abanico: 32,47 dB.\n\nInterpretación propuesta: la configuración en abanico toma más medidas por ángulo y se espera mejor reconstrucción, coherente con esos valores."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#aplicaciones-medicina-geología-e-industria",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#aplicaciones-medicina-geología-e-industria",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Aplicaciones: medicina, geología e industria",
+    "text": "Aplicaciones: medicina, geología e industria\nEn medicina, se describen usos en diagnóstico, guía de procedimientos y monitoreo, incluyendo fluoroscopia, visualización tridimensional, angiografía e imágenes cardíacas; también se menciona exploración en personas asintomáticas (tamizaje por tomografía computarizada).\nEn geología, se describen usos en inspección de muestras (alta resolución, micro y nano), con ejemplos en ciencia del suelo, meteoritos, paleontología, geotecnia y geología del petróleo.\nEn industria, se describen usos en ensayos no destructivos, detección de explosivos, control de calidad y manejo de residuos peligrosos."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#tendencias-y-preocupaciones-destacadas",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#tendencias-y-preocupaciones-destacadas",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Tendencias y preocupaciones destacadas",
+    "text": "Tendencias y preocupaciones destacadas\nSe enfatiza una preocupación persistente: la dosis de radiación.\nSe describe que parte de desarrollos recientes buscan disminuir tiempos de adquisición y aumentar nivel de detalle, y se menciona el interés en métodos basados en muestreo compresivo.\nTambién se plantea como expectativa que próximos avances se enfoquen en el uso de múltiples fuentes de rayos X para reducir tiempos de adquisición y, potencialmente, contribuir a reducción de dosis."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#limitaciones-y-puntos-pendientes-continuación",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#limitaciones-y-puntos-pendientes-continuación",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Limitaciones y puntos pendientes (continuación)",
+    "text": "Limitaciones y puntos pendientes (continuación)\nPendiente técnico: información insuficiente en los PDF adjuntos para completar esta sección.\n(Sección objetivo: descripción operativa detallada de correcciones de calibración específicas, como correcciones cuantitativas de endurecimiento del haz, dispersión y no linealidades del detector, con pasos y validación.)"
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#conclusiones-accionables",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#conclusiones-accionables",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Conclusiones accionables",
+    "text": "Conclusiones accionables\n\nLa tomografía computarizada es una cadena geométrica y computacional: la geometría define qué se mide, el sinograma organiza lo medido, y la reconstrucción traduce mediciones en cortes.\nLa retroproyección filtrada es la receta clásica (filtrar y retroproyectar); la reconstrucción iterativa ajusta una imagen para reproducir mediciones y puede controlar mejor ruido y algunos artefactos, con mayor complejidad.\nCambios en método de adquisición (transmisión, fase, dispersión, difracción, doble energía, tomografía compresiva) cambian qué fenómeno se mide y qué tipo de información interna se busca reconstruir.\nLa práctica segura exige tratar calidad de imagen como un compromiso entre nitidez, ruido, tiempo, cobertura y dosis."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#cierre-mensajes-clave",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#cierre-mensajes-clave",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Cierre: mensajes clave",
+    "text": "Cierre: mensajes clave\nLa fidelidad de la imagen final depende de tres coherencias: coherencia geométrica (centrado y movimiento), coherencia de medición (intensidad a proyección) y coherencia de reconstrucción (modelo y método).\nLos artefactos suelen ser “huellas” de una ruptura de esas coherencias.\nLa tecnología (generaciones, detectores, geometrías y métodos) existe para empujar el equilibrio entre detalle, tiempo y dosis, sin perder interpretabilidad clínica o técnica."
+  },
+  {
+    "objectID": "presentaciones/PAIM/Lect004_Tomografia.html#documentos-base-para-trazabilidad-interna",
+    "href": "presentaciones/PAIM/Lect004_Tomografia.html#documentos-base-para-trazabilidad-interna",
+    "title": "Procesamiento Avanzado de Imágenes Médicas",
+    "section": "Documentos base (para trazabilidad interna)",
+    "text": "Documentos base (para trazabilidad interna)\n\nRevisión: “Tomografía computarizada: proceso de adquisición, tecnología y estado actual”, Revista Tecnura, 2016. Identificador persistente: 10.14483/udistrital.jour.tecnura.2016.1.a10.\nReporte didáctico: “Tomografía axial computarizada: geometría, adquisición y reconstrucción explicadas desde cero”, 2026-02-23."
   }
 ]
