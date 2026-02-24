@@ -1,0 +1,937 @@
+---
+title: "Tomografía axial computarizada: geometría, adquisición y reconstrucción explicadas desde cero"
+author: "Pablo Caicedo"
+date: "2026-02-23"
+lang: es
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+    geometry:
+      - margin=1in
+    header-includes:
+      - \usepackage{amsmath}
+      - \usepackage{amsfonts}
+      - \usepackage{amssymb}
+      - \usepackage{tikz}
+      - \usepackage{graphicx}
+      - \usepackage{hyperref}
+---
+
+# Tabla de contenido {.unnumbered}
+
+*(Esta tabla de contenido se genera automáticamente al compilar el documento.)*
+
+# 1. Introducción: qué es la tomografía axial computarizada y para qué sirve
+
+La **tomografía axial computarizada** es un método para “ver” el interior del cuerpo usando **rayos X** y un computador. A diferencia de una radiografía común (que produce una sola imagen plana), la tomografía axial computarizada produce **cortes** del cuerpo: imágenes que se parecen a “rebanadas” muy delgadas. Si juntamos muchos cortes seguidos, podemos formar un **volumen** (una especie de bloque de información) que permite ver estructuras internas desde distintos ángulos.
+
+Para entenderla con una analogía cuidadosa: imagine que tiene un objeto dentro de una caja opaca. Si solo mira una sombra desde un lado, puede adivinar algo, pero no ver su forma completa. Si en cambio ilumina el objeto desde muchos ángulos y registra muchas sombras, ya tiene suficiente información para reconstruir su forma interna. La tomografía axial computarizada hace algo parecido: toma “sombras” (mediciones de rayos X) desde muchos ángulos alrededor del cuerpo y luego reconstruye una imagen interna.
+
+Este documento explica la tomografía axial computarizada **desde cero**, con lenguaje muy sencillo pero correcto, y con énfasis en dos ideas:
+
+Primero, la **geometría del sistema** y el proceso de **adquisición**: cómo se ubican y se mueven la fuente de rayos X, el colimador, el paciente, los detectores, el giro del gantry y el movimiento de la mesa (incluyendo adquisición helicoidal).
+
+Segundo, la **reconstrucción de imagen**: cómo pasamos de mediciones a una imagen; qué es una proyección; qué es un sinograma; y por qué la retroproyección filtrada y la reconstrucción iterativa funcionan, en qué se diferencian y cuándo conviene cada una.
+
+Al final también cubrimos calidad de imagen, artefactos, dosimetría y prácticas seguras, con un enfoque conceptual y operativo.
+
+## 1.1. Qué significa “corte”, “píxel” y “vóxel”
+
+Un **píxel** es un pequeño cuadrado en una imagen bidimensional (una imagen plana). Cada píxel guarda un número que representa “qué tan intensa” es esa parte de la imagen.
+
+Un **vóxel** es el equivalente en tres dimensiones: un pequeño bloque (como un cubito) dentro de un volumen. En tomografía axial computarizada, cada vóxel representa una pequeña región del cuerpo y guarda un número relacionado con cuánto atenúa los rayos X esa región.
+
+Un **corte** (también llamado “sección”) es una imagen bidimensional que representa una “rebanada” del cuerpo. Si hacemos cortes muy delgados y los apilamos, obtenemos un volumen.
+
+## 1.2. Qué mide realmente la tomografía axial computarizada
+
+El escáner emite rayos X que atraviesan el cuerpo y llegan a los detectores. En términos simples, el detector mide “cuánta radiación llegó” después de atravesar al paciente. Si una zona del cuerpo atenúa mucho los rayos X (por ejemplo, hueso), llega menos radiación al detector. Si atenúa poco (por ejemplo, aire en el pulmón), llega más.
+
+Lo importante es que la tomografía axial computarizada no “fotografía” el interior directamente. Lo que obtiene son muchas mediciones de “cuánto se debilitó” el haz de rayos X a lo largo de muchas trayectorias y desde muchos ángulos. Luego el computador resuelve el rompecabezas: reconstruye una imagen que explica esas mediciones.
+
+## 1.3. Cierre del capítulo: ideas clave
+
+La tomografía axial computarizada obtiene información interna del cuerpo porque mide la atenuación de rayos X desde muchos ángulos. Con muchas “sombras” bien registradas, se puede reconstruir una imagen de cortes. La idea central del documento será entender cómo se toman esas mediciones (geometría y adquisición) y cómo se convierte esa información en imagen (reconstrucción).
+
+# 2. Formación del haz y componentes del escáner (enfoque geométrico)
+
+En este capítulo describimos las “piezas” principales de un escáner de tomografía axial computarizada y, sobre todo, cómo están organizadas geométricamente.
+
+## 2.1. El gantry: la estructura que gira
+
+El **gantry** es el “aro” o estructura circular del escáner donde están montados la fuente de rayos X y los detectores. Lo más importante del gantry es que puede **girar** alrededor del paciente. Ese giro permite medir desde muchos ángulos.
+
+En muchos equipos modernos, el giro puede ser continuo gracias a un sistema de alimentación eléctrica que evita cables enrollados. Esto hace posible la **adquisición helicoidal**, que explicaremos más adelante.
+
+## 2.2. La fuente de rayos X: de dónde sale la radiación
+
+La **fuente de rayos X** (a veces llamada “tubo de rayos X”) es el componente que genera la radiación. Sin entrar en detalles de electrónica, basta con saber esto:
+
+- La fuente produce un haz de rayos X que sale hacia el paciente.
+- La energía del haz se controla principalmente con el **voltaje del tubo** (la “fuerza” con la que se aceleran los electrones dentro del tubo). En la práctica, se ajusta en kilovoltios.
+- La cantidad de rayos X emitidos por unidad de tiempo se controla con la **corriente del tubo** (en miliamperios) y el tiempo de exposición. En tomografía axial computarizada se suele hablar de “corriente por tiempo” como una sola idea operativa (producto corriente–tiempo).
+
+Una consecuencia práctica es importante: si sube la energía, el haz tiende a atravesar más fácilmente el cuerpo; si sube la cantidad emitida, el detector recibe más señal y suele bajar el ruido, pero aumenta la dosis.
+
+## 2.3. El colimador: “dar forma” al haz
+
+Un **colimador** es un conjunto de láminas o “puertas” que restringen el haz de rayos X, de modo que el haz tenga la forma deseada y no ilumine más de lo necesario.
+
+En tomografía axial computarizada hay dos ideas clave relacionadas con colimación:
+
+Primero, la colimación define el **espesor de corte** que es posible medir en cada rotación (o, en equipos con múltiples filas de detectores, define cuántos cortes paralelos se miden al mismo tiempo).
+
+Segundo, la colimación ayuda a controlar la **radiación dispersa** (radiación que cambia de dirección dentro del cuerpo y llega al detector por caminos “equivocados”). La dispersión tiende a “ensuciar” la medición y empeorar el contraste.
+
+En términos geométricos, el colimador define qué “rebanada” del cuerpo se está iluminando.
+
+## 2.4. El filtro de forma: ajustar el haz según la anatomía
+
+En muchos equipos se usa un filtro cuya función es darle al haz una intensidad más adecuada para el cuerpo. Una idea simple: el cuerpo suele ser más “grueso” en el centro que en los bordes. Si el haz fuera igual en toda su sección, en los bordes llegaría demasiada radiación al detector (porque el camino por el cuerpo es más corto), y en el centro llegaría menos.
+
+Por eso se usa un filtro que atenúa más el haz en los bordes y menos en el centro, de modo que el detector reciba una señal más equilibrada. Esto ayuda tanto a la calidad de imagen como a la eficiencia de dosis.
+
+## 2.5. El paciente y la mesa: posición, centrado y movimiento
+
+El paciente se acuesta sobre una **mesa** que se mueve a lo largo del eje del escáner. Ese eje (a lo largo del cuerpo) se suele llamar eje longitudinal.
+
+El **centrado** del paciente es crucial. Si el paciente queda demasiado arriba o abajo respecto al centro geométrico del gantry, cambian los caminos del haz y la distribución de radiación en el detector. Esto afecta tanto la calidad de imagen como la dosis, y puede empeorar artefactos.
+
+La mesa puede:
+
+- Quedarse quieta mientras el gantry gira (modo de adquisición por “pasos”, usado en algunas situaciones).
+- Moverse continuamente mientras el gantry gira (modo de adquisición helicoidal, muy común hoy).
+
+## 2.6. El arreglo de detectores: “oído” del sistema
+
+Los **detectores** miden la radiación que sale del paciente. En tomografía axial computarizada moderna, los detectores suelen ser “integradores”: acumulan señal durante un intervalo de tiempo y luego reportan un número digital.
+
+Cada detector representa un “canal” de medición. La forma en que se organizan los detectores es parte central de la geometría:
+
+- En geometría “de abanico” (un abanico dentro de un plano), hay una fila de detectores y el haz se abre en un ángulo en ese mismo plano.
+- En geometría “de cono” (un cono en tres dimensiones), hay varias filas de detectores (como una matriz). Esto permite capturar varios cortes al mismo tiempo.
+
+Una consecuencia operativa: más filas de detectores permiten cubrir más longitud del cuerpo por rotación, lo cual puede reducir el tiempo total de examen o aumentar el detalle, según el protocolo.
+
+## 2.7. Geometrías básicas del haz: paralela, abanico y cono
+
+Conviene distinguir tres geometrías conceptuales. No todas se usan de la misma forma en equipos reales, pero ayudan a entender.
+
+### 2.7.1. Haz paralelo (ideal para explicar)
+
+Un **haz paralelo** es una idea matemática útil: todos los rayos son paralelos entre sí. Es fácil para explicar proyecciones y sinogramas. No es la geometría física típica de los equipos clínicos modernos, pero se usa como “modelo mental”.
+
+### 2.7.2. Haz en abanico (muy representativo de tomografía axial computarizada)
+
+Un **haz en abanico** significa que la fuente emite rayos que se abren como un abanico en el plano del corte. Los detectores están en un arco o línea opuesta. Esta geometría se parece mucho a lo que ocurre en muchos escáneres para reconstrucción de cortes.
+
+### 2.7.3. Haz en cono (cuando hay muchas filas de detectores)
+
+Un **haz en cono** se abre no solo en el plano, sino también en la dirección longitudinal. Esto aparece cuando hay múltiples filas de detectores. Es clave para adquisición rápida de volumen, pero trae desafíos extra de reconstrucción (por eso aparecen artefactos específicos si no se maneja bien).
+
+## 2.8. Una figura mental del sistema completo
+
+Imagine este “circuito”:
+
+1. La fuente emite un haz de rayos X.
+2. El colimador define el grosor y el ancho del haz.
+3. El haz atraviesa al paciente.
+4. El detector mide lo que llega.
+5. El gantry gira y repite el proceso desde otro ángulo.
+6. El sistema almacena todas esas mediciones para reconstruir.
+
+A continuación se muestra un esquema muy simple.
+
+```{=latex}
+\begin{center}
+\begin{tikzpicture}[scale=0.95]
+  % Gantry circle
+  \draw[thick] (0,0) circle (2.3);
+  \node at (0,2.6) {Gantry (gira)};
+  % Patient
+  \draw[thick, rounded corners] (-0.6,-0.4) rectangle (0.6,0.4);
+  \node at (0,0) {Paciente};
+  % Source and detector
+  \fill (-2.0,0) circle (0.08);
+  \node[left] at (-2.0,0) {Fuente};
+  \draw[thick] (1.7,-0.5) rectangle (2.0,0.5);
+  \node[right] at (2.0,0) {Detectores};
+  % Beam lines
+  \draw[thin] (-2.0,0) -- (1.7,0.4);
+  \draw[thin] (-2.0,0) -- (1.7,0.0);
+  \draw[thin] (-2.0,0) -- (1.7,-0.4);
+  % Table
+  \draw[thick] (-3.0,-1.3) -- (3.0,-1.3);
+  \node at (0,-1.55) {Mesa (se mueve)};
+\end{tikzpicture}
+\end{center}
+```
+
+No es un dibujo a escala ni muestra todos los detalles, pero sí la idea geométrica: fuente y detectores giran alrededor del paciente, mientras la mesa posiciona el cuerpo.
+
+## 2.9. Cierre del capítulo: ideas clave
+
+La geometría manda. La tomografía axial computarizada funciona porque una fuente y un arreglo de detectores se organizan alrededor del paciente y giran, tomando mediciones desde muchos ángulos. El colimador y los filtros dan forma al haz; el movimiento de la mesa (sobre todo en modo helicoidal) define cómo se cubre el cuerpo; y el tamaño y organización de los detectores determinan qué tan finas y qué tan rápidas pueden ser las mediciones.
+
+# 3. De las mediciones a las proyecciones: qué mide realmente el detector
+
+Este capítulo explica qué “número” entrega el detector y cómo ese número se convierte en algo útil para reconstruir.
+
+## 3.1. Atenuación: por qué llega menos radiación
+
+Cuando los rayos X atraviesan material, parte de la radiación se pierde. Esa pérdida ocurre por interacciones físicas (absorción y dispersión). En este documento usaremos la palabra **atenuación** para referirnos al resultado práctico: el haz sale más débil.
+
+Para describir “cuánto atenúa” un material se usa una propiedad llamada **coeficiente de atenuación**. No necesitamos su fórmula detallada. Solo necesitamos esta idea:
+
+- Si el coeficiente de atenuación es grande, el material debilita mucho el haz.
+- Si es pequeño, lo debilita poco.
+
+Hueso suele atenuar más que tejido blando; aire atenua muy poco.
+
+## 3.2. La medición del detector: intensidad recibida
+
+El detector mide la **intensidad** recibida (podemos pensar en “cantidad de radiación” en un intervalo de tiempo). En una medición ideal, si no hubiera paciente, el detector mediría una intensidad “de referencia”.
+
+Con paciente, mide una intensidad menor.
+
+Esa relación entre “lo que habría llegado sin paciente” y “lo que llega con paciente” es muy útil, porque elimina efectos del equipo y nos deja una medida más relacionada con el cuerpo.
+
+## 3.3. Convertir intensidad en una medida más lineal
+
+Aquí aparece una idea matemática sencilla, pero la vamos a presentar como intuición.
+
+En muchos fenómenos de atenuación, la intensidad se reduce de forma “multiplicativa”: si atraviesa un poco de material, se reduce a cierto porcentaje; si atraviesa otro poco, se vuelve a reducir a otro porcentaje, y así.
+
+Cuando algo se acumula multiplicando porcentajes, una operación muy útil es tomar el **logaritmo** (un operador matemático que convierte multiplicaciones en sumas). No hace falta dominar logaritmos; basta esta intuición:
+
+- El logaritmo sirve para que “muchas reducciones porcentuales seguidas” se conviertan en “sumas de pequeñas contribuciones”.
+
+En tomografía axial computarizada, esa transformación hace que la medición se parezca a una “suma a lo largo del camino del rayo” de cuánto atenuó cada pequeño pedazo de cuerpo. Esa es la base para definir una **proyección**.
+
+> **Ecuación opcional (solo como referencia):**
+> Si $I$ es la intensidad medida con paciente e $I_0$ es la intensidad sin paciente, entonces se usa con frecuencia
+> $$
+> p = -\ln\left(\frac{I}{I_0}\right)
+> $$
+> donde $p$ se interpreta como una medida proporcional a la “atenuación acumulada” a lo largo del camino del rayo.
+
+En el resto del documento, cuando digamos “proyección” nos referimos a este tipo de dato ya transformado, que se comporta como una suma a lo largo de una línea.
+
+## 3.4. Qué es una “línea” dentro del cuerpo: trayectorias de rayos
+
+Cada rayo viaja desde la fuente hasta un detector particular. Ese camino es aproximadamente una línea recta dentro del cuerpo (en primera aproximación). Entonces, cada medición corresponde a “cuánta atenuación acumuló el rayo” en esa línea.
+
+Cuando repetimos esto para muchos detectores y para muchos ángulos de giro, obtenemos un conjunto enorme de “sumas por líneas” desde distintas direcciones. Esa colección es suficiente para reconstruir una imagen.
+
+## 3.5. Qué cosas distorsionan la medición real
+
+En el mundo real, hay efectos que hacen que la medición no sea una suma perfecta por línea:
+
+- **Dispersión:** radiación que cambia de dirección y llega al detector “por sorpresa”.
+- **Policromía:** el haz no tiene una sola energía; tiene un rango. Distintos tejidos atenúan distinto según la energía.
+- **Saturación y no linealidad del detector:** el detector tiene límites y calibraciones.
+- **Movimiento:** si el paciente se mueve, la medición de una vista no corresponde exactamente al mismo estado anatómico que otra vista.
+
+Estos efectos son la raíz de muchos artefactos. En este documento los explicaremos de forma cualitativa, sin entrar en correcciones complejas.
+
+## 3.6. Cierre del capítulo: ideas clave
+
+El detector mide intensidad, pero el sistema la convierte en un dato que se comporta como una “suma de atenuación a lo largo de un camino”. Esa suma por línea es lo que llamamos proyección. Muchas proyecciones desde muchos ángulos forman el conjunto de información que permite reconstruir el corte.
+
+# 4. Concepto de sinograma y explicación intuitiva de la transformada de Radon
+
+Este capítulo introduce dos ideas centrales para entender reconstrucción: el **sinograma** y la **transformada de Radon**.
+
+## 4.1. Proyección: una “sombra medida” con números
+
+Tomemos un corte del cuerpo. Para un ángulo fijo del gantry, el detector tiene muchos elementos. Cada elemento del detector recibe un rayo que atravesó el cuerpo por una trayectoria ligeramente distinta.
+
+Si ponemos en fila los valores medidos por todos los detectores, obtenemos una “línea de datos”. Esa línea es la **proyección** para ese ángulo: un perfil numérico que representa la atenuación acumulada en muchas líneas paralelas o casi paralelas (según la geometría).
+
+## 4.2. Sinograma: apilar proyecciones a medida que gira el gantry
+
+Ahora imagine que repetimos el proceso para un ángulo un poco diferente, y luego otro, y otro, hasta dar la vuelta completa.
+
+Si ponemos cada proyección como una fila en una imagen, formando una matriz (ángulo versus posición del detector), obtenemos un **sinograma**.
+
+La palabra “sinograma” se usa porque, para objetos simples, ciertas estructuras dentro del corte producen trazos que se ven como curvas parecidas a senos (curvas suaves onduladas). Pero lo más importante no es el nombre, sino el concepto:
+
+- El sinograma es “la fotografía de todas las mediciones”.
+- Cada punto en el sinograma es una medición del detector para un ángulo y un canal.
+- El sinograma contiene toda la información necesaria para reconstruir el corte (en el modelo ideal).
+
+### 4.2.1. Una manera simple de “ver” el sinograma
+
+Imagine un único punto brillante dentro del corte (un objeto pequeño que atenúa mucho). Cuando el gantry gira, la posición de ese punto “proyectada” sobre el detector cambia de forma suave. Si usted marca dónde cae ese punto en cada proyección, verá una curva a lo largo del sinograma.
+
+Muchas estructuras producen muchas curvas superpuestas. Por eso, el sinograma parece un tejido de patrones.
+
+## 4.3. La transformada de Radon: el puente conceptual
+
+La **transformada de Radon** es un nombre formal para una idea muy simple:
+
+> “Tomar una imagen y convertirla en el conjunto de todas sus sumas por líneas, para muchos ángulos.”
+
+Dicho en el lenguaje de este documento:
+
+- Si usted tiene el mapa interno de atenuación del corte, la transformada de Radon le dice qué proyecciones mediría el escáner ideal.
+- Si usted tiene las proyecciones medidas, la reconstrucción busca la operación inversa: recuperar el mapa interno a partir de esas sumas por líneas.
+
+### 4.3.1. “Sumas por líneas” sin cálculo avanzado
+
+Cuando decimos “suma por líneas” no pedimos cálculo. Imagine que el rayo atraviesa el cuerpo pasando por muchos “cuadritos” pequeños. Cada cuadrito aporta un poquito de atenuación. Si suma todos esos aportes, obtiene el valor de la proyección para ese rayo.
+
+Si hacemos cuadritos cada vez más pequeños, esa suma se vuelve una suma “muy fina”. La matemática usa integrales para describir esa idea, pero usted puede quedarse con la imagen mental de “sumar aportes a lo largo del camino”.
+
+> **Ecuación opcional (solo para quien quiera verla):**
+> Si $f(x,y)$ representa la atenuación en el corte (un mapa bidimensional), la transformada de Radon $R\{f\}(\theta,s)$ se define como una integral de $f$ a lo largo de una línea que depende del ángulo $\theta$ y la distancia $s$ al origen.
+> No necesitamos usar esta fórmula para entender el proceso, pero sí para nombrar el concepto.
+
+## 4.4. Por qué el sinograma es tan útil para entender errores
+
+El sinograma no es solo un “intermedio” de reconstrucción. También es una herramienta de diagnóstico:
+
+- Si hay movimiento, aparecen discontinuidades o bordes extraños.
+- Si hay metal, aparecen bandas intensas.
+- Si hay problemas de calibración (por ejemplo detectores con respuesta distinta), pueden aparecer patrones repetitivos que luego se ven como anillos en la imagen reconstruida.
+
+La idea importante es causa y efecto: problemas físicos durante adquisición “se imprimen” en el sinograma y luego se traducen en artefactos.
+
+## 4.5. Cierre del capítulo: ideas clave
+
+Una proyección es un conjunto de mediciones que se comportan como sumas por líneas. El sinograma es la colección organizada de todas las proyecciones a lo largo de los ángulos de giro. La transformada de Radon es el nombre formal de “pasar de imagen a proyecciones”; la reconstrucción es, conceptualmente, el camino inverso.
+
+# 5. Reconstrucción por retroproyección filtrada: idea, pasos y por qué se filtra
+
+La **retroproyección filtrada** es el método clásico y muy usado para reconstruir cortes en tomografía axial computarizada. En este capítulo explicamos la idea con una intuición clara: primero “devolver” las proyecciones a la imagen (retroproyectar) y luego corregir un problema de borrosidad usando filtrado.
+
+## 5.1. Retroproyección: “pintar de vuelta” lo medido
+
+Imagine que tiene una sola proyección de un ángulo. Esa proyección le dice, para cada rayo, cuánto atenuó el cuerpo en esa trayectoria.
+
+Si usted quisiera “dibujar” esa información en una imagen, una idea simple sería:
+
+- Tome el valor medido para un rayo.
+- “Repártalo” a lo largo de la línea por donde pasó ese rayo en el corte.
+- Haga esto para todos los rayos de esa proyección.
+- Luego repita para muchos ángulos y sume contribuciones.
+
+Ese proceso se llama **retroproyección**.
+
+La retroproyección es intuitiva porque literalmente “vuelve atrás” a partir de las mediciones: si un rayo vio mucha atenuación, usted marca esa información a lo largo de su camino.
+
+## 5.2. El problema de la retroproyección “a secas”: sale borroso
+
+Si usted hace retroproyección simple y suma muchas vistas, obtiene una imagen que muestra las formas principales, pero aparece **borrosa**, como si tuviera un “velo” o una especie de mancha alrededor de los bordes.
+
+No es un error casual: es un efecto matemático esperado. La retroproyección simple tiende a “sobrecontar” contribuciones cerca del centro y a repartir demasiado la información. El resultado es una imagen que parece una versión suavizada de la real.
+
+En otras palabras: la retroproyección simple recupera la forma general, pero no recupera bien los detalles finos.
+
+## 5.3. La solución: filtrar antes de retroproyectar
+
+La idea clave es esta:
+
+> Antes de retroproyectar, se procesa cada proyección con un filtro que compensa la borrosidad que la retroproyección produciría.
+
+Ese método completo se llama retroproyección filtrada porque hace dos cosas:
+
+1. **Filtra** cada proyección (la “afila” de una manera controlada).
+2. **Retroproyecta** las proyecciones filtradas y las suma.
+
+## 5.4. Filtrar: una explicación sin jerga
+
+Filtrar significa “cambiar el contenido” de una señal para resaltar algunas partes y atenuar otras.
+
+En una proyección, hay cambios lentos (variaciones suaves) y cambios rápidos (bordes y detalles). Una analogía con audio ayuda:
+
+- En audio, los cambios lentos se parecen a sonidos graves.
+- Los cambios rápidos se parecen a sonidos agudos.
+
+Un filtro puede dar más peso a lo “agudo” para recuperar bordes, o puede suavizarlo para reducir ruido. En retroproyección filtrada, el filtro básico tiene la función de corregir el desenfoque, y por eso tiende a realzar componentes que ayudan a reconstruir detalles.
+
+## 5.5. Dominio de la frecuencia: ver la señal como mezcla de “ritmos”
+
+El **dominio de la frecuencia** es una forma de describir una señal como combinación de “ritmos” o “ondas” de distintas velocidades. No necesitamos resolver transformadas a mano; solo necesitamos esta idea:
+
+- Una señal puede tener componentes lentos (cambios suaves) y rápidos (cambios bruscos).
+- En frecuencia, “rápido” significa “alta frecuencia”.
+- “Lento” significa “baja frecuencia”.
+
+En retroproyección filtrada, el filtro clásico se suele describir en frecuencia porque es la forma más clara de entender qué hace: compensa el hecho de que la retroproyección simple pierde o distorsiona ciertos contenidos de frecuencia.
+
+> **Representación opcional (muy mínima):**
+> A veces se dice que el filtro ideal para la retroproyección filtrada tiene una respuesta proporcional a $|\omega|$, donde $\omega$ representa la frecuencia.
+> La interpretación intuitiva es: “dar más peso a lo que cambia rápido”, para corregir el velo borroso.
+
+## 5.6. Ventanas: controlar el ruido sin perder toda la nitidez
+
+Aquí aparece un compromiso importante.
+
+Si usted realza demasiado lo “rápido”, también realza el **ruido** (variaciones aleatorias por conteo limitado de fotones, electrónica del detector, etc.). Para evitar que la imagen quede muy ruidosa, se usan **ventanas** (funciones de suavizado) que limitan el filtro en altas frecuencias.
+
+En palabras sencillas:
+
+- El filtro básico corrige la borrosidad.
+- La ventana evita amplificar demasiado el ruido, recortando o suavizando el extremo “más agudo”.
+
+Distintas ventanas producen distintos estilos de imagen:
+
+- Algunas dan más nitidez pero más ruido.
+- Otras dan menos ruido pero más suavidad (menos detalle fino).
+
+La selección depende del objetivo clínico y del protocolo.
+
+## 5.7. Pasos completos de la retroproyección filtrada (sin código)
+
+Podemos describir el método como una receta conceptual:
+
+1. Convertir intensidades medidas a proyecciones (datos tipo “suma por líneas”).
+2. Organizar proyecciones por ángulo (sinograma).
+3. Para cada ángulo, filtrar la proyección (corrección de borrosidad, con control de ruido).
+4. Retroproyectar la proyección filtrada sobre el plano de la imagen.
+5. Sumar contribuciones de todos los ángulos.
+6. Obtener el corte reconstruido.
+
+## 5.8. Por qué “funciona” (idea esencial)
+
+Funciona porque las proyecciones contienen información suficiente sobre el corte (en el modelo ideal), y porque la retroproyección es una manera de “redistribuir” esa información en el espacio. El filtrado es el ajuste que hace que esa redistribución no quede borrosa.
+
+En una frase: la retroproyección filtrada es una forma práctica de aproximar la operación inversa de la transformada de Radon.
+
+## 5.9. Cierre del capítulo: ideas clave
+
+La retroproyección filtrada reconstruye una imagen en dos etapas: primero corrige cada proyección con un filtro (para compensar la borrosidad) y luego “pinta de vuelta” esas proyecciones filtradas sobre el plano de la imagen. El filtrado es esencial porque la retroproyección simple da una imagen demasiado borrosa. Las ventanas permiten controlar cuánto ruido se amplifica.
+
+# 6. Reconstrucción iterativa: intuición, comparación con la retroproyección filtrada, ventajas y límites
+
+La **reconstrucción iterativa** es una familia de métodos donde la imagen se obtiene por aproximaciones sucesivas. La idea central es muy intuitiva: “propongo una imagen, simulo qué mediría el escáner, comparo con lo medido de verdad, y ajusto la imagen”.
+
+## 6.1. La idea de “modelo”: una maqueta matemática del escáner
+
+Un **modelo** es una descripción simplificada (pero útil) de cómo se generan las mediciones a partir de una imagen.
+
+En retroproyección filtrada, se usa un modelo relativamente directo: proyecciones ideales y un inverso aproximado con filtrado.
+
+En reconstrucción iterativa, el modelo puede ser más detallado e incluir:
+
+- Geometría real del haz (abanico o cono).
+- Respuesta del detector.
+- Ruido por conteo de fotones.
+- Algunos efectos físicos (hasta cierto nivel).
+
+Mientras más realista el modelo, mejor puede corregir problemas, pero también más costoso computacionalmente y más sensible a supuestos.
+
+## 6.2. El ciclo iterativo explicado como “ajuste por ensayo y error”
+
+Sin escribir algoritmos largos, la intuición es:
+
+1. Empiezo con una imagen inicial (puede ser una imagen borrosa o incluso una imagen en blanco).
+2. Con esa imagen, calculo qué proyecciones produciría (esto se llama “proyección hacia adelante” o “simulación de medición”).
+3. Comparo esas proyecciones simuladas con las proyecciones medidas por el escáner.
+4. La diferencia me dice “en qué me estoy equivocando”.
+5. Ajusto la imagen para reducir esa diferencia.
+6. Repito varias veces hasta que la diferencia sea pequeña o hasta cumplir un criterio.
+
+> **Pseudocódigo opcional (mínimo):**
+> - iniciar imagen $f$
+> - repetir:
+>   - simular proyecciones a partir de $f$
+>   - comparar con las medidas
+>   - actualizar $f$ para reducir el error
+> - entregar $f$
+
+Lo importante es la idea, no la fórmula.
+
+## 6.3. Qué problema resuelve mejor que la retroproyección filtrada
+
+La retroproyección filtrada es rápida y funciona muy bien en muchas situaciones, pero asume un modelo relativamente ideal.
+
+La reconstrucción iterativa suele ayudar especialmente cuando:
+
+- Hay **poca señal** (por ejemplo protocolos de dosis reducida), y el ruido se vuelve importante.
+- Hay geometrías complejas (por ejemplo cono pronunciado).
+- Se quiere incorporar conocimiento del ruido para evitar que el filtro amplifique ruido.
+- Se busca reducir artefactos específicos al modelar mejor la física o el sistema.
+
+## 6.4. Por qué puede dar menos ruido a igual detalle (idea conceptual)
+
+En retroproyección filtrada, el filtro puede amplificar ruido porque necesita recuperar detalles.
+
+En reconstrucción iterativa, el algoritmo puede separar mejor “detalle consistente con muchas vistas” de “variación aleatoria” porque usa un modelo y un criterio de ajuste global.
+
+Una forma simple de decirlo:
+
+- El ruido tiende a no ser coherente entre ángulos.
+- La estructura real sí es coherente.
+- El método iterativo aprovecha esa coherencia para estabilizar la imagen.
+
+## 6.5. Ventajas conceptuales
+
+Las ventajas más citadas (dichas en términos sencillos) son:
+
+- Puede producir imágenes útiles con menos dosis o menos tiempo de adquisición.
+- Maneja mejor algunos tipos de ruido.
+- Puede reducir ciertos artefactos si el modelo los representa.
+- Permite controlar el “equilibrio” entre fidelidad a las mediciones y suavidad/regularidad de la imagen.
+
+## 6.6. Límites y precauciones conceptuales
+
+También hay límites importantes:
+
+- Requiere más cómputo (aunque hoy esto se ha reducido mucho).
+- Depende de supuestos: si el modelo es incorrecto, puede introducir apariencias artificiales.
+- El resultado puede verse “demasiado suave” o con textura distinta, lo cual puede ser bueno o malo según el caso.
+- Es más difícil explicar su comportamiento exacto sin entrar en matemáticas, por lo que se vuelve clave validar con pruebas de calidad.
+
+## 6.7. Comparación directa con retroproyección filtrada
+
+Podemos comparar con preguntas concretas.
+
+**¿Qué problema resuelve cada una?**
+La retroproyección filtrada resuelve rápido el problema ideal de reconstrucción a partir de proyecciones, con un filtro que corrige borrosidad. La reconstrucción iterativa resuelve el problema como un ajuste: busca una imagen que, al pasar por el modelo del escáner, reproduce las mediciones.
+
+**¿Qué asume?**
+La retroproyección filtrada asume un modelo más simple y un filtrado adecuado. La iterativa asume un modelo más explícito del sistema y del ruido.
+
+**¿Por qué funciona?**
+La retroproyección filtrada funciona por propiedades conocidas del vínculo entre proyecciones e imagen (transformada de Radon). La iterativa funciona porque reduce el error entre medición real y medición simulada, y puede incorporar criterios adicionales que estabilizan el resultado.
+
+**¿Cuándo conviene?**
+La retroproyección filtrada conviene cuando se necesita rapidez, cuando la señal es alta y el caso es estándar, o cuando se quiere consistencia clásica. La iterativa conviene cuando se busca bajar dosis, mejorar ruido, o manejar situaciones complejas, siempre con control de calidad.
+
+## 6.8. Cierre del capítulo: ideas clave
+
+La reconstrucción iterativa construye la imagen por aproximaciones: propone una imagen, simula mediciones, compara con lo real y ajusta. Esto le permite controlar mejor ruido y algunos artefactos, especialmente en protocolos de menor dosis, a costa de depender de modelos y de mayor complejidad. La retroproyección filtrada sigue siendo fundamental por su claridad, rapidez y buen desempeño en condiciones estándar.
+
+# 7. Tomografía helicoidal: qué cambia en la adquisición y qué implica para la reconstrucción (conceptual)
+
+La adquisición helicoidal es uno de los cambios más importantes en la tomografía axial computarizada moderna porque cambia la geometría del muestreo: ya no tomamos un solo corte con mesa quieta, sino que cubrimos un volumen mientras el gantry gira y la mesa avanza.
+
+## 7.1. Qué significa “helicoidal”
+
+**Helicoidal** significa que la trayectoria de la fuente alrededor del paciente, combinada con el avance de la mesa, forma una **hélice** (un “resorte” o “espiral” alrededor del cuerpo).
+
+En cada giro, el sistema no vuelve exactamente al mismo plano del cuerpo; se desplaza un poco en la dirección longitudinal. Con eso, en lugar de adquirir “rebanadas separadas”, adquiere un flujo continuo de datos a lo largo del volumen.
+
+## 7.2. El parámetro “pitch”: cuánto avanza la mesa por giro
+
+En operación clínica se usa un parámetro que describe la relación entre avance de mesa y geometría del haz. Se conoce comúnmente como “pitch”. Aquí lo explicamos sin depender de una fórmula exacta:
+
+- Si la mesa avanza poco por giro, hay mucha superposición de información: más datos por región, potencialmente mejor calidad, pero más tiempo o más dosis si no se ajusta.
+- Si la mesa avanza mucho por giro, se cubre más rápido, pero hay menos datos por región, lo cual puede aumentar ruido o artefactos si es excesivo.
+
+La idea es un compromiso: rapidez y cobertura versus redundancia de datos y calidad.
+
+## 7.3. Qué cambia en los datos: ya no pertenecen a un único plano
+
+En modo “por pasos”, usted puede asociar una rotación a un plano del cuerpo (aproximadamente).
+
+En modo helicoidal, los datos de una rotación corresponden a posiciones longitudinales diferentes. Entonces, para reconstruir un corte en una posición específica, el sistema debe:
+
+- Seleccionar (o interpolar) datos que “rodean” esa posición.
+- Combinar datos de giros cercanos para formar un conjunto de proyecciones equivalente al de un corte.
+
+Esta combinación introduce la necesidad de métodos de interpolación y hace que algunos artefactos sean más probables si hay movimiento, si el avance es alto o si hay geometrías de cono pronunciadas.
+
+## 7.4. Implicaciones para la reconstrucción (sin entrar en fórmulas)
+
+Conceptualmente, reconstruir en helicoidal implica responder dos preguntas:
+
+1. **¿De qué porción de datos tomo información para este corte?**
+   Porque no hay una sola rotación exactamente en ese plano.
+
+2. **¿Cómo combino datos de distintos momentos sin introducir inconsistencias?**
+   Porque el paciente puede moverse (respiración, latido) y porque el sistema está muestreando mientras avanza.
+
+En reconstrucción clásica, se usan estrategias para “rebanar” virtualmente el sinograma helicoidal y convertirlo en un conjunto de proyecciones para un corte, y luego aplicar retroproyección filtrada o métodos iterativos sobre ese conjunto.
+
+En reconstrucción iterativa, el modelo puede incluir directamente la geometría helicoidal y reducir la necesidad de aproximaciones de rebanado, pero a costa de mayor complejidad computacional.
+
+## 7.5. Una figura simple de la hélice
+
+```{=latex}
+\begin{center}
+\begin{tikzpicture}[scale=0.95]
+  % Axis
+  \draw[thick,->] (-0.2,-2.2) -- (-0.2,2.2);
+  \node[left] at (-0.2,2.2) {Eje longitudinal};
+  % Cylinder outline (simplified)
+  \draw[thick] (0,2) ellipse (1.3 and 0.35);
+  \draw[thick] (0,-2) ellipse (1.3 and 0.35);
+  \draw[thick] (-1.3,-2) -- (-1.3,2);
+  \draw[thick] (1.3,-2) -- (1.3,2);
+  % Helix (approx)
+  \draw[thick] plot[smooth,domain=-2:2,samples=120] ({1.1*cos(220*\x)},{\x});
+  \node at (0,-2.6) {Trayectoria helicoidal (idea)};
+\end{tikzpicture}
+\end{center}
+```
+
+## 7.6. Cierre del capítulo: ideas clave
+
+La adquisición helicoidal combina giro del gantry con avance continuo de mesa, creando una hélice. Esto permite cubrir volúmenes rápido, pero hace que los datos no pertenezcan a un único plano, por lo que la reconstrucción debe seleccionar y combinar información de distintos giros para formar cortes coherentes. Parámetros como el avance por giro controlan el compromiso entre rapidez y calidad.
+
+# 8. Parámetros de adquisición y su impacto (ruido, resolución, tiempo)
+
+En este capítulo conectamos “perillas” operativas con efectos visibles en la imagen. No es una lista de recetas, sino una guía conceptual para entender compromisos típicos.
+
+## 8.1. Resolución espacial: ver detalles pequeños
+
+La **resolución espacial** es la capacidad de distinguir detalles pequeños (bordes, líneas finas).
+
+En tomografía axial computarizada, la resolución espacial depende de varios factores que se combinan:
+
+- **Tamaño del foco** de la fuente: si el punto de emisión efectivo es grande, los bordes se ven más borrosos.
+- **Tamaño y separación de detectores**: detectores más pequeños pueden muestrear más fino.
+- **Geometría y distancia**: la forma del abanico y las distancias fuente–paciente–detector influyen en el “tamaño aparente” del detalle.
+- **Muestreo angular**: cuántas vistas se toman por rotación. Si hay pocas, pueden aparecer patrones o bordes con apariencia escalonada.
+- **Reconstrucción**: los filtros o “kernels” de reconstrucción (en español: configuraciones de nitidez) pueden hacer la imagen más nítida o más suave, con efectos sobre ruido.
+
+Un punto importante: aumentar nitidez suele aumentar ruido visible. Por eso, la resolución espacial casi nunca se mejora “gratis”.
+
+## 8.2. Resolución de contraste: distinguir diferencias sutiles
+
+La **resolución de contraste** es la capacidad de distinguir tejidos con atenuaciones parecidas (por ejemplo, dos tejidos blandos con diferencia pequeña).
+
+Aquí manda el **ruido**: si la imagen es muy ruidosa, pequeñas diferencias se pierden.
+
+Factores que mejoran resolución de contraste suelen ser:
+
+- Más señal (más fotones detectados), lo cual reduce fluctuaciones.
+- Cortes más gruesos (porque promedian más información), aunque esto pierde detalle en el eje longitudinal.
+- Reconstrucción más suave (reduce ruido pero puede suavizar bordes).
+
+## 8.3. Ruido: por qué aparece granulado
+
+En este documento, **ruido** significa variación aleatoria en los valores de la imagen que no corresponde a estructura real.
+
+Una causa básica es el conteo finito de fotones: si llegan pocos fotones, la variación relativa es grande. Si llegan muchos, la variación relativa es menor.
+
+Por eso, aumentar la cantidad de radiación emitida suele reducir ruido, pero aumenta dosis.
+
+La reconstrucción iterativa puede reducir ruido aparente sin subir tanto la dosis, pero no elimina la necesidad de señal suficiente; simplemente usa mejor la información disponible.
+
+## 8.4. Tiempo: rotación, avance y cooperación del paciente
+
+El tiempo total del examen depende de:
+
+- Tiempo de rotación del gantry.
+- Longitud del estudio.
+- Avance de la mesa (helicoidal).
+- Preparación: posicionamiento, centrado, instrucciones de respiración, etc.
+
+En algunos estudios, el tiempo es crítico para reducir artefactos por movimiento. Por ejemplo, en tórax, pedir una apnea corta (mantener la respiración) puede ser clave.
+
+## 8.5. Energía del haz y contraste: el rol del voltaje del tubo
+
+Cambiar el voltaje del tubo cambia la energía del haz. De forma cualitativa:
+
+- Energía más alta atraviesa mejor materiales densos, reduce algunos problemas de “falta de fotones”, pero puede disminuir contraste entre tejidos blandos en algunos escenarios.
+- Energía más baja puede aumentar contraste para ciertos materiales (por ejemplo medios de contraste), pero puede aumentar ruido si no se compensa con más emisión, y puede aumentar endurecimiento del haz.
+
+No hay una elección universal; depende del objetivo diagnóstico.
+
+## 8.6. Espesor de corte: detalle longitudinal versus ruido
+
+El **espesor de corte** controla qué tan “delgada” es la rebanada reconstruida.
+
+- Cortes delgados: mejor detalle en el eje longitudinal (útil para estructuras pequeñas y reconstrucciones multiplanares), pero suele aumentar ruido por vóxel porque hay menos señal por corte.
+- Cortes gruesos: menos ruido y mejor contraste en la imagen, pero pueden ocultar detalles finos por promediado.
+
+## 8.7. Campo de visión y matriz: tamaño del píxel
+
+El **campo de visión** es el tamaño físico que cubre la imagen reconstruida (por ejemplo, 30 centímetros de diámetro). La **matriz** es cuántos píxeles hay en esa imagen (por ejemplo, 512 por 512).
+
+Si el campo de visión es grande con la misma matriz, cada píxel representa una región física más grande. Esto puede reducir detalle fino. Si el campo de visión es más pequeño, el píxel representa menos milímetros y puede verse más detalle, siempre que la adquisición y la reconstrucción lo soporten.
+
+## 8.8. Cierre del capítulo: ideas clave
+
+La calidad de imagen es un conjunto de compromisos. Para ver detalles pequeños (resolución espacial) importa el foco, los detectores, el muestreo y la reconstrucción. Para distinguir contrastes sutiles importa el ruido, que depende de cuántos fotones se detectan y de cómo se reconstruye. Cortes más delgados dan más detalle longitudinal pero más ruido; energía y cantidad de emisión cambian contraste y ruido; y el tiempo de adquisición afecta artefactos por movimiento.
+
+# 9. Artefactos comunes: causas, efectos, señales visuales típicas y recomendaciones operativas básicas
+
+Un **artefacto** es una estructura visible en la imagen que no corresponde a la anatomía real, sino a limitaciones físicas, movimiento, geometría, o fallas de medición/reconstrucción.
+
+Aquí explicamos artefactos comunes con causa–efecto y recomendaciones básicas (sin entrar en correcciones complejas).
+
+## 9.1. Endurecimiento del haz: por qué aparecen bandas y “cuencas”
+
+### 9.1.1. Causa (explicación simple)
+
+El haz de rayos X no tiene una sola energía; tiene un rango. Los fotones de energía baja se absorben más fácil. Entonces, a medida que el haz atraviesa el cuerpo, los fotones de baja energía se van perdiendo primero, y el haz que sale se vuelve “más duro” (más compuesto por energías altas).
+
+Ese cambio rompe el modelo simple donde la atenuación se comporta igual en todo el camino. El resultado puede ser que el sistema “interprete mal” ciertas regiones.
+
+### 9.1.2. Efecto típico en imagen
+
+- “Cuenca” en regiones centrales de estructuras grandes (la parte central parece menos atenuante de lo esperado).
+- Bandas o sombreado entre regiones densas.
+
+### 9.1.3. Recomendaciones operativas básicas
+
+- Usar protocolos adecuados de energía y filtración según el caso.
+- Evitar centrados incorrectos que agravan la distribución de atenuación.
+- En presencia de estructuras muy densas, considerar ajustes de energía o técnicas de reconstrucción que toleren mejor el efecto.
+
+## 9.2. Artefactos por movimiento: bordes dobles y sombras
+
+### 9.2.1. Causa
+
+Si el paciente se mueve (respira, traga, se inquieta), distintas proyecciones “ven” anatomías ligeramente diferentes. La reconstrucción asume que todas las vistas corresponden al mismo objeto estático. Cuando eso no se cumple, aparecen inconsistencias.
+
+### 9.2.2. Efecto típico
+
+- Bordes dobles.
+- “Sombras” o duplicación de estructuras.
+- Borrosidad direccional.
+
+### 9.2.3. Recomendaciones básicas
+
+- Instrucciones claras al paciente (respirar, apnea, evitar tragar).
+- Reducir tiempo de adquisición cuando sea posible.
+- Usar estrategias de sujeción y comodidad.
+- Considerar reconstrucción iterativa si ayuda a estabilizar, aunque no elimina movimiento real.
+
+## 9.3. Artefactos por metal: rayas brillantes y oscuras
+
+### 9.3.1. Causa
+
+El metal atenúa muchísimo. En algunas trayectorias llegan muy pocos fotones al detector (“falta de fotones”), lo que produce ruido extremo y datos poco confiables. Además, la policromía y el endurecimiento del haz se intensifican.
+
+### 9.3.2. Efecto típico
+
+- Rayas alternadas brillantes y oscuras alrededor del metal.
+- Pérdida de detalle cerca del implante.
+
+### 9.3.3. Recomendaciones básicas
+
+- Posicionar al paciente para que el metal quede fuera del área de interés si se puede.
+- Ajustar energía o técnicas de adquisición según protocolos institucionales.
+- Usar métodos de reconstrucción o configuraciones específicas para metal cuando estén disponibles.
+- Interpretar con cautela regiones cercanas al metal.
+
+## 9.4. Artefactos helicoidales: patrones tipo “molinete”
+
+### 9.4.1. Causa
+
+En helicoidal, el sistema debe interpolar datos para formar cortes. Si la interpolación es difícil (por avance alto, cortes delgados, o cambios rápidos), aparecen patrones periódicos.
+
+### 9.4.2. Efecto típico
+
+- Apariencia de “molinete” o estrías alrededor de bordes de alto contraste.
+
+### 9.4.3. Recomendaciones básicas
+
+- Ajustar avance por giro para asegurar muestreo suficiente.
+- Evitar combinaciones extremas de cortes muy delgados con avance muy alto si no es necesario.
+- Elegir reconstrucción adecuada para el objetivo.
+
+## 9.5. Artefactos en anillo: círculos concéntricos
+
+### 9.5.1. Causa
+
+Si un detector o un canal tiene calibración diferente o respuesta anómala, ese error aparece de forma repetitiva a lo largo de la rotación. En la imagen reconstruida, esa repetición se manifiesta como anillos.
+
+### 9.5.2. Efecto típico
+
+- Anillos concéntricos centrados en el eje del escáner.
+
+### 9.5.3. Recomendaciones básicas
+
+- Calibración y control de calidad del equipo.
+- Reportar y documentar para mantenimiento.
+
+## 9.6. Volumen parcial: promediado engañoso
+
+### 9.6.1. Causa
+
+Un vóxel representa un volumen. Si dentro de ese volumen hay dos tejidos distintos (por ejemplo borde entre hueso y tejido blando), el valor resultante es un promedio. Eso puede “crear” valores intermedios que no existen como tejido real.
+
+### 9.6.2. Efecto típico
+
+- Bordes menos definidos.
+- Aparición de densidades intermedias en estructuras pequeñas.
+
+### 9.6.3. Recomendaciones básicas
+
+- Cortes más delgados cuando se necesita ver estructuras pequeñas.
+- Interpretar con cuidado en regiones con estructuras finas.
+
+## 9.7. Cierre del capítulo: ideas clave
+
+Los artefactos son consecuencia de inconsistencias entre el modelo ideal y la realidad. Endurecimiento del haz aparece por policromía; movimiento rompe la suposición de objeto estático; metal causa falta de fotones y fuertes distorsiones; helicoidal exige interpolación que puede introducir patrones; fallas de detector pueden producir anillos; y el volumen parcial promedia tejidos distintos. En práctica, buena preparación del paciente, centrado correcto, selección de parámetros y control de calidad reducen muchos problemas.
+
+# 10. Dosimetría en tomografía axial computarizada y prácticas seguras
+
+Este capítulo explica, de forma conceptual y práctica, cómo se describen las dosis en tomografía axial computarizada y qué buenas prácticas se usan para mantener la seguridad.
+
+## 10.1. Qué significa “dosis” en palabras sencillas
+
+En este contexto, **dosis** se refiere a cuánta energía de la radiación se deposita en el cuerpo. Esa energía puede aumentar riesgos biológicos, por lo que se debe usar la mínima necesaria para obtener una imagen útil.
+
+Es importante distinguir dos ideas:
+
+- Los equipos reportan **indicadores de dosis** (números útiles para control y comparación).
+- La dosis real en órganos específicos depende del paciente (tamaño, anatomía) y del estudio.
+
+Este documento se enfoca en los indicadores más usados en práctica clínica.
+
+## 10.2. Índice de dosis de tomografía computarizada: un indicador estandarizado
+
+El **índice de dosis de tomografía computarizada** es una familia de métricas que buscan representar, de forma estandarizada, la dosis asociada a un protocolo.
+
+La idea general es medir o estimar la dosis en un objeto de prueba (un “fantoma”) estándar y usarlo como referencia. Así, diferentes equipos y protocolos se pueden comparar.
+
+En la práctica, una versión muy usada es el **índice de dosis de tomografía computarizada por volumen**, que el equipo suele mostrar en pantalla al planear o finalizar el estudio.
+
+Conceptualmente, piense en esto:
+
+- Es un número que resume “cuánta radiación por unidad de longitud” se está usando en ese protocolo, en condiciones estandarizadas.
+- Es útil para control de calidad y comparación entre protocolos.
+- No es la dosis exacta del paciente, pero se correlaciona y permite optimizar.
+
+## 10.3. Producto dosis–longitud: sumar el efecto a lo largo del estudio
+
+El **producto dosis–longitud** combina un indicador de dosis “por longitud” con la longitud total escaneada.
+
+La idea es muy directa:
+
+- Si escanea más longitud, a igualdad de condiciones, la exposición total asociada aumenta.
+- Por eso, este indicador crece con estudios más largos.
+
+En práctica, ayuda a controlar que la longitud de escaneo sea la necesaria (ni más ni menos) y a comparar estudios completos.
+
+## 10.4. Por qué estos indicadores no son “dosis del paciente” (pero igual son útiles)
+
+Hay tres razones principales:
+
+1. Se basan en fantomas estándar, no en el paciente real.
+2. El tamaño del paciente cambia la distribución de dosis.
+3. Protocolos con modulación (cambio automático de emisión según anatomía) hacen que la dosis varíe a lo largo del cuerpo.
+
+Aun así, estos indicadores son fundamentales para:
+
+- Definir y revisar protocolos.
+- Comparar equipos.
+- Establecer niveles de referencia diagnósticos (valores típicos para ciertos estudios, con el objetivo de detectar excesos injustificados).
+
+## 10.5. Ajuste por tamaño del paciente: por qué importa
+
+Un paciente pequeño no absorbe igual que uno grande. Por eso se han propuesto métricas que ajustan el indicador según tamaño. La idea práctica es:
+
+- Para pacientes pequeños, una misma configuración puede implicar dosis relativamente mayor en tejidos.
+- Para pacientes grandes, el equipo puede necesitar más emisión para mantener calidad de imagen.
+
+La operación segura requiere protocolos específicos por tamaño, especialmente en pediatría.
+
+## 10.6. Principio de mantener la dosis tan baja como sea razonablemente posible
+
+El principio de **mantener la dosis tan baja como sea razonablemente posible** significa:
+
+- No usar más radiación de la necesaria para responder la pregunta clínica.
+- Ajustar parámetros y protocolos para equilibrar calidad y seguridad.
+- Evitar repeticiones innecesarias.
+- Documentar y revisar indicadores.
+
+No significa “la dosis más baja posible a cualquier costo”, porque una imagen inútil puede llevar a errores diagnósticos y a repetir estudios, lo cual puede aumentar dosis total. El objetivo es dosis baja **con calidad suficiente**.
+
+## 10.7. Buenas prácticas operativas (nivel básico)
+
+A nivel operativo, prácticas efectivas incluyen:
+
+- **Justificación:** asegurar que el estudio es adecuado para la pregunta clínica.
+- **Optimización:** seleccionar un protocolo apropiado (adulto, pediátrico, región anatómica, tipo de contraste, etc.).
+- **Centrado correcto:** reduce la necesidad de compensaciones automáticas y mejora calidad.
+- **Longitud de escaneo adecuada:** evitar cubrir más de lo necesario.
+- **Uso correcto de modulación automática:** cuando esté disponible, ayuda a adaptar emisión a la anatomía.
+- **Educación e instrucciones al paciente:** reduce repeticiones por movimiento.
+
+## 10.8. Cierre del capítulo: ideas clave
+
+En tomografía axial computarizada se usan indicadores estandarizados para describir dosis de forma práctica. El índice de dosis de tomografía computarizada por volumen resume el nivel de exposición del protocolo en un marco de referencia estándar, y el producto dosis–longitud agrega el efecto de la longitud escaneada. No son dosis exactas del paciente, pero son esenciales para control, comparación y optimización. La práctica segura busca dosis tan baja como sea razonablemente posible manteniendo calidad suficiente, con protocolos adecuados, centrado correcto y evitando repeticiones.
+
+# 11. Conclusiones: mapa mental del proceso completo
+
+La tomografía axial computarizada puede verse como una cadena completa, donde cada eslabón importa.
+
+Primero está la geometría: una fuente de rayos X y un arreglo de detectores montados en un gantry que gira alrededor del paciente. El colimador define qué parte del cuerpo se ilumina y con qué grosor, y la mesa posiciona el cuerpo. En modo helicoidal, la mesa avanza mientras el gantry gira, generando una hélice de muestreo.
+
+Luego está la medición: el detector no mide “hueso” ni “órgano”; mide intensidad de radiación. Esa intensidad se transforma en un tipo de dato que se comporta como una suma de atenuación a lo largo del camino del rayo. Esas sumas, para muchos detectores y muchos ángulos, forman el conjunto de proyecciones.
+
+Después aparece el sinograma: la organización de todas las proyecciones como una imagen de ángulo versus canal. El sinograma es la memoria completa de la adquisición y, al mismo tiempo, un lugar donde se pueden detectar problemas (movimiento, metal, fallas de detector).
+
+Finalmente viene la reconstrucción: convertir proyecciones en una imagen del corte. La retroproyección filtrada lo hace con una receta clara: filtrar cada proyección para corregir borrosidad y retroproyectar sumando desde muchos ángulos. La reconstrucción iterativa lo hace por ajuste: propone una imagen, simula mediciones, compara con lo real y corrige, lo cual puede reducir ruido y tolerar mejor algunos problemas, especialmente en dosis bajas, a costa de depender de modelos y mayor complejidad.
+
+La calidad de imagen se entiende como compromisos: nitidez, contraste, ruido, tiempo, cobertura y dosis. Los artefactos surgen cuando el mundo real se sale del modelo ideal (policromía, dispersión, movimiento, metal, muestreo helicoidal), y por eso las recomendaciones operativas básicas suelen ser: centrado correcto, protocolos adecuados, instrucciones al paciente, longitud de escaneo justa y control de calidad del equipo.
+
+En dosimetría, los indicadores estandarizados permiten controlar y optimizar, siempre con el objetivo de mantener la dosis tan baja como sea razonablemente posible, sin perder la capacidad de responder la pregunta clínica.
+
+# 12. Bibliografía básica
+
+*(Libros y documentos de referencia; cuando hay identificadores persistentes se incluyen. Si un documento no tiene identificador claro, se indica con el tipo de referencia disponible.)*
+
+## 12.1. Libros fundamentales (visión completa)
+
+1. Jiang Hsieh. **Computed Tomography: Principles, Design, Artifacts, and Recent Advances**. 2nd edition. Wiley, 2009. ISBN 978-0-470-56353-3.
+
+2. Jerrold T. Bushberg; J. Anthony Seibert; Edwin M. Leidholdt Jr.; John M. Boone. **The Essential Physics of Medical Imaging**. 4th edition. Wolters Kluwer, 2020. ISBN 978-1-975103-224.
+
+3. Willi A. Kalender. **Computed Tomography: Fundamentals, System Technology, Image Quality, Applications**. (Ediciones previas ampliamente usadas; si se usa una edición específica, registrar su ISBN y editorial de la copia institucional).
+   *Nota:* En algunos catálogos aparece con editorial Publicis o Wiley-VCH según edición.
+
+4. Avinash C. Kak; Malcolm Slaney. **Principles of Computerized Tomographic Imaging**. Society for Industrial and Applied Mathematics, 2001 (reimpresión). ISBN 978-0-898714-94-4.
+
+5. Frank Natterer. **The Mathematics of Computerized Tomography**. Society for Industrial and Applied Mathematics, 2001. DOI: 10.1137/1.9780898719284.
+
+## 12.2. Reconstrucción y geometrías (artículos y referencias puntuales)
+
+6. L. A. Feldkamp; L. C. Davis; J. W. Kress. **Practical cone-beam algorithm**. Journal of the Optical Society of America A, 1984; 1(6):612–619. DOI: 10.1364/JOSAA.1.000612.
+
+7. Lu Liu. **Model-based Iterative Reconstruction: A Promising Algorithm for Today's Computed Tomography Imaging**. Journal of Medical Imaging and Radiation Sciences, 2014; 45(2):131–136. DOI: 10.1016/j.jmir.2014.02.002.
+
+8. A. M. den Harder; W. de Boer; H. A. de Jong; et al. **Hybrid and Model-Based Iterative Reconstruction Techniques for Pediatric CT**. American Journal of Roentgenology, 2015. DOI: 10.2214/AJR.14.12590.
+
+## 12.3. Dosimetría y protección radiológica (documentos de referencia)
+
+9. American Association of Physicists in Medicine. **Report No. 096: The Measurement, Reporting, and Management of Radiation Dose in CT**. 2008. (Identificador: Reporte No. 096; sin DOI en la fuente principal del organismo).
+
+10. American Association of Physicists in Medicine Task Group 204. **Size-Specific Dose Estimates (SSDE) in Pediatric and Adult Body CT Examinations**. 2011. (Identificador: Reporte del grupo de trabajo; distribución en formato informe; sin DOI en el documento principal).
+
+11. International Commission on Radiological Protection. **Diagnostic Reference Levels in Medical Imaging**. ICRP Publication 135. Annals of the ICRP, 2017; 46(1):1–144. DOI: 10.1177/0146645317717209.
+
+12. International Atomic Energy Agency. **Human Health Reports / Human Health Series** sobre dosimetría en tomografía axial computarizada y uso de indicadores de dosis (publicaciones técnicas institucionales; registrar el número exacto y datos bibliográficos según la copia utilizada por la institución).
+
+# Glosario breve (términos esenciales)
+
+**Atenuación:** debilitamiento del haz de rayos X al atravesar material.
+
+**Colimador:** dispositivo que limita y da forma al haz de rayos X, reduciendo irradiación innecesaria y ayudando a controlar dispersión.
+
+**Corte:** imagen que representa una “rebanada” del cuerpo.
+
+**Detector:** componente que mide cuánta radiación llega después de atravesar el paciente.
+
+**Dispersión:** radiación que cambia de dirección dentro del cuerpo y llega al detector por caminos no deseados, degradando el contraste.
+
+**Gantry:** estructura circular del escáner que gira y sostiene fuente y detectores.
+
+**Proyección:** conjunto de mediciones para un ángulo, interpretables como sumas de atenuación a lo largo de trayectorias.
+
+**Retroproyección:** proceso de “devolver” una proyección a la imagen repartiéndola sobre las líneas de los rayos y sumando sobre ángulos.
+
+**Retroproyección filtrada:** método clásico que filtra cada proyección para corregir borrosidad y luego retroproyecta.
+
+**Reconstrucción iterativa:** familia de métodos que ajustan una imagen por aproximaciones sucesivas comparando mediciones simuladas con mediciones reales.
+
+**Sinograma:** organización de proyecciones en una matriz (ángulo versus canal del detector).
+
+**Tomografía helicoidal:** adquisición donde el gantry gira continuamente y la mesa avanza, generando una trayectoria en hélice.
+
+**Transformada de Radon:** nombre formal del proceso “imagen → conjunto de sumas por líneas para muchos ángulos”; sirve como puente conceptual para la reconstrucción.
+
+**Vóxel:** elemento de volumen; “píxel en tres dimensiones”.
+
+---
