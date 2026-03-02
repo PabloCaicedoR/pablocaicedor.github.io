@@ -1,0 +1,498 @@
+---
+title: "Tutorial: Reconstrucción en tomografía axial computarizada, desde la adquisición hasta un volumen tridimensional"
+subtitle: "Fuente → Objeto → Detector → (normalización + log) → Radiografía lista para ver"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+jupyter: python3
+---
+
+## 1. Qué significa “reconstruir” en tomografía axial computarizada
+
+En tomografía axial computarizada se adquieren muchas mediciones de un mismo objeto desde diferentes ángulos. En términos físicos, cada medición es el resultado de cómo un haz de rayos X se atenúa al atravesar el cuerpo. El objetivo de la reconstrucción es estimar un mapa tridimensional del **coeficiente de atenuación** dentro del cuerpo (un valor por cada elemento de volumen, es decir, por cada *vóxel*). Dicho mapa permite “ver cortes” y también construir representaciones tridimensionales.
+
+La idea matemática clave es que, después de ciertas correcciones, cada medición se puede aproximar como una **integral de línea** del coeficiente de atenuación. Esa colección de integrales, organizada por ángulo y posición del detector, suele representarse como un **sinograma**. Reconstruir consiste en “invertir” esas integrales para recuperar el mapa interno.
+
+### 1.1. Del haz medido a integrales de atenuación
+
+Una forma estándar de modelar la medición de intensidad es:
+
+$$
+I = I_0 \exp\left(-\int_{\text{rayo}} \mu(\mathbf{r}) \, d\ell \right)
+$$
+
+donde $I_0$ es la intensidad incidente (sin objeto), $I$ la intensidad medida tras atravesar el objeto, y $\mu(\mathbf{r})$ el coeficiente de atenuación en el punto $\mathbf{r}$.
+
+Si tomas logaritmo, obtienes algo más lineal:
+
+$$
+p = -\ln\left(\frac{I}{I_0}\right) \approx \int_{\text{rayo}} \mu(\mathbf{r}) \, d\ell
+$$
+
+El valor $p$ es la “proyección” que se usa para reconstruir.
+
+---
+
+## 2. Datos crudos, correcciones y construcción del sinograma
+
+En un escáner real hay efectos que rompen el modelo ideal: dispersión, endurecimiento del haz, respuesta no lineal del detector, corriente oscura, variaciones de ganancia, geometría no perfecta, entre otros. Por eso, antes del logaritmo y de la reconstrucción, normalmente se hace un preprocesamiento.
+
+Un flujo conceptual típico es:
+
+1) **Calibración del detector**: corrección de corriente oscura (medición sin radiación) y corrección de ganancia (respuesta uniforme ante una exposición conocida).
+2) **Normalización** con una medición de referencia sin objeto ($I_0$).
+3) **Transformación logarítmica** para obtener proyecciones $p$.
+4) **Correcciones físicas** (según el sistema): dispersión y endurecimiento del haz.
+5) **Ordenamiento geométrico**: organizar proyecciones por ángulo y por coordenada del detector para formar el sinograma.
+
+En este tutorial haremos énfasis didáctico en el modelo ideal (integrales de línea), porque es el camino más claro para entender la reconstrucción.
+
+---
+
+## 3. Reconstrucción bidimensional: retroproyección filtrada (concepto)
+
+La retroproyección simple “devuelve” cada proyección al plano de imagen a lo largo de la geometría del rayo. Si solo retroproyectas sin filtrar, la imagen queda borrosa. La razón es que la retroproyección acumula energía de manera no uniforme y produce un efecto tipo “promedio” radial.
+
+La solución clásica es **filtrar** cada proyección antes de retroproyectar. El filtro más conocido es el tipo rampa (un filtro que refuerza altas frecuencias para compensar la borrosidad). Este procedimiento se conoce como **retroproyección filtrada**.
+
+En geometría de haz paralelo (una aproximación pedagógica), el procedimiento se resume así:
+
+1) Obtener proyecciones $p(\theta, s)$ para ángulos $\theta$ y posiciones $s$.
+2) Filtrar cada proyección en la dimensión $s$.
+3) Retroproyectar el resultado filtrado en el plano.
+
+---
+
+## 4. Ejemplo 1: reconstrucción bidimensional desde un sinograma sintético
+
+Este ejemplo crea un objeto bidimensional artificial, simula proyecciones (sinograma) con transformada de Radon (haz paralelo ideal) y reconstruye con retroproyección filtrada.
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+from skimage.data import shepp_logan_phantom
+from skimage.transform import radon, iradon, resize
+```
+
+```{python}
+# Objeto bidimensional (phantom) en una malla cuadrada
+N = 256
+phantom = shepp_logan_phantom()
+phantom = resize(phantom, (N, N), anti_aliasing=True)
+
+# Ángulos de adquisición (en grados)
+thetas = np.linspace(0, 180, 360, endpoint=False)
+
+# Sinograma ideal (haz paralelo)
+sinograma = radon(phantom, theta=thetas, circle=True)
+
+# Reconstrucción por retroproyección filtrada (iradon incluye filtrado)
+recon = iradon(sinograma, theta=thetas, circle=True, filter_name="ramp")
+
+fig = plt.figure(figsize=(12, 4))
+ax1 = fig.add_subplot(1, 3, 1)
+ax1.imshow(phantom, cmap="gray")
+ax1.set_title("Objeto (phantom)")
+ax1.axis("off")
+
+ax2 = fig.add_subplot(1, 3, 2)
+ax2.imshow(sinograma, cmap="gray", aspect="auto")
+ax2.set_title("Sinograma")
+ax2.set_xlabel("Ángulo")
+ax2.set_ylabel("Posición en detector")
+ax2.axis("on")
+
+ax3 = fig.add_subplot(1, 3, 3)
+ax3.imshow(recon, cmap="gray")
+ax3.set_title("Reconstrucción (retroproyección filtrada)")
+ax3.axis("off")
+
+plt.tight_layout()
+plt.show()
+```
+
+### 4.1. Qué aprendiste aquí (y qué falta para un sistema real)
+
+Aquí asumiste un haz paralelo ideal y ausencia de correcciones físicas. Un escáner clínico típico usa geometría de abanico (fuente puntual y detector curvo o plano) y, en volúmenes, geometría helicoidal con detector en múltiples filas. En esos casos la idea de “filtrar y retroproyectar” permanece, pero la geometría y los pesos de reconstrucción cambian.
+
+---
+
+## 5. De cortes bidimensionales a un volumen tridimensional (idea práctica)
+
+Hay dos escenarios conceptuales comunes:
+
+**Escenario A (didáctico y muy usado para entender):** reconstruir muchos cortes bidimensionales independientes, cada uno con su sinograma, y luego apilarlos según la coordenada axial. Esto produce un volumen tridimensional.
+
+**Escenario B (más fiel a muchos escáneres modernos):** reconstrucción verdaderamente tridimensional desde geometría de cono (con detector bidimensional). Allí se usan algoritmos de retroproyección filtrada adaptados a cono (por ejemplo, el método de Feldkamp–Davis–Kress) o métodos iterativos tridimensionales.
+
+En docencia conviene dominar el escenario A primero, porque te obliga a entender el sinograma, el filtrado y la retroproyección sin una sobrecarga geométrica.
+
+---
+
+## 6. Ejemplo 2: reconstrucción tridimensional didáctica por apilamiento de cortes
+
+Vamos a crear un objeto tridimensional sintético (un cilindro cuya sección cambia con la coordenada axial), simular proyecciones por corte, reconstruir cada corte, y ensamblar el volumen.
+
+```{python}
+from skimage.draw import disk
+```
+
+```{python}
+def phantom_3d_variable(N=128, Nz=80, r0=0.15, r1=0.35, mu_bg=0.0, mu_obj=1.0):
+    """
+    Volumen sintético: un objeto circular cuyo radio varía suavemente con z.
+    N: tamaño en x,y
+    Nz: número de cortes
+    r0, r1: radios fraccionales (0 a 0.5 aprox)
+    """
+    vol = np.full((Nz, N, N), mu_bg, dtype=float)
+    cy, cx = N//2, N//2
+    zs = np.linspace(0, 1, Nz)
+    for k, z in enumerate(zs):
+        r = (r0 + (r1 - r0) * (0.5 - 0.5*np.cos(2*np.pi*z))) * N
+        rr, cc = disk((cy, cx), r, shape=(N, N))
+        vol[k, rr, cc] = mu_obj
+    return vol
+
+N = 128
+Nz = 80
+vol_true = phantom_3d_variable(N=N, Nz=Nz)
+
+thetas = np.linspace(0, 180, 240, endpoint=False)
+
+# Reconstrucción corte a corte
+vol_recon = np.zeros_like(vol_true)
+for k in range(Nz):
+    sino = radon(vol_true[k], theta=thetas, circle=True)
+    vol_recon[k] = iradon(sino, theta=thetas, circle=True, filter_name="ramp")
+
+# Visualización de tres cortes ortogonales (axial, coronal, sagital)
+kz = Nz//2
+ky = N//2
+kx = N//2
+
+axial = vol_recon[kz]
+coronal = vol_recon[:, ky, :]
+sagital = vol_recon[:, :, kx]
+
+fig = plt.figure(figsize=(12, 4))
+a1 = fig.add_subplot(1, 3, 1)
+a1.imshow(axial, cmap="gray")
+a1.set_title("Corte axial (z medio)")
+a1.axis("off")
+
+a2 = fig.add_subplot(1, 3, 2)
+a2.imshow(coronal, cmap="gray", aspect="auto")
+a2.set_title("Corte coronal (y medio)")
+a2.axis("off")
+
+a3 = fig.add_subplot(1, 3, 3)
+a3.imshow(sagital, cmap="gray", aspect="auto")
+a3.set_title("Corte sagital (x medio)")
+a3.axis("off")
+
+plt.tight_layout()
+plt.show()
+```
+
+Este volumen tridimensional ya puede analizarse por cortes en cualquier plano. Eso, en la práctica clínica, se llama **reformateo multiplanar**.
+
+---
+
+## 7. De volumen a representación tridimensional: dos rutas útiles
+
+Una vez tienes un volumen $V(z,y,x)$, hay dos formas frecuentes de “verlo” en tres dimensiones.
+
+La primera es **visualización por volumen**, que integra contribuciones a lo largo de líneas de visión (como una radiografía sintética del volumen), con reglas de opacidad y color. Es muy potente, pero requiere decisiones de visualización.
+
+La segunda es **extracción de superficie** (por ejemplo, hueso) definiendo un umbral sobre el valor del vóxel y obteniendo una malla triangular con el algoritmo de “cubos marchantes”.
+
+A continuación implementamos extracción de superficie en el volumen sintético.
+
+```{python}
+from skimage.measure import marching_cubes
+```
+
+```{python}
+# Extracción de una isosuperficie
+nivel = 0.5  # umbral entre fondo (0) y objeto (1)
+verts, faces, normals, values = marching_cubes(vol_recon, level=nivel)
+
+# Graficar una vista básica con Matplotlib (proyección simple de los puntos)
+fig = plt.figure(figsize=(6, 6))
+ax = fig.add_subplot(111, projection="3d")
+ax.scatter(verts[::10, 0], verts[::10, 1], verts[::10, 2], s=0.1)
+ax.set_title("Nube de puntos de la isosuperficie (muestra subsampleada)")
+ax.set_xlabel("z")
+ax.set_ylabel("y")
+ax.set_zlabel("x")
+plt.tight_layout()
+plt.show()
+```
+
+La nube de puntos es útil para verificar que la superficie existe, pero no es una superficie “bonita”. Para una malla real se recomienda usar un visor tridimensional dedicado o bibliotecas interactivas.
+
+---
+
+## 8. Ejemplo 3 (opcional): malla interactiva en HTML con Plotly
+
+Si deseas interacción (rotar, acercar), Plotly suele funcionar bien en HTML.
+
+```{python}
+try:
+    import plotly.graph_objects as go
+
+    x, y, z = verts[:, 2], verts[:, 1], verts[:, 0]  # reordenamiento para visualización
+    i, j, k = faces[:, 0], faces[:, 1], faces[:, 2]
+
+    fig = go.Figure(data=[
+        go.Mesh3d(
+            x=x, y=y, z=z,
+            i=i, j=j, k=k,
+            opacity=0.5
+        )
+    ])
+    fig.update_layout(
+        title="Isosuperficie (malla triangular)",
+        scene=dict(
+            xaxis_title="x",
+            yaxis_title="y",
+            zaxis_title="z"
+        ),
+        width=700,
+        height=600
+    )
+    fig.show()
+except Exception as e:
+    print("No fue posible usar Plotly en este entorno. Error:", e)
+```
+
+---
+
+## 9. Flujo con datos clínicos reales: lectura de serie en formato DICOM y volumen
+
+En la práctica, muchas veces no reconstruyes desde proyecciones porque no tienes los datos crudos del escáner, sino un volumen ya reconstruido por el sistema, almacenado como una serie de imágenes en formato Digital Imaging and Communications in Medicine (DICOM).
+
+Aun así, ese flujo es clave para llegar a una representación tridimensional: cargar los cortes, ordenarlos, convertirlos a unidades físicas (en tomografía axial computarizada se usan unidades Hounsfield), re-muestrear a vóxeles isotrópicos si hace falta, y luego visualizar o segmentar.
+
+El siguiente código asume que tienes una carpeta con archivos DICOM de una misma serie.
+
+```{python}
+import os
+```
+
+```{python}
+def cargar_serie_dicom(ruta_carpeta):
+    """
+    Carga una serie DICOM (cortes) y retorna:
+    - volumen: arreglo (Nz, Ny, Nx)
+    - espaciado: (dz, dy, dx) en milímetros si está disponible
+    - metadatos básicos
+    """
+    try:
+        import pydicom
+    except ImportError as e:
+        raise ImportError("Instala pydicom para usar esta función. Por ejemplo: pip install pydicom") from e
+
+    archivos = []
+    for fn in os.listdir(ruta_carpeta):
+        fp = os.path.join(ruta_carpeta, fn)
+        if os.path.isfile(fp):
+            try:
+                ds = pydicom.dcmread(fp, stop_before_pixels=False, force=True)
+                if hasattr(ds, "PixelData"):
+                    archivos.append(ds)
+            except Exception:
+                pass
+
+    if len(archivos) == 0:
+        raise ValueError("No se encontraron archivos DICOM con PixelData en la carpeta dada.")
+
+    # Ordenar por posición axial si existe; si no, por InstanceNumber
+    def clave_orden(ds):
+        if hasattr(ds, "ImagePositionPatient"):
+            return float(ds.ImagePositionPatient[2])
+        if hasattr(ds, "SliceLocation"):
+            return float(ds.SliceLocation)
+        if hasattr(ds, "InstanceNumber"):
+            return float(ds.InstanceNumber)
+        return 0.0
+
+    archivos = sorted(archivos, key=clave_orden)
+
+    # Construir volumen
+    imgs = np.stack([ds.pixel_array.astype(np.int16) for ds in archivos], axis=0)
+
+    # Conversión a unidades Hounsfield (si hay slope e intercept)
+    # En tomografía axial computarizada, RescaleSlope y RescaleIntercept suelen existir.
+    slope = float(getattr(archivos[0], "RescaleSlope", 1.0))
+    intercept = float(getattr(archivos[0], "RescaleIntercept", 0.0))
+    vol_hu = imgs.astype(np.float32) * slope + intercept
+
+    # Espaciado
+    dy, dx = (1.0, 1.0)
+    dz = 1.0
+    if hasattr(archivos[0], "PixelSpacing"):
+        dy, dx = map(float, archivos[0].PixelSpacing)
+    if hasattr(archivos[0], "SliceThickness"):
+        dz = float(archivos[0].SliceThickness)
+
+    meta = {
+        "slope": slope,
+        "intercept": intercept,
+        "modality": str(getattr(archivos[0], "Modality", "")),
+        "series_description": str(getattr(archivos[0], "SeriesDescription", "")),
+        "rows": int(getattr(archivos[0], "Rows", imgs.shape[1])),
+        "cols": int(getattr(archivos[0], "Columns", imgs.shape[2])),
+        "num_slices": int(imgs.shape[0]),
+    }
+    return vol_hu, (dz, dy, dx), meta
+
+# USO:
+# ruta = "/ruta/a/tu/carpeta_dicom"
+# vol_hu, espaciado, meta = cargar_serie_dicom(ruta)
+# print(meta, espaciado, vol_hu.shape)
+```
+
+### 9.1. Visualización rápida de cortes ortogonales del volumen real
+
+```{python}
+def mostrar_ortogonales(vol, titulo="Volumen"):
+    Nz, Ny, Nx = vol.shape
+    kz, ky, kx = Nz//2, Ny//2, Nx//2
+
+    axial = vol[kz]
+    coronal = vol[:, ky, :]
+    sagital = vol[:, :, kx]
+
+    fig = plt.figure(figsize=(12, 4))
+    a1 = fig.add_subplot(1, 3, 1)
+    a1.imshow(axial, cmap="gray")
+    a1.set_title(f"{titulo}: axial")
+    a1.axis("off")
+
+    a2 = fig.add_subplot(1, 3, 2)
+    a2.imshow(coronal, cmap="gray", aspect="auto")
+    a2.set_title(f"{titulo}: coronal")
+    a2.axis("off")
+
+    a3 = fig.add_subplot(1, 3, 3)
+    a3.imshow(sagital, cmap="gray", aspect="auto")
+    a3.set_title(f"{titulo}: sagital")
+    a3.axis("off")
+
+    plt.tight_layout()
+    plt.show()
+
+# USO:
+# mostrar_ortogonales(vol_hu, titulo="Tomografía axial computarizada (unidades Hounsfield)")
+```
+
+---
+
+## 10. Qué significa “reconstrucción tridimensional” en un escáner real
+
+Cuando alguien dice “reconstrucción tridimensional” en tomografía axial computarizada, puede referirse a dos cosas distintas:
+
+La primera es que ya existe un volumen reconstruido (una grilla de vóxeles) y se hace una **visualización tridimensional** (por volumen o por superficies). En ese caso, el algoritmo de reconstrucción principal ya ocurrió (retroproyección filtrada adaptada a la geometría o método iterativo), y tú estás en la etapa de visualización y segmentación.
+
+La segunda es que el algoritmo trabaja **directamente en tres dimensiones** usando la geometría de cono y el movimiento helicoidal, reconstruyendo el volumen sin “rebanar” el problema en cortes independientes. Esto es más fiel a la física y geometría modernas, pero también es más exigente.
+
+En docencia, dominar el ciclo “proyecciones → sinograma → retroproyección filtrada bidimensional → apilamiento → visualización” te da la intuición correcta para luego entender reconstrucción tridimensional en geometría de cono y métodos iterativos.
+
+---
+
+## 11. Lista de verificación para tu propio tutorial (lo que no debe faltar)
+
+Tu tutorial queda completo si el estudiante puede explicar, con sus propias palabras, cómo se pasa de intensidades medidas a integrales de atenuación, por qué se usa el logaritmo, qué representa el sinograma, por qué la retroproyección requiere filtrado, cómo se construye un volumen apilando cortes, y cómo del volumen se obtiene una visualización tridimensional por volumen o por superficies.
+
+Si quieres, en un siguiente paso puedo convertir este mismo contenido en una guía evaluable para estudiantes (con ejercicios, preguntas de control, rúbrica y un conjunto mínimo de prácticas con datos reales), manteniendo el mismo flujo conceptual.
+
+
+## 1. Informe de laboratorio
+
+1. Explique, con sus palabras, qué problema resuelve la reconstrucción en tomografía axial computarizada y qué información física representa el coeficiente de atenuación.
+
+2. Justifique por qué se aplica la transformación logarítmica a las mediciones del detector y qué se gana al pasar de intensidades a proyecciones.
+
+3. Defina qué es un sinograma y describa qué patrones esperaría ver si el objeto contiene una estructura circular y una estructura elíptica.
+
+## 2. Materiales, datos y procedimiento
+
+4. Describa qué datos de entrada usó en el laboratorio (phantom sintético, datos simulados, o serie de imágenes en formato Digital Imaging and Communications in Medicine) e indique tamaño, resolución y número de vistas o cortes.
+
+5. Liste el flujo completo de procesamiento implementado, desde la obtención de proyecciones hasta la reconstrucción del corte. Indique qué pasos corresponden al modelo ideal y cuáles serían correcciones necesarias en un escáner real.
+
+6. Explique cómo seleccionó el número de ángulos de adquisición y el número de muestras del detector. Describa qué ocurriría si reduce ambos a la mitad.
+
+## 3. Reconstrucción bidimensional
+
+7. Compare retroproyección simple contra retroproyección filtrada: describa qué degradación aparece sin filtrado y por qué ocurre.
+
+8. Explique la función del filtro tipo rampa. Si usó otros filtros (por ejemplo, Shepp–Logan, coseno, Hamming o Hann), compare resultados y discuta ventajas y desventajas observadas.
+
+9. Diseñe y ejecute un experimento controlado: reconstruya el mismo objeto con tres cantidades distintas de proyecciones (baja, media y alta) y describa cómo cambian el ruido, la nitidez y los artefactos.
+
+## 4. Artefactos y limitaciones
+
+10. Describa el artefacto de rayas o estrías asociado a muestreo angular insuficiente. Muestre al menos una figura donde se evidencie.
+
+11. Explique qué significa endurecimiento del haz y por qué el modelo ideal de atenuación lineal se rompe en sistemas reales. Proponga, de manera conceptual, una corrección posible.
+
+12. Explique el efecto de la radiación dispersa sobre el sinograma y sobre la imagen reconstruida. Indique si se comporta como un sesgo, como ruido, o como ambos, y justifique.
+
+13. Describa qué es un artefacto de anillo y qué tipo de problema del detector lo produce. Explique cómo se manifestaría en el sinograma.
+
+## 5. Reconstrucción tridimensional y ensamblaje de volumen
+
+14. Explique la diferencia entre reconstrucción tridimensional entendida como apilamiento de cortes y reconstrucción tridimensional entendida como algoritmo que trabaja directamente en geometría de cono.
+
+15. Describa cómo construyó el volumen tridimensional: cómo se ordenaron los cortes, cómo se definió el espaciado entre cortes y qué suposiciones hizo si el espaciado no era isotrópico.
+
+16. Muestre cortes ortogonales del volumen (axial, coronal, sagital) y explique qué información aporta cada vista para evaluar la consistencia del volumen.
+
+## 6. Segmentación y visualización tridimensional
+
+17. Si realizó extracción de superficie mediante umbral, justifique cómo eligió el umbral. Explique qué cambia si el umbral es demasiado bajo o demasiado alto.
+
+18. Compare visualización por superficie versus visualización por volumen: indique en qué casos es preferible cada una y qué información se pierde o se gana.
+
+19. Proponga un criterio para validar que la superficie reconstruida corresponde al objeto real del phantom (o al tejido de interés si usó datos reales).
+
+## 7. Métricas y evaluación cuantitativa
+
+20. Defina y calcule al menos dos métricas para evaluar la reconstrucción (por ejemplo, error cuadrático medio frente al phantom, relación señal a ruido, o índice de similitud estructural).
+
+21. Analice cómo cambia una métrica al variar el número de proyecciones o el filtro. Interprete el resultado e indique a partir de qué punto ya no mejora de manera relevante.
+
+22. Indique si observó un compromiso entre resolución espacial y ruido. Explíquelo con evidencia (figuras o métricas).
+
+## 8. Discusión, conclusiones y reproducibilidad
+
+23. Identifique tres decisiones de diseño del flujo de reconstrucción (número de vistas, filtro, tamaño de imagen, preprocesamiento) y explique cuál tuvo mayor impacto y por qué.
+
+24. Discuta al menos dos limitaciones del laboratorio (modelo ideal, geometría, ausencia de correcciones físicas, ausencia de movimiento del paciente) y cómo podrían abordarse en una práctica más avanzada.
+
+25. Concluya con una recomendación operativa: si tuviera que escoger un conjunto de parámetros razonables para reconstruir un objeto similar, cuáles elegiría y qué justificación técnica daría.
+
+26. Documente el entorno de ejecución (versión de Python y versiones de librerías principales) y entregue una sección de reproducibilidad que permita correr la práctica sin ambigüedad.
+
+27. Incluya una tabla con los parámetros usados y sus valores finales (tamaño de imagen, número de ángulos, tipo de filtro, umbral, entre otros) y explique cualquier ajuste realizado durante el trabajo.
+
+28. Asegure que todas las figuras incluyan título, unidades si aplica y una descripción interpretativa (no solo un rótulo).
