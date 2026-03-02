@@ -1,0 +1,584 @@
+---
+title: "Laboratorio: Buenas prácticas en proyectos de Python para aplicaciones y análisis (con uv)"
+subtitle: "Entornos reproducibles, estructura de proyecto, dependencias, calidad de código y análisis descriptivo"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+jupyter: python3
+---
+
+# Propósito del laboratorio
+
+En este laboratorio vas a construir un proyecto pequeño pero “bien hecho” desde el inicio. La idea central es que, si otra persona clona tu proyecto, pueda ejecutar lo mismo y obtener los mismos resultados sin adivinar qué instalaste, qué versión usaste o desde dónde corriste el código.
+
+El gestor de entornos y dependencias será **uv**, que crea y mantiene un entorno aislado por proyecto y genera un archivo de bloqueo de versiones para reproducibilidad.
+
+# Resultados de aprendizaje
+
+Al finalizar, deberías poder:
+
+1. Instalar uv en tu sistema y verificar que funciona.
+2. Crear un proyecto nuevo con estructura base y archivos mínimos.
+3. Declarar dependencias de forma explícita y reproducible.
+4. Ejecutar scripts y comandos dentro del entorno del proyecto sin “contaminar” el sistema.
+5. Separar análisis (cálculo) de presentación (figuras y reportes) en un flujo ordenado.
+6. Aplicar revisiones automáticas de estilo y ejecutar pruebas simples.
+
+# Requisitos previos
+
+Se asume que sabes programación básica (variables, condicionales, ciclos, funciones) y estadística descriptiva (promedio, mediana, desviación estándar, percentiles). No se asume experiencia previa con entornos ni con archivos de configuración.
+
+Necesitas acceso a una terminal y un editor de texto (puede ser Visual Studio Code, PyCharm, o un editor simple).
+
+# Parte A. Instalación de uv (suponiendo que no está instalado)
+
+:::{.callout-note}
+Para instalar uv se suele usar un instalador por script. Antes de ejecutarlo, es buena práctica **inspeccionarlo** (se muestra cómo hacerlo).
+:::
+
+## A.1. Instalar uv
+
+::: {.panel-tabset}
+
+### Linux / macOS
+
+1) Instala uv:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+2) (Buena práctica) Inspecciona el instalador antes de ejecutarlo:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | less
+```
+
+3) Cierra y abre la terminal (o recarga tu configuración de shell) si el comando `uv` no aparece.
+
+4) Verifica:
+
+```bash
+uv --version
+```
+
+### Windows (PowerShell)
+
+1) Instala uv:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+2) (Buena práctica) Inspecciona el instalador antes de ejecutarlo:
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | more"
+```
+
+3) Verifica:
+
+```powershell
+uv --version
+```
+
+:::
+
+## A.2. Si no tienes Python (o no estás seguro)
+
+uv puede instalar Python si hace falta. En muchos equipos ya existe Python y uv lo detecta, pero este paso te evita bloqueos.
+
+```bash
+uv python install 3.12
+python3.12 --version
+```
+
+Si te funciona, ya tienes una base consistente para el laboratorio.
+
+# Parte B. Crear un proyecto (con estructura que permita crecer)
+
+La forma más común de perder buenas prácticas es mezclar: scripts sueltos, paquetes instalados “a mano”, datos dispersos y resultados sin rastreabilidad. Aquí evitaremos eso desde el minuto cero.
+
+## B.1. Inicializar un proyecto “empaquetado”
+
+Vamos a crear un proyecto “empaquetado” (con carpeta `src/`) para poder importar módulos de forma limpia y escribir pruebas sin trucos.
+
+```bash
+uv init --package lab-bp-uv
+cd lab-bp-uv
+```
+
+**Qué deberías ver** (aproximado):
+
+- `pyproject.toml` (metadatos del proyecto y dependencias)
+- `uv.lock` (aparece cuando sincronizas o ejecutas; contiene versiones exactas resueltas)
+- `.venv/` (aparece cuando sincronizas o ejecutas; es el entorno del proyecto)
+- `src/` (código del proyecto)
+
+## B.2. Ejecutar por primera vez (para que se creen entorno y bloqueo)
+
+```bash
+uv run python -c "print('Entorno listo')"
+```
+
+Si todo va bien, uv creará (si aún no existen) el entorno del proyecto y el archivo de bloqueo automáticamente.
+
+# Parte C. Dependencias: declarar, bloquear, sincronizar
+
+En un proyecto serio, instalar paquetes “porque sí” es una receta para errores. La regla es:
+
+- **Lo que uses debe estar declarado**.
+- **Lo que se ejecute debe estar bloqueado** (versiones exactas).
+- **Lo que esté bloqueado debe poder instalarse igual en otra máquina**.
+
+## C.1. Agregar dependencias de análisis
+
+Usaremos:
+
+- `pandas` para datos tabulares.
+- `matplotlib` para una figura simple.
+
+```bash
+uv add pandas matplotlib
+```
+
+## C.2. Agregar dependencias de desarrollo (calidad y pruebas)
+
+Agregaremos:
+
+- `pytest` para pruebas.
+- `ruff` para revisión automática de estilo y formato.
+- `ipykernel` si quieres usar cuadernos de Jupyter conectados al proyecto (opcional, pero recomendado).
+
+```bash
+uv add --dev pytest ruff ipykernel
+```
+
+## C.3. Ver árbol de dependencias (para entender “qué se instaló”)
+
+```bash
+uv tree
+```
+
+# Parte D. Estructura recomendada del proyecto
+
+Crea estas carpetas:
+
+```bash
+mkdir -p data/raw data/processed outputs figures tests
+```
+
+La intención es:
+
+- `data/raw`: datos “crudos” (no se editan).
+- `data/processed`: datos ya limpios o transformados.
+- `outputs`: tablas/resultados numéricos.
+- `figures`: figuras exportadas.
+- `src/`: código reutilizable.
+- `tests`: pruebas.
+
+# Parte E. Implementación: generar datos, analizar y guardar resultados
+
+Vamos a construir un flujo mínimo y reproducible:
+
+1) Generar un conjunto de datos sintético (para no depender de descargas).
+2) Cargar datos.
+3) Validar columnas.
+4) Calcular estadística descriptiva por grupo.
+5) Guardar una tabla de resumen.
+6) Guardar una figura.
+
+## E.1. Código del módulo (crea/edita archivos)
+
+### Archivo: `src/lab_bp_uv/datos.py`
+
+Crea el archivo con este contenido:
+
+```python
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+
+@dataclass(frozen=True)
+class EsquemaDatos:
+    columnas_obligatorias: tuple[str, ...] = ("id", "grupo", "edad", "medicion")
+
+
+def generar_datos_sinteticos(n: int, semilla: int = 123) -> pd.DataFrame:
+    """
+    Genera un conjunto de datos sintético con dos grupos.
+
+    Variables:
+      - id: identificador entero
+      - grupo: "A" o "B"
+      - edad: años (entero)
+      - medicion: valor continuo (por ejemplo, una medición funcional)
+    """
+    rng = np.random.default_rng(semilla)
+
+    grupo = rng.choice(["A", "B"], size=n, replace=True, p=[0.5, 0.5])
+    edad = rng.integers(low=18, high=75, size=n)
+
+    # Medición: dos distribuciones ligeramente distintas por grupo
+    base = rng.normal(loc=50.0, scale=10.0, size=n)
+    efecto = np.where(grupo == "B", 3.0, 0.0)
+    medicion = base + efecto
+
+    df = pd.DataFrame(
+        {
+            "id": np.arange(1, n + 1),
+            "grupo": grupo,
+            "edad": edad,
+            "medicion": medicion,
+        }
+    )
+    return df
+
+
+def guardar_csv(df: pd.DataFrame, ruta: Path) -> None:
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(ruta, index=False)
+
+
+def cargar_csv(ruta: Path) -> pd.DataFrame:
+    return pd.read_csv(ruta)
+```
+
+### Archivo: `src/lab_bp_uv/analisis.py`
+
+```python
+from __future__ import annotations
+
+from pathlib import Path
+
+import pandas as pd
+
+
+def validar_columnas(df: pd.DataFrame, columnas_obligatorias: tuple[str, ...]) -> None:
+    faltantes = [c for c in columnas_obligatorias if c not in df.columns]
+    if faltantes:
+        raise ValueError(f"Faltan columnas obligatorias: {faltantes}")
+
+
+def resumen_descriptivo_por_grupo(df: pd.DataFrame, variable: str, grupo: str) -> pd.DataFrame:
+    """
+    Retorna un resumen descriptivo por grupo:
+    tamaño de muestra, promedio, desviación estándar, mediana, mínimo, máximo.
+    """
+    g = df.groupby(grupo)[variable]
+    resumen = g.agg(
+        n="count",
+        promedio="mean",
+        desviacion_estandar="std",
+        mediana="median",
+        minimo="min",
+        maximo="max",
+    ).reset_index()
+    return resumen
+
+
+def guardar_tabla(df: pd.DataFrame, ruta: Path) -> None:
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(ruta, index=False)
+```
+
+### Archivo: `src/lab_bp_uv/figuras.py`
+
+```python
+from __future__ import annotations
+
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+
+def histograma_por_grupo(df: pd.DataFrame, variable: str, grupo: str, ruta_salida: Path) -> None:
+    ruta_salida.parent.mkdir(parents=True, exist_ok=True)
+
+    fig = plt.figure()
+    for nombre_grupo in sorted(df[grupo].unique()):
+        datos = df.loc[df[grupo] == nombre_grupo, variable].dropna()
+        plt.hist(datos, bins=20, alpha=0.6, label=f"{grupo}={nombre_grupo}")
+
+    plt.xlabel(variable)
+    plt.ylabel("Frecuencia")
+    plt.legend()
+    plt.tight_layout()
+    fig.savefig(ruta_salida, dpi=150)
+    plt.close(fig)
+```
+
+### Archivo: `src/lab_bp_uv/cli.py`
+
+```python
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from lab_bp_uv.analisis import guardar_tabla, resumen_descriptivo_por_grupo, validar_columnas
+from lab_bp_uv.datos import EsquemaDatos, cargar_csv, generar_datos_sinteticos, guardar_csv
+from lab_bp_uv.figuras import histograma_por_grupo
+
+
+def _construir_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="lab-bp-uv",
+        description="Flujo mínimo reproducible: generar datos, analizar y exportar resultados.",
+    )
+    sub = p.add_subparsers(dest="comando", required=True)
+
+    p_gen = sub.add_parser("generar", help="Genera un CSV sintético en data/raw/")
+    p_gen.add_argument("--n", type=int, default=200)
+    p_gen.add_argument("--semilla", type=int, default=123)
+    p_gen.add_argument("--salida", type=Path, default=Path("data/raw/datos.csv"))
+
+    p_ana = sub.add_parser("analizar", help="Calcula resumen descriptivo y genera figura")
+    p_ana.add_argument("--entrada", type=Path, default=Path("data/raw/datos.csv"))
+    p_ana.add_argument("--tabla", type=Path, default=Path("outputs/resumen_por_grupo.csv"))
+    p_ana.add_argument("--figura", type=Path, default=Path("figures/hist_medicion.png"))
+    p_ana.add_argument("--variable", type=str, default="medicion")
+    p_ana.add_argument("--grupo", type=str, default="grupo")
+
+    return p
+
+
+def main() -> None:
+    args = _construir_parser().parse_args()
+    esquema = EsquemaDatos()
+
+    if args.comando == "generar":
+        df = generar_datos_sinteticos(n=args.n, semilla=args.semilla)
+        guardar_csv(df, args.salida)
+        print(f"Datos guardados en: {args.salida}")
+        return
+
+    if args.comando == "analizar":
+        df = cargar_csv(args.entrada)
+        validar_columnas(df, esquema.columnas_obligatorias)
+
+        resumen = resumen_descriptivo_por_grupo(df, variable=args.variable, grupo=args.grupo)
+        guardar_tabla(resumen, args.tabla)
+
+        histograma_por_grupo(df, variable=args.variable, grupo=args.grupo, ruta_salida=args.figura)
+
+        print(f"Tabla guardada en: {args.tabla}")
+        print(f"Figura guardada en: {args.figura}")
+        return
+```
+
+## E.2. Conectar el comando del proyecto a la interfaz de línea de comandos
+
+Abre `pyproject.toml` y busca la sección `[project.scripts]`. Ajusta para que apunte a `lab_bp_uv.cli:main`. Debe quedar parecido a esto:
+
+```toml
+[project.scripts]
+lab-bp-uv = "lab_bp_uv.cli:main"
+```
+
+# Parte F. Ejecutar el flujo completo (sin activar el entorno manualmente)
+
+Primero genera el conjunto de datos:
+
+```bash
+uv run lab-bp-uv generar --n 200 --semilla 123
+```
+
+Luego ejecuta el análisis:
+
+```bash
+uv run lab-bp-uv analizar
+```
+
+Verifica que aparezcan:
+
+- `data/raw/datos.csv`
+- `outputs/resumen_por_grupo.csv`
+- `figures/hist_medicion.png`
+
+# Parte G. Buenas prácticas de calidad: formato y revisión automática
+
+La idea no es “memorizar reglas”, sino dejar que herramientas automáticas hagan el trabajo repetitivo.
+
+## G.1. Formatear el código
+
+```bash
+uv run ruff format .
+```
+
+## G.2. Revisar problemas comunes (por ejemplo, imports sin usar, errores simples)
+
+```bash
+uv run ruff check .
+```
+
+Si algo falla, corrige y vuelve a ejecutar hasta que pase.
+
+# Parte H. Pruebas automáticas mínimas (para no romper cosas sin darte cuenta)
+
+Crea el archivo `tests/test_analisis.py`:
+
+```python
+import pandas as pd
+import pytest
+
+from lab_bp_uv.analisis import resumen_descriptivo_por_grupo, validar_columnas
+
+
+def test_validar_columnas_falla_si_faltan():
+    df = pd.DataFrame({"a": [1]})
+    with pytest.raises(ValueError):
+        validar_columnas(df, ("id", "grupo"))
+
+
+def test_resumen_descriptivo_por_grupo():
+    df = pd.DataFrame(
+        {
+            "grupo": ["A", "A", "B"],
+            "medicion": [10.0, 20.0, 30.0],
+        }
+    )
+    resumen = resumen_descriptivo_por_grupo(df, variable="medicion", grupo="grupo")
+
+    # Debe haber 2 filas: A y B
+    assert set(resumen["grupo"]) == {"A", "B"}
+
+    # Promedio en A: (10 + 20)/2 = 15
+    prom_A = float(resumen.loc[resumen["grupo"] == "A", "promedio"].iloc[0])
+    assert prom_A == 15.0
+```
+
+Ejecuta pruebas:
+
+```bash
+uv run pytest -q
+```
+
+# Parte I. Usar cuadernos de Jupyter sin romper la reproducibilidad (opcional, recomendado)
+
+La recomendación aquí es: usa cuadernos de Jupyter para exploración, pero mantén el “corazón” del análisis en funciones dentro de `src/` para poder probarlo y reutilizarlo.
+
+Para iniciar Jupyter conectado al proyecto:
+
+```bash
+uv run --with jupyter jupyter lab
+```
+
+Si quieres instalar paquetes desde el cuaderno sin confusiones, crea un núcleo dedicado (requiere `ipykernel` como dependencia de desarrollo, ya lo agregaste):
+
+```bash
+uv run ipython kernel install --user --env VIRTUAL_ENV $(pwd)/.venv --name=lab-bp-uv
+uv run --with jupyter jupyter lab
+```
+
+Al crear el cuaderno, selecciona el núcleo `lab-bp-uv`.
+
+# Parte J. Entregables y criterios de evaluación
+
+Entrega un archivo comprimido con la carpeta del proyecto (o un repositorio), incluyendo:
+
+1. `pyproject.toml` y `uv.lock`.
+2. Carpeta `src/` con los módulos y la interfaz de línea de comandos.
+3. Carpeta `tests/` con al menos las pruebas del laboratorio.
+4. Salidas generadas: `outputs/resumen_por_grupo.csv` y `figures/hist_medicion.png`.
+5. Un `README.md` breve donde expliques cómo reproducir el flujo en una máquina nueva con solo:
+   - instalar uv,
+   - entrar a la carpeta,
+   - ejecutar `uv run ...`.
+
+# Parte K. ¿Qué cambia si el proyecto también requiere hardware?
+
+Cuando un proyecto de Python depende de hardware (por ejemplo: una cámara, una unidad de medición inercial, un sistema de electromiografía, una tarjeta de adquisición, un detector, una impresora térmica o una unidad de procesamiento gráfico), aparecen dependencias que **uv no puede resolver por sí solo**, porque no son “paquetes de Python”, sino **componentes del sistema operativo** y del entorno físico.
+
+En un proyecto solo de software, bastaría con declarar dependencias en `pyproject.toml` y bloquear versiones en `uv.lock`. En un proyecto con hardware, además debes controlar y documentar como mínimo: controladores (drivers) del dispositivo, permisos del sistema, bibliotecas del fabricante (cuando existan), versión de firmware del dispositivo, configuración de conexión (puerto, identificadores, reglas de acceso), y procedimientos de calibración. Si eso no se hace, dos personas con el mismo código y el mismo `uv.lock` pueden obtener resultados distintos o, directamente, no lograr ejecutar nada.
+
+El efecto práctico es que el proyecto se vuelve “mixto”: una parte es reproducible con uv (dependencias de Python) y otra parte es reproducible solo si el entorno del sistema operativo está bien definido. Esto obliga a incorporar buenas prácticas adicionales.
+
+## K.1. Separar dependencias de Python y dependencias del sistema
+
+uv gestiona muy bien bibliotecas de Python (por ejemplo, `pandas`, `matplotlib`, bibliotecas de comunicación como `pyserial`, etc.). Pero los controladores del dispositivo, bibliotecas nativas, permisos de acceso a puertos y módulos del sistema operativo deben registrarse de otra forma. La práctica recomendada es incluir:
+
+- Un archivo `README.md` con requisitos de sistema operativo, versión de Python objetivo, y lista clara de controladores y bibliotecas externas necesarias.
+- Un script reproducible de instalación del sistema (por ejemplo, `scripts/setup_system_linux.sh` o `scripts/setup_system_windows.ps1`) que instale paquetes del sistema, active reglas de permisos y deje el equipo listo.
+- Una sección de “matriz de compatibilidad” indicando qué combinación de sistema operativo y hardware se soporta (por ejemplo, Linux Ubuntu versión X con cámara modelo Y, firmware Z).
+
+## K.2. Diagnóstico de hardware antes de ejecutar el análisis
+
+Un proyecto robusto con hardware no debe fallar “a mitad del camino”. Debe tener un comando explícito para verificar que el hardware está disponible. La buena práctica es añadir un subcomando, por ejemplo `diagnosticar`, que confirme:
+
+- El dispositivo está conectado y es detectable.
+- Hay permisos suficientes para acceder.
+- La biblioteca externa del fabricante (si existe) está instalada y es compatible.
+- Se puede hacer una lectura mínima de prueba (sin capturar datos finales todavía).
+
+Esto reduce el tiempo perdido depurando errores que en realidad no son del código, sino del entorno.
+
+## K.3. Reproducibilidad: registrar versión de firmware, calibración y configuración
+
+En análisis con hardware, la medición suele depender de calibración y de parámetros de adquisición. Para mantener trazabilidad:
+
+- Guarda archivos de calibración (o al menos el identificador y fecha de calibración) en una carpeta como `config/` o `hardware/`.
+- Registra en los resultados (por ejemplo, en un archivo `outputs/metadata.json`) el modelo del dispositivo, número de serie (si aplica), versión de firmware, frecuencia de muestreo configurada, y cualquier filtro o ganancia del equipo.
+- Evita que esos parámetros queden “escondidos” en el código: usa un archivo de configuración (por ejemplo, `config/adquisicion.toml` o `config/adquisicion.yml`) para que sea auditable.
+
+## K.4. Permisos y seguridad operativa
+
+Muchos dispositivos requieren permisos especiales (puertos serie, acceso a cámara, acceso a dispositivo de adquisición). Una mala práctica es “resolverlo” ejecutando todo como administrador. Lo correcto es:
+
+- Configurar permisos mínimos necesarios (por ejemplo, reglas del sistema para acceso a dispositivos).
+- Documentar el procedimiento para habilitar esos permisos.
+- Si el hardware puede actuar sobre el mundo (por ejemplo, un motor o un actuador), incluir advertencias operativas y límites seguros. En docencia, esto es importante para prevenir uso accidental fuera de condiciones controladas.
+
+## K.5. Desarrollo sin hardware: modo simulación y datos grabados
+
+En un curso, no siempre todos tienen el hardware. Para que el laboratorio sea viable, el proyecto debe permitir dos modos:
+
+1) **Modo real**: captura datos desde el dispositivo.
+2) **Modo simulación**: usa datos grabados (archivos en `data/raw`) o un simulador que genere señales plausibles.
+
+La buena práctica es que ambos modos usen las mismas funciones de análisis, cambiando solo la “fuente” de los datos. Esto permite que las pruebas automáticas y la revisión de calidad de código funcionen en cualquier computador, incluso sin hardware.
+
+## K.6. Pruebas: qué se puede automatizar y qué no
+
+Con hardware, no todo se puede probar en integración continua (porque una máquina de pruebas típicamente no tiene el dispositivo conectado). La estrategia recomendada es:
+
+- Pruebas unitarias para funciones puras (cálculos, limpieza, estadística descriptiva), que se ejecutan siempre.
+- Pruebas de integración “en laboratorio” para la captura real, ejecutadas en un computador que sí tiene el hardware, con un procedimiento de verificación definido.
+
+Esto evita que el proyecto dependa de “probar a mano” cada cambio.
+
+## K.7. Implicación clave para la entrega del proyecto
+
+Si tu proyecto requiere hardware, el entregable no puede ser solo “código y uv.lock”. Debe incluir una guía operativa mínima para preparar el sistema, verificar conexión, y asegurar trazabilidad (configuración, calibración y metadatos). De lo contrario, aunque el código sea correcto, el proyecto no será reproducible ni evaluable de forma justa.
+
+# Preguntas de verificación (para el informe)
+
+Responde con texto claro y ejemplos concretos usando tu proyecto:
+
+1. ¿Qué problema práctico resuelve tener un archivo de bloqueo `uv.lock` además de `pyproject.toml`?
+2. ¿Por qué es una mala práctica instalar dependencias “globales” para un proyecto de análisis?
+3. ¿Cuál es la diferencia entre ejecutar `uv run ...` y activar manualmente el entorno y luego ejecutar `python ...`?
+4. En tu proyecto, ¿qué cosas van en `data/raw` y por qué no deberían modificarse?
+5. ¿Qué tipo de errores detecta una herramienta de revisión automática como `ruff` que suelen pasar desapercibidos en un curso?
+6. ¿Qué ganaste al escribir una prueba automática para `resumen_descriptivo_por_grupo`?
