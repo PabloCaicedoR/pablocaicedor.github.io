@@ -506,3 +506,267 @@ $$y[n] = x[n] * h[n] = \sum_{m=-\infty}^{\infty} x[m] h[n - m]$$
 ## Convolution
 
 ![](../../recursos/videos/Convolution_of_box_signal_with_itself.gif)
+
+## Example: RC Low-Pass Filter Response
+
+Consider a first-order RC circuit with impulse response $h(t) = \frac{1}{RC} e^{-t/RC} u(t)$. If the input is a rectangular pulse $x(t) = u(t) - u(t-T)$, the output $y(t)$ is:
+
+$$y(t) = \int_{0}^{t} x(\tau) \frac{1}{RC} e^{-(t-\tau)/RC} d\tau$$
+
+For $0 \le t \le T$:
+$$y(t) = 1 - e^{-t/RC}$$
+
+For $t > T$:
+$$y(t) = (1 - e^{-T/RC}) e^{-(t-T)/RC}$$
+
+---
+
+## RC Filter: Impulse Response Derivation
+
+The voltage across a capacitor in an RC circuit is governed by the first-order differential equation:
+$$RC \frac{dy(t)}{dt} + y(t) = x(t)$$
+
+Applying the Laplace Transform with zero initial conditions:
+$$Y(s)(RCs + 1) = X(s) \implies H(s) = \frac{Y(s)}{X(s)} = \frac{1/RC}{s + 1/RC}$$
+
+The impulse response $h(t)$ is the inverse Laplace Transform $\mathcal{L}^{-1}\{H(s)\}$:
+$$h(t) = \frac{1}{RC} e^{-\frac{t}{RC}} u(t)$$
+
+---
+
+## Time instants
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: false
+# | warning: false
+# | fig-align: center
+# | label: time_instants
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parámetros del sistema
+RC = 1.0
+alpha = 1 / RC
+T = 2.0  # Duración del pulso
+t_final = 5.0
+tau = np.linspace(-1, t_final, 1000)
+
+
+def x(t):
+    return np.where((t >= 0) & (t <= T), 1.0, 0.0)
+
+
+def h(t):
+    return np.where(t >= 0, alpha * np.exp(-alpha * t), 0.0)
+
+
+# Instantes de tiempo para Región 1 y Región 2
+t1 = 1.0  # 0 < t1 < T
+t2 = 3.5  # t2 > T
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+# --- REGIÓN 1: TRASLAPE PARCIAL (0 < t < T) ---
+_ = ax1.fill_between(tau, x(tau), alpha=0.2, color="blue", label="$x(\\tau)$ (Pulso)")
+_ = ax1.plot(tau, h(t1 - tau), "r", label=f"$h({t1}-\\tau)$ (Filtro)")
+# Área de integración
+tau_overlap1 = np.linspace(0, t1, 100)
+_ = ax1.fill_between(
+    tau_overlap1, h(t1 - tau_overlap1), color="red", alpha=0.4, label="Área: $\int_0^t$"
+)
+_ = ax1.set_title(f"Región 1: Traslape Parcial ($t={t1}$)", fontsize=12)
+_ = ax1.set_ylim(-0.1, 1.2)
+_ = ax1.legend(loc="upper right")
+_ = ax1.grid(True, linestyle="--")
+
+# --- REGIÓN 2: TRASLAPE TOTAL / DECAIMIENTO (t > T) ---
+_ = ax2.fill_between(tau, x(tau), alpha=0.2, color="blue", label="$x(\\tau)$ (Pulso)")
+_ = ax2.plot(tau, h(t2 - tau), "r", label=f"$h({t2}-\\tau)$ (Filtro)")
+# Área de integración
+tau_overlap2 = np.linspace(0, T, 100)
+_ = ax2.fill_between(
+    tau_overlap2, h(t2 - tau_overlap2), color="red", alpha=0.4, label="Área: $\int_0^T$"
+)
+_ = ax2.set_title(f"Región 2: Traslape Total y Decaimiento ($t={t2}$)", fontsize=12)
+_ = ax2.set_ylim(-0.1, 1.2)
+_ = ax2.legend(loc="upper right")
+_ = ax2.grid(True, linestyle="--")
+
+plt.tight_layout()
+plt.show()
+```
+
+___
+
+## Analytical Evaluation: Interval $0 \le t \le T$
+
+For a rectangular pulse $x(t) = 1$ for $0 \le t \le T$, and $h(t) = \alpha e^{-\alpha t} u(t)$ where $\alpha = 1/RC$:
+
+$$y(t) = \int_{0}^{t} (1) \cdot \alpha e^{-\alpha(t-\tau)} d\tau$$
+
+Factoring out terms independent of $\tau$:
+$$y(t) = \alpha e^{-\alpha t} \int_{0}^{t} e^{\alpha \tau} d\tau = \alpha e^{-\alpha t} \left[ \frac{1}{\alpha} e^{\alpha \tau} \right]_{0}^{t}$$
+
+Evaluating the limits:
+$$y(t) = e^{-\alpha t} (e^{\alpha t} - 1) = 1 - e^{-\alpha t}$$
+
+---
+
+## Analytical Evaluation: Interval $t > T$
+
+When the input pulse ends ($t > T$), the integration limits are constrained by the pulse width $[0, T]$:
+
+$$y(t) = \int_{0}^{T} (1) \cdot \alpha e^{-\alpha(t-\tau)} d\tau = \alpha e^{-\alpha t} \int_{0}^{T} e^{\alpha \tau} d\tau$$
+
+Solving the integral:
+$$y(t) = \alpha e^{-\alpha t} \left[ \frac{1}{\alpha} e^{\alpha \tau} \right]_{0}^{T} = e^{-\alpha t} (e^{\alpha T} - 1)$$
+
+Rearranging to show the exponential decay from the value at $t=T$:
+$$y(t) = (1 - e^{-\alpha T}) e^{-\alpha(t-T)}$$
+
+---
+
+## Python Implementation: Continuous-Time Emulation
+
+Numerical approximation of the continuous convolution using high-density sampling.
+
+```{python}
+#| echo: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Parameters
+RC = 0.5
+alpha = 1/RC
+T = 2.0
+dt = 0.01
+t = np.arange(0, 5, dt)
+
+# Signals
+x = np.where((t >= 0) & (t <= T), 1.0, 0.0)
+h = alpha * np.exp(-alpha * t)
+
+# Convolution (scaled by dt to approximate integral)
+y = np.convolve(x, h)[:len(t)] * dt
+
+print(f"Peak value at t=T: {y[int(T/dt)]: .4f}")
+print(f"Theoretical peak: {1 - np.exp(-alpha*T): .4f}")
+```
+
+---
+
+## Visualization: Continuous Convolution
+
+The "Flip-Shift-Integrate" process:
+
+```{tikz}
+\begin{tikzpicture}[scale=0.8]
+    \draw[->] (-3,0) -- (5,0) node[right] {$\tau$};
+    \draw[->] (0,-0.2) -- (0,1.5) node[above] {$f(\tau), g(t-\tau)$};
+
+    % Signal x(tau)
+    \draw[blue, thick] (0,0) -- (0,1) -- (2,1) -- (2,0) node[below] {$T$};
+    \node[blue] at (1,1.2) {$x(\tau)$};
+
+    % Signal h(t-tau)
+    \draw[red, thick] (-2,0) -- (1,0) .. controls (1,0.8) .. (1,1) node[left] {$t$} -- (1,0);
+    \draw[red, dashed] (1,1) -- (2.5,0.1);
+    \node[red] at (-1,0.5) {$h(t-\tau)$};
+
+    \draw[<->] (0,-0.5) -- (1,-0.5) node[midway, below] {Overlap};
+\end{tikzpicture}
+```
+
+---
+
+## Discrete-Time Convolution: Definition
+
+In the discrete domain, the convolution sum relates the input $x[n]$ and the impulse response $h[n]$ of a discrete LTI system:
+
+$$y[n] = x[n] * h[n] = \sum_{k=-\infty}^{\infty} x[k] h[n - k]$$
+
+This operation characterizes the system's output as a weighted sum of delayed impulses. For causal signals of finite length $L$ and $M$, the resulting sequence $y[n]$ has length $L + M - 1$.
+
+---
+
+## Example: Moving Average Filter
+
+Let $x[n] = [1, 2, 3, 2, 1]$ and a 3-point causal moving average filter $h[n] = \frac{1}{3}[\delta[n] + \delta[n-1] + \delta[n-2]]$.
+
+**Analytical Calculation:**
+
+* $y[0] = \frac{1}{3}(1) = 0.33$
+* $y[1] = \frac{1}{3}(1+2) = 1.0$
+* $y[2] = \frac{1}{3}(1+2+3) = 2.0$
+* $y[3] = \frac{1}{3}(2+3+2) = 2.33$
+* $y[4] = \frac{1}{3}(3+2+1) = 2.0$
+
+---
+
+## Visualization: Discrete Convolution
+
+Mechanism of $h[n-k]$ sliding over $x[k]$ at $n=2$:
+
+```{tikz}
+\begin{tikzpicture}[scale=1.0]
+    % x[k]
+    \foreach \k/\val in {0/1, 1/2, 2/3, 3/2, 4/1} {
+        \draw[blue, thick, ->] (\k,0) -- (\k,\val*0.5);
+        \fill[blue] (\k,\val*0.5) circle (2pt);
+    }
+    \node[blue] at (4.5, 1.5) {$x[k]$};
+
+    % h[2-k] (Flipped and shifted by 2)
+    % h[k] = [1/3, 1/3, 1/3] for k=0,1,2
+    % h[-k] = [1/3, 1/3, 1/3] for k=0,-1,-2
+    % h[2-k] = [1/3, 1/3, 1/3] for k=2,1,0
+    \foreach \k in {0,1,2} {
+        \draw[red, thick, ->] (\k,0) -- (\k,-0.5);
+        \fill[red] (\k,-0.5) circle (2pt);
+    }
+    \node[red] at (0, -1) {$h[2-k]$};
+
+    \draw[->] (-1,0) -- (6,0) node[right] {$k$};
+\end{tikzpicture}
+```
+
+---
+
+## Numerical Validation in Python
+
+The following code validates the discrete convolution using `numpy.convolve`.
+
+```{python}
+#| echo: true
+import numpy as np
+
+# Define signals
+x = np.array([1, 2, 3, 2, 1])
+h = np.array([1/3, 1/3, 1/3])
+
+# Compute convolution
+y = np.convolve(x, h, mode='full')
+
+# Display results
+print(f"Input x[n]: {x}")
+print(f"Impulse response h[n]: {h}")
+print(f"Output y[n]: {np.round(y, 2)}")
+
+# Verification of length
+expected_len = len(x) + len(h) - 1
+print(f"Verified Length: {len(y) == expected_len}")
+```
+
+---
+
+## Comparison of Domain Characteristics
+
+| Feature | Continuous Domain ($t$) | Discrete Domain ($n$) |
+| :--- | :--- | :--- |
+| **Operator** | Integral $\int$ | Summation $\sum$ |
+| **Identity** | Dirac Delta $\delta(t)$ | Kronecker Delta $\delta[n]$ |
+| **Complexity** | Differential Equations | Difference Equations |
+| **Implementation** | Analog Electronics | Digital Processors (DSP/FPGA) |
