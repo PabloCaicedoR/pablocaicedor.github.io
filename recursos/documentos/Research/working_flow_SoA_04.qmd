@@ -1,0 +1,801 @@
+---
+title: "Flujo de trabajo integrado para la elaboración del estado del arte"
+subtitle: "Informe metodológico extenso basado en el protocolo adjunto de revisión, mapeo bibliométrico y síntesis de evidencia"
+author: "Documento técnico"
+date: today
+lang: es
+fontsize: 11pt
+linestretch: 1.2
+format:
+  pdf:
+    documentclass: scrreprt
+    classoption:
+      - oneside
+      - openany
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    colorlinks: true
+    papersize: letter
+    geometry:
+      - top=25mm
+      - bottom=25mm
+      - left=25mm
+      - right=25mm
+    header-includes:
+      - \usepackage{booktabs}
+      - \usepackage{longtable}
+      - \usepackage{array}
+      - \usepackage{multirow}
+      - \usepackage{float}
+      - \usepackage{enumitem}
+      - \setlist{itemsep=2pt,topsep=4pt}
+      - \usepackage{fancyhdr}
+      - \pagestyle{fancy}
+      - \fancyhead[L]{Flujo de trabajo del estado del arte}
+      - \fancyhead[R]{\thepage}
+      - \fancyfoot{}
+      - \setlength{\headheight}{14pt}
+execute:
+  echo: false
+  warning: false
+  error: false
+---
+
+# Resumen ejecutivo
+
+El documento adjunto plantea un protocolo integrado para revisiones de estado del arte y mapeo bibliométrico, organizado en seis fases: planificación del protocolo, ingeniería de ecuaciones de búsqueda, análisis bibliométrico, selección y evaluación de estudios, síntesis de la evidencia y redacción de la discusión final. El presente informe amplía ese protocolo y lo convierte en una guía de trabajo completa, operativa y didáctica, manteniendo la lógica metodológica original y desarrollando de manera más explícita las decisiones técnicas que deben tomarse en cada etapa.
+
+La idea central es que un estado del arte riguroso no puede reducirse a “buscar artículos y resumirlos”. En realidad, es un proceso encadenado de diseño metodológico, recuperación sistemática, depuración de registros, análisis cuantitativo de la literatura, evaluación crítica y síntesis razonada. Cuando estas fases no están coordinadas, el resultado suele ser un documento descriptivo, débil en trazabilidad y poco útil para fundamentar investigación futura. Cuando sí están coordinadas, el estado del arte se convierte en un producto científico con validez metodológica, capaz de mostrar tendencias, vacíos, consensos, controversias y oportunidades reales de investigación.
+
+Este informe conserva los componentes nucleares del documento base: la referencia a la guía para protocolos de revisiones sistemáticas, la declaración para el reporte del proceso de selección, la guía para síntesis sin metaanálisis, el marco para evaluar la certeza de la evidencia y el uso del análisis bibliométrico como capa cuantitativa del trabajo. La ampliación que aquí se presenta consiste en tres aportes principales. En primer lugar, se explica con mayor profundidad el sentido de cada fase y su articulación con la siguiente. En segundo lugar, se incorporan ejemplos ilustrativos para mostrar cómo se aplican las decisiones metodológicas en un problema concreto. En tercer lugar, se ofrecen plantillas operativas y criterios prácticos de control de calidad para que el flujo pueda implementarse de forma reproducible.
+
+::: {.callout-note}
+Los ejemplos incluidos en este documento son ilustrativos. Sirven para mostrar cómo aplicar el flujo de trabajo, pero no deben interpretarse como resultados empíricos reales de una revisión ejecutada.
+:::
+
+# Introducción
+
+El estado del arte es un componente fundamental en la investigación científica porque permite responder, con base en evidencia organizada, qué se sabe, cómo se ha estudiado, con qué métodos, en qué contextos y cuáles son las limitaciones del conocimiento disponible. Sin embargo, en la práctica académica es frecuente que el término se use para designar actividades muy distintas entre sí: una revisión narrativa no estructurada, una revisión sistemática, un mapeo bibliométrico, una revisión de alcance o una síntesis crítica híbrida. Esta ambigüedad metodológica genera problemas serios: mezcla de enfoques incompatibles, criterios de selección arbitrarios, sesgos no reconocidos y conclusiones que no pueden auditarse.
+
+El protocolo adjunto parte de una posición correcta: el estado del arte debe concebirse como un proceso de síntesis científica y no como una simple enumeración bibliográfica. En consecuencia, propone una arquitectura metodológica integrada. Primero, se fija un protocolo previo que reduzca arbitrariedad. Después, se diseña una estrategia de búsqueda con sensibilidad y especificidad suficientes. Luego, se ejecuta un análisis bibliométrico que permita comprender la estructura macroscópica del campo. Más tarde, se seleccionan y evalúan críticamente los estudios relevantes. Finalmente, se sintetiza la evidencia bajo una lógica transparente y se redactan hallazgos, brechas y proyecciones.
+
+Esa propuesta es especialmente pertinente en áreas con rápido crecimiento y fuerte heterogeneidad metodológica, como el procesamiento de imágenes médicas, la inteligencia artificial aplicada a salud o la ingeniería biomédica. En estos dominios aparecen miles de publicaciones, pero no todas tienen el mismo valor epistemológico. Un modelo puede reportar métricas altas y aun así ser metodológicamente débil por fuga de datos, sesgo de selección, opacidad en el preprocesamiento o validación insuficiente. Por ello, el flujo de trabajo no debe limitarse a recuperar artículos; debe discriminar evidencia confiable de evidencia frágil.
+
+# Propósito, alcance y lógica del flujo de trabajo
+
+## Propósito del informe
+
+El propósito de este informe es transformar el protocolo adjunto en una guía extensa y completa para la elaboración de un estado del arte, de manera que el lector disponga no solo de una secuencia de fases, sino también de criterios para tomar decisiones, ejemplos de aplicación y estructuras de trabajo reutilizables. El documento está pensado para entornos académicos y técnicos donde se requiere rigor metodológico, trazabilidad y capacidad de justificación ante evaluadores, pares o comités.
+
+## Alcance del flujo de trabajo
+
+El flujo aquí descrito cubre el proceso completo, desde la formulación inicial de la pregunta hasta la redacción de la discusión final. No sustituye las guías originales a las que el protocolo hace referencia, pero sí las operacionaliza. En consecuencia, este documento es adecuado para:
+
+- elaborar estados del arte en contextos de investigación formativa o de posgrado;
+- sustentar capítulos de antecedentes en tesis y artículos;
+- diseñar revisiones sistemáticas con componente bibliométrico;
+- construir panoramas robustos en áreas técnicas con alta producción científica.
+
+No pretende, en cambio, reemplazar manuales especializados de metaanálisis estadístico ni funcionar como una guía normativa exhaustiva de cada estándar internacional. Esa precisión es importante: el documento base menciona marcos y herramientas, pero no ofrece el texto completo de sus listas de verificación ni sus instrumentos oficiales. Aquí se respeta esa limitación y se señala explícitamente cuando un componente requiere consulta directa de su guía específica.
+
+## Arquitectura general
+
+El flujo de trabajo puede entenderse como una cadena de seis módulos. Cada módulo produce insumos para el siguiente y, al mismo tiempo, impone restricciones sobre decisiones posteriores. Por ejemplo, una mala pregunta de investigación arruina la búsqueda; una búsqueda pobre sesga el análisis bibliométrico; un cribado laxo contamina la síntesis final; una extracción de datos incompleta impide interpretar la heterogeneidad.
+
+| Fase | Propósito central | Producto principal | Riesgo si se ejecuta mal |
+|---|---|---|---|
+| 1. Planificación y protocolo | Delimitar el problema y fijar reglas previas | Protocolo de revisión | Arbitrariedad y sesgo de decisión |
+| 2. Ingeniería de búsqueda | Recuperar evidencia relevante con trazabilidad | Estrategias de búsqueda por base de datos | Pérdida de estudios clave o exceso de ruido |
+| 3. Análisis bibliométrico | Describir la estructura cuantitativa del campo | Mapas, indicadores y clústeres temáticos | Interpretación superficial del dominio |
+| 4. Selección y evaluación | Identificar estudios elegibles y valorar su calidad | Muestra final de estudios + evaluación crítica | Inclusión de evidencia defectuosa |
+| 5. Síntesis del estado del arte | Integrar hallazgos de forma comparativa | Síntesis narrativa estructurada | Resumen cronológico sin capacidad analítica |
+| 6. Discusión y conclusiones | Convertir la síntesis en conocimiento útil | Informe final | Conclusiones vagas o no sustentadas |
+
+: Tabla 1. Arquitectura general del flujo de trabajo.
+
+## Ejemplo conductor del documento
+
+Para ilustrar el flujo, se utilizará de manera recurrente un ejemplo técnico consistente con los ejemplos del documento base: una revisión sobre inteligencia artificial para segmentación de imágenes de resonancia magnética en glioblastoma, con especial interés en robustez y generalización. En algunos apartados se usará además un ejemplo complementario en detección de retinopatía diabética, también coherente con el protocolo adjunto.
+
+# Naturaleza del estado del arte: qué es y qué no es
+
+Un error común es confundir estado del arte con una recopilación de antecedentes. Un verdadero estado del arte no se limita a decir qué artículos existen; identifica patrones, convergencias, rupturas y vacíos. Tampoco equivale automáticamente a una revisión sistemática completa. Puede adoptar formas diversas, pero si aspira a tener valor científico debe hacer explícitas sus reglas de búsqueda, selección e interpretación.
+
+Desde una perspectiva operativa, el estado del arte bien construido responde al menos cinco preguntas. La primera es qué temas dominan el campo. La segunda es qué métodos o tecnologías son predominantes. La tercera es qué evidencia es metodológicamente más robusta. La cuarta es qué contradicciones o lagunas persisten. La quinta es qué trayectorias de investigación parecen más prometedoras. Si un documento no logra responder esas preguntas con base rastreable, entonces probablemente no pasó de una revisión narrativa.
+
+Por esta razón, el protocolo adjunto articula estándares de distintas tradiciones metodológicas. La lógica es sólida: la planificación previa reduce arbitrariedad; la búsqueda sistemática mejora exhaustividad; la bibliometría ayuda a mapear el paisaje; la evaluación crítica depura la evidencia; la síntesis estructurada evita la mera cronología; la valoración de certeza obliga a calificar la confianza en las conclusiones.
+
+# Fase 1. Planificación y protocolo de investigación
+
+## Función epistemológica de la fase 1
+
+La primera fase fija el marco de decisión antes de iniciar la búsqueda. Su función no es burocrática; es metodológica. Cuando se define previamente la pregunta, los criterios de elegibilidad y el plan general de análisis, se reduce el riesgo de que el investigador adapte las reglas a lo que va encontrando. Ese riesgo es real y frecuente. Por ejemplo, si después de leer los primeros artículos se cambian sin justificación los años de búsqueda o los tipos de estudios aceptados, la revisión pierde transparencia.
+
+El documento base enfatiza correctamente el valor del protocolo previo. En esta ampliación conviene remarcar que el protocolo es el instrumento que conecta la intención científica con la ejecución técnica. Sin protocolo, la revisión es reactiva; con protocolo, la revisión es auditable.
+
+## Definición de la pregunta de investigación
+
+La pregunta de investigación debe ser lo suficientemente específica para delimitar el universo de búsqueda, pero no tan estrecha que vuelva imposible recuperar evidencia suficiente. El protocolo adjunto propone usar marcos como población, intervención, comparador y resultado, o población, exposición y resultado. Esa recomendación es pertinente porque obliga a explicitar el fenómeno central y evita preguntas vagas del tipo “¿qué hay sobre inteligencia artificial en medicina?”, que son metodológicamente inútiles.
+
+### Ejemplo ilustrativo 1: formulación inicial y refinamiento
+
+Supóngase un interés amplio en “segmentación de tumores cerebrales con inteligencia artificial”. Esa formulación es inadecuada porque no define población, modalidad de imagen, criterio comparativo ni resultado. Un refinamiento razonable sería el siguiente:
+
+> En pacientes con glioblastoma evaluados mediante imágenes de resonancia magnética, ¿los modelos con componentes causales o mecanismos explícitos de robustez muestran mejor generalización intercentro que los modelos puramente asociativos para tareas de segmentación tumoral?
+
+Esta versión es mejor por varias razones. Define el dominio clínico, la modalidad de imagen, el tipo de intervención metodológica y el resultado de interés. Además, orienta de manera natural la selección de palabras clave y la posterior síntesis.
+
+### Conversión de la pregunta en componentes operativos
+
+| Componente | Formulación en el ejemplo |
+|---|---|
+| Población | Pacientes con glioblastoma o imágenes de glioblastoma |
+| Intervención o exposición | Modelos causales, modelos robustos, inferencia causal, generalización |
+| Comparador | Modelos asociativos, modelos de caja negra, aprendizaje profundo convencional |
+| Resultado | Segmentación, robustez, generalización, desempeño fuera del centro de entrenamiento |
+
+: Tabla 2. Descomposición operativa de la pregunta de investigación.
+
+## Criterios de elegibilidad
+
+Los criterios de elegibilidad traducen la pregunta en reglas concretas de inclusión y exclusión. El documento base menciona diseño, marco temporal, idiomas y tipo de participantes. Esa estructura es adecuada, pero en una revisión técnica conviene ampliar la matriz para incluir variables metodológicas propias del dominio.
+
+En problemas de ingeniería biomédica o de inteligencia artificial aplicada a imágenes, no basta con decidir si un estudio trata el tema; también es necesario preguntarse si reporta suficiente información técnica, si la validación es reproducible, si el conjunto de datos está claramente descrito y si las métricas son pertinentes. De lo contrario, la revisión puede llenarse de artículos temáticamente relevantes pero metodológicamente inútiles.
+
+### Plantilla de criterios de elegibilidad
+
+| Dimensión | Criterio de inclusión | Criterio de exclusión |
+|---|---|---|
+| Tema | Estudios sobre segmentación de glioblastoma en imágenes de resonancia magnética | Estudios sobre otras neoplasias sin segmento específico de glioblastoma |
+| Tipo de publicación | Artículos completos revisados por pares | Resúmenes de conferencia sin metodología completa, editoriales o cartas |
+| Periodo | Últimos diez años o periodo definido en el protocolo | Publicaciones fuera del periodo establecido |
+| Idioma | Idiomas definidos en el protocolo | Idiomas no contemplados |
+| Método | Modelos computacionales con descripción suficiente | Descripciones vagas, sin detalle de arquitectura o datos |
+| Evaluación | Reporte de métricas relevantes para segmentación | Estudios que reportan solo métricas insuficientes o ambiguas |
+
+: Tabla 3. Plantilla básica para criterios de elegibilidad.
+
+## Registro del protocolo
+
+El documento base menciona el registro en plataformas abiertas. El valor del registro es doble. Primero, actúa como sello temporal de las decisiones metodológicas. Segundo, evita que la revisión quede como un proceso opaco solo visible en la versión final del manuscrito.
+
+En términos prácticos, el registro debe contener, como mínimo, la pregunta, los criterios de elegibilidad, las fuentes de información, la estrategia general de búsqueda, el plan de selección, la estrategia de extracción de datos y el enfoque de síntesis. En revisiones técnicas, además, es útil dejar constancia de los criterios de calidad específicos del dominio, por ejemplo, exclusión por fuga de datos o por ausencia de conjunto de prueba externo.
+
+## Entregables esperados de la fase 1
+
+Al cerrar esta fase, el equipo debería disponer de un protocolo escrito, una pregunta refinada, una matriz de elegibilidad y una lista preliminar de conceptos de búsqueda. Si alguno de estos elementos falta, avanzar a la siguiente fase es un error metodológico.
+
+# Fase 2. Ingeniería de ecuaciones de búsqueda
+
+## Función técnica de la fase 2
+
+La segunda fase traduce la pregunta de investigación en una estrategia concreta de recuperación documental. El documento base destaca un punto decisivo: la calidad de la revisión está limitada por la calidad de la estrategia de búsqueda. Esa afirmación es correcta y debe asumirse de forma literal. Una revisión no puede analizar estudios que nunca recuperó.
+
+En esta fase el trabajo deja de ser puramente conceptual y se vuelve lingüístico, lógico y computacional. El objetivo es construir ecuaciones capaces de capturar el mayor número posible de estudios relevantes sin producir una cantidad inmanejable de resultados irrelevantes. Esta tensión entre sensibilidad y precisión es el problema central de la búsqueda sistemática.
+
+## Descomposición conceptual y taxonomía de términos
+
+El documento base propone descomponer la pregunta en conceptos independientes y usar una taxonomía dual: vocabulario controlado y lenguaje natural. Esa es la decisión correcta. Un error frecuente consiste en confiar solo en palabras clave libres o solo en descriptores controlados. Ambas aproximaciones son insuficientes por separado. Los tesauros aportan consistencia semántica; el texto libre captura variaciones terminológicas, neologismos, abreviaturas y formas de redacción recientes que pueden no estar bien indexadas.
+
+### Ejemplo ilustrativo 2: taxonomía de términos
+
+Para el ejemplo de segmentación de glioblastoma en resonancia magnética, una primera taxonomía operativa podría organizarse así:
+
+| Pilar conceptual | Vocabulario controlado o descriptores | Términos de texto libre |
+|---|---|---|
+| Modalidad de imagen | Descriptores asociados a imagen por resonancia magnética | magnetic resonance imaging, MRI, brain MRI |
+| Fenómeno o entidad | Descriptores asociados a glioblastoma o tumores cerebrales | glioblastoma, brain tumor, brain tumour, glioma |
+| Tarea computacional | Descriptores sobre segmentación de imágenes | segmentation, image segmentation, tumor delineation |
+| Enfoque metodológico | No siempre existe descriptor específico maduro | causal AI, causal inference, robust segmentation, domain generalization |
+
+: Tabla 4. Taxonomía inicial de términos para el ejemplo conductor.
+
+Es importante notar que no todos los componentes de la pregunta deben entrar en la ecuación maestra. El documento base ya advierte que incluir demasiados pilares reduce drásticamente la sensibilidad. En la práctica, esto significa que muchas búsquedas iniciales deben construirse alrededor del problema y la intervención principal, dejando resultados más específicos para filtros o fases posteriores de selección.
+
+## Selección de pilares centrales
+
+La recomendación del documento base de priorizar población e intervención es metodológicamente sensata. Los resultados suelen estar peor indexados y su inclusión temprana puede dejar por fuera estudios clave. Esta decisión no es una regla absoluta, pero sí una buena heurística.
+
+### Ejemplo ilustrativo 3: tres versiones de una misma búsqueda
+
+Una estrategia demasiado amplia podría ser:
+
+```text
+(glioblastoma OR glioma OR brain tumor) AND (MRI OR magnetic resonance imaging)
+```
+
+Una estrategia equilibrada podría ser:
+
+```text
+(glioblastoma OR glioma OR brain tumor) AND
+(MRI OR magnetic resonance imaging) AND
+(segmentation OR image segmentation)
+```
+
+Una estrategia excesivamente restrictiva podría ser:
+
+```text
+(glioblastoma OR glioma OR brain tumor) AND (MRI OR magnetic resonance imaging)
+AND (segmentation) AND (causal inference OR domain generalization)
+AND (Dice OR generalization)
+```
+
+La primera ecuación probablemente recuperará demasiado ruido. La tercera corre un alto riesgo de perder estudios válidos porque exige simultáneamente condiciones que pueden no aparecer en el título, el resumen o la indexación. La segunda suele ser un mejor punto de partida.
+
+## Sintaxis lógica, anidamiento y proximidad
+
+El documento base presenta cuatro componentes sintácticos fundamentales: operadores booleanos, anidamiento, operadores de proximidad y truncamientos. Estos elementos no son detalles menores. Son la gramática de la búsqueda. Un error de paréntesis o el uso impropio de un operador puede alterar completamente el conjunto recuperado.
+
+### Anidamiento
+
+El anidamiento impone jerarquía entre sinónimos y entre grupos conceptuales. Si se omiten paréntesis, el motor de búsqueda puede interpretar de manera errónea la prioridad lógica.
+
+### Proximidad
+
+Los operadores de proximidad elevan la precisión al exigir cercanía entre términos. Son especialmente útiles cuando una combinación con operador lógico simple produce exceso de ruido. Por ejemplo, buscar “brain NEAR/3 tumor” suele ser mejor que buscar “brain AND tumor” si la base de datos admite esa sintaxis.
+
+### Truncamiento y comodines
+
+El truncamiento permite recuperar variantes morfológicas; los comodines capturan cambios ortográficos. Su uso debe ser cuidadoso. Un truncamiento excesivamente corto puede abrir ruido considerable. Por ejemplo, una raíz muy general puede recuperar términos no relacionados.
+
+## Restricción por campos
+
+El documento base recomienda restringir términos de texto libre a campos específicos, como título y resumen. Esa práctica es crucial. Si no se restringen campos, pueden recuperarse registros porque el término aparece en una afiliación, una referencia citada o el nombre de un autor, lo cual degrada la precisión.
+
+### Ejemplo ilustrativo 4: ecuación maestra en una base biomédica
+
+```text
+(
+    (
+    "glioblastoma"[Title/Abstract] OR
+    "glioma"[Title/Abstract] OR
+    "brain tumor"[Title/Abstract]
+    )
+AND
+    (
+    "magnetic resonance imaging"[Title/Abstract] OR
+    MRI[Title/Abstract]
+    )
+AND
+    (
+    "segmentation"[Title/Abstract] OR
+    "image segmentation"[Title/Abstract]
+)
+)
+```
+
+### Traducción ilustrativa a una base multidisciplinaria
+
+```text
+TITLE-ABS-KEY ( ("glioblastoma" OR "glioma" OR "brain tumor")
+AND ("magnetic resonance imaging" OR "MRI")
+AND ("segmentation" OR "image segmentation") )
+```
+
+### Traducción ilustrativa a una base de ingeniería
+
+```text
+("Document Title":"glioblastoma" OR "Abstract":"glioblastoma" OR "Document Title":"glioma" OR "Abstract":"glioma")
+AND
+("Document Title":"magnetic resonance imaging" OR "Abstract":"magnetic resonance imaging" OR "Document Title":"MRI" OR "Abstract":"MRI")
+AND
+("Document Title":"segmentation" OR "Abstract":"segmentation")
+```
+
+Estas traducciones son ilustrativas y deben ajustarse a la sintaxis exacta de la base de datos utilizada. El punto metodológico importante es que una ecuación validada en una plataforma no se traslada mecánicamente a otra.
+
+## Traducción entre bases de datos
+
+La traducción entre bases de datos exige tres tipos de adaptación: semántica, sintáctica y funcional. La adaptación semántica consiste en revisar equivalencias entre vocabularios controlados. La sintáctica implica cambiar etiquetas de campos, operadores y signos permitidos. La funcional corresponde a las capacidades reales del motor, por ejemplo, si permite proximidad, explosión jerárquica o filtros refinados.
+
+Una práctica útil es mantener una tabla de traducción. Esa tabla no es un accesorio administrativo; es el núcleo de la reproducibilidad de la búsqueda.
+
+| Elemento | Base A | Base B | Ajuste requerido |
+|---|---|---|---|
+| Campo título y resumen | `[Title/Abstract]` | `TITLE-ABS-KEY` | Cambio de sintaxis |
+| Operador de proximidad | `NEAR/n` o no disponible | `W/n` | Verificar equivalencia funcional |
+| Vocabulario controlado | Tesauro biomédico | Tesauro alterno o ausencia de tesauro | Revisión conceptual manual |
+| Filtros | Idioma, tipo de estudio, año | Opciones variables | Ajustar sin alterar el alcance del protocolo |
+
+: Tabla 5. Plantilla para traducción de ecuaciones entre bases de datos.
+
+## Validación iterativa: sensibilidad y ruido
+
+El documento base propone validar la búsqueda con artículos semilla y con análisis del ruido en los primeros resultados. Esa recomendación es excelente porque convierte la construcción de ecuaciones en un ciclo de mejora continua.
+
+### Sensibilidad
+
+Si la ecuación no recupera artículos que el equipo considera claramente indispensables, entonces la sensibilidad es insuficiente. La corrección puede requerir añadir sinónimos, revisar ortografías o relajar algún componente excesivamente restrictivo.
+
+### Precisión o control del ruido
+
+Si la mayoría de los primeros resultados es irrelevante, entonces la ecuación es demasiado amplia. La solución puede ser restringir campos, introducir una condición adicional o cambiar el lugar donde se aplican los términos.
+
+### Ejemplo ilustrativo 5: ciclo de retroalimentación
+
+Imagine que el equipo dispone de ocho artículos semilla. Después de ejecutar la ecuación equilibrada, solo se recuperan seis. Al revisar los dos faltantes, se observa que uno usa el término “tumor delineation” en vez de “segmentation”, y el otro describe la resonancia como “MR imaging”. La ecuación se corrige incorporando esos términos. Luego, al revisar los primeros cien resultados, se detecta mucho ruido por estudios clínicos sobre pronóstico sin aporte algorítmico. La corrección consiste en reforzar el bloque de segmentación y restringirlo a campos de título y resumen.
+
+Ese procedimiento ilustra una idea central: la búsqueda no se redacta una sola vez; se calibra.
+
+## Documentación de la búsqueda
+
+El documento base enumera cinco elementos mínimos que deben registrarse: base de datos, estrategia exacta, filtros, fecha de ejecución y número de resultados. Esa lista es el mínimo aceptable. En una implementación madura conviene añadir también responsable de la búsqueda, versión de la ecuación y observaciones de ajuste.
+
+### Plantilla de registro de búsqueda
+
+| Base de datos | Plataforma | Fecha | Ecuación exacta | Filtros | Resultados | Observaciones |
+|---|---|---|---|---|---|---|
+| Base 1 | Plataforma 1 | AAAA-MM-DD | Texto completo de la búsqueda | Años, idioma, tipo de documento | n | Versión inicial o revisada |
+| Base 2 | Plataforma 2 | AAAA-MM-DD | Texto completo adaptado | Años, idioma, tipo de documento | n | Ajustes respecto a la base 1 |
+
+: Tabla 6. Registro mínimo de la estrategia de búsqueda.
+
+## Errores frecuentes en la fase 2
+
+El error más común es construir ecuaciones demasiado bonitas desde el punto de vista conceptual, pero débiles desde el punto de vista de recuperación. Otro error serio es copiar una ecuación de una base a otra sin traducirla. También es frecuente aplicar filtros demasiado pronto y perder registros valiosos antes de la deduplicación y el cribado.
+
+# Fase 3. Análisis bibliométrico y mapeo cuantitativo
+
+## Sentido metodológico de la fase 3
+
+El documento base introduce una idea importante: el análisis bibliométrico constituye la capa cuantitativa del flujo de trabajo. Esta fase no reemplaza la evaluación crítica de los estudios, pero sí ofrece una visión panorámica del campo. Permite responder preguntas que la lectura artículo por artículo no resuelve con facilidad, por ejemplo: qué autores dominan la producción, qué revistas concentran el núcleo del tema, cómo evoluciona la producción en el tiempo, qué conceptos forman clústeres y cómo se organizan las redes de colaboración.
+
+En áreas extensas, esta fase es especialmente valiosa porque evita que el estado del arte quede sesgado hacia los artículos más conocidos por el investigador o hacia los estudios más recientes leídos de manera casual. La bibliometría, bien aplicada, ayuda a ver la topología del campo.
+
+## Preprocesamiento y normalización de datos
+
+El documento base destaca tres tareas: limpieza de metadatos, desambiguación de afiliaciones y filtro de relevancia. Estas tareas son indispensables. Los indicadores bibliométricos pueden distorsionarse gravemente si los nombres de autores o instituciones aparecen fragmentados en múltiples variantes.
+
+### Ejemplo ilustrativo 6: desambiguación básica
+
+Supóngase que, al exportar los registros, aparecen las variantes “Zhang J”, “Zhang Jing” y “J. Zhang”. Si pertenecen a la misma persona y no se normalizan, la productividad y las redes de colaboración quedarán partidas artificialmente. Lo mismo ocurre con afiliaciones como “Univ. X”, “University X” y “X University Hospital”.
+
+### Filtro de relevancia
+
+La limpieza no es solo nominal. También incluye un filtro conceptual. En una búsqueda amplia sobre imágenes médicas pueden aparecer artículos puramente clínicos sin aporte algorítmico o trabajos de ingeniería no médica. El filtro de relevancia elimina registros que pasan la búsqueda textual pero no pertenecen realmente al dominio analítico del estudio.
+
+## Análisis de rendimiento
+
+El documento base divide correctamente esta dimensión en indicadores de actividad e indicadores de impacto. La distinción es útil porque productividad no equivale a influencia.
+
+### Indicadores de actividad
+
+Los indicadores de actividad muestran cuánto se publica, quién publica y dónde se publica. Entre ellos, la tasa de crecimiento anual es importante para identificar si una línea está emergiendo, consolidándose o entrando en meseta.
+
+Una formulación simple del crecimiento anual puede expresarse así:
+
+$$
+\text{Tasa de crecimiento anual} = \frac{N_{t} - N_{t-1}}{N_{t-1}} \times 100
+$$
+
+donde $N_t$ es el número de documentos del año actual y $N_{t-1}$ el del año anterior.
+
+También es relevante la identificación de revistas núcleo. El documento base menciona la ley de Bradford, lo cual es pertinente porque permite reconocer cuáles fuentes concentran la producción más importante del campo.
+
+### Indicadores de impacto
+
+Los indicadores de impacto buscan estimar influencia. El índice H y las citaciones por documento son ejemplos típicos. No deben interpretarse de forma ingenua. Un artículo muy citado no siempre es el metodológicamente más sólido; a veces solo es el más conocido o el pionero. Por eso la fase bibliométrica debe combinarse con evaluación crítica posterior.
+
+## Mapeo científico
+
+El documento base distingue tres estructuras: intelectual, conceptual y social. Esta clasificación es muy útil porque ordena diferentes tipos de redes.
+
+### Estructura intelectual: co-citación
+
+La co-citación permite identificar qué trabajos son citados conjuntamente y, por tanto, qué textos funcionan como cimientos teóricos o metodológicos del campo. En el ejemplo de segmentación de tumores, es razonable esperar que aparezcan trabajos fundacionales sobre arquitecturas de segmentación y, si el foco es robustez causal, trabajos sobre inferencia causal.
+
+### Estructura conceptual: co-ocurrencia de palabras clave
+
+La co-ocurrencia de palabras clave revela cómo se agrupan los temas. Si un clúster reúne términos como “segmentación”, “U-Net”, “Dice” y “glioma”, su interpretación será distinta de otro clúster con “generalización”, “sesgo de dominio”, “robustez” y “causalidad”.
+
+### Estructura social: coautoría y colaboración
+
+La estructura social muestra cómo se organizan las colaboraciones. Es útil para reconocer núcleos de investigación, alianzas entre países y posibles centros de producción de alto impacto.
+
+## Herramientas y flujo computacional
+
+El documento base menciona una combinación de herramientas adecuada: un entorno estadístico para análisis bibliométrico integral, una herramienta especializada en visualización de redes y un entorno programable para preprocesamiento personalizado. El punto importante no es la marca concreta de la herramienta, sino la lógica del pipeline.
+
+Una secuencia razonable sería la siguiente. Primero, exportar registros desde las bases de datos. Segundo, consolidar y deduplicar los archivos. Tercero, normalizar nombres y términos. Cuarto, generar indicadores de producción e impacto. Quinto, construir redes de co-citación, co-ocurrencia y coautoría. Sexto, interpretar esos resultados a la luz de la pregunta del estudio, evitando confundir patrones cuantitativos con evidencia de superioridad metodológica.
+
+### Estructura operativa sugerida del proyecto
+
+```text
+proyecto_estado_arte/
+├── 01_protocolo/
+│   ├── protocolo.qmd
+│   └── criterios_elegibilidad.xlsx
+├── 02_busqueda/
+│   ├── ecuaciones/
+│   ├── registros_busqueda/
+│   └── articulos_semilla/
+├── 03_registros_crudos/
+│   ├── base_1.csv
+│   ├── base_2.csv
+│   └── base_3.csv
+├── 04_limpieza_y_deduplicacion/
+│   ├── consolidado.csv
+│   └── log_deduplicacion.csv
+├── 05_bibliometria/
+│   ├── indicadores/
+│   ├── redes/
+│   └── figuras/
+├── 06_screening/
+│   ├── titulo_resumen.csv
+│   └── texto_completo.csv
+├── 07_extraccion_datos/
+│   └── matriz_extraccion.xlsx
+├── 08_sintesis/
+│   ├── tablas_sintesis.xlsx
+│   └── figuras_sintesis/
+└── 09_informe/
+    └── estado_del_arte.qmd
+```
+
+## Ejemplo ilustrativo 7: tendencias en segmentación de resonancia magnética
+
+El documento base propone como ejemplo una revisión sobre segmentación en imágenes de resonancia magnética y sugiere que el análisis bibliométrico podría revelar palabras con crecimiento explosivo, clústeres de arquitecturas y aplicaciones clínicas específicas. Esa lógica puede desarrollarse así.
+
+Suponga que, después de limpiar los registros, se observa un incremento sostenido de términos relacionados con autoatención, aprendizaje con pocos ejemplos y datos sintéticos. Ese patrón no prueba que dichas técnicas sean mejores, pero sí sugiere que el campo está desplazando su interés desde arquitecturas más tradicionales hacia soluciones orientadas a robustez, eficiencia de datos y adaptabilidad. Paralelamente, una red de co-ocurrencia puede separar un clúster metodológico de funciones de pérdida, un clúster de arquitecturas y un clúster de aplicaciones clínicas. La lectura conjunta de esos clústeres ayuda a entender no solo qué se investiga, sino cómo se conectan los subtemas.
+
+## Limitaciones propias de la bibliometría
+
+La bibliometría es útil, pero no debe sobredimensionarse. Las redes y los indicadores reflejan patrones de producción y citación; no reemplazan la evaluación crítica. Un tema muy citado puede estar dominado por artículos redundantes o por una moda metodológica con validación pobre. Por eso la fase 3 orienta y estructura, pero no decide por sí sola qué evidencia sostendrá las conclusiones del estado del arte.
+
+# Fase 4. Selección y evaluación de estudios
+
+## Función crítica de la fase 4
+
+La cuarta fase opera como un embudo metodológico. Después de la recuperación amplia y del análisis panorámico, llega el momento de decidir qué estudios integrarán efectivamente la síntesis. El documento base recalca que un error en esta etapa invalida las conclusiones. Esa afirmación es totalmente correcta. Si se incluyen estudios con fallas severas o si se excluyen sin criterio trabajos relevantes, la síntesis final queda comprometida.
+
+## Gestión de registros y deduplicación
+
+La deduplicación es más difícil de lo que parece. El documento base recomienda una doble verificación: primero por identificador digital y luego por combinación de título y año. Esa estrategia es robusta porque muchos registros carecen de identificador o lo reportan de forma inconsistente.
+
+### Ejemplo ilustrativo 8: por qué la deduplicación no es trivial
+
+Considere dos registros del mismo artículo. Uno proviene de una base multidisciplinaria y otro de una base de ingeniería. En uno el título aparece con subtítulo completo y en el otro abreviado; uno trae identificador digital y el otro no; uno usa iniciales de los autores y el otro nombres extendidos. Si la deduplicación se hace solo por coincidencia exacta de título, el duplicado puede pasar inadvertido. Si se hace solo por identificador, se perderán los casos sin identificador. De ahí la necesidad de una estrategia combinada.
+
+## Proceso de selección en dos etapas
+
+El documento base propone dos etapas: tamizaje de título y resumen, y revisión a texto completo. Esta es la práctica adecuada porque permite una eliminación eficiente y luego una evaluación técnica más profunda.
+
+### Tamizaje de título y resumen
+
+En esta etapa se busca decidir si vale la pena revisar el texto completo. El error más frecuente es intentar resolver aquí discusiones finas de calidad metodológica. No es el objetivo. El objetivo es filtrar irrelevancia evidente.
+
+En una revisión sobre segmentación de imágenes médicas, es razonable excluir rápidamente estudios sobre visión industrial, editoriales, resúmenes incompletos o publicaciones que claramente no abordan el problema objetivo.
+
+### Evaluación de idoneidad a texto completo
+
+La revisión a texto completo sí exige lectura técnica. Aquí se verifica si el estudio cumple realmente los criterios de elegibilidad y si aporta información suficiente para la extracción de datos. En revisiones de inteligencia artificial, este paso es crucial porque muchos artículos anuncian resultados promisorios, pero omiten detalles decisivos de partición de datos, preprocesamiento, procedencia de la muestra o validación externa.
+
+## Evaluación de calidad y riesgo de sesgo
+
+El documento base señala algo correcto y muy importante: las herramientas clásicas de evaluación pueden ser insuficientes para estudios de imágenes médicas y modelos de inteligencia artificial. Por ello menciona listas y marcos especializados orientados a reporte técnico y precisión diagnóstica con inteligencia artificial.
+
+La evaluación de calidad debe responder dos preguntas distintas. La primera es si el artículo está bien reportado. La segunda es si el artículo es confiable como evidencia. Un estudio puede estar bien escrito y aun así ser débil por fuga de datos o tamaño muestral inadecuado.
+
+### Criterios técnicos relevantes en estudios computacionales
+
+El documento base destaca cuatro criterios severos: ausencia de validación cruzada o de conjunto de prueba independiente, uso de métricas insuficientes, opacidad del preprocesamiento y fuga de datos. Estos criterios deben tomarse en serio. En tareas de segmentación o clasificación médica, reportar solo exactitud global puede ser metodológicamente pobre, especialmente si las clases están desbalanceadas.
+
+### Ejemplo ilustrativo 9: evaluación comparativa de dos estudios hipotéticos
+
+| Criterio | Estudio A | Estudio B |
+|---|---|---|
+| Descripción del conjunto de datos | Clara, con origen y tamaño especificados | Vaga, sin procedencia clara |
+| Separación entrenamiento-prueba | Conjunto externo independiente | No queda claro; posible fuga de datos |
+| Métricas reportadas | Coeficiente Dice, sensibilidad, precisión, intervalos de confianza | Solo exactitud global |
+| Preprocesamiento | Normalización y remuestreo bien descritos | No descrito |
+| Juicio preliminar | Evidencia utilizable | Riesgo alto de sesgo |
+
+: Tabla 7. Ejemplo ilustrativo de evaluación metodológica.
+
+## Extracción de datos
+
+El documento base propone un formulario de extracción con campos de hardware y software, conjunto de datos, arquitectura y resultados. Esa estructura es apropiada para una revisión técnica. Conviene añadir algunos campos más: objetivo exacto del estudio, estrategia de partición de datos, validación externa, manejo del desbalance, explicabilidad o robustez, cuando sean relevantes para la pregunta.
+
+### Plantilla de matriz de extracción
+
+| Campo | Descripción esperada |
+|---|---|
+| Referencia | Identificador interno del estudio |
+| Objetivo | Problema específico que resuelve |
+| Población o datos | Tipo de imágenes, número de casos, origen |
+| Modalidad | Resonancia magnética, fondo de ojo u otra |
+| Modelo | Arquitectura o familia metodológica |
+| Preprocesamiento | Normalización, remuestreo, registro, aumentación |
+| Partición de datos | Entrenamiento, validación, prueba, validación externa |
+| Métricas | Coeficiente Dice, sensibilidad, puntuación F1, otras |
+| Reproducibilidad | Código disponible, datos públicos, detalle suficiente |
+| Limitaciones | Restricciones explícitas o inferidas |
+| Juicio de calidad | Bajo, moderado o alto riesgo de sesgo |
+
+: Tabla 8. Plantilla mínima de extracción de datos.
+
+## Ejemplo ilustrativo 10: revisión de retinopatía diabética
+
+El documento base ofrece un ejemplo con criterios de inclusión y exclusión para detección de retinopatía diabética. Esa lógica puede desarrollarse de la siguiente forma. Si la revisión se enfoca en detección automática de lesiones en imágenes de fondo de ojo, entonces un estudio que solo segmenta vasos sanguíneos sin detectar lesiones está fuera del foco. Del mismo modo, un estudio que no reporta sensibilidad diagnóstica en un contexto clínico puede resultar insuficiente, aunque sea técnicamente sofisticado. Este ejemplo muestra que la elegibilidad no depende solo del tema general, sino de la correspondencia precisa con la pregunta.
+
+## Acuerdo entre revisores
+
+Aunque el documento base solo lo menciona de forma breve, es importante desarrollar este punto. Cuando dos revisores trabajan de manera independiente, el acuerdo entre ellos no es un formalismo. Es una medida indirecta de la claridad de los criterios de selección. Si el acuerdo es bajo, lo más probable es que los criterios estén mal definidos o insuficientemente operacionalizados.
+
+# Fase 5. Síntesis del estado del arte
+
+## Función integradora de la fase 5
+
+En esta fase se pasa de la acumulación de datos a la construcción de conocimiento. El documento base señala con acierto que, cuando no es posible hacer metaanálisis, debe emplearse una síntesis narrativa estructurada. Este punto es especialmente relevante en investigación técnica, donde la heterogeneidad de datos, arquitecturas, métricas y configuraciones experimentales impide muchas veces la combinación estadística directa.
+
+El error clásico en esta etapa es convertir la síntesis en una cronología: “el artículo de tal año hizo esto; luego otro artículo hizo esto otro”. Esa estructura puede ser descriptiva, pero rara vez es analítica. El marco de síntesis propuesto en el documento base obliga a agrupar, comparar y razonar.
+
+## Agrupamiento de estudios
+
+El documento base sugiere agrupar por arquitectura, por función de pérdida y por tipo de conjunto de datos. Esa decisión es metodológicamente sólida porque desplaza el foco desde los artículos individuales hacia dimensiones comparables.
+
+### Ejemplo ilustrativo 11: agrupamiento en el ejemplo conductor
+
+Supóngase una muestra final de veinticinco estudios. En vez de describirlos uno por uno, la síntesis puede dividirlos en tres grupos principales: modelos basados en variantes de U-Net, modelos basados en transformadores y modelos que introducen mecanismos explícitos de robustez o inferencia causal. Dentro de cada grupo pueden compararse los conjuntos de datos usados, las métricas predominantes, la presencia de validación externa y la estabilidad del rendimiento.
+
+Ese agrupamiento ofrece mucho más valor que una simple línea de tiempo porque responde directamente a la pregunta metodológica de la revisión.
+
+## Elección de métricas comparables
+
+El documento base menciona tres métricas útiles: coeficiente Dice, puntuación F1 y distancia de Hausdorff. La enseñanza metodológica aquí es que la síntesis requiere una métrica o, al menos, un conjunto acotado de métricas comparables. Si cada estudio reporta cosas completamente distintas, la comparación se debilita.
+
+No siempre será posible transformar todos los resultados a una sola métrica. Pero sí es posible organizar la síntesis de manera que los estudios se comparen dentro de grupos homogéneos. Cuando eso tampoco es viable, debe explicitarse como limitación.
+
+## Métodos de síntesis
+
+El documento base enumera tres enfoques: conteo de votos, síntesis de valores de significación y síntesis basada en rangos. En una revisión técnica de imágenes médicas, la síntesis por rangos suele ser útil cuando varios estudios reportan desempeño en el mismo punto de referencia, mientras que el conteo de votos puede ser una aproximación más simple cuando los resultados son demasiado heterogéneos.
+
+### Ejemplo ilustrativo 12: síntesis por rangos
+
+Supóngase que diez estudios comparan sus modelos sobre un mismo conjunto de datos público y todos reportan coeficiente Dice. En lugar de promediar indiscriminadamente resultados no del todo comparables, puede organizarse una tabla de rangos que indique qué familia metodológica ocupa posiciones superiores de forma repetida y bajo qué condiciones. Este enfoque no elimina la heterogeneidad, pero la hace interpretable.
+
+## Evaluación de la certeza de la evidencia
+
+El documento base incorpora el marco de certeza de la evidencia y distingue factores que disminuyen y factores que aumentan la confianza. Esa incorporación es una de las fortalezas del protocolo porque obliga a no confundir rendimiento observado con confianza en el resultado.
+
+### Factores que disminuyen la certeza
+
+La fuga de datos, la inconsistencia entre estudios, la evidencia indirecta y la imprecisión por muestras pequeñas son factores severos. En revisiones de inteligencia artificial en salud, la evidencia indirecta merece especial atención. Un modelo puede funcionar bien en datos simulados o altamente curados y no generalizar a escenarios reales.
+
+### Factores que aumentan la certeza
+
+El documento base menciona magnitud del efecto y gradiente dosis-respuesta. En el ámbito técnico, estos factores deben interpretarse con cautela. Una mejora grande en una métrica puede ser relevante, pero solo si se sostiene en condiciones metodológicas comparables y sin sesgos obvios.
+
+### Ejemplo ilustrativo 13: juicio razonado de certeza
+
+Imagine que los modelos con componentes causales muestran una ligera desventaja en el conjunto interno de prueba, pero menor caída de rendimiento cuando se evalúan en datos de hospitales diferentes. Si varios estudios independientes observan ese patrón y además describen claramente sus datos y validaciones, podría emitirse un juicio de certeza moderada a favor de una mejor generalización. Si, en cambio, los estudios son pocos, con muestras pequeñas y sin validación externa sólida, el juicio debería degradarse.
+
+## Visualización cualitativa de resultados
+
+El documento base sugiere diagramas de cosecha y gráficos de burbujas. La idea es acertada: la síntesis no debe depender solo de texto corrido. Las visualizaciones permiten condensar heterogeneidad y ayudar al lector a captar patrones.
+
+Un diagrama de cosecha puede representar cada estudio como una barra cuya altura indique calidad metodológica y cuyo color represente la familia del modelo. Un gráfico de burbujas puede ubicar en el eje horizontal el año, en el vertical una métrica de desempeño y en el tamaño de la burbuja el número de casos. Ninguna de estas figuras reemplaza la discusión, pero ambas pueden hacerla mucho más inteligible.
+
+## Estructura sugerida de la síntesis narrativa
+
+Una síntesis útil suele responder, en orden, cuatro cuestiones: cómo se distribuyen los estudios por familias metodológicas; qué patrones de desempeño aparecen; qué tan robusta es esa evidencia; y qué vacíos o contradicciones persisten. Esa estructura evita que la narrativa se disperse en descripciones aisladas.
+
+### Plantilla breve de tabla de síntesis
+
+| Grupo de estudios | Rasgo común | Métrica principal | Hallazgo dominante | Limitación recurrente |
+|---|---|---|---|---|
+| Variantes de U-Net | Arquitectura convolucional de segmentación | Coeficiente Dice | Buen desempeño en entornos controlados | Menor discusión de generalización |
+| Transformadores | Modelos con mecanismos de atención | Coeficiente Dice y distancia de bordes | Tendencia a mejorar representación global | Mayor demanda de datos y cómputo |
+| Modelos causales o robustos | Mecanismos orientados a estabilidad | Generalización y caída de rendimiento intercentro | Mejor estabilidad fuera del dominio original | Menor volumen de estudios |
+
+: Tabla 9. Ejemplo de tabla de síntesis comparativa.
+
+# Fase 6. Discusión y conclusiones del informe
+
+## Función argumentativa de la fase 6
+
+La última fase no consiste en repetir resultados. Consiste en interpretarlos y traducirlos en una lectura madura del campo. El documento base identifica cuatro componentes: resumen de hallazgos, brechas de conocimiento, limitaciones de la revisión e implicaciones futuras. Esa secuencia es correcta y suficiente para una discusión sólida.
+
+## Resumen de hallazgos
+
+El resumen de hallazgos debe responder cuáles son las tecnologías dominantes, qué patrones son consistentes y en qué aspectos la evidencia es débil o contradictoria. En un estado del arte técnico, conviene diferenciar claramente entre frecuencia de aparición y solidez de la evidencia. No son lo mismo. Un enfoque puede ser dominante en número de publicaciones y aun así presentar debilidades de generalización o reproducibilidad.
+
+## Brechas de conocimiento
+
+Las brechas no son simplemente “temas poco estudiados”. Una brecha genuina puede adoptar varias formas: ausencia de validación externa, falta de estudios multicentro, escasez de comparaciones justas entre familias metodológicas, carencia de datos abiertos, opacidad en el preprocesamiento o falta de análisis de estabilidad. El estado del arte gana valor cuando las brechas se identifican de forma específica y accionable.
+
+### Ejemplo ilustrativo 14: formulación de brechas
+
+En el ejemplo conductor, una brecha plausible no sería decir “faltan más estudios sobre segmentación”, porque eso es demasiado general. Una formulación útil sería: “La literatura presenta un volumen creciente de modelos de segmentación tumoral, pero existe una escasez relativa de estudios que evalúen de manera explícita la estabilidad del rendimiento frente a variaciones de centro, escáner y protocolo de adquisición”. Esa formulación orienta investigación futura concreta.
+
+## Limitaciones de la revisión
+
+El documento base insiste correctamente en que el informe final debe reconocer limitaciones del proceso. Esta práctica es indispensable. Las limitaciones pueden provenir de la búsqueda, de la cobertura de bases de datos, del idioma, de la heterogeneidad de métricas, de la disponibilidad desigual de texto completo o de la propia calidad de los estudios incluidos.
+
+Declarar limitaciones no debilita el trabajo; lo vuelve metodológicamente honesto.
+
+## Implicaciones para investigación y desarrollo
+
+La discusión debe cerrar con implicaciones concretas. En un estado del arte técnico, estas implicaciones pueden dirigirse a investigadores, desarrolladores, clínicos o responsables de proyecto. Lo importante es que deriven de la síntesis y no de preferencias personales del autor.
+
+# Integración transversal entre fases
+
+## Por qué las fases no deben ejecutarse como compartimentos aislados
+
+Aunque el flujo se presenta de forma secuencial, en realidad funciona como un sistema con retroalimentación. La búsqueda puede requerir ajustes después de la bibliometría. La selección puede revelar que ciertos términos de búsqueda eran demasiado amplios o demasiado estrechos. La síntesis puede mostrar que faltan variables en la matriz de extracción. Esta dinámica no invalida el protocolo; solo indica que la ejecución real exige control de versiones y trazabilidad.
+
+## Matriz de dependencias
+
+| Si falla esta fase | Se afecta principalmente | Consecuencia |
+|---|---|---|
+| Planificación | Búsqueda y selección | Criterios ambiguos y sesgo de alcance |
+| Búsqueda | Bibliometría y selección | Muestra incompleta o contaminada |
+| Bibliometría | Discusión estratégica | Panorama deformado del campo |
+| Selección | Síntesis y conclusiones | Evidencia no confiable o insuficiente |
+| Extracción | Síntesis | Comparaciones pobres o imposibles |
+| Síntesis | Discusión final | Conclusiones descriptivas y débiles |
+
+: Tabla 10. Dependencias críticas del flujo de trabajo.
+
+# Ejemplo aplicado integral
+
+## Planteamiento del ejemplo
+
+A continuación se presenta un ejemplo sintético de cómo se vería la ejecución completa del flujo sobre un problema ilustrativo: segmentación de glioblastoma en imágenes de resonancia magnética con interés en robustez y generalización.
+
+## Paso 1: pregunta y criterios
+
+La pregunta se define alrededor de la comparación entre modelos asociativos y modelos con mecanismos explícitos de robustez o causalidad. Se fijan criterios de inclusión para estudios de segmentación con información técnica suficiente, y se excluyen artículos sin texto completo, sin métricas relevantes o sin descripción del conjunto de datos.
+
+## Paso 2: estrategia de búsqueda
+
+Se construye una ecuación maestra con tres pilares: entidad clínica, modalidad de imagen y tarea de segmentación. Los términos de robustez o causalidad se reservan inicialmente para análisis complementario porque imponerlos demasiado pronto podría sacrificar sensibilidad. La ecuación se traduce a varias bases y se valida con artículos semilla.
+
+## Paso 3: análisis bibliométrico
+
+Con los registros consolidados se produce un mapa de crecimiento anual, una red de co-ocurrencia y una red de co-citación. Se observa que la literatura se concentra en arquitecturas bien establecidas, mientras emergen líneas más recientes asociadas a robustez, autoatención y generalización.
+
+## Paso 4: selección y evaluación
+
+Después de deduplicar, se realiza el tamizaje de título y resumen. Luego se revisan los textos completos y se penalizan estudios con fuga de datos, métricas insuficientes o falta de transparencia. La muestra final conserva solo artículos metodológicamente utilizables.
+
+## Paso 5: síntesis
+
+Los estudios se agrupan por familias de modelos. Se compara rendimiento reportado, estabilidad fuera del dominio y calidad metodológica. Se observa que los modelos clásicos dominan en volumen, pero los trabajos orientados a robustez aportan argumentos relevantes para generalización, aunque todavía con base empírica menos abundante.
+
+## Paso 6: discusión
+
+La conclusión no sería que “un enfoque ganó definitivamente”, sino algo más matizado y científicamente defendible: el campo muestra predominio de arquitecturas asociativas de alto rendimiento interno, pero existe interés creciente en estrategias orientadas a robustez; la evidencia sobre generalización intercentro es prometedora, aunque todavía limitada por heterogeneidad metodológica y validación externa insuficiente.
+
+# Plantillas operativas para ejecutar el flujo
+
+## Plantilla de protocolo inicial
+
+| Sección | Contenido esperado |
+|---|---|
+| Título provisional | Nombre preciso de la revisión |
+| Justificación | Por qué el problema merece una revisión |
+| Pregunta de investigación | Formulación estructurada |
+| Objetivos | General y específicos |
+| Criterios de elegibilidad | Inclusión y exclusión |
+| Fuentes de información | Bases de datos y fuentes adicionales |
+| Estrategia de búsqueda | Lógica general de ecuaciones |
+| Proceso de selección | Número de revisores y resolución de discrepancias |
+| Evaluación de calidad | Instrumentos y criterios técnicos |
+| Extracción de datos | Variables a registrar |
+| Estrategia de síntesis | Agrupamiento, métricas y método de síntesis |
+| Limitaciones previstas | Riesgos metodológicos anticipados |
+
+: Tabla 11. Plantilla resumida de protocolo.
+
+## Plantilla de formulario de screening
+
+| ID | Título | ¿Cumple tema? | ¿Tiene texto completo? | ¿Es artículo utilizable? | Decisión | Motivo |
+|---|---|---|---|---|---|---|
+| 001 | ... | Sí/No | Sí/No | Sí/No | Incluir/Excluir/Duda | Criterio aplicado |
+
+: Tabla 12. Plantilla de tamizaje de título y resumen.
+
+## Plantilla de evaluación a texto completo
+
+| ID | Cumple población o datos | Cumple tarea | Reporta métricas adecuadas | Describe datos y preprocesamiento | Riesgo de sesgo | Decisión final |
+|---|---|---|---|---|---|---|
+| 001 | Sí/No | Sí/No | Sí/No | Sí/No | Bajo/Moderado/Alto | Incluir/Excluir |
+
+: Tabla 13. Plantilla de evaluación a texto completo.
+
+## Plantilla de síntesis final
+
+| Estudio | Grupo metodológico | Datos | Métrica central | Resultado principal | Calidad metodológica | Comentario interpretativo |
+|---|---|---|---|---|---|---|
+| A | Grupo 1 | ... | ... | ... | ... | ... |
+
+: Tabla 14. Plantilla de síntesis comparativa.
+
+# Recomendaciones prácticas para equipos de trabajo
+
+## Organización del equipo
+
+Cuando la revisión es desarrollada por más de una persona, conviene separar responsabilidades sin romper la coherencia metodológica. Una posible organización consiste en asignar a una persona la coordinación del protocolo, a otra la ingeniería de búsqueda, a otra la depuración y bibliometría, y a dos revisores la selección independiente. Sin embargo, todas las decisiones críticas deben quedar documentadas en un registro común.
+
+## Control de versiones
+
+Cada cambio en los criterios, las ecuaciones o las tablas de extracción debe quedar fechado. No hacerlo genera un problema clásico: al final del proyecto nadie sabe cuál fue la versión efectiva de la búsqueda o por qué cambió cierto criterio. Un simple registro de decisiones puede evitar esa pérdida de trazabilidad.
+
+## Bitácora mínima de decisiones
+
+```text
+Fecha:
+Responsable:
+Fase afectada:
+Cambio realizado:
+Justificación:
+Impacto esperado:
+Evidencia que motivó el cambio:
+```
+
+Esta bitácora debe acompañar a todo el flujo. Es una herramienta simple, pero de gran valor cuando se requiere defender la revisión ante pares o reproducir el trabajo meses después.
+
+# Errores frecuentes y cómo evitarlos
+
+## Error 1: formular preguntas demasiado amplias
+
+Una pregunta vaga produce búsquedas vagas y síntesis superficiales. La corrección consiste en delimitar problema, contexto y resultado de interés.
+
+## Error 2: confundir cantidad de artículos con calidad del estado del arte
+
+Recuperar miles de registros no es un logro metodológico si la búsqueda no es específica o si la selección posterior es arbitraria. La calidad se mide por trazabilidad y pertinencia, no por volumen bruto.
+
+## Error 3: usar bibliometría como sustituto de lectura crítica
+
+Los mapas de red son útiles, pero no evalúan calidad metodológica. La bibliometría sin evaluación crítica puede producir conclusiones visualmente atractivas pero científicamente débiles.
+
+## Error 4: sintetizar estudio por estudio sin agrupamiento
+
+Esta práctica genera documentos largos, pero poco analíticos. La solución es definir dimensiones de comparación y agrupar la evidencia.
+
+## Error 5: no declarar limitaciones
+
+Toda revisión tiene limitaciones. Omitirlas no mejora el trabajo; lo vuelve menos creíble.
+
+# Discusión metodológica final
+
+El protocolo adjunto ofrece una estructura muy bien orientada para trabajos de estado del arte que buscan combinar revisión sistemática y mapeo bibliométrico. Su fortaleza principal es reconocer que el problema tiene dos escalas: una escala macroscópica, donde interesa entender la estructura del campo, y una escala microscópica, donde importa evaluar críticamente estudios concretos. Esta doble escala suele estar ausente en revisiones tradicionales, que o bien se quedan en la descripción panorámica, o bien se concentran en pocos estudios sin contextualización suficiente.
+
+La ampliación desarrollada en este informe muestra que ese protocolo puede convertirse en un flujo de trabajo robusto si se implementan tres principios. El primero es trazabilidad: toda decisión debe poder reconstruirse. El segundo es comparabilidad: la síntesis debe organizarse en dimensiones homogéneas. El tercero es prudencia inferencial: la revisión no debe confundir popularidad con validez ni rendimiento observado con certeza de la evidencia.
+
+En áreas técnicas como procesamiento de imágenes médicas o inteligencia artificial aplicada a salud, esta prudencia es indispensable. La literatura puede crecer muy rápido, pero ese crecimiento no garantiza madurez metodológica. De hecho, una de las funciones más valiosas del estado del arte es precisamente distinguir entre expansión bibliográfica y consolidación científica.
+
+# Conclusiones
+
+El flujo de trabajo para elaborar un estado del arte, tal como se desprende del documento adjunto y de su desarrollo ampliado en este informe, debe concebirse como un proceso integrado de diseño, recuperación, depuración, evaluación y síntesis. No se trata de una secuencia ornamental de pasos, sino de una cadena de decisiones metodológicas cuyo valor depende de la coherencia entre fases.
+
+La fase de planificación fija el alcance y protege contra arbitrariedad. La ingeniería de búsqueda define el universo recuperable de evidencia. El análisis bibliométrico proporciona una lectura estructural del campo. La selección y evaluación crítica filtran los estudios efectivamente utilizables. La síntesis narrativa estructurada transforma datos dispersos en argumentos comparativos. Finalmente, la discusión y las conclusiones convierten esa síntesis en una interpretación científicamente útil.
+
+La principal enseñanza operativa es que un estado del arte sólido no se logra acumulando referencias, sino tomando decisiones explícitas, documentadas y justificables. La principal enseñanza epistemológica es que la evidencia debe analizarse en dos niveles: cantidad y estructura del campo, por una parte, y calidad y significado de los estudios, por la otra.
+
+En consecuencia, el flujo propuesto es especialmente adecuado para contextos donde se exige rigor, reproducibilidad y capacidad de defensa metodológica. Su aplicación cuidadosa permite producir informes de estado del arte que no solo resumen literatura, sino que realmente organizan conocimiento, identifican vacíos y orientan investigación futura.
+
+# Anexo A. Lista breve de control antes de cerrar el informe
+
+Antes de considerar terminada la revisión, conviene verificar al menos lo siguiente:
+
+1. La pregunta de investigación está definida con claridad y coherencia con los criterios de elegibilidad.
+2. Las ecuaciones de búsqueda fueron traducidas y documentadas por base de datos.
+3. La búsqueda fue validada con artículos semilla y revisión de ruido.
+4. Los registros fueron deduplicados con una estrategia combinada.
+5. La selección fue realizada con criterios explícitos y, de ser posible, por revisores independientes.
+6. La evaluación metodológica contempló riesgos técnicos propios del dominio.
+7. La extracción de datos produce variables comparables.
+8. La síntesis está agrupada por dimensiones analíticas y no por simple cronología.
+9. La discusión distingue hallazgos, brechas, limitaciones e implicaciones.
+10. Todas las decisiones importantes quedaron registradas en una bitácora.
+
+# Anexo B. Párrafo modelo para la sección metodológica de un manuscrito
+
+La elaboración del estado del arte se desarrolló mediante un flujo de trabajo integrado que combinó planificación del protocolo, construcción y validación iterativa de ecuaciones de búsqueda, análisis bibliométrico de la producción científica, selección y evaluación crítica de estudios, y síntesis narrativa estructurada de la evidencia. La pregunta de investigación se delimitó previamente mediante un marco conceptual explícito, se definieron criterios de inclusión y exclusión antes de la búsqueda y se documentaron de forma completa las estrategias empleadas en cada base de datos. Posteriormente, los registros recuperados fueron consolidados, depurados y analizados tanto a nivel cuantitativo como cualitativo. La síntesis final se organizó por grupos metodológicos comparables, con atención especial a la calidad de los estudios, la consistencia de los resultados y la identificación de brechas de conocimiento.
+
+# Anexo C. Nota sobre límites del documento fuente
+
+El documento base proporciona una estructura metodológica sólida, ejemplos temáticos y nombres de estándares relevantes, pero no incorpora los instrumentos completos de evaluación, las listas oficiales de verificación ni una bibliografía detallada de soporte. Por tanto, este informe amplía operativamente el flujo de trabajo, pero no inventa listas oficiales ni agrega referencias específicas no contenidas en el material adjunto. Si el proyecto exige una revisión con citación formal de los estándares y de sus documentos fundacionales, esa capa bibliográfica deberá añadirse en una versión posterior con consulta directa de las fuentes primarias.

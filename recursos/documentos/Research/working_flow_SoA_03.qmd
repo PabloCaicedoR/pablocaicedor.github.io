@@ -1,0 +1,349 @@
+---
+title: "Protocolo de Investigación: Marco Integrado para Revisiones de Estado del Arte y Mapeo Bibliométrico"
+subtitle: "Guía Metodológica Basada en Estándares PRISMA, SWiM y GRADE"
+author: "Departamento de Investigación"
+date: "`r Sys.Date()`"
+lang: es
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    colorlinks: true
+    papersize: letter
+    geometry:
+      - top=25mm
+      - left=25mm
+      - right=25mm
+      - bottom=25mm
+    header-includes:
+      - \usepackage{fancyhdr}
+      - \pagestyle{fancy}
+      - \fancyhead[L]{Protocolo de Revisión Sistemática}
+---
+
+# Introducción
+
+La producción de una revisión del estado del arte no debe entenderse como una mera recopilación bibliográfica narrativa, sino como un proceso de síntesis científica que requiere rigor procedimental. Este informe detalla un flujo de trabajo exhaustivo que integra el análisis bibliométrico cuantitativo (cienciometría) con la síntesis cualitativa bajo los estándares internacionales más recientes. El objetivo es proporcionar una hoja de ruta técnica que permita transitar desde la concepción de la idea hasta la publicación de un documento con alta validez científica.
+
+# Fase 1: Planificación y Protocolo de Investigación (PRISMA-P)
+
+La validez de una revisión sistemática comienza con la definición de un protocolo *a priori*. Según la declaración PRISMA-P 2015, el protocolo debe minimizar la arbitrariedad en la toma de decisiones durante la revisión.
+
+## Definición de la Pregunta de Investigación
+
+Se debe utilizar el marco **PICO** (Población, Intervención, Comparador, Resultado) o **PEO** (Población, Exposición, Resultado) para delimitar el alcance. Una pregunta bien definida facilita la identificación de palabras clave y evita la dispersión temática.
+
+## Criterios de Elegibilidad
+
+Es fundamental establecer criterios explícitos para la inclusión y exclusión de estudios:
+
+- **Criterios de Inclusión:** Tipo de diseño (ej. ensayos controlados, estudios de cohortes), marco temporal (ej. últimos 10 años), idiomas y tipo de participantes.
+- **Criterios de Exclusión:** Reportes de casos aislados, editoriales, resúmenes de conferencias sin datos completos o estudios con metodologías defectuosas.
+
+## Registro del Protocolo
+
+El registro en plataformas como **PROSPERO** o **OSF (Open Science Framework)** es una práctica recomendada que otorga transparencia al proceso y previene la duplicación de esfuerzos en la comunidad científica.
+
+# Fase 2: Ingeniería de Ecuaciones de Búsqueda (Subflujo Técnico)
+
+La calidad de una revisión del estado del arte está limitada por la capacidad de recuperación de su estrategia de búsqueda. Según el *Cochrane Handbook for Systematic Reviews of Interventions*, una búsqueda debe ser lo suficientemente sensible para identificar toda la evidencia relevante, pero lo suficientemente específica para que los resultados sean manejables.
+
+## Descomposición Conceptual y Taxonomía de Términos
+
+El primer paso es desglosar la pregunta de investigación en conceptos independientes. No todos los elementos del marco PICO (Población, Intervención, Comparador, Resultado) deben incluirse en la ecuación, ya que añadir demasiados pilares reduce drásticamente la sensibilidad.
+
+### Selección de Pilares (Conceptos Core)
+
+Generalmente, se recomienda construir la ecuación basándose únicamente en los pilares de **Población** e **Intervención**. Los resultados (*Outcomes*) suelen estar mal indexados y omitirlos en la búsqueda inicial previene la pérdida de estudios relevantes.
+
+### Taxonomía Dual: Lenguaje Controlado vs. Lenguaje Natural
+
+Para cada concepto, se debe desarrollar un conjunto de términos que abarque:
+
+1.  **Descriptores de Vocabulario Controlado (Tesauros):** - **MeSH (Medical Subject Headings):** Para PubMed/MEDLINE. Utilizan una estructura jerárquica. Es fundamental decidir si se "explota" el término (*explode*) para incluir términos más específicos.
+    - **Emtree:** Para Embase, con una cobertura mayor en farmacología y dispositivos biomédicos.
+2.  **Términos de Texto Libre (Keywords):** - Sinónimos técnicos.
+    - Variaciones ortográficas (ej. *orthopaedic* vs. *orthopedic*).
+    - Acrónimos y sus formas extendidas.
+
+## Sintaxis Avanzada y Operadores Lógicos
+
+La construcción de la ecuación requiere el uso preciso de la lógica booleana y operadores de proximidad para evitar el ruido.
+
+### Jerarquía y Anidamiento (Nesting)
+El uso de paréntesis es obligatorio para dictar el orden de las operaciones. La base de datos procesará primero lo contenido en los paréntesis internos.
+- **Estructura correcta:** `(Concepto A1 OR Concepto A2) AND (Concepto B1 OR Concepto B2)`
+
+### Operadores de Proximidad
+A diferencia del operador `AND`, que busca términos en cualquier lugar del registro, los operadores de proximidad exigen que los términos estén a una distancia específica, lo que aumenta exponencialmente la precisión.
+
+- **En Scopus (W/n):** `heart W/3 failure` encuentra "heart failure" y "heart and lung failure".
+- **En Web of Science (NEAR/n):** `signal NEAR/5 processing`.
+
+### Truncamiento y Comodines
+
+- **Truncamiento (*):** Se coloca en la raíz de la palabra. *Ejemplo:* `comput*` recupera *computer, computing, computation, computational*.
+- **Comodín (?):** Reemplaza un carácter. *Ejemplo:* `m?n` recupera *man* y *men*.
+
+
+
+## Estructura de Campos (Field Tags)
+
+Para evitar resultados irrelevantes (ej. autores con el mismo nombre que un concepto), se deben restringir los términos de texto libre a campos específicos:
+
+- **PubMed:** `[tiab]` (Title/Abstract) o `[ot]` (Other Term).
+- **Scopus:** `TITLE-ABS-KEY`.
+- **IEEE Xplore:** `Abstract` o `Document Title`.
+
+## Subflujo de Traducción entre Bases de Datos
+
+Una ecuación validada en PubMed no puede copiarse directamente a Scopus o IEEE Xplore debido a las diferencias en la sintaxis y el indexado.
+
+1.  **Ecuación Maestra:** Se desarrolla primero en la base de datos principal (generalmente PubMed o Scopus).
+2.  **Mapeo de Tesauros:** Traducir los términos MeSH a sus equivalentes en otras bases (ej. Emtree en Embase).
+3.  **Ajuste de Sintaxis:** Cambiar los `[tiab]` por `TITLE-ABS-KEY` o etiquetas equivalentes.
+4.  **Verificación de Operadores:** Asegurarse de que el operador de proximidad (W o NEAR) sea el correcto para el motor de búsqueda.
+
+## Validación Iterativa: El Ciclo de Retroalimentación
+
+La estrategia no se considera final hasta que supera las pruebas de rendimiento:
+
+### Prueba de Sensibilidad (Recall)
+Se toma una lista de 5 a 10 artículos "semilla" (artículos clave que DEBEN estar en la revisión). Se ejecuta la ecuación y se verifica si todos están presentes. Si falta uno, se analiza su indexación para añadir el término faltante a la ecuación.
+
+### Análisis de Ruido (Precision)
+Se revisan los primeros 50 a 100 resultados. Si el 90% son irrelevantes, la ecuación es demasiado amplia. En este caso, se deben aplicar restricciones de campo más estrictas o añadir un tercer pilar conceptual (AND).
+
+## Documentación de la Búsqueda (Estándar PRISMA)
+
+Para cumplir con el reporte PRISMA 2020, se debe registrar para cada base de datos:
+
+1.  Nombre de la base de datos y plataforma (ej. MEDLINE vía PubMed).
+2.  Estrategia de búsqueda completa y exacta.
+3.  Filtros aplicados (fechas, idiomas, tipo de estudio).
+4.  Fecha de ejecución.
+5.  Número de resultados obtenidos.
+
+# Fase 3: Análisis Bibliométrico (Mapeo Cuantitativo)
+
+El análisis bibliométrico constituye la fase cuantitativa del flujo de trabajo. En el área del procesamiento de imágenes médicas, donde la producción científica crece a ritmos de dos dígitos anuales, este análisis es indispensable para identificar la estructura intelectual del campo y las fronteras de conocimiento (*research fronts*).
+
+## Pre-procesamiento y Normalización de Datos
+
+Antes de cualquier análisis, los metadatos crudos extraídos de bases de datos (Scopus, WoS, PubMed) requieren un tratamiento riguroso para evitar sesgos en las métricas.
+
+1.  **Limpieza de Metadatos:** Estandarización de nombres de autores (ej. *Zhang J.* vs *Zhang Jing*) y de instituciones.
+2.  **Desambiguación de Afiliaciones:** Consolidar variantes de un mismo centro de investigación.
+3.  **Filtro de Relevancia:** Eliminación de registros que, a pesar de contener las palabras clave, no pertenecen al dominio del procesamiento de imágenes (ej. estudios puramente clínicos sin aporte algorítmico).
+
+## Análisis de Rendimiento (Performance Analysis)
+
+Esta dimensión evalúa el impacto y la productividad de los actores científicos (autores, revistas, países).
+
+### Indicadores de Actividad
+
+- **Tasa de Crecimiento Anual:** Fundamental para determinar si el interés en una técnica (ej. *Vision Transformers* en segmentación) es creciente o ha llegado a una meseta.
+- **Ley de Bradford:** Identificación de las "revistas núcleo" en procesamiento de imágenes, como *IEEE Transactions on Medical Imaging* o *Medical Image Analysis*.
+
+### Indicadores de Impacto
+
+- **Índice H de los Autores:** Evaluación de la influencia de los investigadores líderes en el área.
+- **Citaciones por Documento:** Permite identificar los *Landmark Papers* (artículos de referencia obligatoria) que han definido el estado del arte.
+
+## Mapeo Científico (Science Mapping)
+
+El mapeo científico permite visualizar la estructura del campo mediante técnicas de redes. Se divide en tres estructuras fundamentales:
+
+### Estructura Intelectual: Análisis de Co-citación
+
+Identifica los cimientos teóricos del campo. Se analiza qué artículos son citados juntos por los artículos de la muestra.
+
+- **Ejemplo en Imágenes:** Un análisis de co-citación revelará que la mayoría de los trabajos actuales en segmentación de tumores cerebrales citan los trabajos originales de Ronneberger (U-Net) y Pearl (IA Causal), estableciendo estas como las bases intelectuales.
+
+### Estructura Conceptual: Co-ocurrencia de Palabras Clave
+
+Representa los temas principales y su evolución.
+
+- **Clusters Temáticos:** Las redes de palabras clave agruparán términos como "Deep Learning", "Convolutional Neural Networks" y "Backpropagation".
+- **Evolución de Tópicos:** Permite observar el desplazamiento desde métodos tradicionales (ej. *Active Contours*) hacia métodos de aprendizaje profundo.
+
+
+
+### Estructura Social: Co-autoría y Colaboración
+Visualiza cómo interactúan los investigadores y los países.
+
+- **Redes de Colaboración:** Identifica "hubs" de investigación (ej. colaboración entre centros de ingeniería en China y departamentos de radiología en EE.UU.).
+
+## Herramientas y Flujo Computacional
+
+Para un ingeniero electrónico, el análisis bibliométrico debe tratarse como un pipeline de procesamiento de datos.
+
+| Herramienta | Aplicación Principal | Ventaja Técnica |
+|:---|:---|:---|
+| **Bibliometrix (R)** | Análisis estadístico completo | Generación automática de reportes y leyes bibliométricas. |
+| **VOSviewer** | Visualización de redes | Algoritmo de diseño basado en la técnica VOS para mapas claros. |
+| **Python (Metaknowledge)** | Pre-procesamiento custom | Permite integración con scripts de limpieza de texto y NLP. |
+
+## Ejemplo Práctico: Análisis de Tendencias en Segmentación MRI
+
+Al aplicar la Fase 3 a la segmentación de imágenes de resonancia magnética (MRI), el análisis bibliométrico debería arrojar los siguientes resultados:
+
+1.  **Identificación de "Burst Words":** Términos que han tenido un crecimiento explosivo reciente, como *Self-attention*, *Few-shot learning* o *Synthetic data*.
+2.  **Mapeo de la Estructura Conceptual:**
+    - *Cluster 1:* Métodos de optimización y funciones de pérdida (Dice loss, Cross-entropy).
+    - *Cluster 2:* Arquitecturas de red (U-Net, SegNet, ResNet).
+    - *Cluster 3:* Aplicaciones clínicas específicas (Glioma, Stroke, Multiple Sclerosis).
+
+# Fase 4: Selección y Evaluación de Estudios (PRISMA 2020)
+
+Una vez obtenida la muestra bruta de documentos, se aplica el proceso de filtrado sistemático, que debe documentarse en el diagrama de flujo de PRISMA.
+
+Una vez ejecutada la búsqueda sistemática (Fase 2) y analizada la estructura macroscópica del campo (Fase 3), se procede a la selección microscópica de la evidencia. Esta fase es crítica: un error en la selección invalida las conclusiones del estado del arte. En el procesamiento de imágenes médicas, este proceso debe ser especialmente riguroso debido a la alta tasa de publicaciones con metodologías redundantes o datos sesgados.
+
+## Gestión de Registros y Deduplicación
+
+El resultado de la búsqueda en múltiples bases de datos genera una cantidad sustancial de registros redundantes. La deduplicación no es un proceso trivial y debe automatizarse para garantizar la integridad de los datos.
+
+1.  **Herramientas de Limpieza:** Uso de gestores como Zotero o Mendeley, o herramientas específicas como *Rayyan* o *Covidence*.
+2.  **Algoritmos de Cruce:** Se recomienda realizar una doble verificación: primero por el Identificador de Objeto Digital (DOI) y segundo por una combinación de título y año de publicación para capturar registros que carecen de DOI en bases de datos técnicas.
+
+## Proceso de Selección en Dos Etapas
+
+Para maximizar la eficiencia, la selección se divide en dos filtros sucesivos, idealmente realizados de forma independiente por dos revisores para calcular el **índice de acuerdo (Kappa de Cohen)**.
+
+### Etapa 1: Tamizaje de Título y Resumen (Screening)
+
+Se evalúa la relevancia superficial. En procesamiento de imágenes, los criterios de exclusión rápidos suelen ser:
+
+- Estudios que solo presentan abstract de conferencia sin metodología detallada.
+- Aplicaciones en imágenes no médicas (ej. visión artificial industrial).
+- Uso de técnicas obsoletas que no cumplen con el marco temporal del estado del arte (ej. segmentación manual).
+
+### Etapa 2: Evaluación de Idoneidad (Full-text Review)
+
+Los artículos que superan el primer filtro se someten a una lectura crítica integral. Aquí, la exclusión es técnica y específica.
+
+- **Ejemplo en Imágenes:** Exclusión de artículos que utilizan "data leakage" (usar imágenes del conjunto de prueba en el entrenamiento) o que no describen la procedencia del conjunto de datos (dataset).
+
+
+
+## Evaluación de la Calidad y Riesgo de Sesgo
+
+En una revisión del estado del arte de carácter técnico, la evaluación no solo se centra en el rigor clínico, sino en la **reproducibilidad y robustez del algoritmo**.
+
+### Herramientas de Evaluación Crítica
+
+Para el procesamiento de imágenes y modelos de IA, las herramientas tradicionales (como RoB 2) resultan insuficientes. Se deben emplear marcos específicos:
+
+1.  **Checklist CLAIM (AI in Medical Imaging):** Evalúa si el artículo reporta detalles esenciales como la arquitectura del modelo, la inicialización de pesos y la gestión de hiperparámetros.
+2.  **QUADAS-AI:** Una adaptación para estudios de precisión diagnóstica que utilizan inteligencia artificial.
+
+### Criterios Técnicos de Exclusión de Calidad
+
+Se debe penalizar o excluir estudios que presenten:
+
+- **Ausencia de Validación Cruzada:** O falta de un conjunto de prueba (*test set*) independiente y externo.
+- **Métricas Insuficientes:** Reportar solo *Accuracy* en datasets desbalanceados (ej. detección de tumores pequeños) sin incluir *F1-score*, *Dice Coefficient* o curvas *Precision-Recall*.
+- **Opacidad en el Pre-procesamiento:** No detallar pasos como la normalización de intensidad, el remuestreo espacial (resampling) o el registro de imágenes.
+
+## Extracción de Datos (Data Extraction)
+
+Se debe diseñar un formulario de extracción estandarizado. Para un proyecto de procesamiento de imágenes médicas, los campos obligatorios son:
+
+- **Hardware/Software:** GPU utilizada, framework (PyTorch, TensorFlow).
+- **Dataset:** Público (ej. BraTS, ISIC) o privado, tamaño de la muestra, balance de clases.
+- **Arquitectura:** Tipo de red (ej. ResNet-50, ViT-Base), funciones de activación, optimizador.
+- **Resultados:** Valores numéricos de las métricas de rendimiento y sus intervalos de confianza.
+
+## Ejemplo Aplicado: Revisión de Detección de Retinopatía Diabética
+
+| Criterio | Ejemplo de Decisión en Fase 4 |
+|:---|:---|
+| **Inclusión** | Estudios que usen imágenes de fondo de ojo con resolución > 1024px y modelos de Deep Learning. |
+| **Exclusión en Screening** | Artículos sobre segmentación de vasos sanguíneos sin detección de lesiones (fuera de foco). |
+| **Exclusión en Full-text** | Estudios que no reportan la métrica de Sensibilidad (crítica en diagnóstico médico). |
+| **Evaluación de Sesgo** | Se detecta "Riesgo Alto" en un estudio que entrenó y probó el modelo en el mismo conjunto de datos pequeño (N<100). |
+
+# Fase 5: Síntesis del Estado del Arte (Guía SWiM)
+
+La fase de síntesis representa la transición del procesamiento de datos a la generación de conocimiento. En el procesamiento de imágenes médicas, la síntesis cualitativa suele ser necesaria debido a la heterogeneidad en las arquitecturas de red, los hiperparámetros y los conjuntos de datos (datasets). Cuando no es posible realizar un metanálisis estadístico, se debe aplicar el protocolo **SWiM** (*Synthesis Without Meta-analysis*) para garantizar un reporte transparente y reproducible.
+
+## Marco SWiM: Síntesis Narrativa Sistematizada
+
+El uso de la guía SWiM previene que el estado del arte se convierta en un simple resumen cronológico de artículos. Se deben seguir los siguientes elementos clave:
+
+### Agrupamiento de Estudios para la Síntesis
+
+Los estudios no deben presentarse uno por uno, sino agrupados bajo criterios técnicos que permitan la comparación:
+
+- **Por Arquitectura de Red:** Agrupar estudios que utilicen variantes de la arquitectura U-Net frente a aquellos basados en *Transformers* (ej. ViT, Swin Transformer).
+
+- **Por Función de Pérdida (Loss Function):** Comparar resultados basados en *Dice Loss*, *Cross-Entropy* o funciones de pérdida personalizadas para abordar el desbalance de clases en imágenes.
+
+- **Por Tipo de Datos:** Agrupar estudios que utilicen datasets públicos (ej. BraTS, LUNA16) frente a datasets privados.
+
+### Elección de Métricas Estandarizadas
+
+Para que la síntesis sea comparativa, se deben transformar los resultados a una métrica común. En procesamiento de imágenes médicas, las métricas fundamentales son:
+
+- **Coeficiente Dice (DSC):** Para medir la superposición espacial en segmentación.
+- **Puntuación F1:** En tareas de clasificación de lesiones.
+- **Distancia de Hausdorff (95th percentile):** Para evaluar la precisión de los bordes en la segmentación de órganos en riesgo.
+
+## Métodos de Síntesis y Transformación de Datos
+
+Existen tres enfoques principales para sintetizar la evidencia técnica en procesamiento de imágenes:
+
+1.  **Votación por Conteo (Vote Counting):** Se basa en el número de estudios que muestran una mejora significativa de una técnica sobre otra. Es el método más sencillo pero el menos potente.
+2.  **Síntesis de Valores P (P-value Synthesis):** Combina los niveles de significancia cuando las magnitudes del efecto no son comparables.
+3.  **Análisis de Rangos (Rank-based Synthesis):** Clasifica las técnicas según su rendimiento reportado en un mismo benchmark.
+
+
+
+## Evaluación de la Certeza de la Evidencia (Marco GRADE)
+
+La calidad de un algoritmo de procesamiento de imágenes no solo se mide por su rendimiento numérico, sino por la confianza que podemos tener en ese resultado. El sistema **GRADE** (*Grading of Recommendations Assessment, Development and Evaluation*) permite calificar esta certeza.
+
+### Factores que Disminuyen la Certeza (Downgrading)
+
+En el contexto de imágenes médicas e IA, se debe penalizar la certeza si existen:
+
+- **Riesgo de Sesgo:** Metodologías opacas en la separación de conjuntos de entrenamiento y prueba (*data leakage*).
+- **Inconsistencia:** Variaciones extremas en los resultados de una misma arquitectura entre diferentes estudios (ej. una U-Net que funciona bien en un dataset pero falla en otros sin explicación).
+- **Evidencia Indirecta:** El algoritmo fue probado en simulaciones o datasets sintéticos, pero se pretende aplicar a entornos clínicos reales.
+- **Imprecisión:** Resultados reportados sin intervalos de confianza o con muestras de imágenes muy pequeñas (N < 30).
+
+### Factores que Aumentan la Certeza (Upgrading)
+
+- **Efecto de Magnitud:** Un algoritmo que muestra una mejora disruptiva (ej. +15% en Dice Coefficient) sobre el estado del arte previo.
+- **Gradiente Dosis-Respuesta:** Mayor precisión a medida que aumenta la resolución de la imagen o el volumen de datos de entrenamiento de alta calidad.
+
+## Visualización Cualitativa de Resultados
+
+La síntesis debe apoyarse en herramientas visuales que permitan al lector captar la evolución del campo de un vistazo.
+
+### Diagramas de Cosecha (Harvest Plots)
+
+Útiles para visualizar resultados heterogéneos. Cada barra representa un estudio; la altura de la barra puede indicar la calidad metodológica y el color el tipo de arquitectura utilizada.
+
+### Gráficos de "Bubble Plot" para Meta-regresión Cualitativa
+Permiten observar la relación entre el año de publicación (eje X), el rendimiento (eje Y) y el tamaño del dataset (tamaño de la burbuja).
+
+## Ejemplo Práctico: Síntesis en Segmentación de MRI con Causal IA
+
+Supongamos una revisión sobre **"IA Causal para la Segmentación Robusta de Glioblastomas"**. La síntesis en la Fase 5 seguiría este esquema:
+
+1.  **Agrupamiento:** Se dividen los estudios en "Modelos Asociativos (Black-box)" vs. "Modelos con Inferencia Causal (Structural Causal Models)".
+2.  **Síntesis:** Se observa que, aunque los modelos asociativos tienen un Dice Coefficient ligeramente superior en el conjunto de prueba interno, los modelos causales presentan una mayor estabilidad (menos caída de rendimiento) al ser probados en datos de diferentes centros hospitalarios.
+3.  **Conclusión GRADE:** "Existe una certeza *Moderada* de que la IA Causal mejora la generalización del modelo en presencia de sesgo de adquisición de imagen (scanner bias)".
+
+# Fase 6: Discusión y Conclusiones del Informe
+
+El documento final debe sintetizar los hallazgos en un lenguaje académico preciso.
+
+- **Resumen de Hallazgos:** Cuáles son las tecnologías o métodos predominantes.
+- **Brechas de Conocimiento (*Research Gaps*):** Identificación de lo que aún no se ha investigado o donde la evidencia es contradictoria.
+- **Limitaciones de la Revisión:** Reconocimiento honesto de las limitaciones del proceso de búsqueda o de la calidad de los estudios incluidos.
+- **Implicaciones para el Futuro:** Recomendaciones prácticas para investigadores y desarrolladores.
+

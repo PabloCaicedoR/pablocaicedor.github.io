@@ -1,0 +1,121 @@
+---
+title: "Flujo de Trabajo para Revisiones del Estado del Arte y Bibliometría"
+subtitle: "Aplicación Especializada en Procesamiento de Imágenes Médicas"
+author: "Protocolo de Investigación Técnica"
+date: "`r Sys.Date()`"
+lang: es
+format:
+  pdf:
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    colorlinks: true
+    papersize: letter
+    geometry:
+      - top=25mm
+      - left=25mm
+      - right=25mm
+      - bottom=25mm
+---
+
+# Introducción
+
+El procesamiento de imágenes médicas ha experimentado un crecimiento exponencial debido al auge del *Deep Learning*. Para producir un estado del arte que sea metodológicamente sólido y útil para la comunidad científica, es imperativo seguir un proceso sistemático que combine la fuerza cuantitativa de la bibliometría con la profundidad analítica de la síntesis narrativa. Este informe detalla dicho flujo de trabajo, utilizando como caso de estudio la **Segmentación de Tumores Cerebrales en Resonancia Magnética (MRI)**.
+
+# Fase 1: Planificación y Definición del Protocolo
+
+Todo proyecto de revisión debe comenzar con un protocolo que defina los límites del estudio para evitar el sesgo de selección.
+
+## Ejemplo PICO en Procesamiento de Imágenes
+- **P (Población/Imágenes):** Imágenes de Resonancia Magnética (MRI) potenciadas en T1, T2 y FLAIR de pacientes adultos.
+- **I (Intervención/Algoritmo):** Redes Neuronales Convolucionales (CNN) con mecanismos de atención (Attention Gates).
+- **C (Comparación):** Arquitecturas clásicas tipo U-Net o segmentación basada en métodos de contornos activos (*Snake models*).
+- **O (Resultado/Métricas):** Coeficiente Dice, Índice de Jaccard y Distancia de Hausdorff.
+
+# Fase 2: Ingeniería de la Estrategia de Búsqueda (Expandida)
+
+Esta fase es crítica para garantizar que no se omitan artículos fundamentales (*landmark papers*). La búsqueda en procesamiento de imágenes es compleja debido a la superposición de términos de ingeniería, computación y medicina.
+
+## Taxonomía de Términos y Conceptos Core
+Se deben dividir los pilares conceptuales para abordar tanto el método como la aplicación clínica.
+
+1.  **Pilar del Método (IA/Procesamiento):** `Deep Learning`, `CNN`, `Semantic Segmentation`, `U-Net`, `Transformers`.
+2.  **Pilar de la Modalidad (Imagen):** `Magnetic Resonance Imaging`, `MRI`, `Neuroimaging`.
+3.  **Pilar del Objetivo (Clínica):** `Brain Tumor`, `Glioma`, `Glioblastoma`.
+
+## Uso de Vocabulario Controlado (MeSH/Emtree)
+En el área biomédica, el uso de términos MeSH es obligatorio en bases de datos como PubMed/MEDLINE.
+- **Ejemplo:** En lugar de solo usar "segmentation", se debe incluir el descriptor MeSH: `"Image Interpretation, Computer-Assisted"[Mesh]`.
+
+## Construcción de la Sintaxis y Lógica Booleana
+La ecuación debe ser una red jerárquica de términos conectados lógicamente.
+
+### Ejemplo de Ecuación Maestra (Sintaxis Genérica)
+```text
+( "Semantic Segmentation" OR "Image Segmentation" OR "U-Net" ) AND
+( "Magnetic Resonance Imaging" OR "MRI" ) AND
+( "Brain Tumor" OR "Glioma" )
+```
+
+## Refinamiento por Campos y Operadores de Proximidad
+Para aumentar la precisión en bases de datos como Scopus o Web of Science, se utilizan operadores de proximidad y etiquetas de campo para evitar "ruido".
+
+- **Operador de Proximidad (Scopus):** `segmentation W/3 tumor`. Esto busca que la palabra "segmentation" esté a máximo 3 palabras de "tumor" (ej. "segmentation of the brain tumor").
+- **Restricción de Campo:** `TITLE-ABS-KEY`. Limita la búsqueda al título, resumen y palabras clave.
+
+### Ejemplo de Ecuación Refinada para Scopus
+```text
+( TITLE-ABS-KEY ( "Deep Learning" OR "CNN" ) ) AND
+( TITLE-ABS-KEY ( "brain tumor" W/2 segment* ) ) AND
+( TITLE-ABS-KEY ( mri OR "magnetic resonance" ) )
+```
+
+## Adaptación Multibase (Traducción)
+Cada motor de búsqueda interpreta la lógica de forma distinta:
+- **IEEE Xplore:** Prioriza términos técnicos y permite mayor complejidad en operadores matemáticos.
+- **PubMed:** Requiere el uso de etiquetas `[tiab]` para términos de texto libre y `[Mesh]` para descriptores.
+- **ArXiv (vía ADS):** Es crucial para capturar *preprints* recientes en IA que aún no han sido indexados formalmente.
+
+
+
+# Fase 3: Análisis Bibliométrico (Mapeo Cuantitativo)
+
+El objetivo aquí es cuantificar la actividad investigadora en el área de imágenes.
+
+* **Ejemplo de Análisis de Tendencias:** Identificar el año exacto en que las publicaciones sobre *Transformers* superaron a las de *CNN* en segmentación médica (ej. hacia 2021).
+* **Ejemplo de Co-ocurrencia:** Crear un mapa donde se observe la transición de palabras clave desde "thresholding" y "watershed" hacia "deep learning" y "encoder-decoder".
+
+# Fase 4: Selección y Evaluación (Diagrama PRISMA)
+
+El proceso de filtrado debe ser transparente y reproducible.
+
+1.  **Identificación:** 1,200 registros encontrados.
+2.  **Cribado:** 850 tras eliminar duplicados. Se excluyen 500 por no tratar imágenes de MRI (ej. CT o PET).
+3.  **Idoneidad:** 350 artículos a texto completo. Se excluyen 300 por falta de validación métrica clara (sin reporte de Dice Coefficient).
+4.  **Inclusión:** 50 artículos seleccionados para el análisis profundo.
+
+
+
+# Fase 5: Síntesis del Estado del Arte (Análisis Cualitativo)
+
+En esta fase se extrae el conocimiento técnico y se sintetiza de forma crítica.
+
+## Agrupamiento por Arquitectura
+En procesamiento de imágenes, la síntesis se organiza mejor por la naturaleza del algoritmo:
+- **Modelos basados en 2D:** Procesamiento corte a corte (ej. U-Net estándar).
+- **Modelos basados en 3D (Voxel-based):** Uso de convoluciones 3D para preservar la coherencia espacial (ej. V-Net).
+- **Modelos Híbridos:** Combinación de CNN con Transformers (ej. TransUNet).
+
+## Evaluación de la Certeza (GRADE)
+Se evalúa si los resultados son generalizables.
+- **Ejemplo:** "Existe alta certeza de que las arquitecturas 3D superan a las 2D en precisión, pero la certeza disminuye al evaluar la eficiencia computacional en tiempo real".
+
+# Fase 6: Discusión y Conclusiones del Informe
+
+Se debe reflexionar sobre el futuro del campo basándose en la evidencia encontrada.
+
+- **Limitaciones Detectadas:** Falta de conjuntos de datos balanceados (sesgo hacia tumores grandes) y carencia de explicabilidad (*Explainable AI*) en los diagnósticos automáticos.
+- **Conclusión:** La tendencia actual en procesamiento de imágenes médicas se desplaza hacia modelos federados (*Federated Learning*) para proteger la privacidad de los datos clínicos.
+
+---
+**Consideración Didáctica:** Este flujo asegura que el investigador no solo "lea" artículos, sino que construya una base de datos técnica (bibliometría) y una narrativa crítica (estado del arte) que aporte valor real a la ingeniería biomédica.
