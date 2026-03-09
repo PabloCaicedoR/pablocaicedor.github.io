@@ -770,3 +770,110 @@ print(f"Verified Length: {len(y) == expected_len}")
 | **Identity** | Dirac Delta $\delta(t)$ | Kronecker Delta $\delta[n]$ |
 | **Complexity** | Differential Equations | Difference Equations |
 | **Implementation** | Analog Electronics | Digital Processors (DSP/FPGA) |
+
+
+## Ejemplo 1: Convolución Continua (Planteamiento)
+
+Considere señales analógicas definidas por tramos (no simétricas):
+
+**Señal de entrada $x(t)$:**
+$$x(t) = \begin{cases} t & 0 \leq t < 1 \\ 1 & 1 \leq t < 2 \\ 0 & \text{otros} \end{cases}$$
+
+**Respuesta al impulso $h(t)$:**
+$$h(t) = \begin{cases} 1 & 0 \leq t < 1 \\ -0.5 & 1 \leq t < 1.5 \\ 0 & \text{otros} \end{cases}$$
+
+**Objetivo:** Calcular la respuesta del sistema $y(t) = \int_{-\infty}^{\infty} x(\tau)h(t-\tau)d\tau$.
+
+---
+
+## Definición Formal de las Señales
+
+Para un análisis riguroso, expresamos las señales asimétricas mediante funciones escalón unitario $u(t)$:
+
+**Entrada $x(t)$:**
+$$x(t) = t[u(t)-u(t-1)] + 1[u(t-1)-u(t-2)]$$
+
+**Respuesta al impulso $h(t)$:**
+$$h(t) = 1[u(t)-u(t-1)] - 0.5[u(t-1)-u(t-1.5)]$$
+
+El soporte de la salida $y(t) = x(t) * h(t)$ es la suma de los soportes:
+$$S_y = [0+0, 2+1.5] = [0, 3.5]$$
+
+---
+
+## Metodología: El Kernel Invertido
+
+La integral de convolución es $y(t) = \int_{-\infty}^{\infty} x(\tau)h(t-\tau)d\tau$.
+El término $h(t-\tau)$ actúa como una ventana móvil que se desplaza de izquierda a derecha según aumenta $t$:
+
+- **Región de $h=1$:** $\tau \in [t-1, t]$
+- **Región de $h=-0.5$:** $\tau \in [t-1.5, t-1]$
+
+La evaluación requiere identificar cada cambio en la intersección de estos intervalos con los tramos de $x(\tau)$ ($[0,1]$ y $[1,2]$).
+
+---
+
+## Análisis por Intervalos (I)
+
+**1. Intervalo $0 \leq t < 1$:**
+Solo la parte frontal de $h$ ($h=1$) entra en el soporte de $x$.
+$$y(t) = \int_{0}^{t} \tau \cdot (1) d\tau = \frac{t^2}{2}$$
+
+**2. Intervalo $1 \leq t < 1.5$:**
+La parte $h=1$ cubre totalmente el primer tramo de $x$ y entra en el segundo. La parte $h=-0.5$ entra en el primer tramo.
+$$y(t) = \underbrace{\int_{0}^{t-1} \tau(-0.5) d\tau}_{\text{cola de } h} + \underbrace{\int_{t-1}^{1} \tau(1) d\tau}_{\text{frente } h \text{ en tramo 1}} + \underbrace{\int_{1}^{t} (1)(1) d\tau}_{\text{frente } h \text{ en tramo 2}}$$
+
+---
+
+## Análisis por Intervalos (II)
+
+**3. Intervalo $1.5 \leq t < 2$:**
+Ambas partes de $h$ están dentro del soporte de $x$.
+$$y(t) = \int_{t-1.5}^{t-1} \tau(-0.5) d\tau + \int_{t-1}^{1} \tau(1) d\tau + \int_{1}^{2} (1)(1) d\tau$$
+
+**4. Intervalo $2 \leq t < 2.5$:**
+El frente de $h$ comienza a salir del soporte de $x$ ($t-1 > 1$).
+$$y(t) = \int_{t-1.5}^{1} \tau(-0.5) d\tau + \int_{1}^{t-1} 1(-0.5) d\tau + \int_{t-1}^{2} (1)(1) d\tau$$
+
+---
+
+## Análisis por Intervalos (III)
+
+**5. Intervalo $2.5 \leq t < 3$:**
+Solo la cola de $h$ ($h=-0.5$) permanece en el segundo tramo de $x$.
+$$y(t) = \int_{t-1.5}^{2} (1)(-0.5) d\tau = -0.5(2 - (t - 1.5))$$
+
+**6. Intervalo $t \geq 3.5$:**
+$$y(t) = 0$$
+
+---
+
+## Ejemplo 2: Convolución Discreta (Planteamiento)
+
+Sean las secuencias asimétricas compuestas $x[n]$ y $h[n]$:
+
+**Entrada $x[n]$:**
+$$x[n] = \{1, 3, 1.5\} \text{ para } n=0, 1, 2$$
+
+**Respuesta al impulso $h[n]$ (Filtro Derivador Asimétrico):**
+$$h[n] = \begin{cases} 0.5 & n=0 \\ 1 & n=1 \\ -1 & n=2 \\ 0.2 & n=3 \\ 0 & \text{otros} \end{cases}$$
+
+Determine $y[n] = x[n] * h[n]$ mediante el método de suma directa para sistemas LTI discretos.
+
+---
+
+## Ejemplo 2: Desarrollo y Resultado
+
+Dado que $x[n]$ tiene longitud $N=3$ y $h[n]$ longitud $M=4$, $y[n]$ tendrá $N+M-1 = 6$ muestras significativas ($n=0$ hasta $n=5$).
+
+
+
+**Cálculo de muestras:**
+* $y[0] = x[0]h[0] = 1(0.5) = \mathbf{0.5}$
+* $y[1] = x[1]h[0] + x[0]h[1] = 3(0.5) + 1(1) = \mathbf{2.5}$
+* $y[2] = x[2]h[0] + x[1]h[1] + x[0]h[2] = 1.5(0.5) + 3(1) + 1(-1) = \mathbf{2.75}$
+* $y[3] = x[2]h[1] + x[1]h[2] + x[0]h[3] = 1.5(1) + 3(-1) + 1(0.2) = \mathbf{-1.3}$
+* $y[4] = x[2]h[2] + x[1]h[3] = 1.5(-1) + 3(0.2) = \mathbf{-0.9}$
+* $y[5] = x[2]h[3] = 1.5(0.2) = \mathbf{0.3}$
+
+**Resultado:** $y[n] = \{0.5, 2.5, 2.75, -1.3, -0.9, 0.3\}$

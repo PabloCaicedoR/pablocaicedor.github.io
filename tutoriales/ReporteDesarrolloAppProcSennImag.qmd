@@ -1,0 +1,116 @@
+---
+title: "Sistemas de Alto Rendimiento en Bioingeniería"
+subtitle: "Arquitectura MVC, Aceleración por GPU y Gestión con `uv`"
+author: "Doctorado en Ciencias de la Electrónica - Reporte Técnico"
+date: "2026-03-09"
+lang: es
+format:
+  html:
+    toc: true
+    code-copy: true
+    theme:
+      light: cosmo
+      dark: darkly
+---
+
+## 1. Gestión de Entornos con `uv`
+
+En el desarrollo de software biomédico profesional, la velocidad de despliegue y la consistencia del entorno son críticas. **`uv`** se establece como el estándar de oro en 2026 para la gestión de proyectos en Python.
+
+### 1.1. Inicialización del Proyecto
+Para crear un entorno optimizado para procesamiento de señales e imágenes, se ejecutan los siguientes comandos en la terminal:
+
+```bash
+# Inicializar proyecto
+uv init paim_app
+cd paim_app
+
+# Agregar dependencias de alto rendimiento
+uv add pyside6 pyqtgraph torch torchvision numpy
+uv add --dev ruff  # Linter para asegurar buenas prácticas
+```
+
+## 2. Arquitectura de Software: Patrón MVC
+
+La arquitectura **Modelo-Vista-Controlador (MVC)** es esencial para desacoplar el procesamiento pesado de señales del renderizado de la interfaz.
+
+
+
+* **Modelo (Model):** Gestiona los tensores en la GPU y algoritmos de IA Confiable.
+* **Vista (View):** Representa gráficamente los datos sin conocer la lógica de negocio.
+* **Controlador (Controller):** Orquestra la comunicación asíncrona mediante el sistema de *Signals & Slots*.
+
+## 3. Implementación con PyTorch y GPU
+
+En el procesamiento de imágenes médicas, la latencia de transferencia entre CPU y GPU debe minimizarse. La lógica se encapsula en un `QObject` que vive en un hilo separado (`QThread`).
+
+### 3.1. Definición del Modelo (Cómputo en GPU)
+
+Utilizamos **Type Hinting** para mejorar la mantenibilidad del código:
+
+```python
+import torch
+import numpy as np
+from PySide6.QtCore import QObject, Signal, Slot
+
+class ImageModel(QObject):
+    """Modelo encargado de la segmentación de imágenes en GPU."""
+    processed_signal = Signal(np.ndarray)
+
+    def __init__(self, device: str = "cuda"):
+        super().__init__()
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+
+    @Slot(np.ndarray)
+    def run_inference(self, image_array: np.ndarray) -> None:
+        # Conversión a tensor y envío a GPU
+        tensor_img = torch.from_numpy(image_array).to(self.device).float()
+
+        # Simulación de un operador de gradiente o modelo de IA
+        # $G = \sqrt{I_x^2 + I_y^2}$
+        processed_tensor = torch.abs(torch.diff(tensor_img, dim=0))
+
+        # Retorno a CPU para visualización
+        self.processed_signal.emit(processed_tensor.cpu().numpy())
+```
+
+### 3.2. Controlador y Gestión de Hilos
+
+El controlador asegura que la interfaz no se congele durante el procesamiento de volúmenes DICOM extensos:
+
+```python
+from PySide6.QtCore import QThread
+
+class AppController:
+    def __init__(self, view, model):
+        self.view = view
+        self.model = model
+
+        # Configuración de concurrencia
+        self.worker_thread = QThread()
+        self.model.moveToThread(self.worker_thread)
+
+        # Mapeo de señales
+        self.view.request_process.connect(self.model.run_inference)
+        self.model.processed_signal.connect(self.view.display_image)
+
+        self.worker_thread.start()
+```
+
+## 4. Análisis Teórico: Optimización de Señales
+
+Para señales biomédicas $s(t)$, la relación señal-ruido (SNR) en el dominio de la frecuencia tras un filtrado en GPU se define como:
+
+$$SNR_{dB} = 10 \log_{10} \left( \frac{P_{signal}}{P_{noise}} \right)$$
+
+Implementar estos cálculos en tensores de PyTorch permite procesar múltiples canales (EMG de 64 canales, por ejemplo) en paralelo, reduciendo el tiempo de cómputo de $O(n)$ a $O(1)$ en arquitecturas SIMD.
+
+## 5. Conclusión y Buenas Prácticas
+
+Un desarrollo **Senior** en procesamiento biomédico debe cumplir con:
+1.  **Aislamiento:** El Modelo nunca importa módulos de `QtWidgets`.
+2.  **Eficiencia:** Uso de `uv` para evitar conflictos de versiones en bibliotecas de IA.
+3.  **Confiabilidad:** Manejo explícito de excepciones en los hilos de procesamiento para evitar el cierre inesperado de la aplicación clínica.
+
+---
+**Nota Didáctica:** Al preparar sus clases, enfatice que `uv` crea un archivo `uv.lock` que garantiza que todos los estudiantes trabajen exactamente con la misma versión de PyTorch, eliminando el "en mi máquina sí funciona".
