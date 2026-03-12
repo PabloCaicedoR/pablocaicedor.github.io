@@ -86,7 +86,155 @@ path_ecg = "../../data"
 - To demonstrate, in the **time domain**, how a Linear Time-Invariant (LTI) system responds to a sinusoidal input.
 - We will start from the **convolution integral** and use **Euler’s identity** to show that the steady-state output remains sinusoidal.
 
+## Introduction
+
+Euler's formula shows the deep connection between trigonometry and complex exponential functions:
+
+$$e^{i\alpha} = \cos(\alpha) + i \sin(\alpha)$$
+
+To prove this, we use the **Taylor Series** method at $a = 0$. This allows us to write complex functions as infinite sums of simple terms.
+
 ---
+
+## Defining the Taylor Series
+
+First, we define the standard power series for the three functions involved:
+
+**Exponential Function:**
+$$e^x = \sum_{n=0}^{\infty} \frac{x^n}{n!} = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \frac{x^4}{4!} + \dots$$
+
+**Trigonometric Functions:**
+$$\cos(\alpha) = 1 - \frac{\alpha^2}{2!} + \frac{\alpha^4}{4!} - \frac{\alpha^6}{6!} + \dots$$
+$$\sin(\alpha) = \alpha - \frac{\alpha^3}{3!} + \frac{\alpha^5}{5!} - \frac{\alpha^7}{7!} + \dots$$
+
+---
+
+## Complex Substitution
+
+Next, we replace the variable $x$ in the exponential series with the imaginary term $i\alpha$:
+
+$$e^{i\alpha} = 1 + (i\alpha) + \frac{(i\alpha)^2}{2!} + \frac{(i\alpha)^3}{3!} + \frac{(i\alpha)^4}{4!} + \dots$$
+
+We must apply the powers of the imaginary unit $i$:
+* $i^2 = -1$
+* $i^3 = -i$
+* $i^4 = 1$
+* $i^5 = i$
+
+---
+
+## Expanding the Series
+
+After applying the powers of $i$, the series looks like this:
+
+$$e^{i\alpha} = 1 + i\alpha - \frac{\alpha^2}{2!} - i\frac{\alpha^3}{3!} + \frac{\alpha^4}{4!} + i\frac{\alpha^5}{5!} - \dots$$
+
+
+
+Now, we group the **Real** parts and the **Imaginary** parts:
+
+$$e^{i\alpha} = \underbrace{\left( 1 - \frac{\alpha^2}{2!} + \frac{\alpha^4}{4!} - \dots \right)}_{\text{Real Part}} + i \underbrace{\left( \alpha - \frac{\alpha^3}{3!} + \frac{\alpha^5}{5!} - \dots \right)}_{\text{Imaginary Part}}$$
+
+---
+
+## Final Conclusion
+
+We can now see that the two groups match the original Taylor series for Sine and Cosine:
+
+1.  The Real part is exactly $\cos(\alpha)$.
+2.  The Imaginary part is exactly $\sin(\alpha)$.
+
+**Final Identity:**
+$$e^{i\alpha} = \cos(\alpha) + i \sin(\alpha)$$
+
+::: {.notes}
+This identity is essential for Fourier analysis and processing biomedical signals like EMG or ECG.
+:::
+
+---
+
+## The Rectangular Form
+
+A complex number $z$ is typically written in Cartesian coordinates as:
+
+$$z = a + bi$$
+
+Where:
+
+* **$a$**: The Real part ($\text{Re}\{z\}$)
+* **$b$**: The Imaginary part ($\text{Im}\{z\}$)
+* **$i$**: The imaginary unit ($\sqrt{-1}$)
+
+---
+
+## Geometry in the Complex Plane
+
+We can treat $(a, b)$ as coordinates on a 2D plane (the Argand plane).
+
+
+
+To convert to polar form, we define:
+
+1. **Magnitude ($r$):** The distance from the origin.
+   $$r = |z| = \sqrt{a^2 + b^2}$$
+2. **Phase ($\alpha$):** The angle from the positive real axis.
+   $$\alpha = \arg(z) = \tan^{-1}\left(\frac{b}{a}\right)$$
+
+---
+
+## From Trigonometry to Euler
+
+From the geometry of a right triangle, we know:
+* $a = r \cos(\alpha)$
+* $b = r \sin(\alpha)$
+
+Substituting these into $z = a + bi$:
+$$z = r \cos(\alpha) + i(r \sin(\alpha))$$
+$$z = r (\cos(\alpha) + i \sin(\alpha))$$
+
+Using **Euler's Formula** ($e^{i\alpha} = \cos\alpha + i\sin\alpha$), we simplify this to:
+$$z = r e^{i\alpha}$$
+
+---
+
+## Why Use Exponential Form?
+
+In biomedical engineering, the form $z = r e^{i\alpha}$ is superior for calculations:
+
+**1. Multiplication:**
+$$z_1 z_2 = (r_1 e^{i\alpha_1})(r_2 e^{i\alpha_2}) = r_1 r_2 e^{i(\alpha_1 + \alpha_2)}$$
+
+**2. Division:**
+$$\frac{z_1}{z_2} = \frac{r_1}{r_2} e^{i(\alpha_1 - \alpha_2)}$$
+
+**3. Signal Analysis:**
+It allows us to represent a rotating phasor, which is the basis for the Fourier Transform.
+
+---
+
+## Example: Converting $z = 1 + i$
+
+1. **Calculate Magnitude:**
+   $$r = \sqrt{1^2 + 1^2} = \sqrt{2}$$
+2. **Calculate Angle:**
+   $$\alpha = \tan^{-1}\left(\frac{1}{1}\right) = 45^\circ = \frac{\pi}{4} \text{ rad}$$
+3. **Exponential Representation:**
+   $$z = \sqrt{2} e^{i\frac{\pi}{4}}$$
+
+
+
+---
+
+## Summary
+
+| Feature | Rectangular | Exponential |
+| :--- | :--- | :--- |
+| **Notation** | $a + bi$ | $r e^{i\alpha}$ |
+| **Best for** | Addition / Subtraction | Mult. / Div. / Powers |
+| **Biomedical** | Signal Amplitude | Phase Shift Analysis |
+
+$$e^{i\alpha} = \cos(\alpha) + i \sin(\alpha)$$
+
 
 ## 1. System Definition
 
@@ -98,9 +246,9 @@ $$
 
 where
 
--$x(t)$is the input,
--$h(t)$is the impulse response,
--$y(t)$is the output.
+- $x(t)$ is the input,
+- $h(t)$ is the impulse response,
+- $y(t)$ is the output.
 
 ---
 
@@ -129,17 +277,17 @@ y(t) = \frac{A}{2}\left[ y_1(t) + y_2(t) \right]
 $$
 where
 $$
-y_1(t) = e^{j\phi} \int_{-\infty}^{\infty} h(\tau)\, e^{j\omega_0(t-\tau)}\, d\tau
+y_1(t) = \frac{A}{2} e^{j\phi} \int_{-\infty}^{\infty} h(\tau)\, e^{j\omega_0(t-\tau)}\, d\tau
 $$
 $$
-y_2(t) = e^{-j\phi} \int_{-\infty}^{\infty} h(\tau)\, e^{-j\omega_0(t-\tau)}\, d\tau
+y_2(t) = \frac{A}{2} e^{-j\phi} \int_{-\infty}^{\infty} h(\tau)\, e^{-j\omega_0(t-\tau)}\, d\tau
 $$
 
 ---
 
 ## 4. Simplifying Each Integral
 
-We can factor out the term$e^{j\omega_0 t}$:
+We can factor out the term $e^{j\omega_0 t}$:
 
 $$
 y_1(t) = e^{j\phi} e^{j\omega_0 t} \int_{-\infty}^{\infty} h(\tau)\, e^{-j\omega_0 \tau}\, d\tau
@@ -152,12 +300,12 @@ $$
 
 Then,
 $$
-y_1(t) = e^{j\phi} H_1 e^{j\omega_0 t}
+y_1(t) = e^{j\phi} e^{j\omega_0 t} H_1
 $$
 
 Similarly,
 $$
-y_2(t) = e^{-j\phi} H_1^* e^{-j\omega_0 t}
+y_2(t) = e^{-j\phi} e^{-j\omega_0 t} H_1
 $$
 
 ---
@@ -294,6 +442,8 @@ $$
 - The output remains **sinusoidal** with the **same frequency** $\omega_0$.
 - Its **amplitude** is scaled by $|H_1|$.
 - Its **phase** is shifted by $\theta$.
+- Complex exponential are proper functions (eigen functions) of LTI systems.
+
 
 $$
 \boxed{y[n] = A |H_1| \cos(\omega_0 n + \phi + \theta)}
