@@ -1194,3 +1194,289 @@ plt.show()
 - Parseval’s theorem states:
 - $$\int |f(x)|^2 dx = \frac{1}{2\pi} \int |F(\omega)|^2 d\omega$$
 - Ensures no energy loss between domains.
+
+## Definitions
+
+For a continuous-time signal $x(t)$, its Fourier transform is
+
+$$
+X(\omega)=\int_{-\infty}^{\infty} x(t)e^{-j\omega t}\,dt
+$$
+
+For a discrete-time signal $x[n]$, its Fourier transform is
+
+$$
+X(e^{j\omega})=\sum_{n=-\infty}^{\infty} x[n]e^{-j\omega n}
+$$
+
+We will prove:
+
+1. **Symmetry**: if the signal is real, then
+   $$
+   X(-\omega)=X^*(\omega)
+   $$
+2. **Periodicity** in discrete time:
+   $$
+   X(e^{j(\omega+2\pi)})=X(e^{j\omega})
+   $$
+
+---
+
+## Proof of symmetry for a real signal
+
+Assume $x(t)\in\mathbb{R}$. Then
+
+$$
+X(\omega)=\int_{-\infty}^{\infty} x(t)e^{-j\omega t}\,dt
+$$
+
+Take complex conjugate:
+
+$$
+X^*(\omega)
+=
+\left(\int_{-\infty}^{\infty} x(t)e^{-j\omega t}\,dt\right)^*
+$$
+
+Because $x(t)$ is real, $x^*(t)=x(t)$. Therefore
+
+$$
+X^*(\omega)
+=
+\int_{-\infty}^{\infty} x(t)e^{j\omega t}\,dt
+$$
+
+But
+
+$$
+X(-\omega)
+=
+\int_{-\infty}^{\infty} x(t)e^{-j(-\omega)t}\,dt
+=
+\int_{-\infty}^{\infty} x(t)e^{j\omega t}\,dt
+$$
+
+Hence
+
+$$
+\boxed{X(-\omega)=X^*(\omega)}
+$$
+
+This is called **conjugate symmetry**.
+
+---
+
+## Consequences of symmetry
+
+From
+
+$$
+X(-\omega)=X^*(\omega)
+$$
+
+we get two useful results:
+
+### 1. Magnitude is even
+
+$$
+|X(-\omega)|=|X(\omega)|
+$$
+
+### 2. Phase is odd
+
+If $X(\omega)=|X(\omega)|e^{j\phi(\omega)}$, then
+
+$$
+\phi(-\omega)=-\phi(\omega)
+$$
+
+So, for a **real signal**:
+
+- the **magnitude spectrum** is mirrored around $0$,
+- the **phase spectrum** changes sign.
+
+The same proof works for the DTFT if $x[n]$ is real.
+
+---
+
+## Proof of periodicity for the DTFT
+
+Start from the DTFT:
+
+$$
+X(e^{j\omega})=\sum_{n=-\infty}^{\infty} x[n]e^{-j\omega n}
+$$
+
+Now evaluate it at $\omega+2\pi$:
+
+$$
+X(e^{j(\omega+2\pi)})
+=
+\sum_{n=-\infty}^{\infty} x[n]e^{-j(\omega+2\pi)n}
+$$
+
+Separate the exponential:
+
+$$
+X(e^{j(\omega+2\pi)})
+=
+\sum_{n=-\infty}^{\infty} x[n]e^{-j\omega n}e^{-j2\pi n}
+$$
+
+Because $n$ is an integer,
+
+$$
+e^{-j2\pi n}=1
+$$
+
+for every integer $n$. Then
+
+$$
+X(e^{j(\omega+2\pi)})
+=
+\sum_{n=-\infty}^{\infty} x[n]e^{-j\omega n}
+=
+X(e^{j\omega})
+$$
+
+So,
+
+$$
+\boxed{X(e^{j(\omega+2\pi)})=X(e^{j\omega})}
+$$
+
+More generally,
+
+$$
+\boxed{X(e^{j(\omega+2\pi k)})=X(e^{j\omega}),\quad k\in\mathbb{Z}}
+$$
+
+---
+
+## Why the CTFT is not periodic in general
+
+For the continuous-time Fourier transform,
+
+$$
+X(\omega)=\int_{-\infty}^{\infty} x(t)e^{-j\omega t}\,dt
+$$
+
+Now test $\omega+2\pi$:
+
+$$
+X(\omega+2\pi)
+=
+\int_{-\infty}^{\infty} x(t)e^{-j(\omega+2\pi)t}\,dt
+=
+\int_{-\infty}^{\infty} x(t)e^{-j\omega t}e^{-j2\pi t}\,dt
+$$
+
+Here is the key point:
+
+- in DTFT, $n$ is integer, so $e^{-j2\pi n}=1$,
+- in CTFT, $t$ is continuous, so $e^{-j2\pi t}\neq 1$ in general.
+
+Therefore, in general,
+
+$$
+\boxed{X(\omega+2\pi)\neq X(\omega)}
+$$
+
+So the **CTFT is not periodic in general**.
+
+---
+
+## One simple discrete-time example
+
+Let
+
+$$
+x[n]=\delta[n]+\delta[n-1]
+$$
+
+Its DTFT is
+
+$$
+X(e^{j\omega})=1+e^{-j\omega}
+$$
+
+Factor it:
+
+$$
+X(e^{j\omega})
+=
+e^{-j\omega/2}\left(e^{j\omega/2}+e^{-j\omega/2}\right)
+=
+2\cos\left(\frac{\omega}{2}\right)e^{-j\omega/2}
+$$
+
+Magnitude:
+
+$$
+|X(e^{j\omega})|=2\left|\cos\left(\frac{\omega}{2}\right)\right|
+$$
+
+This magnitude is:
+
+- **even** in $\omega$,
+- **$2\pi$-periodic**.
+
+So this example shows both properties at the same time.
+
+---
+
+## Visual summary
+
+```{dot}
+digraph G {
+  rankdir=TB;
+  graph [bgcolor="transparent"];
+  node [shape=box, style="rounded,filled", fillcolor="lightgray", color="gray20", fontname="Helvetica"];
+  edge [color="gray30", arrowsize=0.8];
+
+  A [label="Real signal"];
+  B [label="Conjugate symmetry:\nX(-ω)=X*(ω)"];
+  C [label="Discrete-time signal"];
+  D [label="Periodicity:\nX(e^{j(ω+2π)})=X(e^{jω})"];
+  E [label="Real discrete-time signal"];
+  F [label="Both properties:\nsymmetric and periodic"];
+
+  A -> B;
+  C -> D;
+  A -> E;
+  C -> E;
+  E -> F;
+}
+```
+
+---
+
+## Final conclusion
+
+### Continuous-time Fourier transform (CTFT)
+
+If $x(t)$ is real:
+
+$$
+\boxed{X(-\omega)=X^*(\omega)}
+$$
+
+So the spectrum is **symmetric** in the conjugate sense, but **not periodic in general**.
+
+### Discrete-time Fourier transform (DTFT)
+
+For any $x[n]$:
+
+$$
+\boxed{X(e^{j(\omega+2\pi)})=X(e^{j\omega})}
+$$
+
+So the spectrum is **periodic**.
+
+If $x[n]$ is also real, then:
+
+$$
+\boxed{X(e^{-j\omega})=X^*(e^{j\omega})}
+$$
+
+So the DTFT spectrum is **both periodic and symmetric**.

@@ -6,14 +6,14 @@ lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -156,7 +156,7 @@ noisy_circle = cv2.addWeighted(image_circle, 0.5, noise, 0.5, 0)
 
 ## Feature Extraction in CT Scans
 - Filters can help in extracting features like **tumors** or **vessels**.
-- Band-pass filters isolate structures of interest at specific frequency ranges. 
+- Band-pass filters isolate structures of interest at specific frequency ranges.
 
 ## Case Study: Applying a Low-Pass Filter in MRI. Step-by-step Process
 1. Load MRI image.
@@ -165,6 +165,34 @@ noisy_circle = cv2.addWeighted(image_circle, 0.5, noise, 0.5, 0)
 4. Perform **Inverse Fourier Transform** to return to the spatial domain.
 5. Visualize the result.
 
+## Common Frequency-Domain Filter Transformations
+
+Let $D(u,v)$ be the distance from the center of the spectrum:
+
+$$
+D(u,v)=\sqrt{(u-c_x)^2+(v-c_y)^2}
+$$
+
+Let $D_0$ be the cutoff frequency, and let $D_1 < D_2$ define a frequency band.
+
+## Transformation Table
+
+| Filter type | Ideal circular mask | Gaussian mask | Transformation relationship |
+|---|---|---|---|
+| Low-pass | $\displaystyle H_{LP}(u,v)=\begin{cases}1,& D\le D_0\\0,& D>D_0\end{cases}$ | $\displaystyle H_{LP}(u,v)=\exp\left(-\frac{D^2}{2D_0^2}\right)$ | Base filter |
+| High-pass | $\displaystyle H_{HP}(u,v)=\begin{cases}0,& D\le D_0\\1,& D>D_0\end{cases}$ | $\displaystyle H_{HP}(u,v)=1-\exp\left(-\frac{D^2}{2D_0^2}\right)$ | $\displaystyle H_{HP}=1-H_{LP}$ |
+| Band-pass | $\displaystyle H_{BP}(u,v)=1 \text{ if } D_1\le D\le D_2,\; 0 \text{ otherwise}$ | $\displaystyle H_{BP}(u,v)=H_{LP}(D_2)-H_{LP}(D_1)$ | Difference of two low-pass filters |
+| Band-stop | $\displaystyle H_{BS}(u,v)=0 \text{ if } D_1\le D\le D_2,\; 1 \text{ otherwise}$ | $\displaystyle H_{BS}(u,v)=1-H_{BP}(u,v)$ | $\displaystyle H_{BS}=1-H_{BP}$ |
+| High-frequency emphasis | Not usually written in a standard ideal form | $\displaystyle H_{HFE}(u,v)=a+b\,H_{HP}(u,v)$ | Uses $a>0$, $b>0$ to preserve background and enhance detail |
+
+## Practical Conversion Rules
+
+| Conversion | Formula |
+|---|---|
+| Low-pass $\rightarrow$ high-pass | $\displaystyle H_{HP}=1-H_{LP}$ |
+| Two low-pass filters $\rightarrow$ band-pass | $\displaystyle H_{BP}=H_{LP}(D_2)-H_{LP}(D_1)$ |
+| Band-pass $\rightarrow$ band-stop | $\displaystyle H_{BS}=1-H_{BP}$ |
+| High-frequency emphasis | $\displaystyle H_{HFE}=a+b\,H_{HP}$ |
 
 ## Summary
 - Frequency-response filters play a crucial role in biomedical image processing.
