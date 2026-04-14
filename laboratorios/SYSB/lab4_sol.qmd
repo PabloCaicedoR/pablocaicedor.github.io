@@ -1,0 +1,103 @@
+---
+title: "Evaluación Integral: Laboratorio 4 - Señales y Sistemas Biomédicos"
+subtitle: "Respuesta en Frecuencia, Filtrado SOS y Procesamiento de ECG"
+author: "PhD. [Tu Nombre/Cátedra]"
+date: "2026-04-14"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    theme: zephyr
+    code-block-bg: true
+    code-block-border-left: "#31BA92"
+---
+
+## Introducción
+Esta evaluación técnica consta de 15 ítems diseñados para validar la competencia en el análisis de sistemas LTI y el preprocesamiento de señales electrofisiológicas.
+
+---
+
+## I. Fundamentación Teórica (Respuesta en Frecuencia)
+
+### 1. Definición de Ganancia
+[cite_start]**Pregunta:** Escriba la expresión matemática para calcular la ganancia en decibelios a partir de las amplitudes de entrada y salida[cite: 11, 12].
+[cite_start]**Solución:** $G(f) = 20 \log_{10}\left(\frac{A_{salida}}{A_{entrada}}\right)$[cite: 13].
+
+### 2. Frecuencia de Corte y Potencia
+[cite_start]**Pregunta:** ¿Qué porcentaje de la potencia original se conserva en la frecuencia de corte de un filtro?[cite: 14].
+[cite_start]**Solución:** Se conserva el 50% de la potencia (atenuación de -3 dB)[cite: 15].
+
+### 3. Comportamiento del Filtro Pasa-Banda
+[cite_start]**Pregunta:** Describa la morfología de la banda de paso en un filtro pasa-banda ideal según la Figura 1[cite: 17, 32].
+[cite_start]**Solución:** Presenta una banda de paso limitada por dos frecuencias de corte ($F_L$ y $F_H$), donde las frecuencias intermedias no sufren atenuación significativa[cite: 17, 24, 32].
+
+### 4. Transición de Banda
+[cite_start]**Pregunta:** ¿Qué importancia tiene el valor de -3 dB en la caracterización de un filtro?[cite: 16].
+[cite_start]**Solución:** Marca la transición crítica entre las frecuencias que el sistema permite pasar y aquellas que comienza a atenuar progresivamente[cite: 16].
+
+---
+
+## II. Caracterización de Sistemas (Convolución)
+
+### 5. Respuesta al Impulso
+[cite_start]**Pregunta:** Si se tiene un sistema desconocido, ¿cómo se obtiene su respuesta al impulso experimentalmente en un entorno digital?[cite: 74, 75].
+[cite_start]**Solución:** Generando un vector (delta de Kronecker) con un valor de 1 en la primera posición y el resto en cero, y aplicándolo como entrada al sistema[cite: 75, 76].
+
+### 6. Identificación de Filtros
+[cite_start]**Pregunta:** Explique cómo determinar el tipo de filtro (pasa-bajo, pasa-alto, etc.) analizando la respuesta en frecuencia obtenida por convolución[cite: 39, 44].
+[cite_start]**Solución:** Se grafican las ganancias calculadas para un barrido de frecuencias sinusoidales; la tendencia de la curva (magnitud vs frecuencia) revela la naturaleza del filtro[cite: 44, 45].
+
+### 7. Propiedad de Convolución
+[cite_start]**Pregunta:** ¿Por qué es posible caracterizar el filtro aplicando convolución con señales sinusoidales en lugar de usar la FFT directamente?[cite: 40, 43].
+[cite_start]**Solución:** Debido a la propiedad de los sistemas LTI donde la salida es el resultado de convolucionar la entrada con la respuesta al impulso $h[n]$[cite: 40, 43].
+
+---
+
+## III. Implementación de Filtros Digitales (SOS)
+
+### 8. Ecuación General de Diferencias
+[cite_start]**Pregunta:** Presente la ecuación general de diferencias para un filtro digital de orden N[cite: 48, 49].
+[cite_start]**Solución:** $y[n] = \sum_{k=0}^{M}b_{k}x[n-k] - \sum_{k=1}^{N}a_{k}y[n-k]$[cite: 50].
+
+### 9. Ventaja del Filtro Butterworth
+[cite_start]**Pregunta:** ¿Cuál es la característica principal de la respuesta en frecuencia de un filtro Butterworth en su banda de paso?[cite: 51].
+[cite_start]**Solución:** Es una respuesta máximamente plana, sin ondulaciones (ripples), ideal para señales biomédicas[cite: 51].
+
+### 10. Estructura SOS en Cascada
+[cite_start]**Pregunta:** Describa el flujo de datos en una implementación de 8 secciones de segundo orden para un filtro de orden 16[cite: 52, 67].
+[cite_start]**Solución:** La señal de entrada pasa por la primera sección ($SOS_1$), cuya salida sirve como entrada para la sección siguiente ($SOS_2$), repitiéndose el proceso hasta la sección final[cite: 53, 56, 61].
+
+### 11. Coeficientes y Escalamiento
+[cite_start]**Pregunta:** ¿Por qué es necesario el uso de valores de escalamiento entre secciones SOS?[cite: 72].
+[cite_start]**Solución:** Para garantizar la estabilidad numérica y precisión del filtro, evitando el desbordamiento (overflow) o pérdida de resolución[cite: 72].
+
+---
+
+## IV. Análisis Clínico y Métricas (ECG)
+
+### 12. Ruido en ECG
+[cite_start]**Pregunta:** Mencione dos tipos de interferencias que el filtro pasa-banda ayuda a mitigar en señales de ECG[cite: 47].
+[cite_start]**Solución:** El desplazamiento de la línea base (baja frecuencia) y artefactos musculares o interferencia electromagnética (alta frecuencia)[cite: 47].
+
+### 13. Métricas de Fidelidad
+[cite_start]**Pregunta:** ¿Qué indica un valor de correlación cercano a 1 entre la señal ECG original y la filtrada?[cite: 94].
+[cite_start]**Solución:** Indica que el filtro ha conservado la morfología esencial de la señal original sin introducir distorsiones de fase o amplitud significativas en los complejos de interés[cite: 94].
+
+### 14. Análisis Estadístico
+[cite_start]**Pregunta:** ¿Para qué se calcula el valor promedio de la señal antes y después del filtrado?[cite: 92, 93].
+[cite_start]**Solución:** Para evaluar la efectividad del filtro en la eliminación del componente DC o el offset de la señal[cite: 92, 93].
+
+### 15. Características Morfológicas
+[cite_start]**Pregunta:** Enumere tres características del ECG que deben extraerse estrictamente en el dominio del tiempo[cite: 112].
+[cite_start]**Solución:** Frecuencia ventricular, duración del complejo QRS e intervalo QT[cite: 114, 116].
+
+---
+
+## Tabla de Evaluación (Rúbrica)
+
+| Criterio | Excelente (5.0) | Insuficiente (0.0) |
+| :--- | :--- | :--- |
+| **Teoría** | Define con precisión dB y puntos de corte. | No identifica la relación logarítmica. |
+| **Código SOS** | Implementa recursión Directa II correctamente. | No conecta las secciones en cascada. |
+| **Métricas** | Tabula promedio y correlación por derivación. | Omite el análisis estadístico. |
+| **Investigación** | Propone métodos para QRS, QT y ejes. | No define los parámetros temporales. |

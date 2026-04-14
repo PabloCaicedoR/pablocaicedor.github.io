@@ -1,19 +1,19 @@
 ---
 title: "Procesado de Señales e Imágenes Médicas"
-description: "ASIM_M -- 104399"
+description: "PSIM"
 subtitle: "Ingeniería Biomédica"
 lang: es
 author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
 date: last-modified
 format:
-  revealjs: 
+  revealjs:
     code-tools: true
     code-overflow: wrap
     code-line-numbers: true
     code-copy: true
     fig-align: center
     self-contained: true
-    theme: 
+    theme:
       - simple
       - ../../recursos/estilos/metropolis.scss
     slide-number: true
@@ -58,707 +58,740 @@ data_path<-"../../data/"
 ```
 
 ```{python}
-# | echo: false
-# | eval: true
-# | output: false
-# | label: Loading Python-Libraries
+#| label: setup
+#| include: false
 
 import numpy as np
-import scipy.io as sio
 import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-import cv2
 import pywt
 
-plt.rcParams.update(
-    {
-        "text.usetex": True,  # usar LaTeX real
-        "font.family": "Fira Code",  # familia general
-        "mathtext.fontset": "custom",  # fuente personalizada para fórmulas
-        "mathtext.rm": "Fira Code",  # texto “roman”
-        "mathtext.it": "Fira Code:italic",  # texto itálico
-        "mathtext.bf": "Fira Code:bold",  # texto en negrita
-        "text.latex.preamble": r"\usepackage{amsmath}",
-    }
-)
+np.random.seed(7)
+plt.rcParams["figure.dpi"] = 140
+plt.rcParams["font.size"] = 10
 
-data_path = "../../data/"
+# -----------------------------
+# Señal no estacionaria sintética
+# -----------------------------
+fs = 256
+t = np.arange(0, 2, 1/fs)
 
+x = 0.8*np.sin(2*np.pi*8*t)
+x += 0.25*np.sin(2*np.pi*1.2*t)
 
-def adjust_gamma(image, gamma=1.0):
-    invGamma = 1.0 / gamma
-    table = np.array(
-        [((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]
-    ).astype("uint8")
+burst_1 = ((t > 0.45) & (t < 0.58)).astype(float) * 1.3*np.sin(2*np.pi*35*t)
+burst_2 = ((t > 1.25) & (t < 1.34)).astype(float) * 1.1*np.sin(2*np.pi*48*t)
+x_ns = x + burst_1 + burst_2
 
-    return cv2.LUT(image, table)
+freqs = np.fft.rfftfreq(len(x_ns), d=1/fs)
+Xmag = np.abs(np.fft.rfft(x_ns))
 
+# -----------------------------
+# Wavelet ilustrativa
+# -----------------------------
+tw = np.linspace(-1.2, 1.2, 1000)
+wavelet_madre = np.cos(2*np.pi*6*tw) * np.exp(-(tw**2)/(2*0.12**2))
+wavelet_escala = np.cos(2*np.pi*3*tw) * np.exp(-(tw**2)/(2*0.24**2))
+wavelet_desplazada = np.cos(2*np.pi*6*(tw-0.45)) * np.exp(-((tw-0.45)**2)/(2*0.12**2))
 
-# Dibujar un círculo blanco en el centro
-image_circle = np.zeros((200, 200), dtype=np.uint8)
-cv2.circle(image_circle, (100, 100), 50, (255), -1)
+# -----------------------------
+# Transformada wavelet continua
+# -----------------------------
+scales = np.arange(1, 96)
+coef_cwt, pseudo_freq = pywt.cwt(x_ns, scales, "morl", sampling_period=1/fs)
 
+# -----------------------------
+# Electrocardiograma sintético
+# -----------------------------
+def latido(tloc):
+    p  = 0.12*np.exp(-((tloc-0.18)/0.030)**2)
+    q  = -0.10*np.exp(-((tloc-0.36)/0.012)**2)
+    r  = 1.10*np.exp(-((tloc-0.40)/0.010)**2)
+    s  = -0.22*np.exp(-((tloc-0.43)/0.014)**2)
+    twv = 0.30*np.exp(-((tloc-0.68)/0.060)**2)
+    return p + q + r + s + twv
 
-image_gradient = np.linspace(0, 255, 200, dtype=np.uint8)
-image_gradient = np.tile(image_gradient, (200, 1))
-cv2.circle(image_gradient, (100, 100), 50, (255), -1)
+fs_ecg = 360
+t_ecg = np.arange(0, 3, 1/fs_ecg)
+ecg_clean = np.zeros_like(t_ecg)
 
-noise = np.random.randint(0, 256, (200, 200), dtype=np.uint8)
-noisy_circle = cv2.addWeighted(image_circle, 0.5, noise, 0.5, 0)
+for inicio in [0.0, 1.0, 2.0]:
+    idx = (t_ecg >= inicio) & (t_ecg < inicio + 1.0)
+    ecg_clean[idx] += latido(t_ecg[idx] - inicio)
 
-plt.style.use("classic")
-plt.grid(True)
+baseline = 0.12*np.sin(2*np.pi*0.35*t_ecg)
+noise = 0.03*np.random.randn(len(t_ecg))
+muscle = 0.02*np.sin(2*np.pi*55*t_ecg)
 
-data = sio.loadmat("../../data/JS00001.mat")
-ecg001 = data["val"][9, :]
-t_ecg001 = np.linspace(0, 10, len(ecg001))
+ecg_noisy = ecg_clean + baseline + noise + muscle
 
+wavelet = "db4"
+nivel = 5
+coef = pywt.wavedec(ecg_noisy, wavelet, level=nivel)
+
+def reconstruir_un_componente(coeficientes, indice, wavelet):
+    temp = [np.zeros_like(c) for c in coeficientes]
+    temp[indice] = coeficientes[indice]
+    return pywt.waverec(temp, wavelet)
+
+tempA5 = [coef[0]] + [np.zeros_like(c) for c in coef[1:]]
+A5 = pywt.waverec(tempA5, wavelet)
+
+D5 = reconstruir_un_componente(coef, 1, wavelet)
+D4 = reconstruir_un_componente(coef, 2, wavelet)
+D3 = reconstruir_un_componente(coef, 3, wavelet)
+
+n = len(ecg_noisy)
+A5 = A5[:n]
+D5 = D5[:n]
+D4 = D4[:n]
+D3 = D3[:n]
 ```
 
-# Introduction to Wavelet Transform
+## Pregunta guía
 
-## Introduction
-```{python}
-#| echo: false
-#| eval: true
-#| output: true
-#| label: Entry Concepts
+¿Por qué la transformada de Fourier no siempre basta para analizar señales biomédicas como un electrocardiograma, una señal mioeléctrica o una señal electroencefalográfica?
 
-# Configuración del vector
-vx, vy = 4, 3  # Componentes del vector
+Muchas señales biomédicas **no son estacionarias**. Sus componentes cambian con el tiempo, aparecen eventos breves, se superponen artefactos y el instante en que ocurre cada fenómeno sí importa.
 
-# Crear la figura y los ejes
-fig, ax = plt.subplots()
+## Resultados de aprendizaje
 
-# Dibujar los ejes
-ax.axhline(0, color="black", linewidth=0.5)
-ax.axvline(0, color="black", linewidth=0.5)
+Al finalizar esta clase, el estudiante deberá ser capaz de:
 
-# Dibujar el vector
-ax.quiver(
-    0,
-    0,
-    vx,
-    vy,
-    angles="xy",
-    scale_units="xy",
-    scale=1,
-    color="blue",
-)
+- explicar por qué una representación tiempo-escala puede ser más útil que una representación puramente en frecuencia;
+- interpretar de manera básica una descomposición wavelet discreta;
+- relacionar niveles de descomposición con componentes de una señal biomédica.
 
-# Dibujar el vector con estilo de línea punteada
-ax.plot([0, vx], [0, 0], "k--")  # Línea punteada para el vector
-ax.plot(vx, 0, "ko")  # Punto en el extremo del vector
-ax.plot([0, 0], [0, vy], "k--")  # Línea punteada para el vector
-ax.plot(0, vy, "ko")  # Punto en el extremo del vector
-
-# Dibujar las proyecciones en los ejes
-ax.plot([vx, vx], [0, vy], "r:")
-ax.plot([0, vx], [vy, vy], "g:")
-
-# Etiquetas para las proyecciones
-ax.text(vx, -0.1, r"$X_1$", ha="center", va="top")
-ax.text(-0.1, vy, r"$Y_1$", ha="right", va="center")
-ax.text(vx, vy, r"$(X_1, Y_1)$", ha="left", va="bottom")
-ax.text(-0.3, -0.3, "O", ha="center", va="center")
-
-# Configurar los límites de la gráfica
-ax.set_xlim(-1, vx + 2)
-ax.set_ylim(-1, vy + 2)
-
-# Añadir etiquetas y leyendas
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.legend()
-
-# Configurar la cuadrícula
-ax.grid(True)
-ax.set_aspect("equal")
-
-```
-
-## Introduction
-
-- It's a mathematical tool for signal decomposition, like Fourier's Transform.
-- Just as the Fourier transform decomposes a signal into a series of sine and cosine functions, the wavelet transform does so using a set of functions known as wavelets.
-- Wavelets are functions generated by scaling and shifting a base function known as the mother wavelet.
-
-## Introduction
+## El problema de Fourier
 
 ```{python}
-#| echo: false
-#| eval: true
-#| output: true
-#| label: wavelet basis 01
+#| fig-width: 10
+#| fig-height: 5.5
 
-# Definir la wavelet madre Morlet
-def morlet_wavelet(t, f=1.0):
-    """
-    Genera una wavelet madre Morlet.
-    t: Tiempo.
-    f: Frecuencia de la wavelet.
-    """
-    return np.cos(2 * np.pi * f * t) * np.exp(-t**2 / 2)
+fig, ax = plt.subplots(2, 1, figsize=(10, 5.5))
 
-# Generar una serie temporal
-t = np.linspace(-2, 2, 1000)
+ax[0].plot(t, x_ns, lw=1.2)
+ax[0].set_title("Señal no estacionaria con eventos transitorios")
+ax[0].set_xlabel("Tiempo [s]")
+ax[0].set_ylabel("Amplitud")
+ax[0].grid(alpha=0.3)
 
-# Wavelet madre
-wavelet_madre = morlet_wavelet(t)
-
-# Escalamiento (cambiamos la frecuencia para modificar la escala)
-wavelet_escalada = morlet_wavelet(t, f=0.5)  # Escala más ancha (frecuencia más baja)
-
-# Desplazamiento (movemos la wavelet en el tiempo)
-desplazamiento = 1.0  # Tiempo de desplazamiento
-wavelet_desplazada = morlet_wavelet(t - desplazamiento)
-
-# Graficar
-plt.figure(figsize=(12, 8))
-
-# Subplot para la wavelet madre
-plt.subplot(3, 1, 1)
-plt.plot(t, wavelet_madre)
-plt.title('Mother Wavelet')
-plt.xlabel('Time')
-plt.ylabel('Amplitude')
-
-# Subplot para la wavelet escalada
-plt.subplot(3, 1, 2)
-plt.plot(t, wavelet_escalada, color='orange')
-plt.title('Scaled Wavelet')
-plt.xlabel('Time')
-plt.ylabel('Amplitude')
-
-# Subplot para la wavelet desplazada
-plt.subplot(3, 1, 3)
-plt.plot(t, wavelet_desplazada, color='green')
-plt.title('Shift Wavelet')
-plt.xlabel('Time')
-plt.ylabel('Amplitude')
+ax[1].plot(freqs, Xmag, lw=1.2)
+ax[1].set_xlim(0, 80)
+ax[1].set_title("Espectro global de Fourier")
+ax[1].set_xlabel("Frecuencia [Hz]")
+ax[1].set_ylabel("Magnitud")
+ax[1].grid(alpha=0.3)
 
 plt.tight_layout()
 plt.show()
-
 ```
 
-## Introduction
+El espectro global informa **qué frecuencias existen**, pero no indica **cuándo ocurren** los eventos transitorios.
 
-- **Morlet:** Popular for time-frequency analysis in EEG and ECG.
-- **Mexican Hat (Ricker):** Often used in spike detection in neural signals.
-- **Haar**: Useful in quick decomposition of signals and feature extraction.
-- **Daubechies**: Frequently used in ECG signal denoising and compression.
-- **Symlet:** Another option for signal processing and feature extraction in EEG.
-- **Coiflet:** Useful for denoising and baseline correction in biomedical signals.
+## Idea central de una wavelet
 
-## Introduction
+Una wavelet es una función oscilatoria y localizada que puede:
 
-::: {.panel-tabset}
+- comprimirse para detectar cambios rápidos;
+- estirarse para examinar estructuras lentas;
+- desplazarse para analizar regiones específicas de la señal.
 
-## Conditions
-
-- Have a mean of zero (to capture details in the signal).
-- Be square integrable (finite energy).
-- Satisfy the admissibility condition on its Fourier transform.
-- Be oscillatory to capture frequency information.
-- (Optionally) have compact support for efficient computation and localization.
-
-## I 
-::: {.callout-important title="Zero Mean (Admissibility Condition)"}
-The function must have an average value of zero. Mathematically, this is expressed as:
-
-$$\int_{-\infty}^{\infty} \psi(t) \, dt = 0$$
-
-This condition ensures that the wavelet can detect changes or "details" in the signal rather than its average or constant components.
-:::
-
-## II
-
-::: {.callout-important title="Square Integrability"}
-The function $\psi(t)$  must be square integrable, meaning it has finite energy:
-
-$$\int_{-\infty}^{\infty} |\psi(t)|^2 \, dt < \infty$$
-
-This requirement ensures that the wavelet’s energy is finite, making it possible to localize the function in both time and frequency domains. Functions that satisfy this belong to the $L^2(\rm I\!R)$ space, which is the space of all functions with finite energy.
-:::
-
-## III
-
-::: {.callout-important title="Admissibility Constant"}
-The wavelet's Fourier transform, $\hat{\psi}(\omega)$, should satisfy the admissibility condition:
-
-$$C_\psi = \int_{-\infty}^{\infty} \frac{|\hat{\psi}(\omega)|^2}{|\omega|} \, d\omega < \infty$$
-
-where $\hat{\psi}(\omega)$ is the Fourier transform of $\psi(t)$, and $\omega$ represents angular frequency. This condition implies that $\hat{\psi}(\omega)$ must approach zero as $\omega \rightarrow 0$ meaning the wavelet has no component at zero frequency (or DC component). This condition is crucial for ensuring that the wavelet transform is invertible.
-:::
-
-## IV
-
-::: {.callout-important title="Oscillatory Nature"}
-A mother wavelet should generally be oscillatory or "wavelike" (hence the term "wavelet"). This oscillatory behavior allows the wavelet to capture variations in the signal. For example, wavelets like the Morlet wavelet resemble decaying sinusoids. This oscillatory nature helps the wavelet capture both high-frequency and low-frequency components effectively.
-:::
-
-## V
-::: {.callout-important title="Compact Support"}
-Although not strictly necessary, compact support is often a desirable property. Compact support means that the function is non-zero only over a finite interval, making it well-localized in time. This allows for efficient computation and good localization in the time domain. For example, the Haar wavelet has compact support, while others, like the Morlet wavelet, do not have strict compact support but still decay rapidly.
-:::
-
-
-:::
-
-## A wavelet transformation
+## Escala y traslación
 
 ```{python}
-#| echo: false
-#| eval: true
-#| output: true
-#| fig-align: center
-#| label: Time Feature Detection
+#| fig-width: 10
+#| fig-height: 5.2
 
-import numpy as np
-import pywt
-import matplotlib.pyplot as plt
+fig, ax = plt.subplots(3, 1, figsize=(10, 5.2), sharex=True)
 
-# Generate a synthetic signal with features
-np.random.seed(0)
-t = np.linspace(0, 1, 500)
-signal = np.sin(2 * np.pi * 5 * t)  # Base signal (5 Hz)
-signal[100:120] += 2  # Add a spike (feature at t=0.2)
-signal[300:320] -= 1.5  # Add another feature (t=0.6)
+ax[0].plot(tw, wavelet_madre, lw=1.2)
+ax[0].set_title("Wavelet madre")
+ax[0].grid(alpha=0.3)
 
-# Perform wavelet decomposition (using Daubechies 4 wavelet)
-wavelet = "db4"
-max_level = 5  # Maximum decomposition level
-coeffs = pywt.wavedec(signal, wavelet, level=max_level)
+ax[1].plot(tw, wavelet_escala, lw=1.2)
+ax[1].set_title("Wavelet escalada")
+ax[1].grid(alpha=0.3)
 
-# Plot the original signal with features
-plt.figure(figsize=(10, 6))
-plt.subplot(3, 1, 1)
-plt.plot(t, signal, label="Original Signal with Features", color="black")
-plt.title("Original Signal")
-plt.xlim(0, 1)
-plt.xlabel("Time")
-plt.ylabel("Amplitude")
+ax[2].plot(tw, wavelet_desplazada, lw=1.2)
+ax[2].set_title("Wavelet desplazada")
+ax[2].set_xlabel("Tiempo")
+ax[2].grid(alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Propiedades mínimas
+
+Una wavelet útil debe satisfacer ideas como las siguientes:
+
+$$
+\int_{-\infty}^{\infty}\psi(t)\,dt = 0
+$$
+
+$$
+\int_{-\infty}^{\infty} |\psi(t)|^2\,dt < \infty
+$$
+
+Esto favorece la detección de cambios y garantiza energía finita.
+
+## Transformada wavelet continua
+
+$$
+W_x(a,b)=\int_{-\infty}^{\infty} x(t)\,\frac{1}{\sqrt{|a|}}\,
+\psi^*\!\left(\frac{t-b}{a}\right)\,dt
+$$
+
+donde:
+
+- $a$ controla la escala;
+- $b$ controla la posición temporal.
+
+Escalas pequeñas enfatizan detalles rápidos. Escalas grandes describen tendencias más lentas.
+
+## Representación tiempo-escala
+
+```{python}
+#| fig-width: 10
+#| fig-height: 5.2
+
+plt.figure(figsize=(10, 5.2))
+plt.imshow(
+    np.abs(coef_cwt),
+    extent=[t.min(), t.max(), pseudo_freq.max(), pseudo_freq.min()],
+    aspect="auto",
+    cmap="viridis"
+)
+plt.colorbar(label="Magnitud del coeficiente")
+plt.xlabel("Tiempo [s]")
+plt.ylabel("Seudofrecuencia [Hz]")
+plt.title("Transformada wavelet continua")
+plt.tight_layout()
+plt.show()
+```
+
+Ahora sí es posible ver **qué ocurre** y **cuándo ocurre**.
+
+## Transformada wavelet discreta
+
+La transformada wavelet discreta usa escalas diádicas y traslaciones discretas.
+
+$$
+c_{j,k} = \int x(t)\,\psi_{j,k}^*(t)\,dt,
+\qquad
+\psi_{j,k}(t)=2^{j/2}\psi(2^j t-k)
+$$
+
+Produce dos familias de coeficientes:
+
+- **aproximaciones**, asociadas a estructura lenta;
+- **detalles**, asociados a cambios rápidos.
+
+## Ejemplo manual con Haar
+
+Para entender la transformada wavelet discreta, conviene empezar con la wavelet de Haar, porque permite ver con claridad la idea de **aproximación** y **detalle**.
+
+Usaremos la señal discreta:
+
+$$
+x[n] = [4,\ 6,\ 10,\ 12]
+$$
+
+La lógica será esta:
+
+1. agrupar muestras vecinas;
+2. resumir cada par con una aproximación;
+3. medir la diferencia dentro de cada par con un detalle;
+4. repetir el proceso sobre la aproximación.
+
+## Paso 1: agrupar por pares
+
+Tomamos la señal
+
+$$
+x[n] = [4,\ 6,\ 10,\ 12]
+$$
+
+y la dividimos en dos pares:
+
+$$
+(4,6), \qquad (10,12)
+$$
+
+La idea de Haar consiste en responder dos preguntas sobre cada par:
+
+$$
+\text{¿cuál es su valor representativo?}
+\qquad
+\text{¿qué tan diferentes son sus elementos?}
+$$
+
+La primera pregunta produce la **aproximación**.
+La segunda produce el **detalle**.
+
+## Paso 2: versión intuitiva de la aproximación
+
+En una lectura pedagógica inicial, podemos definir la aproximación como el promedio simple de cada par:
+
+$$
+A_1 = \left[
+\frac{4+6}{2},
+\frac{10+12}{2}
+\right]
+$$
+
+Por tanto,
+
+$$
+A_1 = [5,\ 11]
+$$
+
+Interpretación:
+
+- el par $(4,6)$ queda resumido por $5$;
+- el par $(10,12)$ queda resumido por $11$.
+
+La aproximación conserva la estructura gruesa de la señal.
+
+## Paso 3: versión intuitiva del detalle
+
+Ahora calculamos cuánto difieren los elementos dentro de cada par:
+
+$$
+D_1 = \left[
+\frac{4-6}{2},
+\frac{10-12}{2}
+\right]
+$$
+
+Entonces,
+
+$$
+D_1 = [-1,\ -1]
+$$
+
+Interpretación:
+
+- en el primer par, el valor $4$ está una unidad por debajo del promedio $5$;
+- en el segundo par, el valor $10$ está una unidad por debajo del promedio $11$.
+
+El detalle mide variación local.
+
+## Qué significa el primer nivel
+
+Después del primer nivel, la señal ya no se describe con sus cuatro muestras originales, sino con:
+
+$$
+A_1 = [5,\ 11], \qquad D_1 = [-1,\ -1]
+$$
+
+Esto quiere decir que la información se reorganizó así:
+
+- $A_1$: comportamiento grueso;
+- $D_1$: diferencias rápidas entre muestras vecinas.
+
+La idea central de la transformada wavelet discreta es repetir el procedimiento, pero solo sobre la aproximación.
+
+## Paso 4: segundo nivel sobre la aproximación
+
+Ahora tomamos la aproximación del nivel anterior:
+
+$$
+A_1 = [5,\ 11]
+$$
+
+y volvemos a formar un par:
+
+$$
+(5,11)
+$$
+
+La nueva aproximación es
+
+$$
+A_2 = \left[\frac{5+11}{2}\right] = [8]
+$$
+
+y el nuevo detalle es
+
+$$
+D_2 = \left[\frac{5-11}{2}\right] = [-3]
+$$
+
+## Lectura completa de la descomposición
+
+La señal original
+
+$$
+x[n] = [4,\ 6,\ 10,\ 12]
+$$
+
+queda representada por:
+
+$$
+A_2 = [8], \qquad D_2 = [-3], \qquad D_1 = [-1,\ -1]
+$$
+
+Esta escritura indica tres niveles de información:
+
+- $A_2$: tendencia más global de toda la señal;
+- $D_2$: diferencia entre los dos bloques grandes;
+- $D_1$: diferencias locales dentro de cada bloque pequeño.
+
+## Reconstrucción intuitiva desde $A_2$, $D_2$ y $D_1$
+
+Primero reconstruimos $A_1$ a partir de $A_2$ y $D_2$:
+
+$$
+A_1^{(1)} = A_2 + D_2 = 8 + (-3) = 5
+$$
+
+$$
+A_1^{(2)} = A_2 - D_2 = 8 - (-3) = 11
+$$
+
+Por tanto,
+
+$$
+A_1 = [5,\ 11]
+$$
+
+Luego reconstruimos la señal original usando $A_1$ y $D_1$:
+
+Para el primer par,
+
+$$
+x[0] = 5 + (-1) = 4
+\qquad
+x[1] = 5 - (-1) = 6
+$$
+
+Para el segundo par,
+
+$$
+x[2] = 11 + (-1) = 10
+\qquad
+x[3] = 11 - (-1) = 12
+$$
+
+Así recuperamos
+
+$$
+x[n] = [4,\ 6,\ 10,\ 12]
+$$
+
+## Qué aprendimos con la versión intuitiva
+
+La versión intuitiva muestra tres ideas fundamentales:
+
+- la señal puede resumirse por escalas;
+- la aproximación conserva lo grueso;
+- el detalle conserva lo cambiante.
+
+Pedagógicamente es útil, pero todavía no es la forma ortonormal estándar usada en teoría wavelet.
+
+## Versión ortonormal de Haar
+
+En la formulación estándar, Haar usa normalización con $\sqrt{2}$.
+
+Para un par $(a,b)$, los coeficientes son:
+
+$$
+A = \frac{a+b}{\sqrt{2}}
+\qquad
+D = \frac{a-b}{\sqrt{2}}
+$$
+
+Aplicando esto a la señal:
+
+$$
+x[n] = [4,\ 6,\ 10,\ 12]
+$$
+
+obtenemos en el primer nivel:
+
+$$
+A_1 =
+\left[
+\frac{4+6}{\sqrt{2}},
+\frac{10+12}{\sqrt{2}}
+\right]
+=
+\left[
+\frac{10}{\sqrt{2}},
+\frac{22}{\sqrt{2}}
+\right]
+$$
+
+$$
+D_1 =
+\left[
+\frac{4-6}{\sqrt{2}},
+\frac{10-12}{\sqrt{2}}
+\right]
+=
+\left[
+\frac{-2}{\sqrt{2}},
+\frac{-2}{\sqrt{2}}
+\right]
+$$
+
+## Segundo nivel ortonormal
+
+Ahora usamos la aproximación del primer nivel:
+
+$$
+A_1 =
+\left[
+\frac{10}{\sqrt{2}},
+\frac{22}{\sqrt{2}}
+\right]
+$$
+
+La nueva aproximación es
+
+$$
+A_2 =
+\frac{
+\frac{10}{\sqrt{2}} + \frac{22}{\sqrt{2}}
+}{\sqrt{2}}
+=
+\frac{32/\sqrt{2}}{\sqrt{2}}
+=
+16
+$$
+
+El nuevo detalle es
+
+$$
+D_2 =
+\frac{
+\frac{10}{\sqrt{2}} - \frac{22}{\sqrt{2}}
+}{\sqrt{2}}
+=
+\frac{-12/\sqrt{2}}{\sqrt{2}}
+=
+-6
+$$
+
+Por tanto, la descomposición ortonormal queda:
+
+$$
+A_2 = [16], \qquad D_2 = [-6], \qquad D_1 = \left[-\frac{2}{\sqrt{2}},\ -\frac{2}{\sqrt{2}}\right]
+$$
+
+## Comparación entre ambas lecturas
+
+La versión intuitiva usa promedios y semidiferencias:
+
+$$
+A = \frac{a+b}{2}, \qquad D = \frac{a-b}{2}
+$$
+
+La versión ortonormal usa:
+
+$$
+A = \frac{a+b}{\sqrt{2}}, \qquad D = \frac{a-b}{\sqrt{2}}
+$$
+
+La diferencia no es conceptual sino de **normalización**.
+
+Para enseñanza inicial, la primera versión facilita la intuición.
+Para teoría, energía y algoritmos formales, debe usarse la versión ortonormal.
+
+## Interpretación biomédica del ejemplo
+
+En procesamiento de señales biomédicas, este ejemplo enseña la lógica central:
+
+- la aproximación representa tendencias más lentas;
+- el detalle representa cambios más rápidos;
+- al aumentar el nivel, se observa la señal en escalas más gruesas.
+
+Eso explica por qué la transformada wavelet discreta resulta útil para separar:
+
+- complejos rápidos en electrocardiografía;
+- artefactos de alta frecuencia;
+- variaciones lentas de línea base;
+- transitorios en señales mioeléctricas o electroencefalográficas.
+
+## Pregunta de verificación
+
+Si en una señal biomédica aparece un evento breve y abrupto, como un transitorio rápido, ¿esperas que su energía se concentre principalmente en la aproximación o en los detalles?
+
+La respuesta correcta es: en los **detalles**, porque representan cambios locales y componentes más rápidas.
+
+
+
+## Análisis multirresolución
+
+En implementación discreta, la descomposición puede resumirse así:
+
+$$
+A_{j+1} = (A_j * h)\downarrow 2
+\qquad
+D_{j+1} = (A_j * g)\downarrow 2
+$$
+
+donde:
+
+- $h$ es un filtro de aproximación;
+- $g$ es un filtro de detalle;
+- $\downarrow 2$ representa submuestreo por dos.
+
+## Lectura por bandas aproximadas
+
+Si la frecuencia de muestreo es $f_s$, una guía útil es:
+
+$$
+D_j \approx \left[\frac{f_s}{2^{j+1}},\ \frac{f_s}{2^j}\right]
+$$
+
+No es una frontera exacta, pero permite interpretar los niveles.
+
+## Bandas aproximadas para $f_s=360$ Hz
+
+| Componente | Banda aproximada |
+|:--|:--|
+| $D_1$ | 90 a 180 Hz |
+| $D_2$ | 45 a 90 Hz |
+| $D_3$ | 22.5 a 45 Hz |
+| $D_4$ | 11.25 a 22.5 Hz |
+| $D_5$ | 5.625 a 11.25 Hz |
+| $A_5$ | 0 a 5.625 Hz |
+
+## Conexión biomédica
+
+En un electrocardiograma aparecen componentes con distinta duración:
+
+- el complejo QRS es breve y abrupto;
+- las ondas P y T son más lentas;
+- la deriva de línea base es aún más lenta;
+- el ruido muscular suele ocupar bandas más rápidas.
+
+La transformada wavelet ayuda a separarlos por escala.
+
+## Electrocardiograma sintético
+
+```{python}
+#| fig-width: 10
+#| fig-height: 4.8
+
+plt.figure(figsize=(10, 4.8))
+plt.plot(t_ecg, ecg_noisy, lw=1.0, label="Electrocardiograma con ruido")
+plt.plot(t_ecg, ecg_clean, lw=1.0, alpha=0.8, label="Referencia limpia")
+plt.xlabel("Tiempo [s]")
+plt.ylabel("Amplitud")
+plt.title("Señal de ejemplo")
+plt.grid(alpha=0.3)
 plt.legend()
+plt.tight_layout()
+plt.show()
+```
 
-# Plot the wavelet transform coefficients at different levels
-for i in range(1, max_level + 1):
-    plt.subplot(3, 2, i + 1)
-    # Plot detail coefficients for the current level
-    # Zero out other levels to highlight the current level's detail coefficients
-    coeffs_temp = [
-        coeffs[0] if j == 0 else np.zeros_like(coeff) for j, coeff in enumerate(coeffs)
-    ]
-    coeffs_temp[i] = coeffs[i]  # Keep the detail coefficients for level i
+## Descomposición wavelet del electrocardiograma
 
-    # Reconstruct the signal using only the current level's details
-    feature_detection = pywt.waverec(coeffs_temp, wavelet)
-    plt.plot(
-        t,
-        feature_detection[: len(signal)],
-        label=f"Level {i} Feature Detection",
-        color="red",
-    )
-    plt.title(f"Detected Features - Level {i}")
-    plt.xlim(0, 1)
-    plt.xlabel("Time")
-    plt.ylabel("Amplitude")
-    plt.legend()
+```{python}
+#| fig-width: 10
+#| fig-height: 7
+
+fig, ax = plt.subplots(4, 1, figsize=(10, 7), sharex=True)
+
+ax[0].plot(t_ecg, ecg_noisy, lw=1.0)
+ax[0].set_title("Señal original")
+ax[0].grid(alpha=0.3)
+
+ax[1].plot(t_ecg, A5, lw=1.0)
+ax[1].set_title("Aproximación A5")
+ax[1].grid(alpha=0.3)
+
+ax[2].plot(t_ecg, D4, lw=1.0)
+ax[2].set_title("Detalle D4")
+ax[2].grid(alpha=0.3)
+
+ax[3].plot(t_ecg, D5, lw=1.0)
+ax[3].set_title("Detalle D5")
+ax[3].set_xlabel("Tiempo [s]")
+ax[3].grid(alpha=0.3)
 
 plt.tight_layout()
 plt.show()
-
 ```
 
-## A wavelet transformation
-
-![](../../recursos/videos/wavelet_transform01t.gif)
-
-## Mathematical Expressions
-
-The continuous wavelet transform of a signal $f(t)$ is defined as:
-
-$$W_f(a, b) = \int_{-\infty}^{\infty} f(t) \, \psi^*\left(\frac{t - b}{a}\right) \, dt$$
-
-where:
-
-- $f(t)$ is the input signal,
-- $\psi$ is the mother wavelet,
-- $a$ is the scale parameter (controls the width of the wavelet),
-- $b$ is the translation parameter (controls the position of the wavelet),
-- $\psi^*$  denotes the complex conjugate of the mother wavelet.
-## Mathematical Expressions
-
-The continuous wavelet transform of a signal $f(t)$ is defined as:
-
-$$W_f(a, b) = \int_{-\infty}^{\infty} f(t) \, \psi^*\left(\frac{t - b}{a}\right) \, dt$$
-
-where:
-
-- $f(t)$ is the input signal,
-- $\psi$ is the mother wavelet,
-- $a$ is the scale parameter (controls the width of the wavelet),
-- $b$ is the translation parameter (controls the position of the wavelet),
-- $\psi^*$  denotes the complex conjugate of the mother wavelet.
-
-## Mathematical Expressions
-
-The inverse continuous wavelet transform is given by:
-
-$$f(t) = \frac{1}{C_{\psi}} \int_{0}^{\infty} \int_{-\infty}^{\infty} W_f(a, b) \, \psi\left(\frac{t - b}{a}\right) \frac{db \, da}{a^2}$$
-
-where:
-
-where $C_{\psi}$ is a normalization constant, defined as:
-
-$$C_{\psi} = \int_{0}^{\infty} \frac{|\hat{\psi}(\omega)|^2}{\omega} \, d\omega$$
-
-and $\hat{\psi}(\omega)$  is the Fourier transform of the wavelet $\psi(t)$.
-
-## Mathematical Expressions
-
-The discrete wavelet transform decomposes the signal at discrete levels of scale. For a signal $x[n]$, the wavelet decomposition is defined as:
-
-$$c_{j, k} = \sum_{n} x[n] \, \psi_{j, k}(n)$$
-
-where:
-
-- $\psi_{j, k}(n)= \frac{1}{\sqrt{2}}\psi\left(\frac{n-2^{j}k}{2^{j}}\right)$ represents the scaled and translated versions of the mother wavelet $\psi$ 
-- $j$ is the scale index, and $k$ is the translation index.
-
-The decomposition typically consists of approximation and detail coefficients at each scale:
-
-Approximation coefficients $a_j$: capture the low-frequency components.
-Detail coefficients $d_j$ capture the high-frequency components.
-
-## Mathematical Expressions
-
-The inverse discrete wavelet transform reconstructs the original signal from its approximation and detail coefficients:
-$$x[n] = \sum_{j} \sum_{k} c_{j, k} \, \psi_{j, k}(n)$$
-
-This reconstruction process involves upsampling and filtering of the approximation and detail coefficients at each scale.
-
-## Using CWT
-
-- **Purpose:** The CWT is used when you need a highly detailed, continuous analysis of a signal over all possible scales and positions.
-- **Output:** CWT gives you a "heatmap" of wavelet coefficients, showing which frequencies (or scales) are present in the signal at each point in time. This allows for a continuous representation.
-- **Applications:** CWT is useful for analyzing signals where you want to see the evolution of frequencies over time, such as:
-  - Detecting subtle changes in frequencies over time (like brainwave analysis in EEG).
-  - Signals with non-repeating, transient features (like spikes in biomedical signals, e.g., ECG).
-- **Trade-Off:** CWT is more computationally expensive because it analyzes all scales and translations continuously. It gives lots of data but is slower and requires more memory.
-
-::: {.callout-important title="Use CWT when:"}
-- You need a detailed, continuous representation.
-- You want to detect subtle or fast-changing features across time.
-- You’re okay with higher computational costs to get very fine-grained analysis.
-:::
-
-## Using DWT
-
-- **Purpose:** The DWT is used when you want a compact, efficient representation of a signal, usually for compression or feature extraction. It analyzes only specific scales (powers of two), not continuously.
-- **Output:** DWT gives you a set of coefficients at each level (or scale), capturing information at that specific scale. It’s efficient and uses fewer data points.
-- **Applications:** DWT is ideal when you want to reduce the size of data or focus on a smaller set of frequencies, such as:
-  - Image and audio compression (like JPEG 2000 or MP3 formats).
-  - Feature extraction for machine learning (e.g., identifying specific patterns).
-  - De-noising signals by discarding certain scales that contain noise.
-- **Trade-Off:** DWT is computationally cheaper but less detailed than CWT. It doesn’t give a continuous heatmap but rather a discrete set of scales.
-
-::: {.callout-important title="Use DWT when:"}
-- You need a compact and efficient representation.
-- You’re focused on data compression, de-noising, or feature extraction.
-- You want faster computations with less data storage requirements.
-:::
-
-# Multiresolution Analysis (MRA) of ECG
-
----
-
-## Introduction: Analyzing Complex Signals
-
-* Signals like ECG are often non-stationary.
-* Their frequency content and characteristics change over time.
-* Traditional methods (e.g., Fourier Transform) analyze the signal globally, losing temporal information.
-* Need a method to analyze signals at different time scales and frequency bands simultaneously.
-
----
-
-## What is Multiresolution Analysis (MRA)?
-
-* A mathematical framework to decompose a signal into components at different levels of resolution or detail.
-* Think of it like looking at a picture:
-    * Coarse view (low resolution): See the overall structure.
-    * Fine view (high resolution): See small details.
-* MRA decomposes a signal into a series of approximations and details, capturing information across various scales.
-* Often implemented using Wavelet Transforms (specifically the Discrete Wavelet Transform - DWT).
-
----
-
-## MRA: The Nested Subspace Concept
-
-* MRA is built upon a sequence of nested subspaces $V_j$ in $L^2(\mathbb{R})$.
-* These subspaces represent approximations of the signal at different resolutions.
-* Key Properties:
-    * **Nesting:** $\dots \subset V_2 \subset V_1 \subset V_0 \subset V_{-1} \subset V_{-2} \subset \dots$
-    * **Density:** The union of $V_j$ is dense in $L^2(\mathbb{R})$.
-    * **Separation:** The intersection of $V_j$ is $\{0\}$.
-    * **Scaling:** $f(t) \in V_j \iff f(2t) \in V_{j-1}$
-
----
-
-## The Scaling Function ($\phi$)
-
-* Each subspace $V_j$ is generated by scaled and translated versions of a single function called the **scaling function**, $\phi(t)$.
-* $\{\phi(t-k) : k \in \mathbb{Z}\}$ forms an orthonormal basis for $V_0$.
-* $\{\sqrt{2^j}\phi(2^j t-k) : k \in \mathbb{Z}\}$ forms an orthonormal basis for $V_j$.
-* The scaling function captures the "smooth" or low-frequency components – the approximation of the signal at a given scale.
-
----
-
-## The Wavelet Function ($\psi$)
-
-* The difference in information between two successive approximation spaces ($V_j$ and $V_{j-1}$) is captured by the **detail spaces**, $W_j$.
-* $V_{j-1} = V_j \oplus W_j$, where $W_j$ is the orthogonal complement of $V_j$ in $V_{j-1}$.
-* There exists a function $\psi(t) \in W_0$, the **wavelet function** (or mother wavelet).
-* $\{\psi(t-k) : k \in \mathbb{Z}\}$ forms an orthonormal basis for $W_0$.
-* $\{\sqrt{2^j}\psi(2^j t-k) : k \in \mathbb{Z}\}$ forms an orthonormal basis for $W_j$.
-* The wavelet function captures the "details" or high-frequency components.
-
----
-
-## Linking $\phi$ and $\psi$: Two-Scale Equations
-
-* The scaling and wavelet functions are related through coefficients $h_k$ and $g_k$.
-* $\phi(t) = \sqrt{2} \sum_k h_k \phi(2t - k)$
-* $\psi(t) = \sqrt{2} \sum_k g_k \phi(2t - k)$
-* These equations show how functions at one scale (left side) are constructed from functions at a finer scale (right side).
-* The coefficients $h_k$ and $g_k$ are critical – they define the specific wavelet and are the impulse responses of filters used in discrete implementations.
-
----
-
-## From Math to Practice: Filters
-
-* The sequences $h_k$ and $g_k$ correspond to digital filters:
-    * $H = \{h_k\}$ is a low-pass filter.
-    * $G = \{g_k\}$ is a high-pass filter.
-* These filters are designed such that $G$ is derived from $H$ (for orthonormal wavelets, $g_k = (-1)^k h_{N-1-k}$).
-* Applying the low-pass filter and downsampling corresponds to projecting the signal onto $V_j$.
-* Applying the high-pass filter and downsampling corresponds to projecting the signal onto $W_j$.
-
----
-
-## Discrete MRA: Mallat's Algorithm
-
-* The discrete implementation of MRA is efficiently computed using **Mallat's Algorithm** (or the Fast Wavelet Transform - FWT).
-* It's a pyramidal algorithm based on filter banks and downsampling/upsampling.
-* Decomposes the discrete signal into approximation ($A$) and detail ($D$) coefficients at successive levels.
-
----
-
-## Mallat's Algorithm: Decomposition
-
-Starting with signal $x[n]$ (considered $A_0$):
-
-1.  Convolve $A_j$ with low-pass filter $H$ and high-pass filter $G$.
-2.  Downsample outputs by 2 ($\downarrow 2$).
-    * Output of $H \to \downarrow 2$ gives approximation coefficients $A_{j+1}$.
-    * Output of $G \to \downarrow 2$ gives detail coefficients $D_{j+1}$.
-3.  Repeat the process on the approximation coefficients $A_{j+1}$ for the next level.
-
-$$ A_{j+1} = (A_j * H) \downarrow 2 $$
-$$ D_{j+1} = (A_j * G) \downarrow 2 $$
-
----
-
-## Mallat's Algorithm: Reconstruction
-
-Reconstructing signal $A_j$ from $A_{j+1}$ and $D_{j+1}$:
-
-1.  Upsample $A_{j+1}$ and $D_{j+1}$ by 2 ($\uparrow 2$, insert zeros).
-2.  Convolve upsampled coefficients with reconstruction filters $H'$ and $G'$.
-3.  Add the results to get $A_j$.
-4.  Repeat until the original signal $A_0$ is reconstructed.
-
-$$ A_j = (A_{j+1} \uparrow 2 * H') + (D_{j+1} \uparrow 2 * G') $$
-(For orthonormal wavelets, $H'$ and $G'$ are time-reversed $H$ and $G$)
-
----
-
-## MRA Architecture
-
-![![Taken from Stackexchange](https://dsp.stackexchange.com/questions/45718/real-time-wavelet-decomposition-and-reconstruction-for-ecg-feature-extraction)](../../recursos/imagenes/Presentaciones/PSIM/MRA.png)
-
----
-
-## Why MRA for ECG?
-
-* ECG signals are non-stationary and have features at different scales:
-    * QRS complex: Sharp, high frequency, short duration.
-    * P and T waves: Broader, lower frequency, longer duration.
-    * Baseline wander: Very low frequency.
-    * Muscle noise: High frequency.
-* MRA naturally separates these components into different frequency bands (detail levels), making analysis easier.
-
----
-
-## Applications of MRA in ECG: Denoising
-
-* Noise (powerline, muscle, baseline wander) occupies different frequency bands.
-* Decompose noisy ECG using MRA.
-* Noise components are isolated in specific detail coefficients:
-    * High-frequency noise in fine detail levels.
-    * Baseline wander in coarse approximation/detail levels.
-* Apply thresholding to the noise-dominated coefficients (e.g., set small values to zero).
-* Reconstruct the signal from the modified coefficients to get a denoised ECG.
-
----
-
-## Applications of MRA in ECG: Feature Extraction
-
-* Different ECG waves are highlighted in different MRA levels:
-    * QRS complex: Often prominent in mid-to-high frequency detail coefficients.
-    * P and T waves: Appear in lower frequency detail coefficients or approximation coefficients.
-* Analyze coefficients at relevant scales:
-    * Detect QRS peaks by finding local maxima in specific detail levels.
-    * Delineate P and T waves by analyzing the shape and zero-crossings of coefficients at coarser scales.
-* Extract clinically relevant features (intervals, amplitudes) from the detected waves.
-
----
-
-## Other Applications in ECG
-
-* **Compression:** MRA provides a sparse representation; many coefficients are small and can be discarded or quantized, reducing data size.
-* **Abnormality Detection and Classification:** Features derived from the distribution or patterns of coefficients across different MRA levels can be used as input for machine learning algorithms to classify arrhythmias or other heart conditions.
-
----
-
-## Practical Implementation Steps
-
-1.  **Acquisition & Preprocessing:** Get digitized ECG data. Basic filtering might precede MRA if necessary.
-2.  **Choose Wavelet:** Select a wavelet family (e.g., Daubechies 'dbN', Symlets 'symN'). Consider similarity of wavelet shape to ECG features (e.g., QRS) and vanishing moments.
-3.  **Determine Decomposition Levels:** Choose the number of levels ($J$) based on sampling frequency ($F_s$) and the frequency bands of interest. Detail level $j$ covers frequencies approx. $[F_s/2^{j+1}, F_s/2^j]$.
-4.  **Perform Decomposition:** Apply Mallat's algorithm (DWT) to get approximation and detail coefficients.
-5.  **Analyze/Process Coefficients:** Apply denoising (thresholding) or feature extraction techniques to the relevant coefficients.
-6.  **Reconstruct (Optional):** Reconstruct the signal if a filtered or modified ECG is needed.
-
----
-
-## Implementation: Wavelet Choice & Levels
-
-* **Wavelet Family:** Daubechies (db) and Symlets (sym) are common for ECG. 'db4' is often cited for its similarity to the QRS complex.
-* **Number of Levels ($J$):**
-    * Higher levels give coarser approximations and lower frequency details.
-    * Choose $J$ so that key ECG features fall into specific, separable detail levels.
-    * E.g., for a 360 Hz ECG, QRS (10-50 Hz) might be in D3-D5, P/T (1-10 Hz) in D5-D7, baseline wander (<1 Hz) in A7 or D8+.
-
----
-
-## Conclusion
-
-* Multiresolution Analysis is a powerful technique for analyzing non-stationary signals like ECG.
-* It decomposes the signal into different frequency bands/scales using scaling and wavelet functions.
-* Implemented efficiently via Mallat's algorithm (DWT).
-* Enables effective ECG denoising by isolating noise at specific levels.
-* Facilitates robust feature extraction (P, QRS, T) by highlighting them in different detail coefficients.
-* A fundamental tool in modern automated ECG analysis systems.
-
----
-
-## ECG Analysis
+## Interpretación biomédica
+
+| Componente fisiológico o artefacto | Comportamiento esperado | Nivel donde suele observarse mejor |
+|:--|:--|:--|
+| Complejo QRS | Evento breve y abrupto | $D_3$ a $D_4$ |
+| Onda P | Más ancha y de menor energía | $D_4$ a $D_5$ |
+| Onda T | Lenta y ancha | $D_5$ o aproximación |
+| Deriva de línea base | Muy lenta | Aproximaciones altas |
+| Ruido muscular | Rápido e irregular | $D_1$ a $D_2$ |
+
+## Implementación mínima en Python
 
 ```{python}
 #| echo: true
-#| eval: true
-#| output: true
-#| label: MRA 001
 
-# Elegir wavelet y nivel de descomposición
+import pywt
+
 wavelet = "db4"
-max_level = 3
+nivel = 5
 
-# Descomposición multiresolución
-coeffs = pywt.wavedec(ecg001, wavelet, level=max_level)
-# coeffs[0]: coeficientes de aproximación al nivel 3 (cA3)
-# coeffs[1:], coeficientes de detalle en niveles 3, 2, 1 (cD3, cD2, cD1)
+coeficientes = pywt.wavedec(ecg_noisy, wavelet, level=nivel)
+aproximacion = coeficientes[0]
+detalles = coeficientes[1:]
 
-# Reconstruir aproximación al nivel máximo
-arr_approx = [coeffs[0]] + [np.zeros_like(c) for c in coeffs[1:]]
-approx = pywt.waverec(arr_approx, wavelet)
-
+print("Número de conjuntos de coeficientes:", len(coeficientes))
+print("Longitud de la aproximación:", len(aproximacion))
+print("Longitudes de detalles:", [len(d) for d in detalles])
 ```
 
-## ECG Analysis
+## Criterio para elegir la wavelet
 
-```{python}
-#| echo: true
-#| eval: true
-#| output: true
-#| label: MRA 002
+No existe una wavelet universalmente mejor.
 
+La elección depende de:
 
-# Reconstruir detalles por cada nivel
-details = []
-for i in range(1, max_level + 1):
-    arr_detail = [np.zeros_like(c) for c in coeffs]
-    arr_detail[i] = coeffs[i]
-    detail = pywt.waverec(arr_detail, wavelet)
-    details.append(detail)
+- la frecuencia de muestreo;
+- la morfología de la señal;
+- el objetivo del análisis;
+- el desempeño observado en la tarea concreta.
 
-```
+Para electrocardiografía, `db4` suele usarse con frecuencia, pero debe justificarse con resultados.
 
-## ECG Analysis
+## Advertencia metodológica
 
-```{python}
-# | echo: true
-# | eval: true
-# | output: true
-# | label: MRA 003
+Cuatro errores frecuentes:
 
+- confundir escala con frecuencia exacta;
+- creer que un coeficiente alto implica una conclusión clínica;
+- olvidar que la descomposición depende del muestreo;
+- usar la herramienta matemática sin interpretación fisiológica.
 
-# 1. Graficar señal original
-plt.figure()
-plt.plot(t_ecg001, ecg001)
-plt.title("Señal Original")
-plt.xlabel("Tiempo (s)")
-plt.ylabel("Amplitud")
+La transformada wavelet **no reemplaza** el criterio biomédico.
 
-```
+## Verificación conceptual
 
-## ECG Analysis
+1. Si una señal contiene un evento muy breve, ¿esperas verlo con mayor claridad en niveles finos o gruesos?
 
-```{python}
-# | echo: true
-# | eval: true
-# | output: true
-# | label: MRA 004
+2. Si una señal presenta deriva de línea base, ¿debería aparecer en detalles finos o en aproximaciones altas?
 
+3. ¿Qué ventaja ofrece una representación tiempo-escala frente a un espectro global?
 
-# 2. Graficar aproximación nivel 3
-plt.figure()
-plt.plot(t_ecg001, approx)
-plt.title(f"Aproximación al Nivel {max_level}")
-plt.xlabel("Tiempo (s)")
-plt.ylabel("Amplitud")
+## Síntesis final
 
-```
+La transformada wavelet es útil porque permite analizar señales biomédicas cuyos fenómenos cambian con el tiempo.
 
-## ECG Analysis
+La versión continua ofrece una lectura tiempo-escala.
 
-```{python}
-# | echo: true
-# | eval: true
-# | output: true
-# | label: MRA 005
+La versión discreta permite descomposición eficiente, filtrado y extracción de características.
 
+En electrocardiografía, el análisis multirresolución ayuda a separar complejos rápidos, ondas lentas y artefactos bajo una interpretación fisiológica cuidadosa.
 
-# 3. Graficar detalles niveles 1 a 3
-for idx, detail in enumerate(details, start=1):
-    plt.figure()
-    plt.plot(t_ecg001, detail)
-    plt.title(f"Detalle al Nivel {idx}")
-    plt.xlabel("Tiempo (s)")
-    plt.ylabel("Amplitud")
+## Cierre
 
-plt.show()
+La pregunta importante no es solamente cómo calcular coeficientes wavelet.
 
-```
+La pregunta importante es esta:
+
+**¿qué componente fisiológico o artefacto estoy representando en cada escala?**
