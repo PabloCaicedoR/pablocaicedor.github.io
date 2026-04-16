@@ -287,6 +287,466 @@ Produce dos familias de coeficientes:
 - **aproximaciones**, asociadas a estructura lenta;
 - **detalles**, asociados a cambios rápidos.
 
+## Primera lectura intuitiva de la fórmula
+
+La expresión anterior puede leerse así:
+
+- tomo una wavelet;
+- la comprimo o la estiro;
+- la desplazo sobre la señal;
+- calculo qué tan parecidas son localmente.
+
+Por tanto, $W_x(a,b)$ mide:
+
+> **cuánta semejanza hay entre la señal y una wavelet de cierta escala en cierta posición temporal**.
+
+## La wavelet madre, una wavelet escalada y una desplazada
+
+```{python}
+# | fig-width: 10
+# | fig-height: 5.2
+
+# Señal de ejemplo con evento transitorio
+fs = 256
+t = np.arange(0, 2, 1 / fs)
+
+x = 0.7 * np.sin(2 * np.pi * 3 * t)
+x += 0.25 * np.sin(2 * np.pi * 12 * t)
+x += ((t > 0.82) & (t < 0.92)).astype(float) * 1.1 * np.sin(2 * np.pi * 42 * t)
+
+# Ejemplo Haar
+xh = np.array([4, 6, 10, 12], dtype=float)
+A1 = np.array([(4 + 6) / 2, (10 + 12) / 2])
+D1 = np.array([(4 - 6) / 2, (10 - 12) / 2])
+A2 = np.array([(A1[0] + A1[1]) / 2])
+D2 = np.array([(A1[0] - A1[1]) / 2])
+
+# Wavelet tipo Morlet para ilustración
+tw = np.linspace(-1.2, 1.2, 1000)
+psi = np.cos(2 * np.pi * 6 * tw) * np.exp(-(tw**2) / (2 * 0.12**2))
+psi_wide = np.cos(2 * np.pi * 3 * tw) * np.exp(-(tw**2) / (2 * 0.24**2))
+psi_shift = np.cos(2 * np.pi * 6 * (tw - 0.35)) * np.exp(
+    -((tw - 0.35) ** 2) / (2 * 0.12**2)
+)
+
+fig, ax = plt.subplots(3, 1, figsize=(10, 5.2), sharex=True)
+
+ax[0].plot(tw, psi, lw=1.2)
+ax[0].set_title("Wavelet madre")
+ax[0].grid(alpha=0.25)
+
+ax[1].plot(tw, psi_wide, lw=1.2)
+ax[1].set_title("Wavelet escalada: más ancha, más sensible a estructura lenta")
+ax[1].grid(alpha=0.25)
+
+ax[2].plot(tw, psi_shift, lw=1.2)
+ax[2].set_title("Wavelet desplazada: explora otra región temporal")
+ax[2].set_xlabel("Tiempo")
+ax[2].grid(alpha=0.25)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Qué significa la escala
+
+Si la wavelet es **pequeña**:
+
+- responde mejor a cambios rápidos;
+- detecta detalles finos;
+- localiza transitorios breves.
+
+Si la wavelet es **grande**:
+
+- integra más contexto temporal;
+- responde a variaciones lentas;
+- describe estructura global.
+
+## Qué significa la traslación
+
+La traslación $b$ responde a una pregunta simple:
+
+> ¿en qué parte del tiempo estoy mirando la señal?
+
+Por tanto, la transformada wavelet no solo dice **qué tipo de estructura existe**, sino también **dónde aparece**.
+
+## Lectura geométrica: un producto interno
+
+La transformada wavelet puede interpretarse como un producto interno:
+
+$$
+W_x(a,b)=\langle x(t), \psi_{a,b}(t)\rangle
+$$
+
+Eso significa que cada coeficiente wavelet es una **proyección** de la señal sobre una función base localizada.
+
+Esta idea es decisiva, porque el análisis multirresolución también se basa en proyecciones, pero organizadas por niveles de resolución.
+
+## De la definición a una intuición operativa
+
+Si proyectamos la señal sobre:
+
+- wavelets grandes, obtenemos una lectura **gruesa**;
+- wavelets pequeñas, obtenemos una lectura **fina**.
+
+Entonces ya aparece la intuición central:
+
+> una señal puede describirse en varios niveles de detalle.
+
+Ese es el punto de entrada al análisis multirresolución.
+
+## Una misma señal vista a diferentes escalas
+
+```{python}
+#| fig-width: 10
+#| fig-height: 4.2
+
+fig, ax = plt.subplots(2, 1, figsize=(10, 4.2), sharex=True)
+
+ax[0].plot(t, x, lw=1.2)
+ax[0].set_title("Señal original")
+ax[0].grid(alpha=0.25)
+
+coarse = 0.7*np.sin(2*np.pi*3*t)
+ax[1].plot(t, coarse, lw=1.2)
+ax[1].set_title("Lectura gruesa: tendencia lenta dominante")
+ax[1].set_xlabel("Tiempo [s]")
+ax[1].grid(alpha=0.25)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Idea clave
+
+Cuando observamos a escala gruesa, no desaparece la señal:
+
+- se conserva su estructura general;
+- se pierden detalles rápidos;
+- se obtiene una representación más compacta.
+
+Cuando observamos a escala fina:
+
+- emergen cambios locales;
+- aparecen discontinuidades o transitorios;
+- la señal se vuelve más descriptiva, pero menos resumida.
+
+## Definición intuitiva de análisis multirresolución
+
+El análisis multirresolución consiste en representar la señal como suma de dos partes:
+
+- una parte **aproximada**, que contiene la estructura gruesa;
+- una parte de **detalle**, que contiene lo que se pierde al pasar a una resolución más gruesa.
+
+En símbolo:
+
+$$
+\text{señal} = \text{aproximación} + \text{detalle}
+$$
+
+## La idea recursiva
+
+La clave no es hacerlo una sola vez.
+
+La clave es repetir el proceso:
+
+1. separo aproximación y detalle;
+2. tomo solo la aproximación;
+3. vuelvo a dividirla en una nueva aproximación y un nuevo detalle.
+
+Así nace una jerarquía de escalas.
+
+## Ejemplo manual con Haar
+
+Tomemos la señal discreta:
+
+$$
+x[n]=[4,\ 6,\ 10,\ 12]
+$$
+
+La agrupamos por pares:
+
+$$
+(4,6),\qquad(10,12)
+$$
+
+Sobre cada par respondemos dos preguntas:
+
+- ¿cuál es su valor representativo?
+- ¿cuánta diferencia hay dentro del par?
+
+## Primer nivel: aproximación
+
+Usando promedios simples:
+
+$$
+A_1=
+\left[
+\frac{4+6}{2},
+\frac{10+12}{2}
+\right]
+=
+[5,\ 11]
+$$
+
+Interpretación:
+
+- $5$ resume el primer bloque;
+- $11$ resume el segundo bloque.
+
+## Primer nivel: detalle
+
+Ahora medimos diferencia local:
+
+$$
+D_1=
+\left[
+\frac{4-6}{2},
+\frac{10-12}{2}
+\right]
+=
+[-1,\ -1]
+$$
+
+Interpretación:
+
+- el detalle registra cuánto cambia cada bloque internamente;
+- la aproximación resume;
+- el detalle corrige.
+
+## Segundo nivel
+
+Ahora repetimos el procedimiento sobre la aproximación:
+
+$$
+A_1=[5,\ 11]
+$$
+
+Nueva aproximación:
+
+$$
+A_2=\left[\frac{5+11}{2}\right]=[8]
+$$
+
+Nuevo detalle:
+
+$$
+D_2=\left[\frac{5-11}{2}\right]=[-3]
+$$
+
+## Qué significa la descomposición
+
+La señal original queda descrita por:
+
+$$
+A_2=[8],\qquad D_2=[-3],\qquad D_1=[-1,-1]
+$$
+
+Lectura:
+
+- $A_2$: estructura más global;
+- $D_2$: diferencia entre bloques grandes;
+- $D_1$: diferencia dentro de bloques pequeños.
+
+Eso ya es análisis multirresolución en miniatura.
+
+## Visualización del ejemplo Haar
+
+```{python}
+#| fig-width: 10
+#| fig-height: 5
+
+fig, ax = plt.subplots(3, 1, figsize=(10, 5), sharex=False)
+
+ax[0].stem(np.arange(len(xh)), xh, basefmt=" ")
+ax[0].set_title("Señal original")
+ax[0].set_ylabel("x[n]")
+ax[0].grid(alpha=0.25)
+
+ax[1].stem(np.arange(len(A1)), A1, basefmt=" ")
+ax[1].set_title("Aproximación A1")
+ax[1].set_ylabel("A1")
+ax[1].grid(alpha=0.25)
+
+ax[2].stem(np.arange(len(D1)), D1, basefmt=" ")
+ax[2].set_title("Detalle D1")
+ax[2].set_ylabel("D1")
+ax[2].grid(alpha=0.25)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Qué cambió realmente
+
+No solo cambiamos números.
+
+Cambiamos la **forma de describir la señal**:
+
+- antes: muestras originales;
+- ahora: resumen grueso + correcciones por escala.
+
+Ese cambio de representación es la esencia del análisis wavelet discreto.
+
+## Conexión con espacios de resolución
+
+En lenguaje más formal, se habla de espacios:
+
+- $V_j$: espacio de aproximaciones a resolución $j$;
+- $W_j$: espacio de detalles que faltan para pasar de $V_{j+1}$ a $V_j$.
+
+La idea clave es:
+
+$$
+V_j = V_{j+1} \oplus W_{j+1}
+$$
+
+## Lectura intuitiva de esa relación
+
+La ecuación anterior significa:
+
+- una representación más fina contiene
+  - una parte gruesa,
+  - más una corrección de detalle.
+
+Es decir:
+
+$$
+\text{resolución fina}
+=
+\text{resolución gruesa}
++
+\text{detalle perdido}
+$$
+
+## De la definición integral al algoritmo
+
+La transformada wavelet continua usa todas las escalas y todas las posiciones posibles.
+
+Pero para computación práctica conviene usar:
+
+- escalas discretas;
+- traslaciones discretas;
+- filtros paso bajo y paso alto.
+
+Así se obtiene el análisis multirresolución implementable.
+
+## Banco de filtros: intuición
+
+En la transformada wavelet discreta:
+
+- el filtro paso bajo produce la **aproximación**;
+- el filtro paso alto produce el **detalle**;
+- después se submuestrea por 2.
+
+La operación se repite sobre la aproximación.
+
+## Esquema conceptual del proceso
+
+::: {.columns}
+:::: {.column width="48%"}
+**Entrada**
+
+$$
+x[n]
+$$
+
+$$
+\downarrow
+$$
+
+**Filtro paso bajo**
+
+$$
+\rightarrow A_1
+$$
+
+**Filtro paso alto**
+
+$$
+\rightarrow D_1
+$$
+::::
+
+:::: {.column width="48%"}
+Luego:
+
+$$
+A_1 \rightarrow A_2 + D_2
+$$
+
+$$
+A_2 \rightarrow A_3 + D_3
+$$
+
+y así sucesivamente.
+::::
+:::
+
+## Resumen de la lógica completa
+
+1. Defino la transformada wavelet como proyección sobre funciones localizadas.
+2. Interpreto escala como resolución.
+3. Distingo lectura gruesa y lectura fina.
+4. Separo la señal en aproximación y detalle.
+5. Repito el proceso recursivamente.
+6. Obtengo análisis multirresolución.
+
+## Qué debe quedar claro
+
+El análisis multirresolución no es una técnica separada de wavelets.
+
+Es la consecuencia natural de esta idea:
+
+> una señal puede representarse mediante proyecciones organizadas por escala.
+
+## Error conceptual frecuente
+
+No debe pensarse que:
+
+- la aproximación es “lo importante”;
+- el detalle es “ruido”.
+
+Eso es falso.
+
+En muchas señales biomédicas:
+
+- el detalle contiene información crítica;
+- por ejemplo, transitorios rápidos o complejos QRS.
+
+## Aplicación biomédica inmediata
+
+En electrocardiografía, la intuición sería:
+
+- aproximaciones altas: deriva de línea base y componentes lentas;
+- detalles intermedios: complejo QRS;
+- detalles finos: ruido rápido o transitorios muy breves.
+
+Por eso el análisis multirresolución es útil en señales biomédicas no estacionarias.
+
+## Síntesis final
+
+La transformada wavelet responde a la pregunta:
+
+> ¿qué patrón aparece, a qué escala y en qué instante?
+
+El análisis multirresolución reorganiza esa respuesta como una jerarquía de:
+
+- aproximaciones;
+- detalles;
+- niveles sucesivos de resolución.
+
+## Cierre
+
+La idea más importante de la clase es esta:
+
+$$
+\boxed{
+\text{Una señal puede entenderse como suma de estructura gruesa y correcciones de detalle a distintas escalas.}
+}
+$$
+
+
 ## Ejemplo manual con Haar
 
 Para entender la transformada wavelet discreta, conviene empezar con la wavelet de Haar, porque permite ver con claridad la idea de **aproximación** y **detalle**.
