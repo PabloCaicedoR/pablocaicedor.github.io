@@ -1,0 +1,999 @@
+---
+title: "Sistemas y Señales Biomédicos"
+description: "SYSB"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+format:
+  revealjs:
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    self-contained: true
+    theme:
+      - simple
+      - ../../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    mainfont: "Fira Code"
+execute:
+  echo: true
+  warning: false
+  message: false
+  error: false
+
+resources:
+  - demo.pdf
+---
+
+```{r}
+#| echo: false
+#| eval: true
+#| output: false
+#| label: Loading R-Libraries
+# install.packages(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx"))
+library("DiagrammeR")
+library("reticulate")
+library("kableExtra")
+library("tidyverse")
+library("knitr")
+library("cowplot")
+library("ggfx")
+knitr::opts_chunk$set(echo = FALSE)
+
+def.chunk.hook <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+    x <- def.chunk.hook(x, options)
+    ifelse(options$size != "normalsize", paste0("\n \\", options$size, "\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+```{python}
+# | echo: false
+# | eval: true
+# | output: false
+# | label: Loading Python-Libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.io as sio
+import scipy.signal as sig
+from scipy.signal import tf2zpk
+
+plt.rcParams.update(
+    {
+        "text.usetex": False,  # usar LaTeX real
+        "font.family": "Fira Code",  # familia general
+        "mathtext.fontset": "custom",  # fuente personalizada para fórmulas
+        "mathtext.rm": "Fira Code",  # texto “roman”
+        "mathtext.it": "Fira Code:italic",  # texto itálico
+        "mathtext.bf": "Fira Code:bold",  # texto en negrita
+        "text.latex.preamble": r"\usepackage{amsmath}",
+    }
+)
+import matplotlib as mpl
+
+mpl.rcParams.update(mpl.rcParamsDefault)
+path_ecg = "../../data"
+
+```
+
+# Sistemas y Señales Biomedicos - SYSB
+
+## Objetivo
+
+Se debe diseñar un filtro que conserve la mayor parte de la actividad muscular útil y atenuar:
+
+- deriva DC
+- artefactos de movimiento
+- ruido de alta frecuencia
+- contenido cercano al límite de Nyquist
+
+
+## Fisiología de la señal EMG
+
+> La señal electromiográfica superficial no es un potencial aislado. Es la suma interferencial de muchos potenciales de acción de unidades motoras. Cada unidad motora activa fibras musculares, y esas fibras generan potenciales de acción que se propagan por la membrana.
+
+## Fisiología de la señal EMG
+
+> La conducción es electroquímica y depende de la conductividad de los tejidos que están entre la fibra muscular y el electrodo: músculo, grasa y piel. Esos medios no son perfectos, así que la señal se va atenuando y dispersando a medida que se aleja de la fuente.
+
+## Fisiología de la señal EMG
+
+> La combinación de todas esas contribuciones (múltiples unidades motoras, conducción y filtrado biológico) hace que la señal EMG superficial sea una señal compleja, con forma de onda irregular y espectro que se extiende en frecuencia, pero con una banda donde se concentra la mayor parte de la energía.
+
+## Fisiología de la señal EMG
+
+> En electromiografía superficial, la mayor parte de la energía útil generada por la actividad muscular detectable en piel se concentra por debajo de unos 400–500 Hz.
+
+## Frecuencias de corte en un filtro pasabanda EMG
+
+| Elemento a atenuar | Zona espectral | Decisión de diseño |
+|---|---:|---|
+| Deriva DC | 0 Hz y muy baja frecuencia | Usar corte inferior $f_L$ |
+| Artefactos de movimiento | Baja frecuencia, típicamente $<20\text{ Hz}$ | Rechazarlos con $f_L = 20\text{ Hz}$ |
+| Ruido de alta frecuencia | Por encima de la banda muscular útil | Atenuarlo con $f_H = 450\text{ Hz}$ |
+| Contenido cercano a Nyquist | Cerca de $f_s/2$ | Dejar margen entre $f_H$ y $f_N$ |
+
+## Por qué no usar desde 0 Hz
+
+La EMG cruda contiene componentes de baja frecuencia que no suelen representar activación muscular útil:
+
+- offset DC del amplificador
+- deriva lenta de electrodos
+- movimiento piel-electrodo
+- cambios de impedancia
+
+Por eso se usa un pasaaltas alrededor de 20 Hz.
+
+$$
+f_L = 20\text{ Hz}
+$$
+
+Es una decisión conservadora: elimina deriva sin recortar demasiado la EMG fisiológica.
+
+---
+
+## Por qué cortar arriba en 450 Hz
+
+La mayor parte de la energía útil de EMG superficial está por debajo de 450–500 Hz.
+
+Elegimos:
+
+$$
+f_H = 450\text{ Hz}
+$$
+
+porque con:
+
+$$
+f_s = 2000\text{ Hz}
+$$
+
+el límite de Nyquist es:
+
+$$
+f_N = \frac{f_s}{2} = 1000\text{ Hz}
+$$
+
+Así queda margen suficiente entre 450 Hz y 1000 Hz para la transición del filtro.
+
+---
+
+## Por qué IIR
+
+Un filtro FIR con transición estrecha puede necesitar muchos coeficientes.
+
+Un IIR logra una pendiente razonable con bajo orden.
+
+Ventajas:
+
+- menos coeficientes
+- menor costo computacional
+- útil para procesamiento en tiempo real
+
+Desventajas:
+
+- fase no lineal
+- posible inestabilidad si se implementa mal
+
+Por eso se usa formato SOS.
+
+---
+
+## Por qué Butterworth
+
+Se elige Butterworth porque tiene magnitud plana en la banda pasante.
+
+No introduce ondulación como Chebyshev o elíptico.
+
+Esto es útil si queremos preservar amplitudes relativas de EMG.
+
+La prioridad aquí no es lograr la transición más agresiva, sino evitar alterar artificialmente la amplitud dentro de la banda útil.
+
+---
+
+## Supuestos del problema
+
+Trabajaremos con EMG superficial registrada en laboratorio.
+
+| Parámetro | Valor elegido | Motivo |
+|---|---:|---|
+| Frecuencia de muestreo | 2000 Hz | Suficiente para analizar hasta 450–500 Hz |
+| Banda útil | 20–450 Hz | Banda típica para EMG superficial |
+| Tipo de filtro | IIR | Eficiente y de bajo orden |
+| Familia | Butterworth | Magnitud plana en banda pasante |
+| Implementación | SOS | Más estable numéricamente |
+
+---
+
+## Especificaciones iniciales
+
+Usaremos un diseño automático con `buttord`.
+
+Definimos:
+
+$$
+f_p = [20, 450]\text{ Hz}
+$$
+
+$$
+f_s^{stop} = [5, 800]\text{ Hz}
+$$
+
+$$
+A_p = 1\text{ dB}, \quad A_s = 30\text{ dB}
+$$
+
+Interpretación:
+
+- hasta 1 dB de pérdida en la banda útil
+- al menos 30 dB de atenuación fuera de banda
+- transición baja: 5 a 20 Hz
+- transición alta: 450 a 800 Hz
+
+---
+
+## Normalización de frecuencias
+
+Para diseño digital, las frecuencias se comparan con Nyquist:
+
+$$
+f_N = \frac{2000}{2} = 1000\text{ Hz}
+$$
+
+$$
+W_L = \frac{20}{1000} = 0.02
+$$
+
+$$
+W_H = \frac{450}{1000} = 0.45
+$$
+
+En SciPy podemos pasar `fs=2000`, así no hace falta normalizar manualmente.
+
+---
+
+## Código: librerías
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+from scipy.signal import (
+    butter,
+    buttord,
+    sosfreqz,
+    sosfilt,
+    sosfiltfilt,
+    welch
+)
+```
+
+## Predeformación bilineal
+
+Para diseñar a mano se parte del dominio analógico equivalente:
+
+$$
+\Omega = 2f_s\tan\left(\frac{\pi f}{f_s}\right)
+$$
+
+Con $f_s=2000\text{ Hz}$:
+
+$$
+\Omega_{p1}=125.705
+$$
+
+$$
+\Omega_{p2}=3416.323
+$$
+
+$$
+\Omega_{r1}=31.417
+$$
+
+$$
+\Omega_{r2}=12310.734
+$$
+
+---
+
+## Parámetros del pasabanda analógico
+
+Ancho de banda:
+
+$$
+B = \Omega_{p2}-\Omega_{p1}
+$$
+
+$$
+B = 3416.323 - 125.705 = 3290.618
+$$
+
+Frecuencia central:
+
+$$
+\Omega_0 = \sqrt{\Omega_{p1}\Omega_{p2}}
+$$
+
+$$
+\Omega_0 = \sqrt{125.705(3416.323)} = 655.324
+$$
+
+---
+
+## Transformación pasabanda a pasabajas
+
+La transformación es:
+
+$$
+\Omega_L =
+\left|
+\frac{\Omega^2-\Omega_0^2}{B\Omega}
+\right|
+$$
+
+Para las bandas de rechazo:
+
+$$
+\Omega_{Lr1}
+=
+\left|
+\frac{\Omega_{r1}^2-\Omega_0^2}{B\Omega_{r1}}
+\right|
+=4.145
+$$
+
+$$
+\Omega_{Lr2}
+=
+\left|
+\frac{\Omega_{r2}^2-\Omega_0^2}{B\Omega_{r2}}
+\right|
+=3.731
+$$
+
+Se usa el caso más exigente:
+
+$$
+\Omega_{Lr}=3.731
+$$
+
+---
+
+## Orden del filtro Butterworth
+
+Para Butterworth:
+
+$$
+|H(j\Omega)|^2 =
+\frac{1}{1+\left(\frac{\Omega}{\Omega_c}\right)^{2N}}
+$$
+
+Primero:
+
+$$
+\epsilon^2 = 10^{A_p/10}-1
+$$
+
+$$
+\epsilon^2 = 10^{0.1}-1 = 0.2589
+$$
+
+El orden mínimo es:
+
+$$
+N \geq
+\frac{
+\log_{10}
+\left(
+\frac{10^{A_r/10}-1}{10^{A_p/10}-1}
+\right)
+}{
+2\log_{10}(\Omega_{Lr})
+}
+$$
+
+---
+
+## Cálculo del orden
+
+$$
+N \geq
+\frac{
+\log_{10}
+\left(
+\frac{10^{30/10}-1}{10^{1/10}-1}
+\right)
+}{
+2\log_{10}(3.731)
+}
+$$
+
+$$
+N \geq 3.93
+$$
+
+Por tanto:
+
+$$
+\boxed{N=4}
+$$
+
+Este es el orden del prototipo pasabajas.
+
+Como el filtro final es pasabanda:
+
+$$
+\boxed{N_{\text{digital}}=2N=8}
+$$
+
+---
+
+## Frecuencia crítica del prototipo
+
+Se fija la pérdida de 1 dB en la banda pasante:
+
+$$
+\Omega_c =
+\frac{1}{\epsilon^{1/N}}
+$$
+
+equivalentemente:
+
+$$
+\Omega_c =
+\frac{1}{(10^{A_p/10}-1)^{1/(2N)}}
+$$
+
+$$
+\Omega_c =
+\frac{1}{(0.2589)^{1/8}}
+=1.184
+$$
+
+---
+
+## Frecuencias críticas pasabanda
+
+Se resuelve:
+
+$$
+\left|
+\frac{\Omega^2-\Omega_0^2}{B\Omega}
+\right|
+=
+\Omega_c
+$$
+
+Las dos soluciones son:
+
+$$
+\Omega_{c1}
+=
+\frac{
+-\Omega_c B +
+\sqrt{(\Omega_c B)^2+4\Omega_0^2}
+}{2}
+$$
+
+$$
+\Omega_{c2}
+=
+\frac{
+\Omega_c B +
+\sqrt{(\Omega_c B)^2+4\Omega_0^2}
+}{2}
+$$
+
+---
+
+## Resultado analógico
+
+$$
+\Omega_{c1}=107.272
+$$
+
+$$
+\Omega_{c2}=4003.376
+$$
+
+Regresando al dominio digital:
+
+$$
+f =
+\frac{f_s}{\pi}
+\tan^{-1}\left(\frac{\Omega}{2f_s}\right)
+$$
+
+$$
+f_{c1}=17.07\text{ Hz}
+$$
+
+$$
+f_{c2}=500.27\text{ Hz}
+$$
+
+Estas no son la banda útil final; son las frecuencias críticas equivalentes que producen:
+
+$$
+-1\text{ dB en }20\text{ Hz y }450\text{ Hz}
+$$
+
+---
+
+## Forma final del filtro
+
+El filtro digital queda como producto de secciones de segundo orden:
+
+$$
+H(z)=
+\prod_{k=1}^{4}
+\frac{
+b_{0k}+b_{1k}z^{-1}+b_{2k}z^{-2}
+}{
+1+a_{1k}z^{-1}+a_{2k}z^{-2}
+}
+$$
+
+| Sección | $b_0$ | $b_1$ | $b_2$ | $a_1$ | $a_2$ |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 0.084415 | 0.168831 | 0.084415 | -0.048293 | 0.044628 |
+| 2 | 1.000000 | 2.000000 | 1.000000 | -0.009318 | 0.465001 |
+| 3 | 1.000000 | -2.000000 | 1.000000 | -1.899161 | 0.902165 |
+| 4 | 1.000000 | -2.000000 | 1.000000 | -1.958473 | 0.961333 |
+
+---
+
+## Diferencia recursiva
+
+Cada sección se aplica como:
+
+$$
+y_k[n]
+=
+b_{0k}x_k[n]
++
+b_{1k}x_k[n-1]
++
+b_{2k}x_k[n-2]
+-
+a_{1k}y_k[n-1]
+-
+a_{2k}y_k[n-2]
+$$
+
+La salida de una sección alimenta la siguiente:
+
+$$
+x_{k+1}[n]=y_k[n]
+$$
+
+La salida final es:
+
+$$
+y[n]=y_4[n]
+$$
+
+---
+
+## Verificación manual de especificaciones
+
+En las frecuencias de paso:
+
+$$
+|H(20\text{ Hz})| \approx -1\text{ dB}
+$$
+
+$$
+|H(450\text{ Hz})| \approx -1\text{ dB}
+$$
+
+En las frecuencias de rechazo:
+
+$$
+|H(5\text{ Hz})| \approx -43.5\text{ dB}
+$$
+
+$$
+|H(800\text{ Hz})| \approx -39.9\text{ dB}
+$$
+
+Por tanto:
+
+$$
+A_r > 30\text{ dB}
+$$
+
+---
+
+## Resultado del diseño
+
+Filtro diseñado:
+
+$$
+\boxed{
+\text{IIR Butterworth pasabanda de orden 8}
+}
+$$
+
+Banda útil EMG:
+
+$$
+\boxed{
+20\text{ Hz} \leq f \leq 450\text{ Hz}
+}
+$$
+
+Frecuencia de muestreo:
+
+$$
+\boxed{
+f_s=2000\text{ Hz}
+}
+$$
+
+Atenuación:
+
+$$
+\boxed{
+A_p=1\text{ dB}, \qquad A_r \geq 30\text{ dB}
+}
+$$
+
+Implementación recomendada:
+
+$$
+\boxed{
+\text{cascada de secciones de segundo orden}
+}
+$$
+
+
+---
+
+## Código: parámetros de diseño
+
+```{python}
+fs = 2000.0
+
+# Banda pasante deseada para EMG superficial
+fp = [20.0, 450.0]
+
+# Bandas de rechazo elegidas con transiciones razonables
+fsb = [5.0, 800.0]
+
+# Pérdida máxima en banda pasante y atenuación mínima en rechazo
+Ap = 1.0    # dB
+As = 30.0   # dB
+
+N, Wn = buttord(
+    wp=fp,
+    ws=fsb,
+    gpass=Ap,
+    gstop=As,
+    fs=fs
+)
+
+N, Wn
+```
+
+---
+
+## Interpretación del orden
+
+`buttord` devuelve el orden mínimo que satisface las especificaciones.
+
+Si el orden sale alto, no significa que el diseño esté mal.
+
+Significa que las transiciones o la atenuación pedida son exigentes.
+
+Para EMG práctica:
+
+- filtros de orden 4 a 6 suelen ser comunes
+- orden mayor da más pendiente
+- orden mayor también puede aumentar sensibilidad numérica
+
+Por eso implementaremos en SOS.
+
+---
+
+## Diseño final del filtro
+
+```{python}
+sos = butter(
+    N=N,
+    Wn=Wn,
+    btype="bandpass",
+    fs=fs,
+    output="sos"
+)
+
+sos
+```
+
+Usar `output="sos"` evita problemas de precisión que pueden aparecer con coeficientes `b, a` en filtros IIR de orden alto.
+
+---
+
+## Respuesta en frecuencia
+
+```{python}
+w, h = sosfreqz(sos, worN=4096, fs=fs)
+
+mag_db = 20 * np.log10(np.maximum(np.abs(h), 1e-12))
+
+plt.figure(figsize=(9, 4))
+plt.plot(w, mag_db)
+plt.axvline(20, linestyle="--")
+plt.axvline(450, linestyle="--")
+plt.axhline(-1, linestyle=":")
+plt.axhline(-30, linestyle=":")
+plt.xlim(0, 1000)
+plt.ylim(-80, 5)
+plt.xlabel("Frecuencia [Hz]")
+plt.ylabel("Magnitud [dB]")
+plt.title("Respuesta en frecuencia del filtro pasabanda IIR")
+plt.grid(True)
+plt.show()
+```
+
+---
+
+## Señal EMG sintética
+
+Creamos una señal de prueba con:
+
+- deriva lenta de 2 Hz
+- interferencia de red de 60 Hz
+- actividad EMG simulada entre 40 y 300 Hz
+- ruido de alta frecuencia
+
+```{python}
+rng = np.random.default_rng(7)
+
+T = 4.0
+t = np.arange(0, T, 1/fs)
+
+drift = 0.4 * np.sin(2*np.pi*2*t)
+line_noise = 0.15 * np.sin(2*np.pi*60*t)
+
+emg_like = (
+    0.25*np.sin(2*np.pi*45*t) +
+    0.18*np.sin(2*np.pi*120*t) +
+    0.12*np.sin(2*np.pi*260*t)
+)
+
+wide_noise = 0.08 * rng.normal(size=len(t))
+hf_noise = 0.08 * np.sin(2*np.pi*700*t)
+
+x = drift + line_noise + emg_like + wide_noise + hf_noise
+```
+
+---
+
+## Filtrado causal y no causal
+
+Hay dos formas comunes de aplicar el filtro.
+
+Para tiempo real:
+
+```python
+y = sosfilt(sos, x)
+```
+
+Para análisis offline:
+
+```python
+y = sosfiltfilt(sos, x)
+```
+
+Decisión:
+
+- `sosfilt`: introduce retardo de fase
+- `sosfiltfilt`: fase cero, pero no sirve para tiempo real
+
+En este ejemplo usamos `sosfiltfilt` porque es análisis offline.
+
+---
+
+## Aplicar filtro
+
+```{python}
+y = sosfiltfilt(sos, x)
+```
+
+---
+
+## Señal antes y después
+
+```{python}
+plt.figure(figsize=(10, 4))
+plt.plot(t, x, label="EMG cruda", alpha=0.7)
+plt.plot(t, y, label="EMG filtrada", linewidth=1.5)
+plt.xlim(0, 1.0)
+plt.xlabel("Tiempo [s]")
+plt.ylabel("Amplitud")
+plt.title("Comparación temporal")
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+---
+
+## Densidad espectral de potencia
+
+```{python}
+f_raw, P_raw = welch(x, fs=fs, nperseg=1024)
+f_filt, P_filt = welch(y, fs=fs, nperseg=1024)
+
+plt.figure(figsize=(9, 4))
+plt.semilogy(f_raw, P_raw, label="Cruda")
+plt.semilogy(f_filt, P_filt, label="Filtrada")
+plt.axvline(20, linestyle="--")
+plt.axvline(450, linestyle="--")
+plt.xlim(0, 1000)
+plt.xlabel("Frecuencia [Hz]")
+plt.ylabel("PSD")
+plt.title("Efecto espectral del filtro")
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+---
+
+## Qué ocurrió
+
+El filtro elimina:
+
+- deriva lenta bajo 20 Hz
+- ruido alto por encima de 450 Hz
+- parte del contenido no fisiológico
+
+Pero no elimina completamente 50/60 Hz, porque 60 Hz está dentro de la banda EMG.
+
+Por eso un notch de red no debe añadirse automáticamente.
+
+Debe usarse solo si la interferencia de red domina y afecta el análisis.
+
+---
+
+## Decisión sobre notch 50/60 Hz
+
+No incluimos notch por defecto.
+
+Motivo:
+
+$$
+50/60\text{ Hz} \in [20, 450]\text{ Hz}
+$$
+
+Un notch elimina interferencia eléctrica, pero también destruye contenido EMG real alrededor de esa frecuencia.
+
+Decisión práctica:
+
+- si el hardware y el montaje son buenos, evitar notch
+- si hay contaminación clara de red, usar notch estrecho
+- documentar siempre su uso
+
+---
+
+## Código completo como función
+
+```{python}
+def design_emg_bandpass_iir(
+    fs,
+    passband=(20.0, 450.0),
+    stopband=(5.0, 800.0),
+    gpass=1.0,
+    gstop=30.0
+):
+    """
+    Diseña un filtro pasabanda IIR Butterworth para EMG superficial.
+
+    Parámetros:
+    fs       : frecuencia de muestreo [Hz]
+    passband : banda útil EMG [Hz]
+    stopband : banda de rechazo [Hz]
+    gpass    : pérdida máxima en banda pasante [dB]
+    gstop    : atenuación mínima en rechazo [dB]
+
+    Retorna:
+    sos : secciones de segundo orden
+    N   : orden del filtro
+    Wn  : frecuencias críticas calculadas
+    """
+    N, Wn = buttord(
+        wp=list(passband),
+        ws=list(stopband),
+        gpass=gpass,
+        gstop=gstop,
+        fs=fs
+    )
+
+    sos = butter(
+        N=N,
+        Wn=Wn,
+        btype="bandpass",
+        fs=fs,
+        output="sos"
+    )
+
+    return sos, N, Wn
+```
+
+---
+
+## Uso de la función
+
+```{python}
+sos2, N2, Wn2 = design_emg_bandpass_iir(fs=2000)
+
+y2 = sosfiltfilt(sos2, x)
+
+print("Orden:", N2)
+print("Frecuencias críticas:", Wn2)
+```
+
+---
+
+## Validación mínima recomendada
+
+Antes de usar el filtro en datos reales, revisar:
+
+1. respuesta en frecuencia
+2. estabilidad numérica
+3. efecto temporal
+4. espectro antes/después
+5. sensibilidad a distintas bandas
+
+Nunca aplicar un filtro EMG sin reportar:
+
+$$
+f_s,\quad f_L,\quad f_H,\quad \text{orden},\quad \text{familia},\quad \text{método de aplicación}
+$$
+
+---
+
+## Resumen del diseño
+
+Filtro elegido:
+
+$$
+\text{IIR Butterworth pasabanda}
+$$
+
+$$
+20\text{ Hz} \leq f \leq 450\text{ Hz}
+$$
+
+$$
+f_s = 2000\text{ Hz}
+$$
+
+Implementación:
+
+```python
+sos = butter(N, Wn, btype="bandpass", fs=fs, output="sos")
+y = sosfiltfilt(sos, x)
+```
+
+Justificación:
+
+- 20 Hz reduce movimiento y deriva
+- 450 Hz preserva EMG superficial útil
+- Butterworth evita ondulación en banda útil
+- IIR reduce costo computacional
+- SOS mejora estabilidad
+- `filtfilt` evita desfase en análisis offline
