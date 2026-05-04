@@ -1,0 +1,1129 @@
+---
+title: "Regresión lineal y regresión logística: fundamentos teóricos, supuestos y aplicación"
+subtitle: "Reporte académico."
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
+lang: es
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    number-sections: true
+    code-fold: true
+    code-summary: "Mostrar código"
+    embed-resources: true
+    theme: cosmo
+    df-print: paged
+jupyter: python3
+execute:
+  warning: false
+  message: false
+---
+
+# Introducción
+
+La regresión lineal y la regresión logística son dos modelos fundamentales en estadística aplicada, ciencia de datos, epidemiología, ingeniería biomédica y aprendizaje automático. Aunque suelen presentarse como técnicas predictivas, su importancia principal radica en que permiten formalizar relaciones entre variables mediante modelos probabilísticos explícitos.
+
+La regresión lineal se utiliza cuando la variable respuesta es cuantitativa continua. Su objetivo básico es modelar el valor esperado condicional de una variable dependiente en función de un conjunto de variables explicativas. Por ejemplo, puede emplearse para estimar el tiempo requerido por una persona mayor para completar una prueba funcional a partir de su edad, velocidad de marcha y fuerza muscular.
+
+La regresión logística se utiliza cuando la variable respuesta es categórica binaria. Su objetivo es modelar la probabilidad de ocurrencia de un evento. Por ejemplo, puede utilizarse para estimar la probabilidad de que una persona sea clasificada como de alto riesgo de caída a partir de indicadores biomecánicos o clínicos.
+
+Ambos modelos comparten una estructura conceptual: relacionan una variable respuesta con un conjunto de predictores. Sin embargo, difieren en la naturaleza de la variable dependiente, en la función matemática que conecta los predictores con la respuesta y en el método de estimación de parámetros. En la regresión lineal, la respuesta se modela directamente como una combinación lineal de predictores. En la regresión logística, se modela la transformación logarítmica de la razón de probabilidades, conocida como logit.
+
+Este reporte desarrolla los fundamentos teóricos de ambos modelos, sus supuestos principales, los métodos de estimación, la interpretación de los coeficientes, los criterios diagnósticos y una aplicación reproducible basada en un ejemplo biomédico sintético.
+
+# Planteamiento general del problema de regresión
+
+En un problema de regresión se dispone de un conjunto de observaciones:
+
+$$
+\{(y_i, x_{i1}, x_{i2}, \ldots, x_{ip})\}_{i=1}^{n}
+$$
+
+donde $y_i$ representa la variable respuesta de la observación $i$, mientras que $x_{ij}$ representa el valor de la variable explicativa $j$ en la observación $i$. El objetivo es construir una función que relacione la respuesta con los predictores:
+
+$$
+y_i \approx f(x_{i1}, x_{i2}, \ldots, x_{ip})
+$$
+
+En regresión lineal, $y_i$ es una variable continua y se supone que su media condicional depende linealmente de los predictores. En regresión logística, $y_i$ es binaria, generalmente codificada como 0 o 1, y se modela la probabilidad condicional de observar el evento $y_i=1$.
+
+Conviene distinguir tres usos posibles de los modelos de regresión. El primero es el uso descriptivo, cuyo propósito es resumir asociaciones observadas en los datos. El segundo es el uso predictivo, cuyo propósito es estimar valores futuros o probabilidades de ocurrencia. El tercero es el uso explicativo o inferencial, cuyo propósito es interpretar relaciones entre variables bajo un marco estadístico explícito. Un error frecuente consiste en interpretar automáticamente los coeficientes de una regresión como efectos causales. Esa interpretación solo es válida bajo supuestos adicionales de diseño, identificación causal, medición adecuada y control de confusión.
+
+# Regresión lineal
+
+## Modelo teórico
+
+La regresión lineal múltiple se expresa como:
+
+$$
+y_i = \beta_0 + \beta_1x_{i1} + \beta_2x_{i2} + \cdots + \beta_px_{ip} + \varepsilon_i
+$$
+
+donde $y_i$ es la variable respuesta, $\beta_0$ es el intercepto, $\beta_j$ es el coeficiente asociado al predictor $x_j$, y $\varepsilon_i$ es el término de error aleatorio para la observación $i$.
+
+En notación matricial, el modelo se escribe como:
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}
+$$
+
+donde:
+
+$$
+\mathbf{y} =
+\begin{bmatrix}
+y_1 \\
+y_2 \\
+\vdots \\
+y_n
+\end{bmatrix},
+\quad
+\mathbf{X} =
+\begin{bmatrix}
+1 & x_{11} & x_{12} & \cdots & x_{1p} \\
+1 & x_{21} & x_{22} & \cdots & x_{2p} \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & x_{n1} & x_{n2} & \cdots & x_{np}
+\end{bmatrix},
+\quad
+\boldsymbol{\beta} =
+\begin{bmatrix}
+\beta_0 \\
+\beta_1 \\
+\vdots \\
+\beta_p
+\end{bmatrix}
+$$
+
+El modelo no afirma que cada observación individual sea exactamente igual a una combinación lineal de predictores. Lo que se modela es el valor esperado condicional:
+
+$$
+\mathbb{E}(Y \mid X_1, X_2, \ldots, X_p)
+=
+\beta_0 + \beta_1X_1 + \beta_2X_2 + \cdots + \beta_pX_p
+$$
+
+Por tanto, la regresión lineal es un modelo para la media condicional de una variable continua.
+
+## Interpretación de los coeficientes
+
+El coeficiente $\beta_j$ representa el cambio esperado en la variable respuesta cuando $X_j$ aumenta en una unidad, manteniendo constantes los demás predictores del modelo. Esta frase es esencial: en regresión múltiple, la interpretación de cada coeficiente es condicional a las demás variables incluidas.
+
+Por ejemplo, si se modela el tiempo de ejecución de una prueba funcional en segundos y uno de los predictores es la velocidad de marcha en metros por segundo, un coeficiente $\beta_j=-2.0$ indicaría que, manteniendo constantes las demás variables, un aumento de una unidad en la velocidad de marcha se asocia con una disminución promedio de dos segundos en el tiempo de la prueba.
+
+El intercepto $\beta_0$ corresponde al valor esperado de la respuesta cuando todos los predictores valen cero. Su interpretación puede no ser sustantivamente relevante si el valor cero no pertenece al rango plausible de las variables. Por ejemplo, una edad igual a cero años no sería interpretable en un estudio de adultos mayores.
+
+## Estimación por mínimos cuadrados ordinarios
+
+El método clásico para estimar los coeficientes de una regresión lineal es el método de mínimos cuadrados ordinarios. Este método busca los valores de $\boldsymbol{\beta}$ que minimizan la suma de cuadrados de los residuos:
+
+$$
+S(\boldsymbol{\beta}) =
+\sum_{i=1}^{n}(y_i - \hat{y}_i)^2
+$$
+
+donde:
+
+$$
+\hat{y}_i =
+\hat{\beta}_0 + \hat{\beta}_1x_{i1} + \cdots + \hat{\beta}_px_{ip}
+$$
+
+El residuo de la observación $i$ se define como:
+
+$$
+e_i = y_i - \hat{y}_i
+$$
+
+En forma matricial, la función objetivo es:
+
+$$
+S(\boldsymbol{\beta}) =
+(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^T
+(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})
+$$
+
+La solución de mínimos cuadrados, cuando $\mathbf{X}^T\mathbf{X}$ es invertible, es:
+
+$$
+\hat{\boldsymbol{\beta}} =
+(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}
+$$
+
+Esta expresión muestra que la estimación depende de la geometría de la matriz de diseño. Si existe colinealidad perfecta entre predictores, la matriz $\mathbf{X}^T\mathbf{X}$ no es invertible y el modelo no tiene una solución única.
+
+## Varianza residual y error estándar de los coeficientes
+
+La varianza del error se estima como:
+
+$$
+\hat{\sigma}^2 =
+\frac{1}{n-p-1}
+\sum_{i=1}^{n}e_i^2
+$$
+
+El denominador $n-p-1$ corresponde a los grados de libertad residuales, porque se estiman $p+1$ parámetros incluyendo el intercepto.
+
+La matriz de varianza-covarianza de los coeficientes estimados es:
+
+$$
+\widehat{\text{Var}}(\hat{\boldsymbol{\beta}})
+=
+\hat{\sigma}^2
+(\mathbf{X}^T\mathbf{X})^{-1}
+$$
+
+Los errores estándar de los coeficientes se obtienen como la raíz cuadrada de los elementos diagonales de esta matriz. Estos errores estándar permiten construir intervalos de confianza y pruebas de hipótesis sobre los coeficientes.
+
+## Prueba de hipótesis sobre un coeficiente
+
+Para evaluar si un predictor tiene una asociación estadísticamente detectable con la respuesta, suele plantearse:
+
+$$
+H_0: \beta_j = 0
+$$
+
+frente a:
+
+$$
+H_1: \beta_j \neq 0
+$$
+
+El estadístico de prueba es:
+
+$$
+t =
+\frac{\hat{\beta}_j}{SE(\hat{\beta}_j)}
+$$
+
+donde $SE(\hat{\beta}_j)$ es el error estándar del coeficiente estimado. Bajo los supuestos clásicos del modelo lineal, este estadístico sigue una distribución $t$ de Student con $n-p-1$ grados de libertad.
+
+No obstante, una prueba estadística significativa no implica causalidad ni relevancia clínica. La significancia estadística depende del tamaño del efecto, la variabilidad residual, la colinealidad entre predictores y el tamaño muestral.
+
+## Medidas de ajuste
+
+La medida de ajuste más conocida en regresión lineal es el coeficiente de determinación:
+
+$$
+R^2 =
+1 -
+\frac{\sum_{i=1}^{n}(y_i-\hat{y}_i)^2}
+{\sum_{i=1}^{n}(y_i-\bar{y})^2}
+$$
+
+Este índice representa la proporción de variabilidad observada en la respuesta que es explicada por el modelo lineal. Sin embargo, $R^2$ siempre aumenta o permanece igual cuando se agregan predictores, aunque estos no sean sustantivamente útiles.
+
+Por esta razón se emplea también el coeficiente de determinación ajustado:
+
+$$
+R^2_{\text{ajustado}}
+=
+1 -
+(1-R^2)\frac{n-1}{n-p-1}
+$$
+
+El valor ajustado penaliza la inclusión de predictores innecesarios. En contextos predictivos, el rendimiento del modelo debe evaluarse idealmente sobre datos no usados para ajustar los parámetros.
+
+## Supuestos principales de la regresión lineal
+
+La regresión lineal clásica descansa sobre un conjunto de supuestos. Algunos son necesarios para obtener estimadores insesgados; otros son necesarios para que las pruebas de hipótesis e intervalos de confianza tengan validez exacta.
+
+### Linealidad en los parámetros
+
+El modelo supone que la media condicional de la respuesta es lineal en los parámetros:
+
+$$
+\mathbb{E}(Y \mid \mathbf{X}) = \mathbf{X}\boldsymbol{\beta}
+$$
+
+Esto no obliga a que todos los predictores entren en forma lineal simple. Es posible incluir transformaciones como $X^2$, $\log(X)$ o interacciones $X_1X_2$, siempre que el modelo sea lineal respecto a los coeficientes. Por ejemplo:
+
+$$
+Y = \beta_0 + \beta_1X + \beta_2X^2 + \varepsilon
+$$
+
+sigue siendo una regresión lineal en los parámetros, aunque no sea una línea recta en $X$.
+
+### Exogeneidad o media condicional cero del error
+
+El supuesto más crítico es:
+
+$$
+\mathbb{E}(\varepsilon \mid \mathbf{X}) = 0
+$$
+
+Este supuesto indica que, una vez considerados los predictores incluidos en el modelo, el error no contiene información sistemática relacionada con ellos. Si se omiten variables relevantes correlacionadas con los predictores incluidos, este supuesto puede violarse y los coeficientes pueden quedar sesgados.
+
+En estudios observacionales biomédicos, este supuesto es exigente. Por ejemplo, si se intenta estimar la asociación entre velocidad de marcha y riesgo funcional sin controlar por edad, comorbilidad o fuerza muscular, el coeficiente de velocidad puede absorber parcialmente efectos que pertenecen a esas variables omitidas.
+
+### Independencia de los errores
+
+Se supone que los errores de diferentes observaciones son independientes entre sí:
+
+$$
+\text{Cov}(\varepsilon_i, \varepsilon_j)=0,
+\quad i\neq j
+$$
+
+Este supuesto puede fallar en datos longitudinales, mediciones repetidas, datos agrupados por institución o sujetos evaluados varias veces. Si una misma persona aporta múltiples ensayos de marcha, las observaciones no deben tratarse ingenuamente como independientes. En ese caso pueden requerirse modelos mixtos, modelos de efectos aleatorios o errores estándar robustos por conglomerados.
+
+### Homocedasticidad
+
+La homocedasticidad significa que la varianza del error es constante a través del rango de los predictores:
+
+$$
+\text{Var}(\varepsilon_i \mid \mathbf{X}) = \sigma^2
+$$
+
+Cuando la varianza cambia con el nivel de predicción, existe heterocedasticidad. Este problema no necesariamente sesga los coeficientes de mínimos cuadrados si la exogeneidad se mantiene, pero sí afecta los errores estándar, los intervalos de confianza y las pruebas de hipótesis.
+
+### Ausencia de colinealidad perfecta
+
+No debe existir una combinación lineal exacta entre predictores. Si un predictor puede expresarse exactamente como combinación de otros, la matriz $\mathbf{X}^T\mathbf{X}$ no es invertible. Además, la colinealidad alta, aunque no sea perfecta, puede inflar los errores estándar y hacer inestables las estimaciones.
+
+### Normalidad de los errores para inferencia exacta
+
+Para que las pruebas $t$ y $F$ tengan validez exacta en muestras pequeñas, suele asumirse:
+
+$$
+\varepsilon_i \sim N(0,\sigma^2)
+$$
+
+La normalidad no es necesaria para que los coeficientes de mínimos cuadrados sean insesgados bajo los supuestos de exogeneidad. Sin embargo, sí facilita la inferencia exacta. En muestras grandes, los resultados asintóticos permiten relajar parcialmente este supuesto.
+
+# Regresión logística
+
+## Naturaleza del problema
+
+La regresión logística se utiliza cuando la variable respuesta es binaria:
+
+$$
+Y_i \in \{0,1\}
+$$
+
+Por ejemplo, $Y_i=1$ puede indicar presencia de alto riesgo de caída, mientras que $Y_i=0$ puede indicar ausencia de alto riesgo. La cantidad de interés no es directamente el valor de $Y_i$, sino la probabilidad condicional:
+
+$$
+P(Y_i=1 \mid \mathbf{X}_i)
+$$
+
+Un intento ingenuo sería aplicar regresión lineal directamente sobre una variable binaria. Esto produce el llamado modelo de probabilidad lineal:
+
+$$
+P(Y_i=1 \mid \mathbf{X}_i) =
+\beta_0 + \beta_1X_{i1} + \cdots + \beta_pX_{ip}
+$$
+
+El problema es que una combinación lineal puede producir predicciones menores que cero o mayores que uno, lo cual es incompatible con la definición de probabilidad. La regresión logística corrige este problema mediante una función de enlace que transforma la probabilidad al rango de los números reales.
+
+## Modelo logístico
+
+Sea:
+
+$$
+\pi_i = P(Y_i=1 \mid \mathbf{X}_i)
+$$
+
+La regresión logística modela el logit de la probabilidad:
+
+$$
+\log\left(\frac{\pi_i}{1-\pi_i}\right)
+=
+\beta_0 + \beta_1x_{i1} + \cdots + \beta_px_{ip}
+$$
+
+El término:
+
+$$
+\frac{\pi_i}{1-\pi_i}
+$$
+
+se denomina razón de probabilidades. Representa la relación entre la probabilidad de ocurrencia del evento y la probabilidad de no ocurrencia.
+
+Al despejar $\pi_i$, se obtiene la función logística:
+
+$$
+\pi_i =
+\frac{1}{1+\exp[-(\beta_0+\beta_1x_{i1}+\cdots+\beta_px_{ip})]}
+$$
+
+Esta función garantiza que toda predicción se encuentre entre cero y uno.
+
+## Interpretación de los coeficientes
+
+En regresión logística, el coeficiente $\beta_j$ representa el cambio esperado en el logaritmo de la razón de probabilidades por cada aumento de una unidad en $X_j$, manteniendo constantes los demás predictores.
+
+Como esta escala no es intuitiva, suele exponenciarse el coeficiente:
+
+$$
+\exp(\beta_j)
+$$
+
+Este valor se interpreta como una razón de probabilidades. Si $\exp(\beta_j)=1.5$, entonces un aumento de una unidad en $X_j$ se asocia con una multiplicación por 1.5 de la razón de probabilidades del evento, manteniendo constantes los demás predictores.
+
+Es importante no confundir razón de probabilidades con razón de riesgos. Cuando el evento es común, la razón de probabilidades puede alejarse considerablemente de la razón de probabilidades absolutas o de la razón de riesgos. Por tanto, la interpretación clínica debe hacerse con cuidado.
+
+## Estimación por máxima verosimilitud
+
+A diferencia de la regresión lineal clásica, la regresión logística no se estima mediante mínimos cuadrados ordinarios. Se estima mediante máxima verosimilitud.
+
+Dado que $Y_i$ es binaria, se modela como una variable Bernoulli:
+
+$$
+Y_i \sim \text{Bernoulli}(\pi_i)
+$$
+
+La función de probabilidad para una observación es:
+
+$$
+P(Y_i=y_i)=\pi_i^{y_i}(1-\pi_i)^{1-y_i}
+$$
+
+Para $n$ observaciones independientes, la verosimilitud es:
+
+$$
+L(\boldsymbol{\beta}) =
+\prod_{i=1}^{n}
+\pi_i^{y_i}(1-\pi_i)^{1-y_i}
+$$
+
+La log-verosimilitud es:
+
+$$
+\ell(\boldsymbol{\beta}) =
+\sum_{i=1}^{n}
+\left[
+y_i\log(\pi_i)
++
+(1-y_i)\log(1-\pi_i)
+\right]
+$$
+
+El estimador de máxima verosimilitud es el valor de $\boldsymbol{\beta}$ que maximiza esta función. No existe, en general, una solución cerrada análoga a la fórmula matricial de mínimos cuadrados. Por ello se emplean algoritmos iterativos, como Newton-Raphson o métodos relacionados.
+
+## Inferencia en regresión logística
+
+Los coeficientes estimados por máxima verosimilitud tienen propiedades asintóticas. Bajo condiciones regulares y muestras suficientemente grandes:
+
+$$
+\hat{\boldsymbol{\beta}}
+\approx
+N(\boldsymbol{\beta}, \mathbf{I}^{-1})
+$$
+
+donde $\mathbf{I}$ es la matriz de información de Fisher. Esta aproximación permite construir errores estándar, intervalos de confianza y pruebas de hipótesis.
+
+Una prueba común es la prueba de Wald:
+
+$$
+z =
+\frac{\hat{\beta}_j}{SE(\hat{\beta}_j)}
+$$
+
+También pueden emplearse pruebas de razón de verosimilitudes, comparando un modelo reducido contra un modelo completo.
+
+## Supuestos principales de la regresión logística
+
+### Variable respuesta binaria correctamente definida
+
+La respuesta debe representar un evento binario bien definido. La codificación 0 y 1 debe ser inequívoca. En aplicaciones clínicas, es necesario justificar el punto de corte usado para definir el evento. Por ejemplo, clasificar alto riesgo de caída con base en un umbral funcional requiere sustento clínico o metodológico.
+
+### Independencia de las observaciones
+
+Las observaciones deben ser independientes. Si existen mediciones repetidas por sujeto, datos longitudinales o agrupamientos por institución, la regresión logística estándar puede subestimar la incertidumbre. En estos casos pueden requerirse modelos logísticos mixtos, ecuaciones de estimación generalizadas o errores estándar robustos.
+
+### Linealidad en el logit
+
+La regresión logística no exige que la probabilidad sea lineal en los predictores. Lo que exige es que el logit de la probabilidad sea lineal respecto a los predictores:
+
+$$
+\log\left(\frac{\pi}{1-\pi}\right)
+=
+\beta_0 + \beta_1X_1 + \cdots + \beta_pX_p
+$$
+
+Si la relación real entre un predictor continuo y el logit es no lineal, el modelo puede estar mal especificado. En tales casos pueden usarse transformaciones, términos polinomiales o funciones suaves.
+
+### Ausencia de separación perfecta
+
+La separación perfecta ocurre cuando una combinación de predictores clasifica perfectamente los eventos y no eventos. En ese caso, los coeficientes de máxima verosimilitud pueden tender a infinito y el modelo no converge adecuadamente.
+
+Este problema es frecuente cuando la muestra es pequeña, el número de predictores es alto o existen variables que casi determinan el desenlace.
+
+### Ausencia de colinealidad extrema
+
+La colinealidad entre predictores dificulta la estimación estable de los coeficientes. Aunque la colinealidad no impide necesariamente la predicción, sí afecta la interpretación individual de los coeficientes.
+
+### Tamaño muestral suficiente
+
+La regresión logística requiere suficiente información en ambas clases. No basta con tener muchas observaciones si el evento es raro. Una muestra con pocos eventos puede producir estimaciones inestables, intervalos de confianza amplios y sobreajuste.
+
+### Correcta especificación del modelo
+
+El modelo debe incluir predictores relevantes, evitar variables redundantes y representar adecuadamente relaciones no lineales o interacciones importantes. La omisión de predictores relevantes puede sesgar asociaciones, especialmente en análisis explicativos.
+
+# Comparación conceptual entre regresión lineal y regresión logística
+
+| Aspecto | Regresión lineal | Regresión logística |
+|---|---|---|
+| Variable respuesta | Continua | Binaria |
+| Cantidad modelada | Media condicional | Probabilidad condicional |
+| Forma del modelo | $Y = X\beta + \varepsilon$ | $\log(\pi/(1-\pi)) = X\beta$ |
+| Método de estimación | Mínimos cuadrados ordinarios | Máxima verosimilitud |
+| Rango de predicción | Puede ser cualquier número real | Entre 0 y 1 |
+| Error típico | Normal con varianza constante, bajo el modelo clásico | Bernoulli |
+| Interpretación de coeficientes | Cambio esperado en la respuesta | Cambio en log-razón de probabilidades |
+| Diagnóstico central | Residuos, homocedasticidad, normalidad, influencia | Calibración, discriminación, separación, ajuste del logit |
+| Uso típico | Predicción de magnitudes continuas | Estimación de probabilidad de evento |
+
+# Ejemplo aplicado: evaluación funcional y riesgo de caída
+
+## Contexto del ejemplo
+
+Se construirá un conjunto de datos sintético inspirado en un problema biomédico: la evaluación funcional de adultos mayores. El objetivo es ilustrar dos tareas complementarias.
+
+Primero, se ajustará una regresión lineal para estimar el tiempo de ejecución de la prueba funcional "Timed Up and Go", expresado en segundos. Esta variable será tratada como continua.
+
+Segundo, se ajustará una regresión logística para estimar la probabilidad de alto riesgo de caída. Esta variable será binaria.
+
+Las variables explicativas serán:
+
+| Variable | Descripción |
+|---|---|
+| `edad` | Edad en años |
+| `velocidad_marcha` | Velocidad de marcha en metros por segundo |
+| `tiempo_apoyo_doble` | Porcentaje del ciclo de marcha en apoyo doble |
+| `fuerza_extensores` | Fuerza relativa de extensores de rodilla |
+| `sexo` | Variable binaria simulada: 0 y 1 |
+
+El conjunto de datos será sintético. Por tanto, no debe interpretarse como evidencia clínica real. Su finalidad es didáctica: mostrar cómo se especifican, ajustan, diagnostican e interpretan ambos modelos.
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
+from scipy import stats
+from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+from sklearn.metrics import (
+    confusion_matrix,
+    classification_report,
+    roc_auc_score,
+    roc_curve,
+    brier_score_loss,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
+from sklearn.calibration import calibration_curve
+
+np.random.seed(42)
+```
+
+## Simulación del conjunto de datos
+
+```{python}
+n = 240
+
+edad = np.random.normal(loc=72, scale=7, size=n)
+edad = np.clip(edad, 60, 90)
+
+sexo = np.random.binomial(1, 0.52, size=n)
+
+velocidad_marcha = (
+    1.35
+    - 0.012 * (edad - 60)
+    - 0.08 * sexo
+    + np.random.normal(0, 0.12, size=n)
+)
+velocidad_marcha = np.clip(velocidad_marcha, 0.35, 1.6)
+
+tiempo_apoyo_doble = (
+    18
+    + 0.22 * (edad - 60)
+    - 5.5 * velocidad_marcha
+    + np.random.normal(0, 2.5, size=n)
+)
+tiempo_apoyo_doble = np.clip(tiempo_apoyo_doble, 10, 38)
+
+fuerza_extensores = (
+    1.8
+    - 0.015 * (edad - 60)
+    + 0.18 * sexo
+    + np.random.normal(0, 0.18, size=n)
+)
+fuerza_extensores = np.clip(fuerza_extensores, 0.6, 2.4)
+
+error_lineal = np.random.normal(0, 1.1, size=n)
+
+tug = (
+    7.5
+    + 0.08 * edad
+    - 2.9 * velocidad_marcha
+    + 0.07 * tiempo_apoyo_doble
+    - 0.85 * fuerza_extensores
+    + 0.25 * sexo
+    + error_lineal
+)
+
+logit_riesgo = (
+    -8.0
+    + 0.07 * edad
+    - 2.6 * velocidad_marcha
+    + 0.09 * tiempo_apoyo_doble
+    - 0.75 * fuerza_extensores
+    + 0.35 * sexo
+)
+
+prob_riesgo = 1 / (1 + np.exp(-logit_riesgo))
+alto_riesgo_caida = np.random.binomial(1, prob_riesgo, size=n)
+
+datos = pd.DataFrame({
+    "edad": edad,
+    "sexo": sexo,
+    "velocidad_marcha": velocidad_marcha,
+    "tiempo_apoyo_doble": tiempo_apoyo_doble,
+    "fuerza_extensores": fuerza_extensores,
+    "tug": tug,
+    "prob_riesgo_teorica": prob_riesgo,
+    "alto_riesgo_caida": alto_riesgo_caida
+})
+
+datos.head()
+```
+
+## Descripción inicial de los datos
+
+```{python}
+datos.describe().T
+```
+
+```{python}
+datos["alto_riesgo_caida"].value_counts(normalize=True).rename("proporcion")
+```
+
+La proporción de eventos es relevante para la regresión logística. Si una clase es extremadamente minoritaria, la estimación y la evaluación del modelo pueden requerir estrategias adicionales, como validación estratificada, ponderación de clases o métodos específicos para eventos raros.
+
+# Aplicación de regresión lineal
+
+## Especificación del modelo
+
+Se desea modelar el tiempo de ejecución de la prueba funcional `tug` como función de edad, sexo, velocidad de marcha, tiempo de apoyo doble y fuerza de extensores.
+
+El modelo es:
+
+$$
+\text{tug}_i =
+\beta_0
++
+\beta_1\text{edad}_i
++
+\beta_2\text{sexo}_i
++
+\beta_3\text{velocidad\_marcha}_i
++
+\beta_4\text{tiempo\_apoyo\_doble}_i
++
+\beta_5\text{fuerza\_extensores}_i
++
+\varepsilon_i
+$$
+
+Este modelo pretende estimar la media condicional del tiempo funcional. No debe interpretarse automáticamente como un modelo causal. Para una interpretación causal, sería necesario justificar que no existen confusores no medidos relevantes, que la dirección temporal es adecuada y que las variables fueron medidas sin error sustantivo.
+
+```{python}
+modelo_lineal = smf.ols(
+    formula="tug ~ edad + sexo + velocidad_marcha + tiempo_apoyo_doble + fuerza_extensores",
+    data=datos
+).fit()
+
+print(modelo_lineal.summary())
+```
+
+## Interpretación de los coeficientes
+
+```{python}
+coef_lineal = modelo_lineal.params
+conf_lineal = modelo_lineal.conf_int()
+tabla_coef_lineal = pd.DataFrame({
+    "coeficiente": coef_lineal,
+    "limite_inferior_95": conf_lineal[0],
+    "limite_superior_95": conf_lineal[1],
+    "valor_p": modelo_lineal.pvalues
+})
+
+tabla_coef_lineal
+```
+
+La interpretación debe hacerse variable por variable y manteniendo constantes los demás predictores. Si el coeficiente de `velocidad_marcha` es negativo, el modelo indica que una mayor velocidad de marcha se asocia con menor tiempo esperado en la prueba funcional, manteniendo constantes edad, sexo, apoyo doble y fuerza de extensores.
+
+Si el coeficiente de `edad` es positivo, el modelo indica que mayor edad se asocia con mayor tiempo esperado en la prueba. Esa asociación no implica por sí sola un efecto causal de la edad, sino una relación condicional dentro del sistema de variables incluido.
+
+## Evaluación del ajuste
+
+```{python}
+ajuste_lineal = pd.DataFrame({
+    "metrica": [
+        "R cuadrado",
+        "R cuadrado ajustado",
+        "Error estándar residual",
+        "Número de observaciones"
+    ],
+    "valor": [
+        modelo_lineal.rsquared,
+        modelo_lineal.rsquared_adj,
+        np.sqrt(modelo_lineal.scale),
+        modelo_lineal.nobs
+    ]
+})
+
+ajuste_lineal
+```
+
+El coeficiente de determinación resume la fracción de variabilidad de `tug` explicada por el conjunto de predictores. Sin embargo, un valor alto de $R^2$ no garantiza validez causal ni ausencia de sesgo. Además, un modelo puede tener buen ajuste global y aun así violar supuestos relevantes.
+
+## Diagnóstico de residuos
+
+Los residuos permiten evaluar si el modelo presenta patrones sistemáticos no explicados. Si el modelo es adecuado, los residuos deberían distribuirse alrededor de cero sin estructura clara respecto a los valores ajustados.
+
+```{python}
+datos["tug_ajustado"] = modelo_lineal.fittedvalues
+datos["residuo_lineal"] = modelo_lineal.resid
+
+plt.figure(figsize=(7, 5))
+plt.scatter(datos["tug_ajustado"], datos["residuo_lineal"], alpha=0.75)
+plt.axhline(0, linestyle="--")
+plt.xlabel("Valores ajustados")
+plt.ylabel("Residuos")
+plt.title("Residuos frente a valores ajustados")
+plt.show()
+```
+
+Un patrón en forma de embudo sugeriría heterocedasticidad. Una curvatura sistemática sugeriría falta de linealidad o ausencia de términos no lineales relevantes.
+
+## Normalidad aproximada de los residuos
+
+```{python}
+fig = sm.qqplot(datos["residuo_lineal"], line="45", fit=True)
+plt.title("Gráfico cuantil-cuantil de los residuos")
+plt.show()
+```
+
+```{python}
+plt.figure(figsize=(7, 5))
+plt.hist(datos["residuo_lineal"], bins=20)
+plt.xlabel("Residuo")
+plt.ylabel("Frecuencia")
+plt.title("Distribución de los residuos")
+plt.show()
+```
+
+La normalidad de los residuos es especialmente relevante para inferencia exacta en muestras pequeñas. En muestras moderadas o grandes, la inferencia basada en aproximaciones asintóticas suele ser menos sensible a desviaciones moderadas de normalidad.
+
+## Prueba de homocedasticidad
+
+La prueba de Breusch-Pagan evalúa si la varianza de los residuos depende sistemáticamente de los predictores. La hipótesis nula es homocedasticidad.
+
+```{python}
+bp_test = het_breuschpagan(
+    modelo_lineal.resid,
+    modelo_lineal.model.exog
+)
+
+tabla_bp = pd.DataFrame({
+    "estadistico": [
+        "Multiplicador de Lagrange",
+        "Valor p del multiplicador",
+        "Estadístico F",
+        "Valor p del estadístico F"
+    ],
+    "valor": bp_test
+})
+
+tabla_bp
+```
+
+Un valor p pequeño sugiere evidencia contra la homocedasticidad. En ese caso puede considerarse el uso de errores estándar robustos, transformaciones de la respuesta o una especificación alternativa del modelo.
+
+## Independencia de residuos
+
+```{python}
+dw = durbin_watson(modelo_lineal.resid)
+dw
+```
+
+El estadístico de Durbin-Watson se usa como indicador de autocorrelación serial. Valores cercanos a 2 son compatibles con ausencia de autocorrelación de primer orden. En datos transversales independientes suele ser menos crítico que en series temporales o datos longitudinales.
+
+## Colinealidad entre predictores
+
+La colinealidad puede evaluarse mediante el factor de inflación de la varianza. Valores altos indican que un predictor está fuertemente explicado por otros predictores, lo cual puede aumentar la incertidumbre de su coeficiente.
+
+```{python}
+X = modelo_lineal.model.exog
+nombres_predictores = modelo_lineal.model.exog_names
+
+tabla_vif = pd.DataFrame({
+    "variable": nombres_predictores,
+    "factor_inflacion_varianza": [
+        variance_inflation_factor(X, i) for i in range(X.shape[1])
+    ]
+})
+
+tabla_vif
+```
+
+Un factor de inflación de la varianza alto no necesariamente invalida la predicción, pero sí limita la interpretación individual de los coeficientes. En estudios explicativos, la colinealidad debe analizarse con especial cuidado.
+
+## Observaciones influyentes
+
+Una observación influyente es aquella que modifica de forma importante la estimación de los coeficientes. Puede detectarse mediante distancia de Cook.
+
+```{python}
+influence = modelo_lineal.get_influence()
+cooks_d = influence.cooks_distance[0]
+
+datos["distancia_cook"] = cooks_d
+
+plt.figure(figsize=(8, 5))
+plt.stem(np.arange(len(cooks_d)), cooks_d, markerfmt=",")
+plt.xlabel("Índice de observación")
+plt.ylabel("Distancia de Cook")
+plt.title("Distancia de Cook por observación")
+plt.show()
+
+datos.sort_values("distancia_cook", ascending=False).head(10)
+```
+
+Una observación influyente no debe eliminarse automáticamente. Primero debe determinarse si corresponde a un error de captura, una condición extrema plausible o una subpoblación no representada adecuadamente por el modelo.
+
+# Aplicación de regresión logística
+
+## Especificación del modelo
+
+Ahora se desea modelar la probabilidad de alto riesgo de caída:
+
+$$
+P(Y_i=1 \mid \mathbf{X}_i)
+$$
+
+donde $Y_i=1$ indica alto riesgo de caída. El modelo logístico será:
+
+$$
+\log\left(
+\frac{\pi_i}{1-\pi_i}
+\right)
+=
+\beta_0
++
+\beta_1\text{edad}_i
++
+\beta_2\text{sexo}_i
++
+\beta_3\text{velocidad\_marcha}_i
++
+\beta_4\text{tiempo\_apoyo\_doble}_i
++
+\beta_5\text{fuerza\_extensores}_i
+$$
+
+donde:
+
+$$
+\pi_i = P(\text{alto riesgo de caída}_i=1 \mid \mathbf{X}_i)
+$$
+
+```{python}
+modelo_logistico = smf.logit(
+    formula="alto_riesgo_caida ~ edad + sexo + velocidad_marcha + tiempo_apoyo_doble + fuerza_extensores",
+    data=datos
+).fit(disp=False)
+
+print(modelo_logistico.summary())
+```
+
+## Coeficientes, razones de probabilidades e intervalos de confianza
+
+```{python}
+coef_log = modelo_logistico.params
+conf_log = modelo_logistico.conf_int()
+
+tabla_logistica = pd.DataFrame({
+    "coeficiente_logit": coef_log,
+    "razon_probabilidades": np.exp(coef_log),
+    "limite_inferior_95_or": np.exp(conf_log[0]),
+    "limite_superior_95_or": np.exp(conf_log[1]),
+    "valor_p": modelo_logistico.pvalues
+})
+
+tabla_logistica
+```
+
+La columna `coeficiente_logit` está en escala logit. La columna `razon_probabilidades` corresponde a $\exp(\beta)$, que suele ser más interpretable.
+
+Si la razón de probabilidades de `velocidad_marcha` es menor que 1, el modelo indica que una mayor velocidad de marcha se asocia con una reducción de la razón de probabilidades de alto riesgo de caída, manteniendo constantes los demás predictores.
+
+Si la razón de probabilidades de `tiempo_apoyo_doble` es mayor que 1, el modelo indica que un mayor porcentaje de apoyo doble se asocia con mayor razón de probabilidades de alto riesgo. Esta interpretación es coherente con la idea de que el aumento del tiempo de apoyo doble puede reflejar una estrategia compensatoria de estabilidad.
+
+## Predicción de probabilidades
+
+```{python}
+datos["prob_logistica"] = modelo_logistico.predict(datos)
+
+datos[[
+    "edad",
+    "velocidad_marcha",
+    "tiempo_apoyo_doble",
+    "fuerza_extensores",
+    "alto_riesgo_caida",
+    "prob_logistica"
+]].head()
+```
+
+La salida principal de una regresión logística no es una clase, sino una probabilidad. La clasificación en 0 o 1 requiere elegir un umbral. El umbral 0.5 es frecuente, pero no necesariamente óptimo. En contextos clínicos, el umbral debe definirse según las consecuencias relativas de falsos positivos y falsos negativos.
+
+## Clasificación con umbral de 0.5
+
+```{python}
+umbral = 0.5
+datos["prediccion_clase"] = (datos["prob_logistica"] >= umbral).astype(int)
+
+matriz_confusion = confusion_matrix(
+    datos["alto_riesgo_caida"],
+    datos["prediccion_clase"]
+)
+
+matriz_confusion_df = pd.DataFrame(
+    matriz_confusion,
+    index=["Real: no alto riesgo", "Real: alto riesgo"],
+    columns=["Predicho: no alto riesgo", "Predicho: alto riesgo"]
+)
+
+matriz_confusion_df
+```
+
+```{python}
+metricas_clasificacion = pd.DataFrame({
+    "metrica": [
+        "Exactitud",
+        "Precisión",
+        "Sensibilidad",
+        "Puntaje F1",
+        "Área bajo la curva característica operativa del receptor",
+        "Pérdida de Brier"
+    ],
+    "valor": [
+        accuracy_score(datos["alto_riesgo_caida"], datos["prediccion_clase"]),
+        precision_score(datos["alto_riesgo_caida"], datos["prediccion_clase"]),
+        recall_score(datos["alto_riesgo_caida"], datos["prediccion_clase"]),
+        f1_score(datos["alto_riesgo_caida"], datos["prediccion_clase"]),
+        roc_auc_score(datos["alto_riesgo_caida"], datos["prob_logistica"]),
+        brier_score_loss(datos["alto_riesgo_caida"], datos["prob_logistica"])
+    ]
+})
+
+metricas_clasificacion
+```
+
+La exactitud puede ser engañosa si las clases están desbalanceadas. La sensibilidad mide la proporción de eventos correctamente identificados. La precisión mide la proporción de predicciones positivas que realmente son eventos. El área bajo la curva característica operativa del receptor evalúa discriminación, es decir, la capacidad del modelo para asignar mayor probabilidad a sujetos con evento que a sujetos sin evento.
+
+La pérdida de Brier evalúa la calidad probabilística de las predicciones. A diferencia de una métrica puramente clasificatoria, penaliza probabilidades mal calibradas.
+
+## Curva característica operativa del receptor
+
+```{python}
+fpr, tpr, thresholds = roc_curve(
+    datos["alto_riesgo_caida"],
+    datos["prob_logistica"]
+)
+
+auc = roc_auc_score(
+    datos["alto_riesgo_caida"],
+    datos["prob_logistica"]
+)
+
+plt.figure(figsize=(7, 5))
+plt.plot(fpr, tpr, label=f"Área bajo la curva = {auc:.3f}")
+plt.plot([0, 1], [0, 1], linestyle="--")
+plt.xlabel("Tasa de falsos positivos")
+plt.ylabel("Tasa de verdaderos positivos")
+plt.title("Curva característica operativa del receptor")
+plt.legend()
+plt.show()
+```
+
+Esta curva evalúa el desempeño del modelo para todos los umbrales posibles. No selecciona por sí misma el umbral clínico adecuado. En un contexto de riesgo de caída, la selección del umbral debería considerar el costo de no identificar a una persona en alto riesgo frente al costo de clasificar erróneamente a una persona como de alto riesgo.
+
+## Calibración del modelo
+
+La calibración evalúa si las probabilidades predichas corresponden aproximadamente a las frecuencias observadas. Un modelo puede discriminar bien y estar mal calibrado.
+
+```{python}
+fraccion_positivos, prob_media_predicha = calibration_curve(
+    datos["alto_riesgo_caida"],
+    datos["prob_logistica"],
+    n_bins=8,
+    strategy="quantile"
+)
+
+plt.figure(figsize=(7, 5))
+plt.plot(prob_media_predicha, fraccion_positivos, marker="o")
+plt.plot([0, 1], [0, 1], linestyle="--")
+plt.xlabel("Probabilidad media predicha")
+plt.ylabel("Frecuencia observada")
+plt.title("Curva de calibración")
+plt.show()
+```
+
+Una curva cercana a la diagonal sugiere buena calibración. Si el modelo predice probabilidades alrededor de 0.70 para un grupo de sujetos, se esperaría que aproximadamente el 70 por ciento de ellos presenten el evento.
+
+## Evaluación de la linealidad en el logit
+
+Un supuesto importante de la regresión logística es que los predictores continuos tienen una relación aproximadamente lineal con el logit de la probabilidad. Una exploración simple consiste en agrupar los valores predichos o revisar la relación entre cada predictor continuo y el logit estimado.
+
+```{python}
+eps = 1e-6
+datos["prob_logistica_ajustada"] = np.clip(datos["prob_logistica"], eps, 1 - eps)
+datos["logit_estimado"] = np.log(
+    datos["prob_logistica_ajustada"] / (1 - datos["prob_logistica_ajustada"])
+)
+
+predictores_continuos = [
+    "edad",
+    "velocidad_marcha",
+    "tiempo_apoyo_doble",
+    "fuerza_extensores"
+]
+
+for variable in predictores_continuos:
+    plt.figure(figsize=(7, 5))
+    plt.scatter(datos[variable], datos["logit_estimado"], alpha=0.65)
+    plt.xlabel(variable)
+    plt.ylabel("Logit estimado")
+    plt.title(f"Relación entre {variable} y logit estimado")
+    plt.show()
+```
+
+Esta exploración no prueba formalmente el supuesto, pero ayuda a detectar relaciones no lineales evidentes. Si se observan patrones curvos, puede ser necesario incluir términos no lineales, funciones spline o transformar predictores.
+
+# Comparación interpretativa sobre el ejemplo
+
+La regresión lineal y la regresión logística responden preguntas diferentes en el ejemplo.
+
+La regresión lineal responde una pregunta de magnitud continua: ¿cuál es el tiempo esperado de ejecución de una prueba funcional para una persona con determinadas características? Su respuesta se expresa en segundos.
+
+La regresión logística responde una pregunta probabilística: ¿cuál es la probabilidad estimada de que una persona sea clasificada como de alto riesgo de caída? Su respuesta se expresa como probabilidad entre cero y uno.
+
+Ambos modelos pueden compartir predictores, pero no deben interpretarse de la misma manera. En la regresión lineal, un coeficiente se interpreta como cambio esperado en segundos. En la regresión logística, un coeficiente exponenciado se interpreta como multiplicador de la razón de probabilidades.
+
+Además, el objetivo analítico puede cambiar la forma de evaluar el modelo. Para la regresión lineal, interesa revisar residuos, error de predicción, estabilidad de coeficientes y supuestos de inferencia. Para la regresión logística, interesa revisar discriminación, calibración, sensibilidad, especificidad, selección de umbral, separación y estabilidad de las razones de probabilidades.
+
+# Consideraciones metodológicas
+
+## Predicción frente a explicación
+
+Un modelo puede ser útil para predicción aunque algunos coeficientes individuales no sean fácilmente interpretables. También puede ocurrir lo contrario: un modelo puede tener coeficientes interpretables pero capacidad predictiva limitada.
+
+En estudios biomédicos, esta distinción es crítica. Si el objetivo es construir un sistema de alerta temprana de riesgo de caída, la prioridad puede ser la calidad predictiva, la calibración y la validación externa. Si el objetivo es comprender mecanismos biomecánicos asociados al riesgo, la prioridad será la especificación del modelo, el control de confusión y la interpretación de efectos.
+
+## Asociación frente a causalidad
+
+Ni la regresión lineal ni la regresión logística garantizan inferencia causal por sí solas. Para interpretar un coeficiente como efecto causal se requieren condiciones adicionales. Entre ellas se encuentran la correcta dirección temporal, ausencia de confusión no controlada, adecuada medición de variables, ausencia de sesgo de selección y una estrategia explícita de identificación.
+
+Por ejemplo, si se observa que menor velocidad de marcha se asocia con alto riesgo de caída, no puede concluirse automáticamente que aumentar la velocidad de marcha reducirá causalmente el riesgo. La velocidad puede ser un marcador de fragilidad, fuerza muscular, enfermedad neurológica, dolor, miedo a caer u otras condiciones no incluidas en el modelo.
+
+## Sobreajuste
+
+El sobreajuste ocurre cuando el modelo captura ruido específico de la muestra en lugar de patrones generalizables. En regresión lineal puede aparecer al incluir demasiados predictores, interacciones o términos no lineales con una muestra pequeña. En regresión logística puede ser especialmente problemático cuando hay pocos eventos por predictor.
+
+La validación cruzada, la separación entre entrenamiento y prueba, la penalización y la validación externa son estrategias habituales para controlar el sobreajuste.
+
+## Escalamiento y transformación de variables
+
+En regresión lineal clásica no es obligatorio escalar las variables para obtener estimaciones correctas. Sin embargo, el escalamiento puede facilitar la comparación de magnitudes entre coeficientes. En regresión logística, el escalamiento también puede mejorar la estabilidad numérica, especialmente cuando se usan algoritmos de optimización o penalización.
+
+Las transformaciones deben justificarse por la estructura de los datos y no solo por conveniencia computacional. Una transformación logarítmica, por ejemplo, puede ser apropiada cuando una variable es estrictamente positiva y presenta asimetría marcada.
+
+## Interacciones
+
+Una interacción aparece cuando el efecto de un predictor depende del valor de otro. En regresión lineal puede expresarse como:
+
+$$
+Y =
+\beta_0
++
+\beta_1X_1
++
+\beta_2X_2
++
+\beta_3X_1X_2
++
+\varepsilon
+$$
+
+En regresión logística, una interacción indica que el efecto sobre el logit de la probabilidad cambia según otro predictor. En contextos biomédicos, las interacciones son plausibles. Por ejemplo, la asociación entre fuerza muscular y riesgo de caída podría depender de la edad o del deterioro sensorial.
+
+# Extensión del ejemplo: predicción para nuevos sujetos
+
+A continuación se construyen tres perfiles hipotéticos para obtener predicciones de ambos modelos.
+
+```{python}
+nuevos_sujetos = pd.DataFrame({
+    "edad": [65, 74, 84],
+    "sexo": [0, 1, 1],
+    "velocidad_marcha": [1.25, 0.95, 0.65],
+    "tiempo_apoyo_doble": [17, 22, 29],
+    "fuerza_extensores": [1.75, 1.35, 0.95]
+})
+
+nuevos_sujetos["tug_predicho"] = modelo_lineal.predict(nuevos_sujetos)
+nuevos_sujetos["prob_alto_riesgo"] = modelo_logistico.predict(nuevos_sujetos)
+
+nuevos_sujetos
+```
+
+La interpretación debe separar claramente la magnitud funcional estimada y la probabilidad de evento. Un sujeto puede tener un tiempo funcional moderadamente alterado y aun así presentar probabilidad alta de riesgo si varios predictores se combinan desfavorablemente.
+
+# Buenas prácticas para reportar resultados
+
+Un reporte académico de regresión lineal debería incluir la descripción de la muestra, la especificación exacta del modelo, la justificación de predictores, los coeficientes con intervalos de confianza, las métricas de ajuste, el diagnóstico de residuos, la evaluación de colinealidad y una discusión sobre limitaciones.
+
+Un reporte académico de regresión logística debería incluir la definición del evento, la proporción de eventos, la especificación exacta del modelo, los coeficientes en escala logit y como razones de probabilidades, los intervalos de confianza, las métricas de discriminación, la calibración, el criterio de selección del umbral y la discusión de posibles sesgos.
+
+En ambos casos debe evitarse una lectura mecánica del valor p. La interpretación debe considerar el tamaño del efecto, la incertidumbre, la plausibilidad teórica, la calidad de medición y el diseño del estudio.
+
+# Conclusiones
+
+La regresión lineal y la regresión logística son modelos estadísticos fundamentales, pero responden preguntas diferentes. La regresión lineal modela una media condicional continua; la regresión logística modela una probabilidad condicional para un evento binario.
+
+La regresión lineal se estima clásicamente por mínimos cuadrados ordinarios y se apoya en supuestos como linealidad, exogeneidad, independencia, homocedasticidad, ausencia de colinealidad perfecta y normalidad de errores para inferencia exacta. Su diagnóstico se centra en residuos, observaciones influyentes y estabilidad de coeficientes.
+
+La regresión logística se estima por máxima verosimilitud y se apoya en supuestos como respuesta binaria bien definida, independencia, linealidad en el logit, ausencia de separación perfecta, tamaño muestral suficiente y correcta especificación del modelo. Su evaluación debe ir más allá de la exactitud e incluir discriminación, calibración, sensibilidad, precisión y análisis del umbral.
+
+El ejemplo biomédico presentado muestra que ambos modelos pueden usarse de manera complementaria: uno para estimar una variable funcional continua y otro para estimar la probabilidad de un evento clínico o funcional. Sin embargo, el uso responsable de estos modelos exige distinguir predicción de explicación, asociación de causalidad y ajuste aparente de validez generalizable.
+
+# Referencias recomendadas
+
+Agresti, A. (2018). *An Introduction to Categorical Data Analysis*. Wiley.
+
+Dobson, A. J., & Barnett, A. G. (2018). *An Introduction to Generalized Linear Models*. CRC Press.
+
+Fox, J. (2016). *Applied Regression Analysis and Generalized Linear Models*. Sage.
+
+Harrell, F. E. (2015). *Regression Modeling Strategies*. Springer.
+
+Hosmer, D. W., Lemeshow, S., & Sturdivant, R. X. (2013). *Applied Logistic Regression*. Wiley.
+
+James, G., Witten, D., Hastie, T., & Tibshirani, R. (2021). *An Introduction to Statistical Learning*. Springer.
+
+Kutner, M. H., Nachtsheim, C. J., Neter, J., & Li, W. (2005). *Applied Linear Statistical Models*. McGraw-Hill.
+
+Montgomery, D. C., Peck, E. A., & Vining, G. G. (2021). *Introduction to Linear Regression Analysis*. Wiley.
+
+Wooldridge, J. M. (2020). *Introductory Econometrics: A Modern Approach*. Cengage.

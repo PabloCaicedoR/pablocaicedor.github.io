@@ -1,0 +1,1028 @@
+---
+title: "Reporte técnico: diseño manual de un filtro pasabanda IIR Butterworth para EMG"
+subtitle: "Diseño desde especificaciones fisiológicas hasta coeficientes digitales"
+author: "PhD. Pablo Eduardo Caicedo-Rodriguez"
+format:
+  html:
+    toc: true
+    number-sections: true
+    colorlinks: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Planteamiento del problema
+
+Se requiere diseñar un filtro digital pasabanda de respuesta al impulso infinita para una señal de electromiografía superficial. El objetivo es conservar la mayor parte del contenido muscular útil y atenuar componentes asociadas a deriva de corriente continua, artefactos de movimiento, ruido de alta frecuencia y contenido cercano al límite de Nyquist.
+
+La frecuencia de muestreo seleccionada es:
+
+$$
+f_s = 2000\ \text{Hz}
+$$
+
+Por tanto, la frecuencia de Nyquist es:
+
+$$
+f_N = \frac{f_s}{2} = 1000\ \text{Hz}
+$$
+
+La banda de paso especificada es:
+
+$$
+f_{p1}=20\ \text{Hz}
+$$
+
+$$
+f_{p2}=450\ \text{Hz}
+$$
+
+Las frecuencias de rechazo se definen como:
+
+$$
+f_{r1}=5\ \text{Hz}
+$$
+
+$$
+f_{r2}=800\ \text{Hz}
+$$
+
+Las tolerancias de diseño son:
+
+$$
+A_p = 1\ \text{dB}
+$$
+
+$$
+A_r = 30\ \text{dB}
+$$
+
+donde $A_p$ es la pérdida máxima permitida en la banda pasante y $A_r$ es la atenuación mínima exigida en las bandas de rechazo.
+
+# Justificación de la banda de paso
+
+El corte inferior se fija en:
+
+$$
+f_{p1}=20\ \text{Hz}
+$$
+
+Esta decisión busca atenuar componentes lentas de la señal, principalmente la deriva de corriente continua, los cambios de línea base y los artefactos de movimiento. Estos fenómenos aparecen preferentemente en bajas frecuencias y no representan, en general, la actividad eléctrica muscular útil que se desea analizar.
+
+El corte superior se fija en:
+
+$$
+f_{p2}=450\ \text{Hz}
+$$
+
+Esta decisión busca conservar el contenido electromiográfico superficial relevante y limitar la entrada de ruido de alta frecuencia. El valor de 450 Hz deja, además, una distancia suficiente frente al límite de Nyquist:
+
+$$
+450\ \text{Hz} < 1000\ \text{Hz}
+$$
+
+Esto permite una zona de transición razonable antes de Nyquist.
+
+# Elección del tipo de filtro
+
+Se selecciona un filtro Butterworth de respuesta al impulso infinita porque su magnitud es monótona y plana en la banda pasante. Esta propiedad es útil cuando se desea evitar ondulaciones artificiales en la amplitud relativa de la señal electromiográfica.
+
+El filtro final se implementará como cascada de secciones de segundo orden, no como un único polinomio de octavo orden. Esta decisión reduce la sensibilidad numérica y mejora la estabilidad de la implementación.
+
+# Predeformación de frecuencias
+
+El diseño se realiza mediante la transformación bilineal. Como esta transformación deforma el eje de frecuencias, primero se predeforman las frecuencias digitales hacia frecuencias analógicas equivalentes.
+
+La relación de predeformación es:
+
+$$
+\Omega = 2f_s \tan\left(\frac{\pi f}{f_s}\right)
+$$
+
+Para $f_s=2000\ \text{Hz}$, se obtiene:
+
+$$
+\Omega_{p1}
+=
+2(2000)\tan\left(\frac{\pi(20)}{2000}\right)
+$$
+
+$$
+\Omega_{p1}=125.705
+$$
+
+$$
+\Omega_{p2}
+=
+2(2000)\tan\left(\frac{\pi(450)}{2000}\right)
+$$
+
+$$
+\Omega_{p2}=3416.323
+$$
+
+$$
+\Omega_{r1}
+=
+2(2000)\tan\left(\frac{\pi(5)}{2000}\right)
+$$
+
+$$
+\Omega_{r1}=31.417
+$$
+
+$$
+\Omega_{r2}
+=
+2(2000)\tan\left(\frac{\pi(800)}{2000}\right)
+$$
+
+$$
+\Omega_{r2}=12310.734
+$$
+
+# Parámetros del pasabanda analógico
+
+El ancho de banda analógico es:
+
+$$
+B=\Omega_{p2}-\Omega_{p1}
+$$
+
+$$
+B=3416.323-125.705
+$$
+
+$$
+B=3290.618
+$$
+
+La frecuencia central geométrica es:
+
+$$
+\Omega_0=\sqrt{\Omega_{p1}\Omega_{p2}}
+$$
+
+$$
+\Omega_0=\sqrt{125.705(3416.323)}
+$$
+
+$$
+\Omega_0=655.324
+$$
+
+Esta frecuencia central no es la media aritmética. En un filtro pasabanda analógico se usa la media geométrica porque la transformación pasabanda a pasabajas es simétrica en escala logarítmica.
+
+# Transformación pasabanda a pasabajas
+
+El prototipo Butterworth se diseña como pasabajas normalizado. Para convertir el problema pasabanda en un problema pasabajas equivalente se usa:
+
+$$
+\Omega_L =
+\left|
+\frac{\Omega^2-\Omega_0^2}{B\Omega}
+\right|
+$$
+
+Esta transformación cumple:
+
+$$
+\Omega=\Omega_{p1}
+\quad \Rightarrow \quad
+\Omega_L=1
+$$
+
+$$
+\Omega=\Omega_{p2}
+\quad \Rightarrow \quad
+\Omega_L=1
+$$
+
+$$
+\Omega=\Omega_0
+\quad \Rightarrow \quad
+\Omega_L=0
+$$
+
+Por tanto, la banda pasante original:
+
+$$
+\Omega_{p1}\leq \Omega \leq \Omega_{p2}
+$$
+
+se convierte en la banda pasante normalizada del prototipo:
+
+$$
+0 \leq \Omega_L \leq 1
+$$
+
+# Frecuencias de rechazo normalizadas
+
+Para la frecuencia de rechazo inferior:
+
+$$
+\Omega_{Lr1}
+=
+\left|
+\frac{\Omega_{r1}^2-\Omega_0^2}{B\Omega_{r1}}
+\right|
+$$
+
+$$
+\Omega_{Lr1}
+=
+\left|
+\frac{31.417^2-655.324^2}{3290.618(31.417)}
+\right|
+$$
+
+$$
+\Omega_{Lr1}=4.145
+$$
+
+Para la frecuencia de rechazo superior:
+
+$$
+\Omega_{Lr2}
+=
+\left|
+\frac{\Omega_{r2}^2-\Omega_0^2}{B\Omega_{r2}}
+\right|
+$$
+
+$$
+\Omega_{Lr2}
+=
+\left|
+\frac{12310.734^2-655.324^2}{3290.618(12310.734)}
+\right|
+$$
+
+$$
+\Omega_{Lr2}=3.731
+$$
+
+El caso más exigente es el menor valor:
+
+$$
+\Omega_{Lr}=3.731
+$$
+
+Si el filtro cumple la atenuación mínima en $\Omega_{Lr}=3.731$, también la cumple en $\Omega_{Lr1}=4.145$.
+
+# Cálculo del orden del prototipo Butterworth
+
+La magnitud al cuadrado de un filtro Butterworth pasabajas es:
+
+$$
+|H(j\Omega_L)|^2 =
+\frac{1}{1+\left(\frac{\Omega_L}{\Omega_c}\right)^{2N}}
+$$
+
+La tolerancia en banda pasante se expresa mediante:
+
+$$
+\epsilon^2 = 10^{A_p/10}-1
+$$
+
+Con $A_p=1\ \text{dB}$:
+
+$$
+\epsilon^2 = 10^{1/10}-1
+$$
+
+$$
+\epsilon^2=0.2589
+$$
+
+El orden mínimo del prototipo Butterworth se calcula como:
+
+$$
+N \geq
+\frac{
+\log_{10}
+\left(
+\frac{10^{A_r/10}-1}{10^{A_p/10}-1}
+\right)
+}{
+2\log_{10}(\Omega_{Lr})
+}
+$$
+
+Sustituyendo:
+
+$$
+N \geq
+\frac{
+\log_{10}
+\left(
+\frac{10^{30/10}-1}{10^{1/10}-1}
+\right)
+}{
+2\log_{10}(3.731)
+}
+$$
+
+$$
+N \geq 3.93
+$$
+
+Por tanto, se selecciona:
+
+$$
+N=4
+$$
+
+Este es el orden del prototipo pasabajas. Al transformar el prototipo pasabajas en pasabanda, el orden se duplica:
+
+$$
+N_{\text{pasabanda}}=2N=8
+$$
+
+# Frecuencia crítica del prototipo Butterworth
+
+La frecuencia crítica del prototipo se calcula para que en el borde normalizado $\Omega_L=1$ la pérdida sea $A_p=1\ \text{dB}$.
+
+$$
+\Omega_c =
+\frac{1}{(10^{A_p/10}-1)^{1/(2N)}}
+$$
+
+$$
+\Omega_c =
+\frac{1}{(10^{0.1}-1)^{1/8}}
+$$
+
+$$
+\Omega_c=1.184
+$$
+
+Este valor indica que la frecuencia natural del prototipo Butterworth está más allá del borde pasante normalizado. Por eso las frecuencias críticas finales del filtro no coinciden exactamente con 20 Hz y 450 Hz.
+
+# Frecuencias críticas pasabanda
+
+Para obtener las frecuencias críticas del pasabanda se resuelve:
+
+$$
+\left|
+\frac{\Omega^2-\Omega_0^2}{B\Omega}
+\right|
+=
+\Omega_c
+$$
+
+Esto produce dos soluciones:
+
+$$
+\Omega_{c1}
+=
+\frac{
+-\Omega_c B+
+\sqrt{(\Omega_cB)^2+4\Omega_0^2}
+}{2}
+$$
+
+$$
+\Omega_{c2}
+=
+\frac{
+\Omega_c B+
+\sqrt{(\Omega_cB)^2+4\Omega_0^2}
+}{2}
+$$
+
+Sustituyendo:
+
+$$
+\Omega_{c1}
+=
+\frac{
+-1.184(3290.618)+
+\sqrt{[1.184(3290.618)]^2+4(655.324)^2}
+}{2}
+$$
+
+$$
+\Omega_{c1}=107.272
+$$
+
+$$
+\Omega_{c2}
+=
+\frac{
+1.184(3290.618)+
+\sqrt{[1.184(3290.618)]^2+4(655.324)^2}
+}{2}
+$$
+
+$$
+\Omega_{c2}=4003.376
+$$
+
+Para regresar a frecuencia digital en hercios:
+
+$$
+f =
+\frac{f_s}{\pi}
+\tan^{-1}
+\left(
+\frac{\Omega}{2f_s}
+\right)
+$$
+
+$$
+f_{c1}
+=
+\frac{2000}{\pi}
+\tan^{-1}
+\left(
+\frac{107.272}{4000}
+\right)
+$$
+
+$$
+f_{c1}=17.07\ \text{Hz}
+$$
+
+$$
+f_{c2}
+=
+\frac{2000}{\pi}
+\tan^{-1}
+\left(
+\frac{4003.376}{4000}
+\right)
+$$
+
+$$
+f_{c2}=500.27\ \text{Hz}
+$$
+
+Estas son las frecuencias críticas matemáticas del filtro Butterworth. La banda pasante especificada sigue siendo:
+
+$$
+20\ \text{Hz} \leq f \leq 450\ \text{Hz}
+$$
+
+con pérdida máxima de 1 dB en esos bordes.
+
+# Polos del prototipo Butterworth
+
+Los polos del prototipo Butterworth se calculan como:
+
+$$
+p_k=
+\Omega_c
+e^{j\left(
+\frac{\pi}{2}
++
+\frac{(2k-1)\pi}{2N}
+\right)}
+$$
+
+con:
+
+$$
+k=1,2,3,4
+$$
+
+Para $N=4$ y $\Omega_c=1.184$, los polos son:
+
+$$
+p_1=-0.4531+j1.0939
+$$
+
+$$
+p_2=-1.0939+j0.4531
+$$
+
+$$
+p_3=-1.0939-j0.4531
+$$
+
+$$
+p_4=-0.4531-j1.0939
+$$
+
+Todos los polos tienen parte real negativa; por tanto, el prototipo analógico es estable.
+
+# Transformación del prototipo pasabajas a pasabanda
+
+La transformación algebraica usada es:
+
+$$
+s_L=
+\frac{s^2+\Omega_0^2}{Bs}
+$$
+
+El filtro pasabanda analógico se obtiene como:
+
+$$
+H_{BP}(s)
+=
+H_L
+\left(
+\frac{s^2+\Omega_0^2}{Bs}
+\right)
+$$
+
+Cada polo $p_k$ del prototipo genera dos polos pasabanda. Para obtenerlos se resuelve:
+
+$$
+\frac{s^2+\Omega_0^2}{Bs}=p_k
+$$
+
+$$
+s^2+\Omega_0^2=Bp_k s
+$$
+
+$$
+s^2-Bp_k s+\Omega_0^2=0
+$$
+
+Por tanto:
+
+$$
+s_{k,1},s_{k,2}
+=
+\frac{
+Bp_k \pm \sqrt{(Bp_k)^2-4\Omega_0^2}
+}{2}
+$$
+
+# Polos analógicos pasabanda
+
+Al aplicar la transformación anterior se obtienen ocho polos:
+
+$$
+s_1=-1451.516+j3700.116
+$$
+
+$$
+s_2=-1451.516-j3700.116
+$$
+
+$$
+s_3=-3496.583+j1536.204
+$$
+
+$$
+s_4=-3496.583-j1536.204
+$$
+
+$$
+s_5=-39.458+j100.585
+$$
+
+$$
+s_6=-39.458-j100.585
+$$
+
+$$
+s_7=-102.948+j45.230
+$$
+
+$$
+s_8=-102.948-j45.230
+$$
+
+Estos polos aparecen en pares conjugados complejos. Esta estructura permite formar secciones reales de segundo orden.
+
+# Ceros del pasabanda analógico
+
+El prototipo Butterworth pasabajas no tiene ceros finitos. Al aplicar la transformación pasabanda aparecen:
+
+$$
+N=4
+$$
+
+ceros en:
+
+$$
+s=0
+$$
+
+y:
+
+$$
+N=4
+$$
+
+ceros en:
+
+$$
+s=\infty
+$$
+
+Esto es coherente con la naturaleza pasabanda del filtro: debe rechazar la continua y también las frecuencias muy altas.
+
+# Transformación bilineal hacia el dominio digital
+
+La transformación bilineal es:
+
+$$
+s =
+2f_s
+\frac{1-z^{-1}}{1+z^{-1}}
+$$
+
+Un polo analógico $s_i$ se transforma en un polo digital $q_i$ mediante:
+
+$$
+q_i=
+\frac{
+1+\frac{s_i}{2f_s}
+}{
+1-\frac{s_i}{2f_s}
+}
+$$
+
+Con:
+
+$$
+f_s=2000\ \text{Hz}
+$$
+
+se obtienen los polos digitales:
+
+$$
+q_1=0.004659+j0.681894
+$$
+
+$$
+q_2=0.004659-j0.681894
+$$
+
+$$
+q_3=0.024146+j0.209869
+$$
+
+$$
+q_4=0.024146-j0.209869
+$$
+
+$$
+q_5=0.949581+j0.021492
+$$
+
+$$
+q_6=0.949581-j0.021492
+$$
+
+$$
+q_7=0.979236+j0.049284
+$$
+
+$$
+q_8=0.979236-j0.049284
+$$
+
+La estabilidad digital exige:
+
+$$
+|q_i|<1
+$$
+
+para todos los polos. Esta condición se cumple.
+
+# Transformación de los ceros
+
+Los ceros en $s=0$ se transforman en:
+
+$$
+z=1
+$$
+
+Esto representa rechazo de la componente de frecuencia cero.
+
+Los ceros en $s=\infty$ se transforman en:
+
+$$
+z=-1
+$$
+
+Esto representa rechazo de la frecuencia de Nyquist.
+
+Por tanto, el filtro digital pasabanda tiene ceros en:
+
+$$
+z=1
+$$
+
+y en:
+
+$$
+z=-1
+$$
+
+# Obtención de los coeficientes del denominador
+
+Cada par de polos conjugados:
+
+$$
+q,\overline{q}
+$$
+
+genera un denominador de segundo orden:
+
+$$
+D(z)=
+(1-qz^{-1})(1-\overline{q}z^{-1})
+$$
+
+Al expandir:
+
+$$
+D(z)=
+1-(q+\overline{q})z^{-1}
++
+q\overline{q}z^{-2}
+$$
+
+Como:
+
+$$
+q+\overline{q}=2\operatorname{Re}(q)
+$$
+
+y:
+
+$$
+q\overline{q}=|q|^2
+$$
+
+entonces:
+
+$$
+D(z)=
+1-2\operatorname{Re}(q)z^{-1}
++
+|q|^2z^{-2}
+$$
+
+Si se escribe:
+
+$$
+D(z)=1+a_1z^{-1}+a_2z^{-2}
+$$
+
+entonces:
+
+$$
+a_1=-2\operatorname{Re}(q)
+$$
+
+$$
+a_2=|q|^2
+$$
+
+# Obtención de los coeficientes del numerador
+
+Un par de ceros en $z=-1$ genera:
+
+$$
+(1+z^{-1})^2
+$$
+
+$$
+1+2z^{-1}+z^{-2}
+$$
+
+Por tanto:
+
+$$
+b_0=1,\qquad b_1=2,\qquad b_2=1
+$$
+
+Un par de ceros en $z=1$ genera:
+
+$$
+(1-z^{-1})^2
+$$
+
+$$
+1-2z^{-1}+z^{-2}
+$$
+
+Por tanto:
+
+$$
+b_0=1,\qquad b_1=-2,\qquad b_2=1
+$$
+
+# Ajuste de ganancia
+
+Los ceros y polos definen la forma de la respuesta, pero falta ajustar una ganancia global $K$. Se impone ganancia unitaria en la frecuencia central del pasabanda.
+
+La frecuencia central digital se calcula con:
+
+$$
+f_0 =
+\frac{f_s}{\pi}
+\tan^{-1}
+\left(
+\frac{\Omega_0}{2f_s}
+\right)
+$$
+
+$$
+f_0 =
+\frac{2000}{\pi}
+\tan^{-1}
+\left(
+\frac{655.324}{4000}
+\right)
+$$
+
+$$
+f_0=103.38\ \text{Hz}
+$$
+
+Se evalúa el filtro sin ganancia en:
+
+$$
+z=e^{j\omega_0}
+$$
+
+donde:
+
+$$
+\omega_0=2\pi\frac{f_0}{f_s}
+$$
+
+Si:
+
+$$
+|H_0(e^{j\omega_0})|=11.8462
+$$
+
+entonces:
+
+$$
+K=\frac{1}{11.8462}
+$$
+
+$$
+K=0.084415
+$$
+
+Esta ganancia se coloca en la primera sección.
+
+# Coeficientes finales
+
+El filtro se implementa como:
+
+$$
+H(z)=
+\prod_{k=1}^{4}
+\frac{
+b_{0k}+b_{1k}z^{-1}+b_{2k}z^{-2}
+}{
+1+a_{1k}z^{-1}+a_{2k}z^{-2}
+}
+$$
+
+Los coeficientes finales son:
+
+| Sección | $b_0$ | $b_1$ | $b_2$ | $a_1$ | $a_2$ |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 0.084415 | 0.168831 | 0.084415 | -0.048293 | 0.044628 |
+| 2 | 1.000000 | 2.000000 | 1.000000 | -0.009318 | 0.465001 |
+| 3 | 1.000000 | -2.000000 | 1.000000 | -1.899161 | 0.902165 |
+| 4 | 1.000000 | -2.000000 | 1.000000 | -1.958473 | 0.961333 |
+
+La primera sección contiene la ganancia global:
+
+$$
+K=0.084415
+$$
+
+Por eso, en esa sección:
+
+$$
+b_0=K
+$$
+
+$$
+b_1=2K
+$$
+
+$$
+b_2=K
+$$
+
+# Ecuación en diferencias
+
+Cada sección se implementa como:
+
+$$
+y_k[n]
+=
+b_{0k}x_k[n]
++
+b_{1k}x_k[n-1]
++
+b_{2k}x_k[n-2]
+-
+a_{1k}y_k[n-1]
+-
+a_{2k}y_k[n-2]
+$$
+
+La salida de una sección alimenta a la siguiente:
+
+$$
+x_{k+1}[n]=y_k[n]
+$$
+
+La salida total del filtro es:
+
+$$
+y[n]=y_4[n]
+$$
+
+# Verificación del cumplimiento
+
+La respuesta del filtro cumple:
+
+$$
+|H(20\ \text{Hz})|=-1\ \text{dB}
+$$
+
+$$
+|H(450\ \text{Hz})|=-1\ \text{dB}
+$$
+
+En las bandas de rechazo:
+
+$$
+|H(5\ \text{Hz})|\approx -43.53\ \text{dB}
+$$
+
+$$
+|H(800\ \text{Hz})|\approx -39.87\ \text{dB}
+$$
+
+Como:
+
+$$
+43.53\ \text{dB} > 30\ \text{dB}
+$$
+
+y:
+
+$$
+39.87\ \text{dB} > 30\ \text{dB}
+$$
+
+el filtro cumple la especificación de rechazo.
+
+# Resultado final del diseño
+
+El diseño obtenido corresponde a un filtro digital pasabanda Butterworth de respuesta al impulso infinita, de orden total ocho, implementado como cuatro secciones de segundo orden.
+
+La banda pasante especificada es:
+
+$$
+20\ \text{Hz} \leq f \leq 450\ \text{Hz}
+$$
+
+La pérdida máxima en los bordes de la banda pasante es:
+
+$$
+A_p=1\ \text{dB}
+$$
+
+La atenuación mínima en las bandas de rechazo es:
+
+$$
+A_r=30\ \text{dB}
+$$
+
+Las frecuencias críticas matemáticas equivalentes del filtro Butterworth son:
+
+$$
+f_{c1}=17.07\ \text{Hz}
+$$
+
+$$
+f_{c2}=500.27\ \text{Hz}
+$$
+
+Estas frecuencias críticas no reemplazan la banda fisiológica de diseño. Indican los puntos naturales del Butterworth que permiten que la pérdida sea de 1 dB en 20 Hz y 450 Hz.
+
+# Consideraciones de uso
+
+Este filtro es adecuado para análisis fuera de línea de electromiografía superficial cuando se desea conservar la mayor parte de la banda muscular útil y rechazar componentes lentas y ruido alto.
+
+Si el procesamiento es fuera de línea, puede aplicarse filtrado hacia adelante y hacia atrás para evitar desfase. Si el procesamiento es en tiempo real, debe aplicarse como filtro causal, aceptando el retardo de fase.
+
+No se incluye un filtro de rechazo de red eléctrica de 50 o 60 Hz. Esa decisión debe tomarse después de inspeccionar la señal, porque 50 o 60 Hz están dentro de la banda electromiográfica útil y un rechazo automático puede eliminar contenido muscular real.
+
+# Referencias técnicas sugeridas
+
+De Luca, C. J., Gilmore, L. D., Kuznetsov, M., & Roy, S. H. (2010). Filtering the surface EMG signal: Movement artifact and baseline noise contamination. *Journal of Biomechanics*, 43(8), 1573–1579. DOI: 10.1016/j.jbiomech.2010.01.027.
+
+Merletti, R., & Cerone, G. L. (2020). Tutorial. Surface EMG detection, conditioning and pre-processing: Best practices. *Journal of Electromyography and Kinesiology*, 54, 102440. DOI: 10.1016/j.jelekin.2020.102440.

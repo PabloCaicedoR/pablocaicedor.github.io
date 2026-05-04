@@ -266,6 +266,10 @@ En SciPy podemos pasar `fs=2000`, así no hace falta normalizar manualmente.
 ## Código: librerías
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Loading Libraries for signal processing I
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -531,6 +535,7 @@ $$
 
 ---
 
+
 ## Forma final del filtro
 
 El filtro digital queda como producto de secciones de segundo orden:
@@ -664,6 +669,10 @@ $$
 ## Código: parámetros de diseño
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter I
 fs = 2000.0
 
 # Banda pasante deseada para EMG superficial
@@ -710,6 +719,10 @@ Por eso implementaremos en SOS.
 ## Diseño final del filtro
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter II
 sos = butter(
     N=N,
     Wn=Wn,
@@ -728,6 +741,10 @@ Usar `output="sos"` evita problemas de precisión que pueden aparecer con coefic
 ## Respuesta en frecuencia
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter III
 w, h = sosfreqz(sos, worN=4096, fs=fs)
 
 mag_db = 20 * np.log10(np.maximum(np.abs(h), 1e-12))
@@ -759,6 +776,10 @@ Creamos una señal de prueba con:
 - ruido de alta frecuencia
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter IV
 rng = np.random.default_rng(7)
 
 T = 4.0
@@ -788,12 +809,20 @@ Hay dos formas comunes de aplicar el filtro.
 Para tiempo real:
 
 ```python
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter V
 y = sosfilt(sos, x)
 ```
 
 Para análisis offline:
 
 ```python
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter VI
 y = sosfiltfilt(sos, x)
 ```
 
@@ -809,6 +838,10 @@ En este ejemplo usamos `sosfiltfilt` porque es análisis offline.
 ## Aplicar filtro
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter VII
 y = sosfiltfilt(sos, x)
 ```
 
@@ -817,6 +850,10 @@ y = sosfiltfilt(sos, x)
 ## Señal antes y después
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter VIII
 plt.figure(figsize=(10, 4))
 plt.plot(t, x, label="EMG cruda", alpha=0.7)
 plt.plot(t, y, label="EMG filtrada", linewidth=1.5)
@@ -834,6 +871,10 @@ plt.show()
 ## Densidad espectral de potencia
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter IX
 f_raw, P_raw = welch(x, fs=fs, nperseg=1024)
 f_filt, P_filt = welch(y, fs=fs, nperseg=1024)
 
@@ -892,6 +933,10 @@ Decisión práctica:
 ## Código completo como función
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter X
 def design_emg_bandpass_iir(
     fs,
     passband=(20.0, 450.0),
@@ -938,6 +983,10 @@ def design_emg_bandpass_iir(
 ## Uso de la función
 
 ```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter XI
 sos2, N2, Wn2 = design_emg_bandpass_iir(fs=2000)
 
 y2 = sosfiltfilt(sos2, x)
@@ -985,6 +1034,10 @@ $$
 Implementación:
 
 ```python
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Designing the IIR filter XII
 sos = butter(N, Wn, btype="bandpass", fs=fs, output="sos")
 y = sosfiltfilt(sos, x)
 ```
