@@ -15180,6 +15180,426 @@
     "href": "clases/Class_PSIM.html#recursos",
     "title": "Procesado de Señales e Imágenes Médicas",
     "section": "Recursos",
-    "text": "Recursos\n\nModelos Lineales y Logísticos"
+    "text": "Recursos\n\nModelos Lineales y Logísticos\nAnálisis completo de un electrocardiograma\nAnálisis multirresolución de imágenes médicas mediante transformadas wavelet"
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "",
+    "text": "El análisis multirresolución de imágenes médicas permite representar una imagen como la combinación de componentes de baja frecuencia, asociadas con la estructura anatómica global, y componentes de alta frecuencia, asociadas con bordes, transiciones, textura fina, ruido y artefactos. Esta representación es especialmente pertinente en imágenes médicas porque la información clínicamente relevante no aparece en una única escala espacial: una lesión puede manifestarse como una alteración macroscópica de intensidad, como un cambio de textura, como una irregularidad de borde o como una combinación de patrones locales y regionales.\nLa transformada wavelet, también llamada transformada de ondículas, proporciona una base matemática para este análisis. A diferencia de la transformada de Fourier, que describe la imagen mediante frecuencias globales, la transformada wavelet permite localizar simultáneamente información espacial y frecuencial. En imágenes médicas, esta propiedad resulta útil para tareas de reducción de ruido, realce de bordes, compresión, extracción de características, análisis de textura, segmentación asistida e interpretación multiescala de hallazgos anatómicos o patológicos.\nEl punto crítico no es aplicar una wavelet de manera automática, sino justificar su elección según el objetivo analítico, la modalidad de imagen, el tipo de ruido, la resolución espacial, la anatomía de interés, la necesidad de reconstrucción y el grado de interpretabilidad requerido. La elección de la wavelet afecta la localización de bordes, la preservación de estructuras finas, la sensibilidad al desplazamiento, la aparición de artefactos y la estabilidad de las características extraídas.\nEste reporte desarrolla los fundamentos teóricos del análisis multirresolución, presenta criterios para seleccionar familias wavelet en imágenes médicas y propone una guía para interpretar los coeficientes y los resultados reconstruidos. La tesis central es que el análisis wavelet no debe interpretarse como una herramienta diagnóstica autónoma, sino como una representación matemática que debe ser validada contra criterios físicos, anatómicos, estadísticos y clínicos."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#imagen-médica-como-señal-espacial",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#imagen-médica-como-señal-espacial",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "3.1 Imagen médica como señal espacial",
+    "text": "3.1 Imagen médica como señal espacial\nUna imagen médica digital puede representarse como una función discreta de intensidad:\n\\[\nI[m,n],\n\\]\ndonde \\(m\\) y \\(n\\) indican la posición espacial en una matriz de píxeles. En imágenes volumétricas se utiliza una función discreta tridimensional:\n\\[\nI[m,n,p],\n\\]\ndonde \\(p\\) representa la posición en el eje de cortes o profundidad. En cada modalidad, el valor de intensidad tiene una interpretación física distinta. En tomografía computarizada se relaciona con atenuación de rayos X; en resonancia magnética depende de parámetros de adquisición, relajación tisular y secuencias; en ecografía depende de dispersión acústica, impedancia y procesamiento del equipo; en histopatología digital depende de tinción, iluminación, óptica y digitalización.\nEsta observación es metodológicamente importante: dos imágenes pueden tener la misma estructura matemática, pero no la misma interpretación física. Por tanto, la transformada wavelet opera sobre una matriz de intensidades, pero la interpretación biomédica exige conocer la modalidad, la escala espacial y el proceso de adquisición."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#idea-central-del-análisis-multirresolución",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#idea-central-del-análisis-multirresolución",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "3.2 Idea central del análisis multirresolución",
+    "text": "3.2 Idea central del análisis multirresolución\nEl análisis multirresolución descompone una imagen en una jerarquía de escalas. En la primera escala se separa la información gruesa de la información fina. En escalas sucesivas, la información gruesa vuelve a descomponerse para obtener niveles cada vez más amplios de estructura espacial.\nDe forma conceptual, una imagen puede escribirse como:\n\\[\nI = A_J + \\sum_{j=1}^{J} D_j,\n\\]\ndonde \\(A_J\\) representa la aproximación de baja resolución en el nivel \\(J\\), y \\(D_j\\) representa los detalles extraídos en la escala \\(j\\). En dos dimensiones, cada nivel de detalle se separa en componentes orientadas:\n\\[\nD_j = D_j^{H} + D_j^{V} + D_j^{D},\n\\]\ndonde \\(D_j^{H}\\), \\(D_j^{V}\\) y \\(D_j^{D}\\) representan detalles asociados con cambios horizontales, verticales y diagonales, respectivamente. La notación exacta puede variar según la biblioteca computacional usada, pero la interpretación general se conserva: las subbandas de detalle contienen transiciones espaciales localizadas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#espacios-anidados-de-aproximación",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#espacios-anidados-de-aproximación",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "3.3 Espacios anidados de aproximación",
+    "text": "3.3 Espacios anidados de aproximación\nLa formulación clásica del análisis multirresolución se basa en una secuencia de espacios anidados:\n\\[\n\\cdots \\subset V_{-1} \\subset V_0 \\subset V_1 \\subset V_2 \\subset \\cdots\n\\]\nCada espacio \\(V_j\\) contiene aproximaciones de la señal a una resolución particular. Al aumentar \\(j\\), se representa información más fina. El complemento entre dos espacios consecutivos se denomina espacio de detalle:\n\\[\nV_{j+1} = V_j \\oplus W_j.\n\\]\nEn esta expresión, \\(W_j\\) contiene la información que está presente en la resolución \\(j+1\\), pero no en la resolución \\(j\\). Desde el punto de vista de imágenes médicas, esta relación expresa que una imagen de mayor resolución contiene una aproximación anatómica más gruesa más una corrección de detalle."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#función-de-escala-y-función-wavelet",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#función-de-escala-y-función-wavelet",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "3.4 Función de escala y función wavelet",
+    "text": "3.4 Función de escala y función wavelet\nLa función de escala \\(\\phi(x)\\) genera las aproximaciones de baja frecuencia, mientras que la función wavelet \\(\\psi(x)\\) genera los detalles. Las funciones desplazadas y escaladas se expresan como:\n\\[\n\\phi_{j,k}(x) = 2^{j/2}\\phi(2^j x - k),\n\\]\n\\[\n\\psi_{j,k}(x) = 2^{j/2}\\psi(2^j x - k).\n\\]\nEl parámetro \\(j\\) controla la escala y el parámetro \\(k\\) controla la posición. Esta doble dependencia permite que la wavelet detecte patrones localizados: una transición de borde, una textura fina o una alteración focal puede aparecer con fuerza en un subconjunto específico de coeficientes."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#transformada-wavelet-discreta-bidimensional",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#transformada-wavelet-discreta-bidimensional",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "3.5 Transformada wavelet discreta bidimensional",
+    "text": "3.5 Transformada wavelet discreta bidimensional\nEn imágenes digitales se utiliza con frecuencia la transformada wavelet discreta bidimensional. La forma más común se construye mediante filtros separables aplicados por filas y columnas. En cada nivel se obtienen cuatro subbandas:\n\n\n\n\n\n\n\n\n\nSubbanda\nFiltrado por filas\nFiltrado por columnas\nInterpretación general\n\n\n\n\n\\(LL\\)\nPaso bajo\nPaso bajo\nAproximación de baja resolución\n\n\n\\(LH\\)\nPaso bajo\nPaso alto\nDetalles asociados con cambios en una dirección\n\n\n\\(HL\\)\nPaso alto\nPaso bajo\nDetalles asociados con cambios en la dirección ortogonal\n\n\n\\(HH\\)\nPaso alto\nPaso alto\nDetalles diagonales o de alta variación local\n\n\n\nLa subbanda \\(LL\\) puede descomponerse de nuevo para formar una pirámide multirresolución. Este proceso se repite hasta un número de niveles \\(J\\), limitado por el tamaño de la imagen y por la escala anatómica que se desea conservar.\n\n\n\n\n\nflowchart TD\n  A[\"Imagen original\"] --&gt; B[\"Nivel 1: filtrado paso bajo y paso alto\"]\n  B --&gt; C[\"LL1: aproximación\"]\n  B --&gt; D[\"LH1: detalle\"]\n  B --&gt; E[\"HL1: detalle\"]\n  B --&gt; F[\"HH1: detalle\"]\n  C --&gt; G[\"Nivel 2: nueva descomposición de LL1\"]\n  G --&gt; H[\"LL2: aproximación más gruesa\"]\n  G --&gt; I[\"LH2: detalle\"]\n  G --&gt; J[\"HL2: detalle\"]\n  G --&gt; K[\"HH2: detalle\"]"
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#no-existe-una-wavelet-universal",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#no-existe-una-wavelet-universal",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "7.1 No existe una wavelet universal",
+    "text": "7.1 No existe una wavelet universal\nUn error frecuente consiste en seleccionar una wavelet por costumbre, por disponibilidad en una biblioteca o por repetición de trabajos previos. Esa práctica es insuficiente. La elección debe justificarse con base en el objetivo del análisis, la modalidad de imagen y el tipo de estructura que se desea preservar o cuantificar.\nLa pregunta correcta no es “¿cuál es la mejor wavelet?”, sino “¿qué propiedades debe tener la wavelet para este problema específico?”."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#propiedades-técnicas-relevantes",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#propiedades-técnicas-relevantes",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "7.2 Propiedades técnicas relevantes",
+    "text": "7.2 Propiedades técnicas relevantes\n\n7.2.1 Soporte compacto\nUna wavelet tiene soporte compacto cuando está concentrada en una región finita. Esto mejora la localización espacial. En imágenes médicas, un soporte corto puede ser útil para detectar bordes o lesiones pequeñas, porque evita que una estructura local influya excesivamente en regiones distantes.\nSin embargo, un soporte demasiado corto puede producir una representación menos suave y menos selectiva en frecuencia. Por tanto, existe un compromiso entre localización espacial y selectividad frecuencial.\n\n\n7.2.2 Momentos nulos\nUna wavelet con \\(N\\) momentos nulos cumple:\n\\[\n\\int x^k \\psi(x)\\,dx = 0, \\qquad k = 0,1,\\ldots,N-1.\n\\]\nEsto significa que la wavelet es insensible a tendencias polinomiales de bajo orden. En términos prácticos, una wavelet con más momentos nulos puede representar regiones suaves con pocos coeficientes significativos y concentrar la energía en discontinuidades o cambios locales.\nEn imágenes médicas, esto puede ser útil para separar variaciones lentas de intensidad de cambios anatómicos locales. No obstante, aumentar el número de momentos nulos suele aumentar la longitud del filtro, lo que puede reducir la localización espacial y aumentar los efectos de borde.\n\n\n7.2.3 Regularidad\nLa regularidad se relaciona con la suavidad de la función wavelet. Wavelets más regulares producen reconstrucciones más suaves y pueden ser convenientes en imágenes donde se desea reducir ruido preservando continuidad anatómica. Wavelets menos regulares pueden capturar mejor discontinuidades abruptas, pero también pueden generar apariencia más escalonada.\n\n\n7.2.4 Simetría y fase lineal\nLa simetría es importante en imágenes médicas porque los desplazamientos artificiales de bordes pueden afectar la localización anatómica. Las wavelets ortogonales compactas, como muchas Daubechies, no son perfectamente simétricas. Las wavelets biortogonales pueden ofrecer simetría o casi simetría, lo que mejora la preservación de bordes y reduce distorsiones de fase.\nPara tareas donde la localización del borde es crítica, como medición de espesores, contornos anatómicos o detección de calcificaciones, la simetría puede ser más importante que la ortogonalidad estricta.\n\n\n7.2.5 Ortogonalidad y biortogonalidad\nUna base ortogonal conserva energía de forma directa y facilita análisis matemático. En una transformada ortogonal, la energía de la imagen puede relacionarse con la energía de sus coeficientes. Esto es útil para cuantificar energía por subbanda.\nLas wavelets biortogonales usan una base para descomposición y otra para reconstrucción. Esto permite diseños con simetría y reconstrucción perfecta, aunque la interpretación energética puede ser menos directa que en el caso ortogonal.\n\n\n7.2.6 Invarianza aproximada al desplazamiento\nLa transformada wavelet discreta clásica es sensible a pequeños desplazamientos. Un desplazamiento de uno o dos píxeles puede modificar notablemente los coeficientes. Esta propiedad puede afectar la estabilidad de características extraídas para aprendizaje automático o radiómica.\nCuando la estabilidad frente a desplazamientos es importante, puede considerarse la transformada wavelet estacionaria, la transformada wavelet no diezmada o la transformada wavelet compleja de árbol dual. Estas representaciones son redundantes, pero más estables.\n\n\n7.2.7 Selectividad direccional\nLa transformada wavelet separable bidimensional produce tres orientaciones principales por nivel. Esto puede ser insuficiente para bordes curvos o estructuras elongadas en múltiples direcciones. En imágenes con estructuras direccionales complejas, como vasos, fibras, trabéculas o patrones histológicos, pueden ser más adecuadas representaciones con mayor selectividad direccional, como wavelets complejas, curvelets o shearlets."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-1-objetivo-del-análisis",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-1-objetivo-del-análisis",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "8.1 Criterio 1: objetivo del análisis",
+    "text": "8.1 Criterio 1: objetivo del análisis\nLa wavelet debe seleccionarse según la tarea principal.\n\n\n\n\n\n\n\n\nObjetivo\nPropiedad prioritaria\nElección razonable\n\n\n\n\nReducción de ruido\nCompacidad, regularidad, estabilidad\nSymlet, Coiflet, Daubechies moderada, transformada estacionaria\n\n\nRealce de bordes\nLocalización espacial, simetría\nBiortogonal, Haar para bordes abruptos, Symlet\n\n\nCompresión\nConcentración de energía, reconstrucción\nBiortogonal 9/7 o 5/3, según pérdida permitida\n\n\nTextura\nSeparación por escala y orientación\nDaubechies, Coiflet, wavelet compleja, bancos multiorientados\n\n\nSegmentación asistida\nPreservación de contornos, estabilidad\nBiortogonal, estacionaria, árbol dual complejo\n\n\nCaracterísticas para aprendizaje automático\nReproducibilidad, baja sensibilidad al desplazamiento\nTransformada estacionaria o características agregadas por regiones"
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-2-modalidad-de-imagen",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-2-modalidad-de-imagen",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "8.2 Criterio 2: modalidad de imagen",
+    "text": "8.2 Criterio 2: modalidad de imagen\nLa modalidad condiciona el tipo de ruido, el contraste y el significado físico de la intensidad.\n\n\n\n\n\n\n\n\nModalidad\nRasgos dominantes\nConsideración para wavelet\n\n\n\n\nRadiografía\nBordes óseos, contraste proyectivo, ruido dependiente de exposición\nPreservar bordes y evitar realce excesivo de ruido\n\n\nTomografía computarizada\nBordes definidos, ruido relacionado con dosis, unidades físicas interpretables\nEvaluar ruido por región y preservar detalles diagnósticos\n\n\nResonancia magnética\nContraste dependiente de secuencia, ruido no siempre gaussiano, artefactos de campo\nNormalizar intensidad y evitar interpretar coeficientes como marcadores absolutos\n\n\nEcografía\nMoteado, textura granular, sombras acústicas\nUsar métodos robustos; diferenciar textura anatómica de moteado\n\n\nHistopatología digital\nTextura multiescala, color, tinción variable\nSeparar canales o espacios de color antes del análisis\n\n\nMicroscopía\nEstructuras finas, ruido de adquisición, desenfoque\nPriorizar localización y control de artefactos de reconstrucción"
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-3-escala-anatómica-de-interés",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-3-escala-anatómica-de-interés",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "8.3 Criterio 3: escala anatómica de interés",
+    "text": "8.3 Criterio 3: escala anatómica de interés\nAntes de elegir niveles de descomposición, se debe estimar el tamaño físico de la estructura. Por ejemplo, si una imagen tiene resolución de \\(0.5\\ \\text{mm/píxel}\\), un patrón de 4 píxeles corresponde a \\(2\\ \\text{mm}\\). Si se descompone en varios niveles sin considerar esta escala, se pueden mezclar detalles clínicamente relevantes con ruido o con variaciones anatómicas no relacionadas.\nUna regla práctica es definir:\n\\[\nJ_{\\max} \\leq \\left\\lfloor \\log_2(\\min(M,N)) \\right\\rfloor,\n\\]\ndonde \\(M\\) y \\(N\\) son las dimensiones de la imagen. Esta es una restricción computacional, no una justificación biomédica. La elección real de \\(J\\) debe depender del tamaño de las estructuras de interés."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-4-tipo-de-ruido",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-4-tipo-de-ruido",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "8.4 Criterio 4: tipo de ruido",
+    "text": "8.4 Criterio 4: tipo de ruido\nEn imágenes médicas, el ruido no siempre es aditivo, blanco ni gaussiano. Algunas técnicas wavelet de umbralización asumen ruido aproximadamente gaussiano en las subbandas de alta frecuencia. Esta suposición puede ser razonable en algunos contextos, pero no en todos.\nEn resonancia magnética de magnitud, el ruido puede aproximarse por distribuciones no gaussianas en regiones de baja señal. En ecografía, el moteado suele tener naturaleza multiplicativa. En tomografía computarizada de baja dosis, el ruido puede depender de la intensidad y de la reconstrucción. Por tanto, la selección de umbrales debe estar alineada con el modelo de ruido."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-5-necesidad-de-reconstrucción",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#criterio-5-necesidad-de-reconstrucción",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "8.5 Criterio 5: necesidad de reconstrucción",
+    "text": "8.5 Criterio 5: necesidad de reconstrucción\nSi el análisis busca reconstruir una imagen filtrada, la wavelet debe permitir reconstrucción estable y sin artefactos inaceptables. Si el análisis busca únicamente extraer características, la reconstrucción puede ser secundaria, aunque la estabilidad de los coeficientes sigue siendo importante."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#haar",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#haar",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.1 Haar",
+    "text": "9.1 Haar\nLa wavelet de Haar es la más simple. Es discontinua, tiene soporte muy corto y detecta cambios abruptos. Puede ser útil para explicar conceptos o detectar discontinuidades marcadas, pero suele ser limitada para imágenes médicas con transiciones suaves. Su principal ventaja es la interpretabilidad; su principal desventaja es la generación de representaciones escalonadas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#daubechies",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#daubechies",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.2 Daubechies",
+    "text": "9.2 Daubechies\nLas wavelets Daubechies tienen soporte compacto y varios momentos nulos. Son útiles para representar señales e imágenes con regiones suaves y detalles localizados. Sin embargo, no son simétricas, lo que puede introducir desplazamientos o distorsiones de fase en aplicaciones donde la localización exacta del borde es crítica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#symlets",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#symlets",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.3 Symlets",
+    "text": "9.3 Symlets\nLas Symlets son variantes de Daubechies con mayor simetría. Suelen ser una elección razonable cuando se desea mantener buenas propiedades de compacidad y momentos nulos, pero con menor distorsión de fase."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#coiflets",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#coiflets",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.4 Coiflets",
+    "text": "9.4 Coiflets\nLas Coiflets poseen momentos nulos tanto para la función wavelet como para la función de escala. Pueden ser útiles para análisis de textura y para representar regiones suaves con estabilidad. Su longitud de filtro puede ser mayor, lo que exige cuidado con bordes y regiones pequeñas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#biortogonales",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#biortogonales",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.5 Biortogonales",
+    "text": "9.5 Biortogonales\nLas wavelets biortogonales permiten simetría y reconstrucción perfecta usando filtros duales. Son frecuentes en compresión y en tareas donde la preservación visual de bordes es importante. La biortogonal 9/7 se asocia con compresión con pérdida, mientras que la 5/3 se asocia con compresión reversible en contextos como JPEG 2000."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#wavelets-estacionarias-y-no-diezmadas",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#wavelets-estacionarias-y-no-diezmadas",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.6 Wavelets estacionarias y no diezmadas",
+    "text": "9.6 Wavelets estacionarias y no diezmadas\nEstas transformadas evitan la reducción de tamaño entre niveles. Producen una representación redundante, pero más estable frente a desplazamientos. Son útiles para reducción de ruido, detección y extracción de características cuando pequeñas variaciones de registro podrían alterar los coeficientes."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#wavelet-compleja-de-árbol-dual",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#wavelet-compleja-de-árbol-dual",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "9.7 Wavelet compleja de árbol dual",
+    "text": "9.7 Wavelet compleja de árbol dual\nLa wavelet compleja de árbol dual mejora la selectividad direccional y la invarianza aproximada al desplazamiento. Es más costosa y redundante que la transformada discreta clásica, pero puede ser ventajosa para bordes orientados, textura direccional y estructuras anatómicas alargadas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#principio-general",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#principio-general",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "10.1 Principio general",
+    "text": "10.1 Principio general\nLa reducción de ruido mediante wavelets se basa en la observación de que muchas imágenes naturales y médicas tienen representaciones dispersas: gran parte de la información estructural se concentra en pocos coeficientes, mientras que el ruido tiende a distribuirse en muchos coeficientes de pequeña magnitud.\nLa estrategia básica es:\n\nDescomponer la imagen en subbandas wavelet.\nEstimar el nivel de ruido.\nAplicar un umbral a los coeficientes de detalle.\nReconstruir la imagen.\nEvaluar si se preservó la información relevante."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#umbral-duro-y-umbral-suave",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#umbral-duro-y-umbral-suave",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "10.2 Umbral duro y umbral suave",
+    "text": "10.2 Umbral duro y umbral suave\nEl umbral duro se define como:\n\\[\nT_{\\lambda}^{\\text{duro}}(w) =\n\\begin{cases}\nw, & |w| \\geq \\lambda, \\\\\n0, & |w| &lt; \\lambda.\n\\end{cases}\n\\]\nEl umbral suave se define como:\n\\[\nT_{\\lambda}^{\\text{suave}}(w) =\n\\operatorname{sign}(w)\\max(|w|-\\lambda,0).\n\\]\nEl umbral duro preserva coeficientes grandes sin modificarlos, pero puede introducir discontinuidades. El umbral suave es más estable, pero reduce la magnitud de los coeficientes conservados, lo que puede suavizar bordes o disminuir contraste de estructuras finas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#estimación-robusta-del-ruido",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#estimación-robusta-del-ruido",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "10.3 Estimación robusta del ruido",
+    "text": "10.3 Estimación robusta del ruido\nUna estimación frecuente del ruido usa la desviación absoluta mediana en la subbanda diagonal del primer nivel:\n\\[\n\\hat{\\sigma} =\n\\frac{\\operatorname{mediana}(|HH_1|)}{0.6745}.\n\\]\nEsta estimación presupone que la subbanda \\(HH_1\\) contiene principalmente ruido. En imágenes médicas con textura fina real, esta suposición puede fallar. Por ejemplo, en histopatología o ecografía, la alta frecuencia no es necesariamente ruido."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#umbral-universal",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#umbral-universal",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "10.4 Umbral universal",
+    "text": "10.4 Umbral universal\nEl umbral universal se expresa como:\n\\[\n\\lambda = \\hat{\\sigma}\\sqrt{2\\log(N)},\n\\]\ndonde \\(N\\) es el número de píxeles o coeficientes considerados. Es simple y conservador, pero puede suavizar en exceso. En imágenes médicas, este exceso de suavizado puede borrar detalles diagnósticos pequeños."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#bayesshrink",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#bayesshrink",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "10.5 BayesShrink",
+    "text": "10.5 BayesShrink\nBayesShrink adapta el umbral por subbanda. Su forma básica es:\n\\[\n\\lambda_B = \\frac{\\hat{\\sigma}^2}{\\hat{\\sigma}_x},\n\\]\ndonde \\(\\hat{\\sigma}\\) estima el ruido y \\(\\hat{\\sigma}_x\\) estima la desviación estándar de la señal subyacente en la subbanda. Esta estrategia reconoce que no todas las subbandas tienen la misma relación entre señal y ruido."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretación-de-la-subbanda-de-aproximación",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretación-de-la-subbanda-de-aproximación",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "11.1 Interpretación de la subbanda de aproximación",
+    "text": "11.1 Interpretación de la subbanda de aproximación\nLa subbanda \\(LL_J\\) representa la versión de baja resolución de la imagen. Conserva las variaciones lentas de intensidad y la estructura anatómica global. En una resonancia magnética cerebral, por ejemplo, esta subbanda puede preservar la forma general del encéfalo y los grandes compartimentos anatómicos, pero no los bordes finos ni las texturas sutiles.\nUna aproximación muy suavizada puede ser útil para analizar iluminación, inhomogeneidad de campo o estructuras globales. No debe usarse para descartar lesiones pequeñas, porque estas pueden desaparecer en niveles altos de descomposición."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretación-de-subbandas-de-detalle",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretación-de-subbandas-de-detalle",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "11.2 Interpretación de subbandas de detalle",
+    "text": "11.2 Interpretación de subbandas de detalle\nLas subbandas de detalle contienen cambios locales. Una magnitud alta de coeficientes puede indicar bordes, textura, ruido, artefactos o estructuras finas. La interpretación depende del contexto.\nEn términos generales:\n\n\n\n\n\n\n\n\nPatrón en coeficientes\nPosible interpretación\nAdvertencia\n\n\n\n\nCoeficientes altos alrededor de bordes anatómicos\nTransiciones reales de tejido\nConfirmar con imagen original\n\n\nCoeficientes altos dispersos en toda la imagen\nRuido o textura fina\nNo asumir patología\n\n\nCoeficientes altos en una región focal\nLesión, borde, artefacto o cambio de textura\nRequiere validación anatómica\n\n\nEnergía alta en niveles bajos\nDetalles finos o ruido\nSeparar estructura de ruido\n\n\nEnergía alta en niveles altos\nCambios regionales amplios\nPuede reflejar iluminación o sesgo de campo"
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#energía-por-subbanda",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#energía-por-subbanda",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "11.3 Energía por subbanda",
+    "text": "11.3 Energía por subbanda\nUna medida útil es la energía relativa por subbanda:\n\\[\nE_{j,o} =\n\\sum_{m,n} |D_{j,o}[m,n]|^2,\n\\]\ndonde \\(j\\) indica el nivel y \\(o\\) la orientación. La energía relativa se obtiene como:\n\\[\nR_{j,o} =\n\\frac{E_{j,o}}{\\sum_{j,o}E_{j,o}}.\n\\]\nEsta medida puede resumir qué escalas y orientaciones dominan en una región. En análisis de textura, una región tumoral y una región sana podrían diferir en la distribución de energía por subbanda. Sin embargo, la energía no es específica: puede aumentar por textura patológica, ruido, artefactos de movimiento, bordes anatómicos o mala normalización."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#entropía-wavelet",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#entropía-wavelet",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "11.4 Entropía wavelet",
+    "text": "11.4 Entropía wavelet\nLa entropía de los coeficientes permite medir dispersión o complejidad de la representación. Si se define una distribución normalizada de energía:\n\\[\np_{j,o} =\n\\frac{E_{j,o}}{\\sum_{j,o}E_{j,o}},\n\\]\nla entropía puede calcularse como:\n\\[\nH = -\\sum_{j,o} p_{j,o}\\log(p_{j,o}).\n\\]\nUna entropía mayor indica que la energía está distribuida en más subbandas. En imágenes médicas, esto podría asociarse con textura heterogénea, pero también con ruido. Por tanto, la entropía debe interpretarse junto con métricas de calidad, regiones anatómicas y control de artefactos."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#coeficientes-positivos-y-negativos",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#coeficientes-positivos-y-negativos",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "11.5 Coeficientes positivos y negativos",
+    "text": "11.5 Coeficientes positivos y negativos\nEl signo de un coeficiente wavelet depende de la dirección de cambio de intensidad y de la forma de la wavelet. En bordes, el signo puede indicar una transición de oscuro a claro o de claro a oscuro según la orientación del filtro. No se debe interpretar el signo como presencia o ausencia de patología. Su valor es matemático, no clínico."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#reconstrucción-por-subbandas",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#reconstrucción-por-subbandas",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "11.6 Reconstrucción por subbandas",
+    "text": "11.6 Reconstrucción por subbandas\nUna práctica útil consiste en reconstruir la imagen usando solo un subconjunto de subbandas. Esto permite visualizar qué estructuras aporta cada escala. Por ejemplo:\n\nreconstrucción solo con \\(LL_J\\): muestra estructura global;\nreconstrucción con detalles de nivel 1: enfatiza bordes finos y ruido;\nreconstrucción con detalles de niveles intermedios: puede resaltar textura anatómica;\nreconstrucción sin detalles de nivel 1: puede reducir ruido fino, pero también eliminar microestructuras.\n\nLa reconstrucción selectiva es interpretativamente más clara que mirar únicamente mapas de coeficientes, porque permite volver al dominio de imagen."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-1-definir-el-objetivo",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-1-definir-el-objetivo",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "12.1 Paso 1: definir el objetivo",
+    "text": "12.1 Paso 1: definir el objetivo\nAntes de calcular la transformada, debe definirse si el objetivo es reducción de ruido, realce, compresión, extracción de características, segmentación o interpretación exploratoria. Cada objetivo exige criterios de evaluación diferentes."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-2-caracterizar-la-imagen",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-2-caracterizar-la-imagen",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "12.2 Paso 2: caracterizar la imagen",
+    "text": "12.2 Paso 2: caracterizar la imagen\nSe debe registrar modalidad, resolución espacial, tamaño de píxel o vóxel, profundidad de bits, protocolo de adquisición, región anatómica, presencia de artefactos y tipo esperado de ruido. Sin esta información, la interpretación de escalas carece de base física."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-3-preprocesar",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-3-preprocesar",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "12.3 Paso 3: preprocesar",
+    "text": "12.3 Paso 3: preprocesar\nEl preprocesamiento puede incluir normalización de intensidad, recorte de región de interés, corrección de sesgo de campo, registro, remuestreo, eliminación de fondo y manejo de valores extremos. En imágenes tridimensionales con vóxeles anisotrópicos, debe evaluarse si conviene remuestrear antes del análisis."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-4-seleccionar-wavelet-y-nivel",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-4-seleccionar-wavelet-y-nivel",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "12.4 Paso 4: seleccionar wavelet y nivel",
+    "text": "12.4 Paso 4: seleccionar wavelet y nivel\nLa selección debe documentarse. Una decisión metodológica mínima debe incluir familia wavelet, número de niveles, modo de extensión en bordes, tipo de umbralización si aplica y razón de selección."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-5-analizar-coeficientes",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-5-analizar-coeficientes",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "12.5 Paso 5: analizar coeficientes",
+    "text": "12.5 Paso 5: analizar coeficientes\nEl análisis puede incluir energía, entropía, estadísticos por subbanda, mapas de coeficientes, reconstrucciones selectivas y comparación por regiones anatómicas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-6-reconstruir-y-validar",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#paso-6-reconstruir-y-validar",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "12.6 Paso 6: reconstruir y validar",
+    "text": "12.6 Paso 6: reconstruir y validar\nLa imagen reconstruida debe evaluarse visual y cuantitativamente. En contexto médico, una mejora estética no implica mejora diagnóstica. La validación debe ser orientada a tarea."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#relación-señal-a-ruido-pico",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#relación-señal-a-ruido-pico",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "13.1 Relación señal a ruido pico",
+    "text": "13.1 Relación señal a ruido pico\nLa relación señal a ruido pico se calcula como:\n\\[\n\\operatorname{PSNR} =\n10\\log_{10}\n\\left(\n\\frac{I_{\\max}^2}{\\operatorname{MSE}}\n\\right),\n\\]\ndonde \\(I_{\\max}\\) es la intensidad máxima posible y \\(\\operatorname{MSE}\\) es el error cuadrático medio. Es útil cuando existe una imagen de referencia, pero puede no correlacionarse con utilidad clínica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#índice-de-similitud-estructural",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#índice-de-similitud-estructural",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "13.2 Índice de similitud estructural",
+    "text": "13.2 Índice de similitud estructural\nEl índice de similitud estructural compara luminancia, contraste y estructura. Es más informativo que el error cuadrático medio, pero sigue siendo una métrica general de similitud, no una medida diagnóstica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#relación-contraste-a-ruido",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#relación-contraste-a-ruido",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "13.3 Relación contraste a ruido",
+    "text": "13.3 Relación contraste a ruido\nPara regiones de interés, puede calcularse:\n\\[\n\\operatorname{CNR} =\n\\frac{|\\mu_1-\\mu_2|}\n{\\sqrt{\\sigma_1^2+\\sigma_2^2}},\n\\]\ndonde \\(\\mu_1\\) y \\(\\mu_2\\) son medias de intensidad en dos regiones, y \\(\\sigma_1\\), \\(\\sigma_2\\) son sus desviaciones estándar. Esta métrica es útil cuando se busca mejorar contraste entre lesión y tejido de referencia."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#preservación-de-bordes",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#preservación-de-bordes",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "13.4 Preservación de bordes",
+    "text": "13.4 Preservación de bordes\nUna forma de evaluar preservación de bordes consiste en comparar gradientes antes y después del procesamiento. Si el filtrado reduce ruido pero degrada bordes anatómicos, puede ser inadecuado para segmentación o medición morfológica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#métricas-orientadas-a-tarea",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#métricas-orientadas-a-tarea",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "13.5 Métricas orientadas a tarea",
+    "text": "13.5 Métricas orientadas a tarea\nCuando el análisis wavelet se usa como preprocesamiento para segmentación, clasificación o detección, la evaluación debe hacerse sobre la tarea final. Algunas métricas posibles son coeficiente de Dice, distancia de Hausdorff, sensibilidad, especificidad, área bajo la curva característica operativa del receptor y estabilidad de características."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#confundir-ruido-con-textura",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#confundir-ruido-con-textura",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "16.1 Confundir ruido con textura",
+    "text": "16.1 Confundir ruido con textura\nEn muchas imágenes, especialmente ecografía, histopatología y resonancia magnética de baja señal, las altas frecuencias pueden contener tanto ruido como información tisular. Eliminar todos los coeficientes pequeños o de alta frecuencia puede destruir textura diagnóstica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#elegir-demasiados-niveles",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#elegir-demasiados-niveles",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "16.2 Elegir demasiados niveles",
+    "text": "16.2 Elegir demasiados niveles\nUna descomposición excesiva puede producir aproximaciones tan gruesas que pierden significado anatómico. Además, los niveles altos pueden estar dominados por efectos globales de intensidad, no por estructuras clínicas específicas."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#ignorar-los-bordes-de-la-imagen",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#ignorar-los-bordes-de-la-imagen",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "16.3 Ignorar los bordes de la imagen",
+    "text": "16.3 Ignorar los bordes de la imagen\nLos filtros wavelet requieren extender la imagen en los bordes. El modo de extensión puede producir artefactos cerca del contorno. En imágenes médicas, estos artefactos pueden afectar regiones periféricas, campos de visión pequeños o estructuras cercanas al borde."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretar-coeficientes-como-biomarcadores-directos",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretar-coeficientes-como-biomarcadores-directos",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "16.4 Interpretar coeficientes como biomarcadores directos",
+    "text": "16.4 Interpretar coeficientes como biomarcadores directos\nLos coeficientes wavelet son descriptores matemáticos. Pueden contribuir a construir biomarcadores, pero no son biomarcadores por sí mismos. Para usarlos como variables biomédicas se requiere reproducibilidad, validez externa, sensibilidad al protocolo de adquisición y relación con una pregunta clínica definida."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#optimizar-solo-una-métrica-global",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#optimizar-solo-una-métrica-global",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "16.5 Optimizar solo una métrica global",
+    "text": "16.5 Optimizar solo una métrica global\nUna imagen procesada puede mejorar la relación señal a ruido pico y, al mismo tiempo, perder bordes clínicamente relevantes. En imágenes médicas, la evaluación debe considerar la tarea: detección, segmentación, cuantificación, clasificación o lectura visual."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html",
+    "href": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html",
+    "title": "Selección justificada de wavelet y análisis completo de un electrocardiograma",
+    "section": "",
+    "text": "Este reporte presenta un ejemplo completo de análisis de electrocardiografía basado en transformada wavelet discreta. El punto de partida no es la aplicación directa de una wavelet preseleccionada, sino la elección explícita y justificada de la wavelet a partir de criterios teóricos y empíricos. Para ello se comparan varias candidatas mediante ortogonalidad o biortogonalidad, simetría, longitud del filtro, número de momentos nulos, error de reconstrucción y capacidad para concentrar la energía del complejo QRS en niveles de detalle fisiológicamente plausibles.\nDespués de esa selección, se realiza un flujo completo de análisis sobre un electrocardiograma real: inspección inicial, análisis espectral, descomposición multirresolución, atenuación de deriva de línea base y ruido de alta frecuencia, construcción de una banda proxy para el complejo QRS, detección automática de picos R, estimación de intervalos RR y frecuencia cardiaca instantánea, obtención de un latido mediano y exploración de un segmento con morfologías anómalas.\nEl objetivo no es producir un sistema clínico final, sino un ejemplo didácticamente sólido, metodológicamente explícito y computacionalmente reproducible para estudiantes de pregrado en ingeniería biomédica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-1.-ortogonalidad-o-biortogonalidad",
+    "href": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-1.-ortogonalidad-o-biortogonalidad",
+    "title": "Selección justificada de wavelet y análisis completo de un electrocardiograma",
+    "section": "3.1 Criterio 1. Ortogonalidad o biortogonalidad",
+    "text": "3.1 Criterio 1. Ortogonalidad o biortogonalidad\nLa ortogonalidad indica que las funciones de la base son mutuamente ortogonales, lo que favorece descomposiciones energéticamente consistentes y reconstrucciones estables. La biortogonalidad relaja esa condición estricta, pero conserva una estructura de análisis y síntesis bien definida, muy útil cuando se desea combinar reconstrucción estable con propiedades de simetría.\nEn este reporte, este criterio no se mide de forma subjetiva, sino consultando directamente los atributos lógicos que PyWavelets asigna a cada wavelet discreta. Si la wavelet es ortogonal, recibe la mayor valoración. Si no es ortogonal pero sí biortogonal, recibe una valoración intermedia. Si no satisface ninguna de las dos propiedades, recibe una penalización explícita. En términos operacionales, la medición se implementa como una puntuación categórica:\n\\[\nS_{\\text{ort}} =\n\\begin{cases}\n1.00, & \\text{si la wavelet es ortogonal} \\\\\n0.80, & \\text{si no es ortogonal pero sí biortogonal} \\\\\n0.40, & \\text{si no cumple ninguna de las dos propiedades}\n\\end{cases}\n\\]\nLa lógica de esta escala es directa: se privilegia la ortogonalidad, se acepta la biortogonalidad como alternativa técnicamente sólida y se desincentivan wavelets sin ninguna de estas dos estructuras cuando el objetivo es un análisis didáctico con reconstrucción interpretable."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-2.-simetría",
+    "href": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-2.-simetría",
+    "title": "Selección justificada de wavelet y análisis completo de un electrocardiograma",
+    "section": "3.2 Criterio 2. Simetría",
+    "text": "3.2 Criterio 2. Simetría\nLa simetría es relevante porque una wavelet más simétrica tiende a introducir menor distorsión temporal o de fase en la representación de transitorios. En una señal como el electrocardiograma, esto importa porque los puntos fiduciales —por ejemplo, el máximo del complejo QRS— deben conservar una localización temporal razonablemente estable después de la descomposición y la reconstrucción parcial.\nAquí la medición también se hace a partir de la metainformación formal de la wavelet. PyWavelets clasifica esta propiedad con etiquetas como symmetric, near symmetric o asymmetric. En lugar de dejar esa descripción en lenguaje natural, el documento la convierte en una escala numérica ordinal para que pueda entrar en la puntuación multicriterio:\n\\[\nS_{\\text{sim}} =\n\\begin{cases}\n1.00, & \\text{si la simetría es } \\texttt{symmetric} \\\\\n0.90, & \\text{si la simetría es } \\texttt{near\\ symmetric} \\\\\n0.55, & \\text{si la simetría es } \\texttt{asymmetric}\n\\end{cases}\n\\]\nNo se trata de una medición geométrica exacta de la simetría del filtro, sino de una traducción operativa de la clasificación estructural reportada por la biblioteca. Su función es introducir, de manera explícita, la preferencia por wavelets que reduzcan deformaciones temporales en eventos estrechos."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-3.-compacidad-temporal-medida-mediante-la-longitud-del-filtro",
+    "href": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-3.-compacidad-temporal-medida-mediante-la-longitud-del-filtro",
+    "title": "Selección justificada de wavelet y análisis completo de un electrocardiograma",
+    "section": "3.3 Criterio 3. Compacidad temporal, medida mediante la longitud del filtro",
+    "text": "3.3 Criterio 3. Compacidad temporal, medida mediante la longitud del filtro\nEn el contexto de este documento, la compacidad temporal se aproxima mediante la longitud del filtro de descomposición, denotada por dec_len. Cuanto más corto es el filtro, menor es su soporte efectivo y, por tanto, mejor suele ser la localización temporal de transitorios breves. El costo de esa ventaja es que filtros muy cortos pueden perder poder de separación espectral o robustez frente a ciertas formas de ruido.\nLa medición comienza extrayendo la longitud del filtro asociada a cada candidata. Sin embargo, como una longitud menor es preferible, no se usa directamente dec_len, sino su inverso:\n\\[\nC_{\\text{raw}} = \\frac{1}{L},\n\\]\ndonde (L) es la longitud del filtro. Después, para que las wavelets comparadas queden en una misma escala numérica, ese valor se normaliza al intervalo ([0,1]) con una transformación mínimo-máximo:\n\\[\nS_{\\text{comp}} = \\frac{C_{\\text{raw}} - C_{\\min}}{C_{\\max} - C_{\\min}}.\n\\]\nEsta forma de medición expresa con claridad la compensación fundamental: una wavelet con filtro corto obtiene mejor puntuación de compacidad porque favorece localización temporal, pero no necesariamente será la mejor en los demás criterios."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-4.-número-de-momentos-nulos",
+    "href": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-4.-número-de-momentos-nulos",
+    "title": "Selección justificada de wavelet y análisis completo de un electrocardiograma",
+    "section": "3.4 Criterio 4. Número de momentos nulos",
+    "text": "3.4 Criterio 4. Número de momentos nulos\nLos momentos nulos cuantifican la capacidad de la wavelet para anular polinomios de bajo grado y, en consecuencia, para separar mejor componentes suaves de cambios abruptos. En términos prácticos, una wavelet con más momentos nulos suele representar con mayor eficiencia transitorios localizados sobre fondos lentos. Esto resulta pertinente cuando se desea atenuar deriva de línea base y, al mismo tiempo, conservar información útil del complejo QRS.\nLa medición utilizada en el documento toma directamente el atributo vanishing_moments_psi de cada wavelet. Ese valor, por sí solo, no es aún comparable entre candidatas con escalas distintas; por ello se normaliza nuevamente al intervalo ([0,1]):\n\\[\nS_{\\text{vm}} = \\frac{M - M_{\\min}}{M_{\\max} - M_{\\min}},\n\\]\ndonde (M) es el número de momentos nulos de la wavelet analizada. Esta normalización no elimina la compensación estructural ya conocida: aumentar momentos nulos suele implicar filtros más largos. Precisamente por eso este criterio no se usa de manera aislada, sino en conjunto con la compacidad temporal."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-5.-concentración-empírica-de-energía-del-complejo-qrs",
+    "href": "recursos/documentos/PSIM/Ejemplo_Wavelet_v01.html#criterio-5.-concentración-empírica-de-energía-del-complejo-qrs",
+    "title": "Selección justificada de wavelet y análisis completo de un electrocardiograma",
+    "section": "3.5 Criterio 5. Concentración empírica de energía del complejo QRS",
+    "text": "3.5 Criterio 5. Concentración empírica de energía del complejo QRS\nLos cuatro criterios anteriores describen propiedades de la wavelet en abstracto. Sin embargo, una selección metodológicamente seria exige además verificar cómo se comporta la candidata sobre la señal concreta. Para eso se introduce un criterio empírico: medir qué fracción de la energía de detalle queda concentrada en los niveles que, para la frecuencia de muestreo del registro, son compatibles con la dinámica del complejo QRS.\nSi la señal está muestreada a (f_s = 360,), una descomposición diádica ideal asocia a cada nivel de detalle (D_j) una banda aproximada\n\\[\n\\left[\\frac{f_s}{2^{j+1}},\\; \\frac{f_s}{2^j}\\right].\n\\]\nCon esta relación, los niveles (D_3), (D_4) y (D_5) cubren aproximadamente los intervalos 22.5–45 Hz, 11.25–22.5 Hz y 5.625–11.25 Hz. Para fines docentes, esa zona constituye una región razonable donde debería concentrarse una parte importante de la energía asociada al complejo QRS.\nLa medición se realiza en cuatro pasos. Primero, se descompone el segmento de referencia con la wavelet candidata. Segundo, se reconstruye por separado cada componente de detalle (D_j) en el dominio temporal. Tercero, se calcula la energía de cada componente como\n\\[\nE_j = \\sum_n D_j[n]^2.\n\\]\nFinalmente, se calcula la razón entre la energía acumulada en los niveles objetivo y la energía total de detalle:\n\\[\nR_{\\text{QRS}} = \\frac{E_3 + E_4 + E_5}{\\sum_{j=1}^{J} E_j},\n\\]\najustando la suma superior al máximo nivel disponible en el segmento. Cuanto mayor sea esta razón, mayor es la capacidad de la wavelet para concentrar la energía del electrocardiograma en una región de escalas coherente con el complejo QRS. En la fase de clasificación, esta razón también se normaliza al intervalo ([0,1]) para hacerla comparable con los demás criterios.\nEn síntesis, la selección propuesta no se apoya en una sola propiedad. Una wavelet adecuada para este problema debe exhibir una estructura matemática conveniente, mantener una localización temporal razonable, ofrecer suficiente capacidad de separación entre tendencias suaves y transitorios, y demostrar sobre la señal real que concentra la energía del complejo QRS en niveles esperables. Esa combinación de criterios es la que convierte la elección en una decisión justificable y reproducible.\nAntes de pasar a la implementación, conviene aclarar un punto adicional. En la etapa operacional del documento aparecerá también el error relativo de reconstrucción. Ese valor no forma parte de los cinco criterios conceptuales principales, sino que funciona como verificación numérica complementaria: si dos wavelets son competitivas según los cinco criterios anteriores, una reconstrucción más fiel ofrece un argumento adicional a favor de la candidata seleccionada."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#imagen-sintética-usada-en-el-ejemplo",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#imagen-sintética-usada-en-el-ejemplo",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.1 Imagen sintética usada en el ejemplo",
+    "text": "14.1 Imagen sintética usada en el ejemplo\n\n\nCódigo\nfig, axes = plt.subplots(1, 4, figsize=(12, 3.2))\n\naxes[0].imshow(image_clean, cmap=\"gray\")\naxes[0].set_title(\"Imagen limpia\")\naxes[0].axis(\"off\")\n\naxes[1].imshow(image_noisy, cmap=\"gray\")\naxes[1].set_title(\"Imagen con ruido\")\naxes[1].axis(\"off\")\n\naxes[2].imshow(noise * brain_mask, cmap=\"gray\")\naxes[2].set_title(\"Ruido agregado\")\naxes[2].axis(\"off\")\n\naxes[3].imshow(lesion_mask, cmap=\"gray\")\naxes[3].set_title(\"Lesión simulada\")\naxes[3].axis(\"off\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigura 1: Fantoma médico sintético, imagen con ruido, componente de ruido y máscara de la lesión simulada.\n\n\n\n\n\nLa imagen limpia representa una anatomía idealizada con una región principal, variaciones internas de intensidad, cavidades hipointensas y una lesión hiperintensa simulada. La imagen con ruido permite evaluar cómo la transformada wavelet responde ante variaciones finas que no corresponden necesariamente a estructura anatómica. La máscara de lesión no participa en la descomposición; se incluye solo para interpretar si las escalas wavelet resaltan bordes o textura en la región alterada.\nEl punto metodológico central es que la imagen con ruido mezcla tres fuentes de alta frecuencia: bordes anatómicos, textura simulada y ruido. Por tanto, una subbanda de detalle con coeficientes altos no debe interpretarse automáticamente como lesión. Primero debe verificarse si esos coeficientes coinciden espacialmente con una estructura anatómica plausible, con el ruido agregado o con un artefacto de borde."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#mapa-global-de-coeficientes-wavelet",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#mapa-global-de-coeficientes-wavelet",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.2 Mapa global de coeficientes wavelet",
+    "text": "14.2 Mapa global de coeficientes wavelet\n\n\nCódigo\ncoeff_array, coeff_slices = pywt.coeffs_to_array(coeffs)\n\nplt.figure(figsize=(7, 7))\nplt.imshow(robust_display(np.log1p(np.abs(coeff_array))), cmap=\"gray\")\nplt.title(f\"Coeficientes wavelet: {wavelet_name}, nivel {decomposition_level}\")\nplt.axis(\"off\")\nplt.show()\n\n\n\n\n\n\n\n\nFigura 2: Mapa global de coeficientes wavelet empaquetados. La región superior izquierda corresponde a la aproximación de baja resolución; las demás regiones corresponden a detalles por escala y orientación.\n\n\n\n\n\nEl mapa global muestra la organización multirresolución de la imagen. La región de aproximación conserva la estructura anatómica de baja frecuencia: forma general, regiones amplias de intensidad y variaciones suaves. Las regiones de detalle contienen los cambios locales separados por escala y orientación.\nUna lectura técnica adecuada es la siguiente: los bloques de detalle de nivel fino tienden a capturar ruido, bordes pequeños y variaciones locales abruptas; los bloques de detalle de niveles más gruesos capturan transiciones anatómicas más amplias. Si la lesión simulada tiene bordes definidos, parte de su contorno aparece en subbandas de detalle. Si además tiene textura interna, puede distribuir energía en más de una escala.\nLa interpretación clínica directa sería incorrecta. El mapa no dice “hay lesión”; solo muestra dónde y en qué escala la imagen tiene variaciones espaciales relevantes."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#subbandas-de-detalle-por-nivel-y-orientación",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#subbandas-de-detalle-por-nivel-y-orientación",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.3 Subbandas de detalle por nivel y orientación",
+    "text": "14.3 Subbandas de detalle por nivel y orientación\n\n\nCódigo\nfig, axes = plt.subplots(3, 3, figsize=(10, 9))\n\norientation_names = [\"Horizontal\", \"Vertical\", \"Diagonal\"]\n\nfor row, level in enumerate([1, 2, 3]):\n    cH, cV, cD = coeffs[-level]\n\n    bands = [cH, cV, cD]\n\n    for col, band in enumerate(bands):\n        axes[row, col].imshow(\n            robust_display(np.log1p(np.abs(band))),\n            cmap=\"gray\"\n        )\n        axes[row, col].set_title(\n            f\"Nivel {level} - {orientation_names[col]}\"\n        )\n        axes[row, col].axis(\"off\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigura 3: Subbandas de detalle por nivel. El nivel 1 corresponde a detalles finos; el nivel 3 corresponde a detalles más gruesos.\n\n\n\n\n\nEn el nivel 1 predominan los detalles finos. En una imagen médica real, esta escala puede contener microestructuras, bordes muy delgados, textura fina y ruido de adquisición. En el ejemplo, parte importante del patrón granular proviene del ruido agregado. Por esa razón, una alta actividad en el nivel 1 debe analizarse con cautela.\nEn el nivel 2 aparecen detalles de escala intermedia. Esta escala puede ser especialmente informativa cuando la estructura de interés no es ni demasiado fina ni demasiado global. En el fantoma, el borde de la lesión y las transiciones internas pueden observarse con mayor estabilidad que en el nivel 1, porque el ruido fino pierde parte de su predominio relativo.\nEn el nivel 3 se observan transiciones más gruesas. Esta escala responde a cambios anatómicos amplios, al contorno general de la región principal y a variaciones lentas de intensidad. Si una lesión pequeña desaparece en este nivel, eso no significa que no exista; significa que su tamaño espacial está por debajo de la escala dominante de esa subbanda.\nLa orientación también importa. Las subbandas horizontal, vertical y diagonal no representan tejidos distintos, sino direcciones preferenciales de cambio. Un borde oblicuo puede distribuirse entre varias orientaciones."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#reconstrucción-selectiva-por-escalas",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#reconstrucción-selectiva-por-escalas",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.4 Reconstrucción selectiva por escalas",
+    "text": "14.4 Reconstrucción selectiva por escalas\n\n\nCódigo\nfig, axes = plt.subplots(1, 5, figsize=(13, 3.2))\n\naxes[0].imshow(image_noisy, cmap=\"gray\")\naxes[0].set_title(\"Imagen con ruido\")\naxes[0].axis(\"off\")\n\naxes[1].imshow(reconstruction_approx, cmap=\"gray\")\naxes[1].set_title(\"Solo aproximación\")\naxes[1].axis(\"off\")\n\nfor idx, level in enumerate([1, 2, 3], start=2):\n    axes[idx].imshow(\n        robust_display(np.abs(detail_reconstructions[level])),\n        cmap=\"gray\"\n    )\n    axes[idx].set_title(f\"Solo detalles nivel {level}\")\n    axes[idx].axis(\"off\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigura 4: Reconstrucciones selectivas: aproximación de baja resolución y detalles aislados por nivel.\n\n\n\n\n\nLa reconstrucción con solo la aproximación conserva la forma anatómica global, pero pierde bordes finos, textura local y parte de la definición de la lesión simulada. Esta imagen es útil para estudiar variaciones lentas de intensidad, pero no para valorar detalles pequeños.\nLa reconstrucción con detalles de nivel 1 muestra variaciones finas. En este ejemplo, esa reconstrucción está fuertemente contaminada por el ruido agregado. Esto ilustra una situación común en imágenes médicas: las escalas finas no son automáticamente más informativas, porque pueden estar dominadas por ruido.\nLa reconstrucción con detalles de nivel 2 resalta transiciones de tamaño intermedio. En el fantoma, esta escala puede mostrar mejor el contorno de la lesión y algunas estructuras internas. Para tareas de segmentación o extracción de bordes, este nivel podría ser más útil que el nivel 1.\nLa reconstrucción con detalles de nivel 3 enfatiza cambios amplios y bordes de mayor escala. Puede ser útil para identificar contornos anatómicos generales, pero puede perder lesiones pequeñas o patrones texturales finos. La consecuencia práctica es que el número de niveles debe elegirse según el tamaño físico de la estructura de interés, no solo según el tamaño de la matriz."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#energía-relativa-por-subbanda",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#energía-relativa-por-subbanda",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.5 Energía relativa por subbanda",
+    "text": "14.5 Energía relativa por subbanda\n\n\nCódigo\nenergy_rows = []\n\nfor level in [1, 2, 3]:\n    cH, cV, cD = coeffs[-level]\n\n    for orientation, band in zip(\n        [\"horizontal\", \"vertical\", \"diagonal\"],\n        [cH, cV, cD]\n    ):\n        energy = np.sum(np.abs(band) ** 2)\n\n        energy_rows.append(\n            {\n                \"nivel\": level,\n                \"orientacion\": orientation,\n                \"energia\": energy\n            }\n        )\n\nenergy_table = pd.DataFrame(energy_rows)\nenergy_table[\"energia_relativa\"] = (\n    energy_table[\"energia\"] / energy_table[\"energia\"].sum()\n)\n\nenergy_table\n\n\n\n\n\n\nEnergía relativa por nivel y orientación en las subbandas de detalle.\n\n\n\nnivel\norientacion\nenergia\nenergia_relativa\n\n\n\n\n0\n1\nhorizontal\n28.924753\n0.163863\n\n\n1\n1\nvertical\n31.614865\n0.179102\n\n\n2\n1\ndiagonal\n25.910481\n0.146786\n\n\n3\n2\nhorizontal\n14.115259\n0.079965\n\n\n4\n2\nvertical\n18.836011\n0.106709\n\n\n5\n2\ndiagonal\n8.736170\n0.049492\n\n\n6\n3\nhorizontal\n17.280556\n0.097897\n\n\n7\n3\nvertical\n22.571942\n0.127873\n\n\n8\n3\ndiagonal\n8.528260\n0.048314\n\n\n\n\n\n\n\n\n\nCódigo\nenergy_table[\"subbanda\"] = (\n    \"N\" + energy_table[\"nivel\"].astype(str) +\n    \"-\" +\n    energy_table[\"orientacion\"]\n)\n\nfig, ax = plt.subplots(figsize=(8, 4))\nax.bar(energy_table[\"subbanda\"], energy_table[\"energia_relativa\"])\nax.set_xlabel(\"Subbanda\")\nax.set_ylabel(\"Energía relativa\")\nax.set_title(\"Distribución de energía wavelet por subbanda\")\nax.tick_params(axis=\"x\", rotation=45)\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigura 5: Energía relativa de las subbandas de detalle. La energía resume la magnitud de las variaciones espaciales por escala y orientación.\n\n\n\n\n\nLa energía relativa permite resumir qué escalas y orientaciones concentran más variación espacial. Una energía alta en el nivel 1 puede indicar ruido, bordes finos o textura. Una energía alta en niveles intermedios puede indicar estructuras anatómicas o lesiones con tamaño espacial compatible con esa escala. Una energía alta en niveles gruesos puede reflejar contornos amplios, variaciones regionales de intensidad o inhomogeneidad.\nEsta métrica no es específica. Dos imágenes pueden tener energías similares por subbanda y representar fenómenos biomédicos distintos. Por tanto, la energía wavelet debe analizarse junto con regiones de interés, modalidad de adquisición, tamaño físico de píxel, ruido esperado y validación anatómica."
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#reducción-de-ruido-mediante-umbralización-wavelet",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#reducción-de-ruido-mediante-umbralización-wavelet",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.6 Reducción de ruido mediante umbralización wavelet",
+    "text": "14.6 Reducción de ruido mediante umbralización wavelet\n\n\nCódigo\nfig, axes = plt.subplots(2, 3, figsize=(13, 5.5))\n\naxes[0, 0].imshow(image_clean, cmap=\"gray\")\naxes[0, 0].set_title(\"Imagen limpia\")\naxes[0, 0].axis(\"off\")\n\naxes[0, 1].imshow(image_noisy, cmap=\"gray\")\naxes[0, 1].set_title(\"Imagen con ruido\")\naxes[0, 1].axis(\"off\")\n\naxes[0, 2].imshow(image_denoised, cmap=\"gray\")\naxes[0, 2].set_title(\"Filtrada por wavelet\")\naxes[0, 2].axis(\"off\")\n\naxes[1, 0].imshow(error_noisy, cmap=\"gray\")\naxes[1, 0].set_title(\"Error absoluto: ruido\")\naxes[1, 0].axis(\"off\")\n\naxes[1, 1].imshow(error_denoised, cmap=\"gray\")\naxes[1, 1].set_title(\"Error absoluto: filtrado\")\naxes[1, 1].axis(\"off\")\n\naxes[1, 2].imshow(np.abs(image_denoised - image_noisy), cmap=\"gray\")\naxes[1, 2].set_title(\"Cambio inducido por filtrado\")\naxes[1, 2].axis(\"off\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\n\n\n\n\nFigura 6: Comparación entre imagen limpia, imagen con ruido, imagen filtrada por wavelet y mapas de error absoluto.\n\n\n\n\n\n\n\nCódigo\nmetrics_table\n\n\n\n\n\n\nComparación cuantitativa entre imagen con ruido e imagen filtrada por wavelet.\n\n\n\nimagen\nraiz_error_cuadratico_medio\nrelacion_senal_ruido_pico_db\n\n\n\n\n0\nCon ruido\n0.036172\n28.832545\n\n\n1\nFiltrada por wavelet\n0.028069\n31.035602\n\n\n\n\n\n\n\nLa imagen filtrada por wavelet reduce parte del ruido granular sin eliminar completamente la estructura anatómica principal. Sin embargo, también puede suavizar bordes y modificar detalles pequeños. Esta es una consecuencia esperada de la umbralización: los coeficientes de baja magnitud se reducen o se anulan, pero algunos de ellos pueden pertenecer a estructuras reales.\nEl mapa de error absoluto permite localizar dónde el filtrado mejora o deteriora la imagen. Si el error disminuye en regiones homogéneas, el filtrado está reduciendo ruido. Si el error aumenta alrededor de bordes o en la lesión simulada, el filtrado está afectando detalles potencialmente relevantes. En imágenes médicas reales, este punto es crítico: una mejora global de la relación señal a ruido pico no garantiza preservación diagnóstica.\nLa tabla cuantitativa resume el desempeño respecto a la imagen limpia conocida. En un caso clínico real normalmente no existe una imagen limpia de referencia, por lo que estas métricas deben sustituirse o complementarse con evaluación por tarea: segmentación, detección, clasificación, reproducibilidad de características o lectura experta.\n\n\nCódigo\ndiagnostic_table = pd.DataFrame(\n    {\n        \"imagen\": [\"image_clean\", \"image_noisy\", \"image_denoised\"],\n        \"nan\": [\n            np.isnan(image_clean).sum(),\n            np.isnan(image_noisy).sum(),\n            np.isnan(image_denoised).sum()\n        ],\n        \"inf\": [\n            np.isinf(image_clean).sum(),\n            np.isinf(image_noisy).sum(),\n            np.isinf(image_denoised).sum()\n        ],\n        \"minimo\": [\n            np.nanmin(image_clean),\n            np.nanmin(image_noisy),\n            np.nanmin(image_denoised)\n        ],\n        \"maximo\": [\n            np.nanmax(image_clean),\n            np.nanmax(image_noisy),\n            np.nanmax(image_denoised)\n        ]\n    }\n)\n\ndiagnostic_table\n\n\n\n\n\n\nDiagnóstico de valores no finitos en las imágenes usadas para calcular las métricas.\n\n\n\nimagen\nnan\ninf\nminimo\nmaximo\n\n\n\n\n0\nimage_clean\n0\n0\n0.0\n1.0\n\n\n1\nimage_noisy\n0\n0\n0.0\n1.0\n\n\n2\nimage_denoised\n0\n0\n0.0\n1.0\n\n\n\n\n\n\n\n\n\nCódigo\nthreshold_table\n\n\n\n\n\n\nUmbrales aplicados por subbanda y reducción relativa de energía.\n\n\n\nnivel\norientacion\numbral\nenergia_antes\nenergia_despues\nreduccion_energia\n\n\n\n\n0\n3\nhorizontal\n0.048019\n17.280556\n13.400862\n0.224512\n\n\n1\n3\nvertical\n0.039559\n22.571942\n18.480466\n0.181264\n\n\n2\n3\ndiagonal\n0.103101\n8.528260\n3.811177\n0.553112\n\n\n3\n2\nhorizontal\n0.563192\n14.115259\n0.000000\n1.000000\n\n\n4\n2\nvertical\n0.583388\n18.836011\n0.000000\n1.000000\n\n\n5\n2\ndiagonal\n0.374128\n8.736170\n0.000000\n1.000000\n\n\n6\n1\nhorizontal\n0.439896\n28.924753\n0.000000\n1.000000\n\n\n7\n1\nvertical\n0.444405\n31.614865\n0.000000\n1.000000\n\n\n8\n1\ndiagonal\n0.369942\n25.910481\n0.000000\n1.000000\n\n\n\n\n\n\n\n\n\nCódigo\nchange_table\n\n\n\n\n\n\nMagnitud del cambio inducido por la reducción de ruido wavelet.\n\n\n\nmetrica\nvalor\n\n\n\n\n0\nCambio absoluto medio inducido por el filtrado\n0.020190\n\n\n1\nCambio absoluto máximo inducido por el filtrado\n0.369983"
+  },
+  {
+    "objectID": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretación-integrada-del-ejemplo",
+    "href": "recursos/documentos/PSIM/ejemplo_wavelet_image.html#interpretación-integrada-del-ejemplo",
+    "title": "Análisis multirresolución de imágenes médicas mediante transformadas wavelet",
+    "section": "14.7 Interpretación integrada del ejemplo",
+    "text": "14.7 Interpretación integrada del ejemplo\nEl ejemplo muestra que la transformada wavelet separa la imagen en escalas, pero no separa automáticamente anatomía, lesión, ruido y artefactos. La misma subbanda puede contener información útil y ruido simultáneamente. Por eso, la interpretación debe hacerse en tres niveles.\nPrimero, debe interpretarse la escala. Los niveles finos responden a detalles pequeños, pero también al ruido. Los niveles intermedios pueden ser útiles para bordes y texturas anatómicas. Los niveles gruesos representan estructuras globales, pero pueden omitir lesiones pequeñas.\nSegundo, debe interpretarse la orientación. Las subbandas horizontal, vertical y diagonal indican direcciones de cambio de intensidad, no categorías anatómicas. Una lesión con borde irregular puede distribuir energía en varias orientaciones.\nTercero, debe interpretarse la reconstrucción. La reconstrucción selectiva ayuda a traducir los coeficientes al dominio espacial original. Esto es preferible a interpretar únicamente matrices de coeficientes, porque permite verificar si una escala resalta estructuras anatómicas plausibles o solo ruido.\nLa conclusión metodológica es que el análisis wavelet es útil cuando se usa como representación multiescala controlada. No es un sustituto de la validación anatómica, física o clínica."
   }
 ]

@@ -1,0 +1,1165 @@
+---
+title: "Análisis multirresolución de imágenes médicas mediante transformadas wavelet"
+subtitle: "Fundamentos teóricos, elección de la wavelet e interpretación de resultados"
+author: "Pablo Caicedo"
+date: "2026-05-04"
+lang: es
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    code-fold: true
+    code-tools: true
+    html-math-method: mathjax
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+# Resumen
+
+El análisis multirresolución de imágenes médicas permite representar una imagen como la combinación de componentes de baja frecuencia, asociadas con la estructura anatómica global, y componentes de alta frecuencia, asociadas con bordes, transiciones, textura fina, ruido y artefactos. Esta representación es especialmente pertinente en imágenes médicas porque la información clínicamente relevante no aparece en una única escala espacial: una lesión puede manifestarse como una alteración macroscópica de intensidad, como un cambio de textura, como una irregularidad de borde o como una combinación de patrones locales y regionales.
+
+La transformada wavelet, también llamada transformada de ondículas, proporciona una base matemática para este análisis. A diferencia de la transformada de Fourier, que describe la imagen mediante frecuencias globales, la transformada wavelet permite localizar simultáneamente información espacial y frecuencial. En imágenes médicas, esta propiedad resulta útil para tareas de reducción de ruido, realce de bordes, compresión, extracción de características, análisis de textura, segmentación asistida e interpretación multiescala de hallazgos anatómicos o patológicos.
+
+El punto crítico no es aplicar una wavelet de manera automática, sino justificar su elección según el objetivo analítico, la modalidad de imagen, el tipo de ruido, la resolución espacial, la anatomía de interés, la necesidad de reconstrucción y el grado de interpretabilidad requerido. La elección de la wavelet afecta la localización de bordes, la preservación de estructuras finas, la sensibilidad al desplazamiento, la aparición de artefactos y la estabilidad de las características extraídas.
+
+Este reporte desarrolla los fundamentos teóricos del análisis multirresolución, presenta criterios para seleccionar familias wavelet en imágenes médicas y propone una guía para interpretar los coeficientes y los resultados reconstruidos. La tesis central es que el análisis wavelet no debe interpretarse como una herramienta diagnóstica autónoma, sino como una representación matemática que debe ser validada contra criterios físicos, anatómicos, estadísticos y clínicos.
+
+# Alcance del reporte
+
+Este documento se enfoca en imágenes médicas bidimensionales, aunque muchos conceptos se extienden directamente a volúmenes tridimensionales. Las modalidades de referencia incluyen radiografía, tomografía computarizada, resonancia magnética, ecografía, microscopía biomédica e histopatología digital. El énfasis está en tres preguntas metodológicas:
+
+Primero, qué significa analizar una imagen médica en múltiples resoluciones. Segundo, cómo elegir una wavelet de manera técnicamente justificable. Tercero, cómo interpretar los coeficientes, las subbandas y las imágenes reconstruidas sin atribuir significado clínico espurio a patrones puramente matemáticos.
+
+# Fundamentos del análisis multirresolución
+
+## Imagen médica como señal espacial
+
+Una imagen médica digital puede representarse como una función discreta de intensidad:
+
+$$
+I[m,n],
+$$
+
+donde $m$ y $n$ indican la posición espacial en una matriz de píxeles. En imágenes volumétricas se utiliza una función discreta tridimensional:
+
+$$
+I[m,n,p],
+$$
+
+donde $p$ representa la posición en el eje de cortes o profundidad. En cada modalidad, el valor de intensidad tiene una interpretación física distinta. En tomografía computarizada se relaciona con atenuación de rayos X; en resonancia magnética depende de parámetros de adquisición, relajación tisular y secuencias; en ecografía depende de dispersión acústica, impedancia y procesamiento del equipo; en histopatología digital depende de tinción, iluminación, óptica y digitalización.
+
+Esta observación es metodológicamente importante: dos imágenes pueden tener la misma estructura matemática, pero no la misma interpretación física. Por tanto, la transformada wavelet opera sobre una matriz de intensidades, pero la interpretación biomédica exige conocer la modalidad, la escala espacial y el proceso de adquisición.
+
+## Idea central del análisis multirresolución
+
+El análisis multirresolución descompone una imagen en una jerarquía de escalas. En la primera escala se separa la información gruesa de la información fina. En escalas sucesivas, la información gruesa vuelve a descomponerse para obtener niveles cada vez más amplios de estructura espacial.
+
+De forma conceptual, una imagen puede escribirse como:
+
+$$
+I = A_J + \sum_{j=1}^{J} D_j,
+$$
+
+donde $A_J$ representa la aproximación de baja resolución en el nivel $J$, y $D_j$ representa los detalles extraídos en la escala $j$. En dos dimensiones, cada nivel de detalle se separa en componentes orientadas:
+
+$$
+D_j = D_j^{H} + D_j^{V} + D_j^{D},
+$$
+
+donde $D_j^{H}$, $D_j^{V}$ y $D_j^{D}$ representan detalles asociados con cambios horizontales, verticales y diagonales, respectivamente. La notación exacta puede variar según la biblioteca computacional usada, pero la interpretación general se conserva: las subbandas de detalle contienen transiciones espaciales localizadas.
+
+## Espacios anidados de aproximación
+
+La formulación clásica del análisis multirresolución se basa en una secuencia de espacios anidados:
+
+$$
+\cdots \subset V_{-1} \subset V_0 \subset V_1 \subset V_2 \subset \cdots
+$$
+
+Cada espacio $V_j$ contiene aproximaciones de la señal a una resolución particular. Al aumentar $j$, se representa información más fina. El complemento entre dos espacios consecutivos se denomina espacio de detalle:
+
+$$
+V_{j+1} = V_j \oplus W_j.
+$$
+
+En esta expresión, $W_j$ contiene la información que está presente en la resolución $j+1$, pero no en la resolución $j$. Desde el punto de vista de imágenes médicas, esta relación expresa que una imagen de mayor resolución contiene una aproximación anatómica más gruesa más una corrección de detalle.
+
+## Función de escala y función wavelet
+
+La función de escala $\phi(x)$ genera las aproximaciones de baja frecuencia, mientras que la función wavelet $\psi(x)$ genera los detalles. Las funciones desplazadas y escaladas se expresan como:
+
+$$
+\phi_{j,k}(x) = 2^{j/2}\phi(2^j x - k),
+$$
+
+$$
+\psi_{j,k}(x) = 2^{j/2}\psi(2^j x - k).
+$$
+
+El parámetro $j$ controla la escala y el parámetro $k$ controla la posición. Esta doble dependencia permite que la wavelet detecte patrones localizados: una transición de borde, una textura fina o una alteración focal puede aparecer con fuerza en un subconjunto específico de coeficientes.
+
+## Transformada wavelet discreta bidimensional
+
+En imágenes digitales se utiliza con frecuencia la transformada wavelet discreta bidimensional. La forma más común se construye mediante filtros separables aplicados por filas y columnas. En cada nivel se obtienen cuatro subbandas:
+
+| Subbanda | Filtrado por filas | Filtrado por columnas | Interpretación general |
+|---|---:|---:|---|
+| $LL$ | Paso bajo | Paso bajo | Aproximación de baja resolución |
+| $LH$ | Paso bajo | Paso alto | Detalles asociados con cambios en una dirección |
+| $HL$ | Paso alto | Paso bajo | Detalles asociados con cambios en la dirección ortogonal |
+| $HH$ | Paso alto | Paso alto | Detalles diagonales o de alta variación local |
+
+La subbanda $LL$ puede descomponerse de nuevo para formar una pirámide multirresolución. Este proceso se repite hasta un número de niveles $J$, limitado por el tamaño de la imagen y por la escala anatómica que se desea conservar.
+
+```{mermaid}
+flowchart TD
+  A["Imagen original"] --> B["Nivel 1: filtrado paso bajo y paso alto"]
+  B --> C["LL1: aproximación"]
+  B --> D["LH1: detalle"]
+  B --> E["HL1: detalle"]
+  B --> F["HH1: detalle"]
+  C --> G["Nivel 2: nueva descomposición de LL1"]
+  G --> H["LL2: aproximación más gruesa"]
+  G --> I["LH2: detalle"]
+  G --> J["HL2: detalle"]
+  G --> K["HH2: detalle"]
+```
+
+# Relación entre escala wavelet y tamaño físico
+
+En imágenes médicas no basta con hablar de píxeles. Debe considerarse el tamaño físico de píxel o vóxel. Si una imagen tiene espaciamiento $\Delta_x$ y $\Delta_y$, una estructura de $r$ píxeles corresponde aproximadamente a:
+
+$$
+L_x = r\Delta_x,
+$$
+
+$$
+L_y = r\Delta_y.
+$$
+
+En una descomposición wavelet, los detalles de nivel bajo suelen capturar variaciones espaciales finas, mientras que los detalles de niveles altos capturan variaciones más gruesas. Una aproximación útil es considerar que el nivel $j$ se relaciona con estructuras cuyo tamaño espacial aumenta proporcionalmente a $2^j$. Por tanto, una lesión pequeña, un borde cortical o una microcalcificación puede aparecer con mayor fuerza en niveles bajos, mientras que una región anatómica amplia o una variación lenta de intensidad puede dominar en niveles altos.
+
+Esta relación no debe interpretarse de forma rígida. La respuesta exacta depende de la wavelet, de los filtros, de la modalidad, del preprocesamiento y de la textura de la estructura. Sin embargo, la conversión entre escala wavelet y escala física es obligatoria si se pretende dar una interpretación biomédica.
+
+# Comparación con la transformada de Fourier
+
+La transformada de Fourier representa una imagen como combinación de componentes sinusoidales. Es adecuada para analizar contenido frecuencial global, pero pierde localización espacial. Una frecuencia alta en Fourier indica variaciones rápidas, pero no indica dónde ocurren. En imágenes médicas, esta limitación es relevante porque una alteración focal puede ocupar una región pequeña.
+
+La transformada wavelet proporciona una localización conjunta aproximada en espacio y frecuencia. No tiene resolución perfecta en ambos dominios, porque está limitada por principios de incertidumbre, pero ofrece una representación más adecuada para estructuras localizadas.
+
+La diferencia conceptual puede resumirse así:
+
+| Método | Representación | Ventaja | Limitación |
+|---|---|---|---|
+| Fourier | Frecuencias globales | Excelente análisis frecuencial global | Mala localización espacial |
+| Ventanas de Fourier | Frecuencias por regiones fijas | Localización parcial | Ventana fija para todas las escalas |
+| Wavelet | Escalas y posiciones | Localización multiescala | Depende fuertemente de la wavelet elegida |
+
+# Por qué el análisis wavelet es pertinente en imágenes médicas
+
+Las imágenes médicas contienen estructuras con escalas muy diferentes. En una resonancia magnética cerebral, por ejemplo, pueden coexistir límites anatómicos amplios, sustancia blanca, sustancia gris, líquido cefalorraquídeo, lesiones focales, ruido térmico, artefactos de movimiento y variaciones de intensidad de baja frecuencia. En tomografía computarizada pueden aparecer bordes óseos de alta intensidad, tejidos blandos de bajo contraste y ruido relacionado con dosis. En ecografía, la textura granular asociada con el moteado puede dominar gran parte de la imagen.
+
+La descomposición wavelet permite separar parcialmente estas escalas. Esta separación puede ser útil para:
+
+- reducir ruido sin suavizar excesivamente los bordes;
+- realzar estructuras anatómicas en escalas específicas;
+- extraer características de textura por subbanda;
+- detectar cambios locales en bordes o regiones;
+- comprimir imágenes conservando información diagnóstica relevante;
+- alimentar modelos de clasificación o segmentación con descriptores multiescala.
+
+La advertencia metodológica es directa: una subbanda wavelet no equivale automáticamente a un tejido, una lesión o un marcador fisiológico. Es una representación matemática de variaciones espaciales. Su interpretación clínica requiere validación.
+
+# Elección de la wavelet
+
+## No existe una wavelet universal
+
+Un error frecuente consiste en seleccionar una wavelet por costumbre, por disponibilidad en una biblioteca o por repetición de trabajos previos. Esa práctica es insuficiente. La elección debe justificarse con base en el objetivo del análisis, la modalidad de imagen y el tipo de estructura que se desea preservar o cuantificar.
+
+La pregunta correcta no es “¿cuál es la mejor wavelet?”, sino “¿qué propiedades debe tener la wavelet para este problema específico?”.
+
+## Propiedades técnicas relevantes
+
+### Soporte compacto
+
+Una wavelet tiene soporte compacto cuando está concentrada en una región finita. Esto mejora la localización espacial. En imágenes médicas, un soporte corto puede ser útil para detectar bordes o lesiones pequeñas, porque evita que una estructura local influya excesivamente en regiones distantes.
+
+Sin embargo, un soporte demasiado corto puede producir una representación menos suave y menos selectiva en frecuencia. Por tanto, existe un compromiso entre localización espacial y selectividad frecuencial.
+
+### Momentos nulos
+
+Una wavelet con $N$ momentos nulos cumple:
+
+$$
+\int x^k \psi(x)\,dx = 0, \qquad k = 0,1,\ldots,N-1.
+$$
+
+Esto significa que la wavelet es insensible a tendencias polinomiales de bajo orden. En términos prácticos, una wavelet con más momentos nulos puede representar regiones suaves con pocos coeficientes significativos y concentrar la energía en discontinuidades o cambios locales.
+
+En imágenes médicas, esto puede ser útil para separar variaciones lentas de intensidad de cambios anatómicos locales. No obstante, aumentar el número de momentos nulos suele aumentar la longitud del filtro, lo que puede reducir la localización espacial y aumentar los efectos de borde.
+
+### Regularidad
+
+La regularidad se relaciona con la suavidad de la función wavelet. Wavelets más regulares producen reconstrucciones más suaves y pueden ser convenientes en imágenes donde se desea reducir ruido preservando continuidad anatómica. Wavelets menos regulares pueden capturar mejor discontinuidades abruptas, pero también pueden generar apariencia más escalonada.
+
+### Simetría y fase lineal
+
+La simetría es importante en imágenes médicas porque los desplazamientos artificiales de bordes pueden afectar la localización anatómica. Las wavelets ortogonales compactas, como muchas Daubechies, no son perfectamente simétricas. Las wavelets biortogonales pueden ofrecer simetría o casi simetría, lo que mejora la preservación de bordes y reduce distorsiones de fase.
+
+Para tareas donde la localización del borde es crítica, como medición de espesores, contornos anatómicos o detección de calcificaciones, la simetría puede ser más importante que la ortogonalidad estricta.
+
+### Ortogonalidad y biortogonalidad
+
+Una base ortogonal conserva energía de forma directa y facilita análisis matemático. En una transformada ortogonal, la energía de la imagen puede relacionarse con la energía de sus coeficientes. Esto es útil para cuantificar energía por subbanda.
+
+Las wavelets biortogonales usan una base para descomposición y otra para reconstrucción. Esto permite diseños con simetría y reconstrucción perfecta, aunque la interpretación energética puede ser menos directa que en el caso ortogonal.
+
+### Invarianza aproximada al desplazamiento
+
+La transformada wavelet discreta clásica es sensible a pequeños desplazamientos. Un desplazamiento de uno o dos píxeles puede modificar notablemente los coeficientes. Esta propiedad puede afectar la estabilidad de características extraídas para aprendizaje automático o radiómica.
+
+Cuando la estabilidad frente a desplazamientos es importante, puede considerarse la transformada wavelet estacionaria, la transformada wavelet no diezmada o la transformada wavelet compleja de árbol dual. Estas representaciones son redundantes, pero más estables.
+
+### Selectividad direccional
+
+La transformada wavelet separable bidimensional produce tres orientaciones principales por nivel. Esto puede ser insuficiente para bordes curvos o estructuras elongadas en múltiples direcciones. En imágenes con estructuras direccionales complejas, como vasos, fibras, trabéculas o patrones histológicos, pueden ser más adecuadas representaciones con mayor selectividad direccional, como wavelets complejas, curvelets o shearlets.
+
+# Criterios prácticos para seleccionar una wavelet
+
+## Criterio 1: objetivo del análisis
+
+La wavelet debe seleccionarse según la tarea principal.
+
+| Objetivo | Propiedad prioritaria | Elección razonable |
+|---|---|---|
+| Reducción de ruido | Compacidad, regularidad, estabilidad | Symlet, Coiflet, Daubechies moderada, transformada estacionaria |
+| Realce de bordes | Localización espacial, simetría | Biortogonal, Haar para bordes abruptos, Symlet |
+| Compresión | Concentración de energía, reconstrucción | Biortogonal 9/7 o 5/3, según pérdida permitida |
+| Textura | Separación por escala y orientación | Daubechies, Coiflet, wavelet compleja, bancos multiorientados |
+| Segmentación asistida | Preservación de contornos, estabilidad | Biortogonal, estacionaria, árbol dual complejo |
+| Características para aprendizaje automático | Reproducibilidad, baja sensibilidad al desplazamiento | Transformada estacionaria o características agregadas por regiones |
+
+## Criterio 2: modalidad de imagen
+
+La modalidad condiciona el tipo de ruido, el contraste y el significado físico de la intensidad.
+
+| Modalidad | Rasgos dominantes | Consideración para wavelet |
+|---|---|---|
+| Radiografía | Bordes óseos, contraste proyectivo, ruido dependiente de exposición | Preservar bordes y evitar realce excesivo de ruido |
+| Tomografía computarizada | Bordes definidos, ruido relacionado con dosis, unidades físicas interpretables | Evaluar ruido por región y preservar detalles diagnósticos |
+| Resonancia magnética | Contraste dependiente de secuencia, ruido no siempre gaussiano, artefactos de campo | Normalizar intensidad y evitar interpretar coeficientes como marcadores absolutos |
+| Ecografía | Moteado, textura granular, sombras acústicas | Usar métodos robustos; diferenciar textura anatómica de moteado |
+| Histopatología digital | Textura multiescala, color, tinción variable | Separar canales o espacios de color antes del análisis |
+| Microscopía | Estructuras finas, ruido de adquisición, desenfoque | Priorizar localización y control de artefactos de reconstrucción |
+
+## Criterio 3: escala anatómica de interés
+
+Antes de elegir niveles de descomposición, se debe estimar el tamaño físico de la estructura. Por ejemplo, si una imagen tiene resolución de $0.5\ \text{mm/píxel}$, un patrón de 4 píxeles corresponde a $2\ \text{mm}$. Si se descompone en varios niveles sin considerar esta escala, se pueden mezclar detalles clínicamente relevantes con ruido o con variaciones anatómicas no relacionadas.
+
+Una regla práctica es definir:
+
+$$
+J_{\max} \leq \left\lfloor \log_2(\min(M,N)) \right\rfloor,
+$$
+
+donde $M$ y $N$ son las dimensiones de la imagen. Esta es una restricción computacional, no una justificación biomédica. La elección real de $J$ debe depender del tamaño de las estructuras de interés.
+
+## Criterio 4: tipo de ruido
+
+En imágenes médicas, el ruido no siempre es aditivo, blanco ni gaussiano. Algunas técnicas wavelet de umbralización asumen ruido aproximadamente gaussiano en las subbandas de alta frecuencia. Esta suposición puede ser razonable en algunos contextos, pero no en todos.
+
+En resonancia magnética de magnitud, el ruido puede aproximarse por distribuciones no gaussianas en regiones de baja señal. En ecografía, el moteado suele tener naturaleza multiplicativa. En tomografía computarizada de baja dosis, el ruido puede depender de la intensidad y de la reconstrucción. Por tanto, la selección de umbrales debe estar alineada con el modelo de ruido.
+
+## Criterio 5: necesidad de reconstrucción
+
+Si el análisis busca reconstruir una imagen filtrada, la wavelet debe permitir reconstrucción estable y sin artefactos inaceptables. Si el análisis busca únicamente extraer características, la reconstrucción puede ser secundaria, aunque la estabilidad de los coeficientes sigue siendo importante.
+
+# Familias wavelet frecuentes
+
+## Haar
+
+La wavelet de Haar es la más simple. Es discontinua, tiene soporte muy corto y detecta cambios abruptos. Puede ser útil para explicar conceptos o detectar discontinuidades marcadas, pero suele ser limitada para imágenes médicas con transiciones suaves. Su principal ventaja es la interpretabilidad; su principal desventaja es la generación de representaciones escalonadas.
+
+## Daubechies
+
+Las wavelets Daubechies tienen soporte compacto y varios momentos nulos. Son útiles para representar señales e imágenes con regiones suaves y detalles localizados. Sin embargo, no son simétricas, lo que puede introducir desplazamientos o distorsiones de fase en aplicaciones donde la localización exacta del borde es crítica.
+
+## Symlets
+
+Las Symlets son variantes de Daubechies con mayor simetría. Suelen ser una elección razonable cuando se desea mantener buenas propiedades de compacidad y momentos nulos, pero con menor distorsión de fase.
+
+## Coiflets
+
+Las Coiflets poseen momentos nulos tanto para la función wavelet como para la función de escala. Pueden ser útiles para análisis de textura y para representar regiones suaves con estabilidad. Su longitud de filtro puede ser mayor, lo que exige cuidado con bordes y regiones pequeñas.
+
+## Biortogonales
+
+Las wavelets biortogonales permiten simetría y reconstrucción perfecta usando filtros duales. Son frecuentes en compresión y en tareas donde la preservación visual de bordes es importante. La biortogonal 9/7 se asocia con compresión con pérdida, mientras que la 5/3 se asocia con compresión reversible en contextos como JPEG 2000.
+
+## Wavelets estacionarias y no diezmadas
+
+Estas transformadas evitan la reducción de tamaño entre niveles. Producen una representación redundante, pero más estable frente a desplazamientos. Son útiles para reducción de ruido, detección y extracción de características cuando pequeñas variaciones de registro podrían alterar los coeficientes.
+
+## Wavelet compleja de árbol dual
+
+La wavelet compleja de árbol dual mejora la selectividad direccional y la invarianza aproximada al desplazamiento. Es más costosa y redundante que la transformada discreta clásica, pero puede ser ventajosa para bordes orientados, textura direccional y estructuras anatómicas alargadas.
+
+# Umbralización wavelet para reducción de ruido
+
+## Principio general
+
+La reducción de ruido mediante wavelets se basa en la observación de que muchas imágenes naturales y médicas tienen representaciones dispersas: gran parte de la información estructural se concentra en pocos coeficientes, mientras que el ruido tiende a distribuirse en muchos coeficientes de pequeña magnitud.
+
+La estrategia básica es:
+
+1. Descomponer la imagen en subbandas wavelet.
+2. Estimar el nivel de ruido.
+3. Aplicar un umbral a los coeficientes de detalle.
+4. Reconstruir la imagen.
+5. Evaluar si se preservó la información relevante.
+
+## Umbral duro y umbral suave
+
+El umbral duro se define como:
+
+$$
+T_{\lambda}^{\text{duro}}(w) =
+\begin{cases}
+w, & |w| \geq \lambda, \\
+0, & |w| < \lambda.
+\end{cases}
+$$
+
+El umbral suave se define como:
+
+$$
+T_{\lambda}^{\text{suave}}(w) =
+\operatorname{sign}(w)\max(|w|-\lambda,0).
+$$
+
+El umbral duro preserva coeficientes grandes sin modificarlos, pero puede introducir discontinuidades. El umbral suave es más estable, pero reduce la magnitud de los coeficientes conservados, lo que puede suavizar bordes o disminuir contraste de estructuras finas.
+
+## Estimación robusta del ruido
+
+Una estimación frecuente del ruido usa la desviación absoluta mediana en la subbanda diagonal del primer nivel:
+
+$$
+\hat{\sigma} =
+\frac{\operatorname{mediana}(|HH_1|)}{0.6745}.
+$$
+
+Esta estimación presupone que la subbanda $HH_1$ contiene principalmente ruido. En imágenes médicas con textura fina real, esta suposición puede fallar. Por ejemplo, en histopatología o ecografía, la alta frecuencia no es necesariamente ruido.
+
+## Umbral universal
+
+El umbral universal se expresa como:
+
+$$
+\lambda = \hat{\sigma}\sqrt{2\log(N)},
+$$
+
+donde $N$ es el número de píxeles o coeficientes considerados. Es simple y conservador, pero puede suavizar en exceso. En imágenes médicas, este exceso de suavizado puede borrar detalles diagnósticos pequeños.
+
+## BayesShrink
+
+BayesShrink adapta el umbral por subbanda. Su forma básica es:
+
+$$
+\lambda_B = \frac{\hat{\sigma}^2}{\hat{\sigma}_x},
+$$
+
+donde $\hat{\sigma}$ estima el ruido y $\hat{\sigma}_x$ estima la desviación estándar de la señal subyacente en la subbanda. Esta estrategia reconoce que no todas las subbandas tienen la misma relación entre señal y ruido.
+
+# Interpretación de resultados
+
+## Interpretación de la subbanda de aproximación
+
+La subbanda $LL_J$ representa la versión de baja resolución de la imagen. Conserva las variaciones lentas de intensidad y la estructura anatómica global. En una resonancia magnética cerebral, por ejemplo, esta subbanda puede preservar la forma general del encéfalo y los grandes compartimentos anatómicos, pero no los bordes finos ni las texturas sutiles.
+
+Una aproximación muy suavizada puede ser útil para analizar iluminación, inhomogeneidad de campo o estructuras globales. No debe usarse para descartar lesiones pequeñas, porque estas pueden desaparecer en niveles altos de descomposición.
+
+## Interpretación de subbandas de detalle
+
+Las subbandas de detalle contienen cambios locales. Una magnitud alta de coeficientes puede indicar bordes, textura, ruido, artefactos o estructuras finas. La interpretación depende del contexto.
+
+En términos generales:
+
+| Patrón en coeficientes | Posible interpretación | Advertencia |
+|---|---|---|
+| Coeficientes altos alrededor de bordes anatómicos | Transiciones reales de tejido | Confirmar con imagen original |
+| Coeficientes altos dispersos en toda la imagen | Ruido o textura fina | No asumir patología |
+| Coeficientes altos en una región focal | Lesión, borde, artefacto o cambio de textura | Requiere validación anatómica |
+| Energía alta en niveles bajos | Detalles finos o ruido | Separar estructura de ruido |
+| Energía alta en niveles altos | Cambios regionales amplios | Puede reflejar iluminación o sesgo de campo |
+
+## Energía por subbanda
+
+Una medida útil es la energía relativa por subbanda:
+
+$$
+E_{j,o} =
+\sum_{m,n} |D_{j,o}[m,n]|^2,
+$$
+
+donde $j$ indica el nivel y $o$ la orientación. La energía relativa se obtiene como:
+
+$$
+R_{j,o} =
+\frac{E_{j,o}}{\sum_{j,o}E_{j,o}}.
+$$
+
+Esta medida puede resumir qué escalas y orientaciones dominan en una región. En análisis de textura, una región tumoral y una región sana podrían diferir en la distribución de energía por subbanda. Sin embargo, la energía no es específica: puede aumentar por textura patológica, ruido, artefactos de movimiento, bordes anatómicos o mala normalización.
+
+## Entropía wavelet
+
+La entropía de los coeficientes permite medir dispersión o complejidad de la representación. Si se define una distribución normalizada de energía:
+
+$$
+p_{j,o} =
+\frac{E_{j,o}}{\sum_{j,o}E_{j,o}},
+$$
+
+la entropía puede calcularse como:
+
+$$
+H = -\sum_{j,o} p_{j,o}\log(p_{j,o}).
+$$
+
+Una entropía mayor indica que la energía está distribuida en más subbandas. En imágenes médicas, esto podría asociarse con textura heterogénea, pero también con ruido. Por tanto, la entropía debe interpretarse junto con métricas de calidad, regiones anatómicas y control de artefactos.
+
+## Coeficientes positivos y negativos
+
+El signo de un coeficiente wavelet depende de la dirección de cambio de intensidad y de la forma de la wavelet. En bordes, el signo puede indicar una transición de oscuro a claro o de claro a oscuro según la orientación del filtro. No se debe interpretar el signo como presencia o ausencia de patología. Su valor es matemático, no clínico.
+
+## Reconstrucción por subbandas
+
+Una práctica útil consiste en reconstruir la imagen usando solo un subconjunto de subbandas. Esto permite visualizar qué estructuras aporta cada escala. Por ejemplo:
+
+- reconstrucción solo con $LL_J$: muestra estructura global;
+- reconstrucción con detalles de nivel 1: enfatiza bordes finos y ruido;
+- reconstrucción con detalles de niveles intermedios: puede resaltar textura anatómica;
+- reconstrucción sin detalles de nivel 1: puede reducir ruido fino, pero también eliminar microestructuras.
+
+La reconstrucción selectiva es interpretativamente más clara que mirar únicamente mapas de coeficientes, porque permite volver al dominio de imagen.
+
+# Flujo metodológico recomendado
+
+## Paso 1: definir el objetivo
+
+Antes de calcular la transformada, debe definirse si el objetivo es reducción de ruido, realce, compresión, extracción de características, segmentación o interpretación exploratoria. Cada objetivo exige criterios de evaluación diferentes.
+
+## Paso 2: caracterizar la imagen
+
+Se debe registrar modalidad, resolución espacial, tamaño de píxel o vóxel, profundidad de bits, protocolo de adquisición, región anatómica, presencia de artefactos y tipo esperado de ruido. Sin esta información, la interpretación de escalas carece de base física.
+
+## Paso 3: preprocesar
+
+El preprocesamiento puede incluir normalización de intensidad, recorte de región de interés, corrección de sesgo de campo, registro, remuestreo, eliminación de fondo y manejo de valores extremos. En imágenes tridimensionales con vóxeles anisotrópicos, debe evaluarse si conviene remuestrear antes del análisis.
+
+## Paso 4: seleccionar wavelet y nivel
+
+La selección debe documentarse. Una decisión metodológica mínima debe incluir familia wavelet, número de niveles, modo de extensión en bordes, tipo de umbralización si aplica y razón de selección.
+
+## Paso 5: analizar coeficientes
+
+El análisis puede incluir energía, entropía, estadísticos por subbanda, mapas de coeficientes, reconstrucciones selectivas y comparación por regiones anatómicas.
+
+## Paso 6: reconstruir y validar
+
+La imagen reconstruida debe evaluarse visual y cuantitativamente. En contexto médico, una mejora estética no implica mejora diagnóstica. La validación debe ser orientada a tarea.
+
+# Métricas de evaluación
+
+## Relación señal a ruido pico
+
+La relación señal a ruido pico se calcula como:
+
+$$
+\operatorname{PSNR} =
+10\log_{10}
+\left(
+\frac{I_{\max}^2}{\operatorname{MSE}}
+\right),
+$$
+
+donde $I_{\max}$ es la intensidad máxima posible y $\operatorname{MSE}$ es el error cuadrático medio. Es útil cuando existe una imagen de referencia, pero puede no correlacionarse con utilidad clínica.
+
+## Índice de similitud estructural
+
+El índice de similitud estructural compara luminancia, contraste y estructura. Es más informativo que el error cuadrático medio, pero sigue siendo una métrica general de similitud, no una medida diagnóstica.
+
+## Relación contraste a ruido
+
+Para regiones de interés, puede calcularse:
+
+$$
+\operatorname{CNR} =
+\frac{|\mu_1-\mu_2|}
+{\sqrt{\sigma_1^2+\sigma_2^2}},
+$$
+
+donde $\mu_1$ y $\mu_2$ son medias de intensidad en dos regiones, y $\sigma_1$, $\sigma_2$ son sus desviaciones estándar. Esta métrica es útil cuando se busca mejorar contraste entre lesión y tejido de referencia.
+
+## Preservación de bordes
+
+Una forma de evaluar preservación de bordes consiste en comparar gradientes antes y después del procesamiento. Si el filtrado reduce ruido pero degrada bordes anatómicos, puede ser inadecuado para segmentación o medición morfológica.
+
+## Métricas orientadas a tarea
+
+Cuando el análisis wavelet se usa como preprocesamiento para segmentación, clasificación o detección, la evaluación debe hacerse sobre la tarea final. Algunas métricas posibles son coeficiente de Dice, distancia de Hausdorff, sensibilidad, especificidad, área bajo la curva característica operativa del receptor y estabilidad de características.
+
+# Ejemplo visual e interpretativo con fantoma médico sintético
+
+El siguiente ejemplo utiliza un fantoma bidimensional sintético inspirado en imágenes médicas. No corresponde a un paciente real ni debe interpretarse como evidencia diagnóstica. Su utilidad es didáctica: permite observar cómo la transformada wavelet separa información anatómica global, bordes, textura fina y ruido en diferentes escalas.
+
+Para ejecutar esta sección se requieren las bibliotecas `numpy`, `matplotlib`, `pandas` y `PyWavelets`.
+
+```{python}
+#| label: setup-ejemplo-wavelet
+#| include: false
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import pywt
+
+np.random.seed(42)
+
+def add_ellipse(image, cy, cx, ry, rx, angle_deg, intensity):
+    """
+    Agrega una elipse a una imagen sintética.
+    cy, cx: centro de la elipse.
+    ry, rx: radios vertical y horizontal.
+    angle_deg: rotación en grados.
+    intensity: intensidad agregada.
+    """
+    y, x = np.indices(image.shape)
+    angle = np.deg2rad(angle_deg)
+
+    x0 = x - cx
+    y0 = y - cy
+
+    xr = x0 * np.cos(angle) + y0 * np.sin(angle)
+    yr = -x0 * np.sin(angle) + y0 * np.cos(angle)
+
+    mask = (xr / rx) ** 2 + (yr / ry) ** 2 <= 1
+    image[mask] += intensity
+
+    return mask
+
+
+def normalize01(image):
+    image = image.astype(float)
+    min_val = np.min(image)
+    max_val = np.max(image)
+    return (image - min_val) / (max_val - min_val + 1e-12)
+
+
+def robust_display(image):
+    """
+    Normalización robusta para visualización.
+    Evita que valores extremos dominen el contraste.
+    """
+    p1, p99 = np.percentile(image, [1, 99])
+    return np.clip((image - p1) / (p99 - p1 + 1e-12), 0, 1)
+
+
+# -------------------------------------------------------------------------
+# Creación de un fantoma médico sintético
+# -------------------------------------------------------------------------
+
+N = 256
+image_clean = np.zeros((N, N), dtype=float)
+
+# Región anatómica principal
+brain_mask = add_ellipse(
+    image_clean,
+    cy=128,
+    cx=128,
+    ry=92,
+    rx=72,
+    angle_deg=0,
+    intensity=0.45
+)
+
+# Regiones internas con contraste suave
+add_ellipse(image_clean, 122, 103, 48, 22, -18, 0.12)
+add_ellipse(image_clean, 125, 153, 50, 23, 18, 0.10)
+
+# Cavidades o regiones hipointensas
+add_ellipse(image_clean, 120, 126, 20, 8, -10, -0.18)
+add_ellipse(image_clean, 122, 140, 20, 8, 10, -0.18)
+
+# Lesión sintética hiperintensa
+lesion_mask = add_ellipse(
+    image_clean,
+    cy=92,
+    cx=158,
+    ry=13,
+    rx=18,
+    angle_deg=25,
+    intensity=0.38
+)
+
+# Región periférica de menor intensidad alrededor de la lesión
+add_ellipse(image_clean, 94, 158, 22, 29, 25, 0.08)
+
+# Campo de intensidad no uniforme, semejante a una inhomogeneidad suave
+yy, xx = np.indices((N, N))
+bias_field = 0.90 + 0.18 * (xx / N) + 0.08 * (yy / N)
+image_clean = image_clean * bias_field
+
+# Se restringe la imagen al dominio anatómico principal
+image_clean = image_clean * brain_mask
+image_clean = normalize01(image_clean)
+
+# Ruido aditivo para simular degradación de adquisición
+noise_sigma = 0.065
+noise = np.random.normal(0, noise_sigma, size=image_clean.shape)
+image_noisy = np.clip(image_clean + noise * brain_mask, 0, 1)
+
+# Parámetros wavelet
+wavelet_name = "sym4"
+decomposition_level = 3
+extension_mode = "symmetric"
+
+coeffs = pywt.wavedec2(
+    image_noisy,
+    wavelet=wavelet_name,
+    level=decomposition_level,
+    mode=extension_mode
+)
+```
+
+## Imagen sintética usada en el ejemplo
+
+```{python}
+#| label: fig-imagen-sintetica
+#| fig-cap: "Fantoma médico sintético, imagen con ruido, componente de ruido y máscara de la lesión simulada."
+#| fig-width: 12
+#| fig-height: 3.2
+
+fig, axes = plt.subplots(1, 4, figsize=(12, 3.2))
+
+axes[0].imshow(image_clean, cmap="gray")
+axes[0].set_title("Imagen limpia")
+axes[0].axis("off")
+
+axes[1].imshow(image_noisy, cmap="gray")
+axes[1].set_title("Imagen con ruido")
+axes[1].axis("off")
+
+axes[2].imshow(noise * brain_mask, cmap="gray")
+axes[2].set_title("Ruido agregado")
+axes[2].axis("off")
+
+axes[3].imshow(lesion_mask, cmap="gray")
+axes[3].set_title("Lesión simulada")
+axes[3].axis("off")
+
+plt.tight_layout()
+plt.show()
+```
+
+La imagen limpia representa una anatomía idealizada con una región principal, variaciones internas de intensidad, cavidades hipointensas y una lesión hiperintensa simulada. La imagen con ruido permite evaluar cómo la transformada wavelet responde ante variaciones finas que no corresponden necesariamente a estructura anatómica. La máscara de lesión no participa en la descomposición; se incluye solo para interpretar si las escalas wavelet resaltan bordes o textura en la región alterada.
+
+El punto metodológico central es que la imagen con ruido mezcla tres fuentes de alta frecuencia: bordes anatómicos, textura simulada y ruido. Por tanto, una subbanda de detalle con coeficientes altos no debe interpretarse automáticamente como lesión. Primero debe verificarse si esos coeficientes coinciden espacialmente con una estructura anatómica plausible, con el ruido agregado o con un artefacto de borde.
+
+## Mapa global de coeficientes wavelet
+
+```{python}
+#| label: fig-mapa-coeficientes
+#| fig-cap: "Mapa global de coeficientes wavelet empaquetados. La región superior izquierda corresponde a la aproximación de baja resolución; las demás regiones corresponden a detalles por escala y orientación."
+#| fig-width: 7
+#| fig-height: 7
+
+coeff_array, coeff_slices = pywt.coeffs_to_array(coeffs)
+
+plt.figure(figsize=(7, 7))
+plt.imshow(robust_display(np.log1p(np.abs(coeff_array))), cmap="gray")
+plt.title(f"Coeficientes wavelet: {wavelet_name}, nivel {decomposition_level}")
+plt.axis("off")
+plt.show()
+```
+
+El mapa global muestra la organización multirresolución de la imagen. La región de aproximación conserva la estructura anatómica de baja frecuencia: forma general, regiones amplias de intensidad y variaciones suaves. Las regiones de detalle contienen los cambios locales separados por escala y orientación.
+
+Una lectura técnica adecuada es la siguiente: los bloques de detalle de nivel fino tienden a capturar ruido, bordes pequeños y variaciones locales abruptas; los bloques de detalle de niveles más gruesos capturan transiciones anatómicas más amplias. Si la lesión simulada tiene bordes definidos, parte de su contorno aparece en subbandas de detalle. Si además tiene textura interna, puede distribuir energía en más de una escala.
+
+La interpretación clínica directa sería incorrecta. El mapa no dice “hay lesión”; solo muestra dónde y en qué escala la imagen tiene variaciones espaciales relevantes.
+
+## Subbandas de detalle por nivel y orientación
+
+```{python}
+#| label: fig-subbandas-detalle
+#| fig-cap: "Subbandas de detalle por nivel. El nivel 1 corresponde a detalles finos; el nivel 3 corresponde a detalles más gruesos."
+#| fig-width: 10
+#| fig-height: 9
+
+fig, axes = plt.subplots(3, 3, figsize=(10, 9))
+
+orientation_names = ["Horizontal", "Vertical", "Diagonal"]
+
+for row, level in enumerate([1, 2, 3]):
+    cH, cV, cD = coeffs[-level]
+
+    bands = [cH, cV, cD]
+
+    for col, band in enumerate(bands):
+        axes[row, col].imshow(
+            robust_display(np.log1p(np.abs(band))),
+            cmap="gray"
+        )
+        axes[row, col].set_title(
+            f"Nivel {level} - {orientation_names[col]}"
+        )
+        axes[row, col].axis("off")
+
+plt.tight_layout()
+plt.show()
+```
+
+En el nivel 1 predominan los detalles finos. En una imagen médica real, esta escala puede contener microestructuras, bordes muy delgados, textura fina y ruido de adquisición. En el ejemplo, parte importante del patrón granular proviene del ruido agregado. Por esa razón, una alta actividad en el nivel 1 debe analizarse con cautela.
+
+En el nivel 2 aparecen detalles de escala intermedia. Esta escala puede ser especialmente informativa cuando la estructura de interés no es ni demasiado fina ni demasiado global. En el fantoma, el borde de la lesión y las transiciones internas pueden observarse con mayor estabilidad que en el nivel 1, porque el ruido fino pierde parte de su predominio relativo.
+
+En el nivel 3 se observan transiciones más gruesas. Esta escala responde a cambios anatómicos amplios, al contorno general de la región principal y a variaciones lentas de intensidad. Si una lesión pequeña desaparece en este nivel, eso no significa que no exista; significa que su tamaño espacial está por debajo de la escala dominante de esa subbanda.
+
+La orientación también importa. Las subbandas horizontal, vertical y diagonal no representan tejidos distintos, sino direcciones preferenciales de cambio. Un borde oblicuo puede distribuirse entre varias orientaciones.
+
+## Reconstrucción selectiva por escalas
+
+```{python}
+#| label: reconstrucciones-selectivas
+#| include: false
+
+def zero_like_coeffs(coeffs):
+    zero_coeffs = [np.zeros_like(coeffs[0])]
+
+    for detail_tuple in coeffs[1:]:
+        zero_coeffs.append(tuple(np.zeros_like(band) for band in detail_tuple))
+
+    return zero_coeffs
+
+
+def crop_like(image, reference):
+    return image[:reference.shape[0], :reference.shape[1]]
+
+
+# Reconstrucción usando solo la aproximación final
+coeffs_approx = zero_like_coeffs(coeffs)
+coeffs_approx[0] = coeffs[0].copy()
+
+reconstruction_approx = crop_like(
+    pywt.waverec2(coeffs_approx, wavelet=wavelet_name, mode=extension_mode),
+    image_noisy
+)
+
+# Reconstrucciones usando solo detalles de cada nivel
+detail_reconstructions = {}
+
+for level in [1, 2, 3]:
+    coeffs_detail = zero_like_coeffs(coeffs)
+    coeffs_detail[-level] = tuple(band.copy() for band in coeffs[-level])
+
+    detail_reconstructions[level] = crop_like(
+        pywt.waverec2(coeffs_detail, wavelet=wavelet_name, mode=extension_mode),
+        image_noisy
+    )
+```
+
+```{python}
+#| label: fig-reconstruccion-selectiva
+#| fig-cap: "Reconstrucciones selectivas: aproximación de baja resolución y detalles aislados por nivel."
+#| fig-width: 13
+#| fig-height: 3.2
+
+fig, axes = plt.subplots(1, 5, figsize=(13, 3.2))
+
+axes[0].imshow(image_noisy, cmap="gray")
+axes[0].set_title("Imagen con ruido")
+axes[0].axis("off")
+
+axes[1].imshow(reconstruction_approx, cmap="gray")
+axes[1].set_title("Solo aproximación")
+axes[1].axis("off")
+
+for idx, level in enumerate([1, 2, 3], start=2):
+    axes[idx].imshow(
+        robust_display(np.abs(detail_reconstructions[level])),
+        cmap="gray"
+    )
+    axes[idx].set_title(f"Solo detalles nivel {level}")
+    axes[idx].axis("off")
+
+plt.tight_layout()
+plt.show()
+```
+
+La reconstrucción con solo la aproximación conserva la forma anatómica global, pero pierde bordes finos, textura local y parte de la definición de la lesión simulada. Esta imagen es útil para estudiar variaciones lentas de intensidad, pero no para valorar detalles pequeños.
+
+La reconstrucción con detalles de nivel 1 muestra variaciones finas. En este ejemplo, esa reconstrucción está fuertemente contaminada por el ruido agregado. Esto ilustra una situación común en imágenes médicas: las escalas finas no son automáticamente más informativas, porque pueden estar dominadas por ruido.
+
+La reconstrucción con detalles de nivel 2 resalta transiciones de tamaño intermedio. En el fantoma, esta escala puede mostrar mejor el contorno de la lesión y algunas estructuras internas. Para tareas de segmentación o extracción de bordes, este nivel podría ser más útil que el nivel 1.
+
+La reconstrucción con detalles de nivel 3 enfatiza cambios amplios y bordes de mayor escala. Puede ser útil para identificar contornos anatómicos generales, pero puede perder lesiones pequeñas o patrones texturales finos. La consecuencia práctica es que el número de niveles debe elegirse según el tamaño físico de la estructura de interés, no solo según el tamaño de la matriz.
+
+## Energía relativa por subbanda
+
+```{python}
+#| label: tabla-energia-subbanda
+#| tbl-cap: "Energía relativa por nivel y orientación en las subbandas de detalle."
+
+energy_rows = []
+
+for level in [1, 2, 3]:
+    cH, cV, cD = coeffs[-level]
+
+    for orientation, band in zip(
+        ["horizontal", "vertical", "diagonal"],
+        [cH, cV, cD]
+    ):
+        energy = np.sum(np.abs(band) ** 2)
+
+        energy_rows.append(
+            {
+                "nivel": level,
+                "orientacion": orientation,
+                "energia": energy
+            }
+        )
+
+energy_table = pd.DataFrame(energy_rows)
+energy_table["energia_relativa"] = (
+    energy_table["energia"] / energy_table["energia"].sum()
+)
+
+energy_table
+```
+
+```{python}
+#| label: fig-energia-subbanda
+#| fig-cap: "Energía relativa de las subbandas de detalle. La energía resume la magnitud de las variaciones espaciales por escala y orientación."
+#| fig-width: 8
+#| fig-height: 4
+
+energy_table["subbanda"] = (
+    "N" + energy_table["nivel"].astype(str) +
+    "-" +
+    energy_table["orientacion"]
+)
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.bar(energy_table["subbanda"], energy_table["energia_relativa"])
+ax.set_xlabel("Subbanda")
+ax.set_ylabel("Energía relativa")
+ax.set_title("Distribución de energía wavelet por subbanda")
+ax.tick_params(axis="x", rotation=45)
+plt.tight_layout()
+plt.show()
+```
+
+La energía relativa permite resumir qué escalas y orientaciones concentran más variación espacial. Una energía alta en el nivel 1 puede indicar ruido, bordes finos o textura. Una energía alta en niveles intermedios puede indicar estructuras anatómicas o lesiones con tamaño espacial compatible con esa escala. Una energía alta en niveles gruesos puede reflejar contornos amplios, variaciones regionales de intensidad o inhomogeneidad.
+
+Esta métrica no es específica. Dos imágenes pueden tener energías similares por subbanda y representar fenómenos biomédicos distintos. Por tanto, la energía wavelet debe analizarse junto con regiones de interés, modalidad de adquisición, tamaño físico de píxel, ruido esperado y validación anatómica.
+
+## Reducción de ruido mediante umbralización wavelet
+
+```{python}
+#| label: denoising-wavelet
+#| include: false
+
+def crop_like(image, reference):
+    """
+    Recorta la imagen reconstruida para igualar el tamaño de la imagen de referencia.
+    """
+    return image[:reference.shape[0], :reference.shape[1]]
+
+
+def bayes_shrink_threshold(band, sigma_noise):
+    """
+    Umbral BayesShrink robusto para una subbanda wavelet.
+
+    En el ejemplo sintético se usa sigma_noise conocido porque el ruido fue
+    generado explícitamente. En una imagen médica real, este valor debe estimarse
+    desde una región de fondo, una región homogénea o un modelo de ruido adecuado
+    para la modalidad.
+    """
+    band = np.nan_to_num(band, nan=0.0, posinf=0.0, neginf=0.0)
+
+    observed_variance = np.var(band)
+
+    if not np.isfinite(observed_variance) or observed_variance <= 0:
+        return 0.0
+
+    signal_variance = observed_variance - sigma_noise**2
+
+    if not np.isfinite(signal_variance) or signal_variance <= 0:
+        return np.max(np.abs(band))
+
+    sigma_signal = np.sqrt(signal_variance)
+
+    threshold = sigma_noise**2 / sigma_signal
+
+    if not np.isfinite(threshold) or threshold < 0:
+        threshold = np.max(np.abs(band))
+
+    return threshold
+
+
+# En este ejemplo sintético sí conocemos la desviación estándar del ruido agregado.
+# Esta corrección evita que la mediana de una subbanda dominada por fondo negro
+# produzca un sigma estimado artificialmente cercano a cero.
+sigma_estimated = noise_sigma
+
+coeffs_denoised = [np.nan_to_num(coeffs[0], nan=0.0, posinf=0.0, neginf=0.0)]
+
+threshold_rows = []
+
+for decomposition_index, detail_tuple in enumerate(coeffs[1:], start=1):
+
+    # La lista coeffs[1:] viene desde el nivel más grueso hasta el más fino.
+    # Esta conversión permite reportar niveles como 3, 2, 1.
+    level = decomposition_level - decomposition_index + 1
+
+    denoised_detail = []
+
+    for orientation, band in zip(
+        ["horizontal", "vertical", "diagonal"],
+        detail_tuple
+    ):
+        band = np.nan_to_num(band, nan=0.0, posinf=0.0, neginf=0.0)
+
+        threshold = bayes_shrink_threshold(
+            band=band,
+            sigma_noise=sigma_estimated
+        )
+
+        denoised_band = pywt.threshold(
+            band,
+            value=threshold,
+            mode="soft"
+        )
+
+        denoised_band = np.nan_to_num(
+            denoised_band,
+            nan=0.0,
+            posinf=0.0,
+            neginf=0.0
+        )
+
+        threshold_rows.append(
+            {
+                "nivel": level,
+                "orientacion": orientation,
+                "umbral": threshold,
+                "energia_antes": np.sum(np.abs(band) ** 2),
+                "energia_despues": np.sum(np.abs(denoised_band) ** 2)
+            }
+        )
+
+        denoised_detail.append(denoised_band)
+
+    coeffs_denoised.append(tuple(denoised_detail))
+
+
+image_denoised = pywt.waverec2(
+    coeffs_denoised,
+    wavelet=wavelet_name,
+    mode=extension_mode
+)
+
+image_denoised = crop_like(image_denoised, image_noisy)
+
+image_denoised = np.nan_to_num(
+    image_denoised,
+    nan=0.0,
+    posinf=1.0,
+    neginf=0.0
+)
+
+image_denoised = np.clip(image_denoised, 0, 1)
+
+error_noisy = np.abs(image_noisy - image_clean)
+error_denoised = np.abs(image_denoised - image_clean)
+
+threshold_table = pd.DataFrame(threshold_rows)
+threshold_table["reduccion_energia"] = (
+    1.0 - threshold_table["energia_despues"] /
+    (threshold_table["energia_antes"] + 1e-12)
+)
+```
+
+```{python}
+#| label: metricas-denoising
+#| include: false
+
+def root_mean_squared_error(reference, test):
+    reference = np.nan_to_num(reference, nan=0.0, posinf=1.0, neginf=0.0)
+    test = np.nan_to_num(test, nan=0.0, posinf=1.0, neginf=0.0)
+
+    mse = np.mean((reference - test) ** 2)
+
+    if not np.isfinite(mse):
+        return np.nan
+
+    return np.sqrt(mse)
+
+
+def peak_signal_to_noise_ratio(reference, test, data_range=1.0):
+    reference = np.nan_to_num(reference, nan=0.0, posinf=1.0, neginf=0.0)
+    test = np.nan_to_num(test, nan=0.0, posinf=1.0, neginf=0.0)
+
+    mse = np.mean((reference - test) ** 2)
+
+    if not np.isfinite(mse):
+        return np.nan
+
+    if mse == 0:
+        return np.inf
+
+    return 10 * np.log10((data_range ** 2) / mse)
+
+
+rmse_noisy = root_mean_squared_error(image_clean, image_noisy)
+rmse_denoised = root_mean_squared_error(image_clean, image_denoised)
+
+psnr_noisy = peak_signal_to_noise_ratio(image_clean, image_noisy)
+psnr_denoised = peak_signal_to_noise_ratio(image_clean, image_denoised)
+
+mean_absolute_change = np.mean(np.abs(image_denoised - image_noisy))
+max_absolute_change = np.max(np.abs(image_denoised - image_noisy))
+
+metrics_table = pd.DataFrame(
+    {
+        "imagen": ["Con ruido", "Filtrada por wavelet"],
+        "raiz_error_cuadratico_medio": [rmse_noisy, rmse_denoised],
+        "relacion_senal_ruido_pico_db": [psnr_noisy, psnr_denoised]
+    }
+)
+
+change_table = pd.DataFrame(
+    {
+        "metrica": [
+            "Cambio absoluto medio inducido por el filtrado",
+            "Cambio absoluto máximo inducido por el filtrado"
+        ],
+        "valor": [
+            mean_absolute_change,
+            max_absolute_change
+        ]
+    }
+)
+```
+
+```{python}
+#| label: fig-denoising-wavelet
+#| fig-cap: "Comparación entre imagen limpia, imagen con ruido, imagen filtrada por wavelet y mapas de error absoluto."
+#| fig-width: 13
+#| fig-height: 5.5
+
+fig, axes = plt.subplots(2, 3, figsize=(13, 5.5))
+
+axes[0, 0].imshow(image_clean, cmap="gray")
+axes[0, 0].set_title("Imagen limpia")
+axes[0, 0].axis("off")
+
+axes[0, 1].imshow(image_noisy, cmap="gray")
+axes[0, 1].set_title("Imagen con ruido")
+axes[0, 1].axis("off")
+
+axes[0, 2].imshow(image_denoised, cmap="gray")
+axes[0, 2].set_title("Filtrada por wavelet")
+axes[0, 2].axis("off")
+
+axes[1, 0].imshow(error_noisy, cmap="gray")
+axes[1, 0].set_title("Error absoluto: ruido")
+axes[1, 0].axis("off")
+
+axes[1, 1].imshow(error_denoised, cmap="gray")
+axes[1, 1].set_title("Error absoluto: filtrado")
+axes[1, 1].axis("off")
+
+axes[1, 2].imshow(np.abs(image_denoised - image_noisy), cmap="gray")
+axes[1, 2].set_title("Cambio inducido por filtrado")
+axes[1, 2].axis("off")
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: tabla-metricas-denoising
+#| tbl-cap: "Comparación cuantitativa entre imagen con ruido e imagen filtrada por wavelet."
+
+metrics_table
+```
+
+La imagen filtrada por wavelet reduce parte del ruido granular sin eliminar completamente la estructura anatómica principal. Sin embargo, también puede suavizar bordes y modificar detalles pequeños. Esta es una consecuencia esperada de la umbralización: los coeficientes de baja magnitud se reducen o se anulan, pero algunos de ellos pueden pertenecer a estructuras reales.
+
+El mapa de error absoluto permite localizar dónde el filtrado mejora o deteriora la imagen. Si el error disminuye en regiones homogéneas, el filtrado está reduciendo ruido. Si el error aumenta alrededor de bordes o en la lesión simulada, el filtrado está afectando detalles potencialmente relevantes. En imágenes médicas reales, este punto es crítico: una mejora global de la relación señal a ruido pico no garantiza preservación diagnóstica.
+
+La tabla cuantitativa resume el desempeño respecto a la imagen limpia conocida. En un caso clínico real normalmente no existe una imagen limpia de referencia, por lo que estas métricas deben sustituirse o complementarse con evaluación por tarea: segmentación, detección, clasificación, reproducibilidad de características o lectura experta.
+
+```{python}
+#| label: diagnostico-valores-no-finitos
+#| tbl-cap: "Diagnóstico de valores no finitos en las imágenes usadas para calcular las métricas."
+
+diagnostic_table = pd.DataFrame(
+    {
+        "imagen": ["image_clean", "image_noisy", "image_denoised"],
+        "nan": [
+            np.isnan(image_clean).sum(),
+            np.isnan(image_noisy).sum(),
+            np.isnan(image_denoised).sum()
+        ],
+        "inf": [
+            np.isinf(image_clean).sum(),
+            np.isinf(image_noisy).sum(),
+            np.isinf(image_denoised).sum()
+        ],
+        "minimo": [
+            np.nanmin(image_clean),
+            np.nanmin(image_noisy),
+            np.nanmin(image_denoised)
+        ],
+        "maximo": [
+            np.nanmax(image_clean),
+            np.nanmax(image_noisy),
+            np.nanmax(image_denoised)
+        ]
+    }
+)
+
+diagnostic_table
+```
+```{python}
+#| label: tabla-umbrales-wavelet
+#| tbl-cap: "Umbrales aplicados por subbanda y reducción relativa de energía."
+
+threshold_table
+```
+
+```{python}
+#| label: tabla-cambio-filtrado
+#| tbl-cap: "Magnitud del cambio inducido por la reducción de ruido wavelet."
+
+change_table
+```
+
+## Interpretación integrada del ejemplo
+
+El ejemplo muestra que la transformada wavelet separa la imagen en escalas, pero no separa automáticamente anatomía, lesión, ruido y artefactos. La misma subbanda puede contener información útil y ruido simultáneamente. Por eso, la interpretación debe hacerse en tres niveles.
+
+Primero, debe interpretarse la escala. Los niveles finos responden a detalles pequeños, pero también al ruido. Los niveles intermedios pueden ser útiles para bordes y texturas anatómicas. Los niveles gruesos representan estructuras globales, pero pueden omitir lesiones pequeñas.
+
+Segundo, debe interpretarse la orientación. Las subbandas horizontal, vertical y diagonal indican direcciones de cambio de intensidad, no categorías anatómicas. Una lesión con borde irregular puede distribuir energía en varias orientaciones.
+
+Tercero, debe interpretarse la reconstrucción. La reconstrucción selectiva ayuda a traducir los coeficientes al dominio espacial original. Esto es preferible a interpretar únicamente matrices de coeficientes, porque permite verificar si una escala resalta estructuras anatómicas plausibles o solo ruido.
+
+La conclusión metodológica es que el análisis wavelet es útil cuando se usa como representación multiescala controlada. No es un sustituto de la validación anatómica, física o clínica.
