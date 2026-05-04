@@ -460,3 +460,361 @@ flowchart LR
 - [5] PRISMA-P Group et al., “Preferred reporting items for systematic review and meta-analysis protocols (PRISMA-P) 2015 statement”, Syst Rev, vol. 4, núm. 1, p. 1, dic. 2015, doi: 10.1186/2046-4053-4-1.
 - [6] G. Guyatt et al., “GRADE guidelines: 1. Introduction—GRADE evidence profiles and summary of findings tables”, Journal of Clinical Epidemiology, vol. 64, núm. 4, pp. 383–394, abr. 2011, doi: 10.1016/j.jclinepi.2010.04.026.
 
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+## Propósito del ejemplo
+
+Este material muestra cómo aplicar el flujo de trabajo de estado del arte a un caso completo, pero **simulado**.
+
+El tema usado como hilo conductor es:
+
+> Modelos robustos, causales o explicables para segmentación de glioblastoma en imágenes de resonancia magnética.
+
+La finalidad no es reportar evidencia real, sino ilustrar cómo se encadenan protocolo, búsqueda, bibliometría, selección, evaluación crítica, síntesis y conclusiones.
+
+## Pregunta operativa
+
+> En estudios de segmentación de glioblastoma mediante imágenes de resonancia magnética, ¿los modelos con estrategias de robustez, explicabilidad o inferencia causal muestran mejor generalización intercentro que los modelos puramente asociativos?
+
+::: {.compact-table}
+| Componente | Definición operativa |
+|---|---|
+| Población | Pacientes o bases de datos de glioblastoma con resonancia magnética |
+| Intervención metodológica | Modelos robustos, explicables, causales o con generalización de dominio |
+| Comparador | Modelos convencionales de aprendizaje profundo |
+| Resultado | Desempeño de segmentación y estabilidad fuera del centro de entrenamiento |
+| Contexto | Estudios computacionales revisados por pares |
+:::
+
+## Protocolo mínimo
+
+::: {.small-table}
+| Elemento | Decisión ilustrativa |
+|---|---|
+| Periodo | 2018–2026 |
+| Idioma | Inglés o español |
+| Bases | PubMed, Scopus, IEEE Xplore y Web of Science |
+| Tipo de estudio | Artículos completos con metodología reproducible |
+| Unidad de análisis | Estudio computacional de segmentación |
+| Variable principal | Coeficiente Dice en validación externa |
+| Variable crítica | Evidencia de generalización intercentro |
+:::
+
+## Criterios de elegibilidad
+
+::: {.small-table}
+| Dimensión | Inclusión | Exclusión |
+|---|---|---|
+| Tema | Segmentación de glioblastoma en resonancia magnética | Otros tumores sin análisis separado |
+| Método | Modelo computacional descrito técnicamente | Método no reproducible |
+| Validación | Interna o externa claramente reportada | Métricas ambiguas o ausentes |
+| Datos | Fuente, tamaño y partición descritos | Datos no identificables metodológicamente |
+| Resultado | Métricas de segmentación | Solo exactitud global |
+| Calidad | Información suficiente para evaluar sesgo | Resumen, editorial o carta |
+:::
+
+## Ingeniería de búsqueda
+
+La pregunta se descompone en cuatro familias conceptuales. Cada familia aporta términos para construir ecuaciones trazables.
+
+::: {.compact-table}
+| Familia conceptual | Términos ilustrativos |
+|---|---|
+| Modalidad | magnetic resonance imaging, MRI, brain MRI |
+| Entidad clínica | glioblastoma, brain tumor, glioma |
+| Tarea | segmentation, tumor delineation, lesion segmentation |
+| Enfoque | causal inference, robust learning, explainable artificial intelligence, domain generalization |
+:::
+
+## Ecuación ilustrativa
+
+```text
+("glioblastoma" OR "brain tumor" OR "glioma")
+AND
+("magnetic resonance imaging" OR MRI OR "brain MRI")
+AND
+(segmentation OR "tumor delineation")
+AND
+("domain generalization" OR robustness OR "causal inference" OR explainability)
+```
+
+La ecuación debe calibrarse con artículos semilla. Si no recupera estudios conocidos, tiene baja sensibilidad. Si recupera demasiados estudios no pertinentes, tiene baja precisión.
+
+## Bitácora de búsqueda
+
+::: {.small-table}
+| Base | Fecha | Estrategia | Filtros | Registros |
+|---|---:|---|---|---:|
+| PubMed | 2026-05-04 | Ecuación 1 | 2018–2026, artículo | 142 |
+| Scopus | 2026-05-04 | Ecuación 1 adaptada | 2018–2026, inglés/español | 211 |
+| IEEE Xplore | 2026-05-04 | Ecuación 1 técnica | Conferencias excluidas | 74 |
+| Web of Science | 2026-05-04 | Ecuación 1 adaptada | Artículos completos | 118 |
+:::
+
+## Consolidación de registros
+
+```{python}
+registros = pd.DataFrame({
+    "fuente": ["PubMed", "Scopus", "IEEE Xplore", "Web of Science"],
+    "recuperados": [142, 211, 74, 118],
+    "duplicados_estimados": [22, 58, 10, 31]
+})
+registros["unicos_estimados"] = registros["recuperados"] - registros["duplicados_estimados"]
+registros
+```
+
+## Flujo de selección
+
+```{mermaid}
+flowchart TD
+  A["Registros identificados: 545"] --> B["Duplicados eliminados: 121"]
+  B --> C["Registros únicos: 424"]
+  C --> D["Excluidos por título y resumen: 302"]
+  D --> E["Texto completo evaluado: 122"]
+  E --> F["Excluidos por baja trazabilidad técnica: 78"]
+  F --> G["Estudios incluidos en síntesis: 44"]
+```
+
+## Datos sintéticos para el ejemplo
+
+```{python}
+np.random.seed(7)
+
+estudios = pd.DataFrame({
+    "estudio": [f"E{i:02d}" for i in range(1, 19)],
+    "familia": [
+        "U-Net", "U-Net", "U-Net", "U-Net",
+        "Transformador", "Transformador", "Transformador", "Transformador",
+        "Robusto", "Robusto", "Robusto", "Robusto",
+        "Explicable", "Explicable", "Explicable",
+        "Causal", "Causal", "Causal"
+    ],
+    "anio": [2018,2019,2020,2021,2021,2022,2023,2024,2020,2021,2023,2025,2021,2022,2024,2023,2025,2026],
+    "n_pacientes": [120,180,95,250,210,310,190,420,160,240,360,510,130,175,290,85,145,220],
+    "dice_externo": [0.76,0.78,0.74,0.79,0.80,0.82,0.81,0.83,0.81,0.84,0.85,0.86,0.77,0.79,0.80,0.82,0.84,0.85],
+    "caida_intercentro": [0.14,0.13,0.16,0.12,0.11,0.10,0.10,0.09,0.08,0.07,0.06,0.05,0.12,0.11,0.09,0.07,0.06,0.05],
+    "riesgo_sesgo": ["Alto","Moderado","Alto","Moderado","Moderado","Bajo","Moderado","Bajo",
+                     "Moderado","Bajo","Bajo","Bajo","Moderado","Moderado","Bajo","Moderado","Bajo","Bajo"]
+})
+estudios.head()
+```
+
+## Producción por año
+
+```{python}
+prod = estudios.groupby("anio").size().reset_index(name="documentos")
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.plot(prod["anio"], prod["documentos"], marker="o")
+ax.set_xlabel("Año")
+ax.set_ylabel("Número de estudios")
+ax.set_title("Producción anual simulada")
+ax.grid(True, alpha=0.3)
+plt.show()
+```
+
+::: {.caption}
+La producción aumenta después de 2021. Este patrón sugiere crecimiento del tema, pero no demuestra madurez metodológica.
+:::
+
+## Distribución por familia metodológica
+
+```{python}
+familias = estudios["familia"].value_counts().sort_values()
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.barh(familias.index, familias.values)
+ax.set_xlabel("Número de estudios")
+ax.set_ylabel("Familia metodológica")
+ax.set_title("Familias metodológicas identificadas")
+ax.grid(axis="x", alpha=0.3)
+plt.show()
+```
+
+::: {.caption}
+La frecuencia de una familia metodológica no equivale a superioridad científica. Puede indicar tradición, disponibilidad de código o facilidad de implementación.
+:::
+
+## Gráfico de burbujas
+
+```{python}
+fig, ax = plt.subplots(figsize=(7, 4.8))
+
+for familia, datos in estudios.groupby("familia"):
+    ax.scatter(
+        datos["anio"],
+        datos["dice_externo"],
+        s=datos["n_pacientes"] * 0.65,
+        alpha=0.55,
+        label=familia
+    )
+
+ax.set_xlabel("Año")
+ax.set_ylabel("Coeficiente Dice en validación externa")
+ax.set_title("Desempeño externo por familia metodológica")
+ax.grid(True, alpha=0.3)
+ax.legend(title="Familia", fontsize=8)
+plt.show()
+```
+
+::: {.caption}
+La burbuja representa tamaño muestral. El eje vertical representa desempeño externo. La lectura correcta exige combinar desempeño, tamaño de muestra y riesgo de sesgo.
+:::
+
+## Caída intercentro
+
+```{python}
+orden = estudios.groupby("familia")["caida_intercentro"].median().sort_values().index
+datos_box = [estudios.loc[estudios["familia"] == f, "caida_intercentro"] for f in orden]
+
+fig, ax = plt.subplots(figsize=(7, 4.5))
+ax.boxplot(datos_box, labels=orden)
+ax.set_ylabel("Caída de desempeño intercentro")
+ax.set_title("Estabilidad fuera del centro de entrenamiento")
+ax.grid(axis="y", alpha=0.3)
+plt.xticks(rotation=20)
+plt.show()
+```
+
+::: {.caption}
+Menor caída intercentro sugiere mayor estabilidad. En este ejemplo, los enfoques robustos y causales muestran mejor estabilidad simulada.
+:::
+
+## Evaluación crítica de estudios
+
+::: {.small-table}
+| Criterio | Bajo riesgo | Riesgo moderado | Alto riesgo |
+|---|---|---|---|
+| Datos | Fuente, tamaño y partición claros | Fuente clara, partición incompleta | Fuente o partición ambigua |
+| Validación | Externa independiente | Interna con partición razonable | Posible fuga de datos |
+| Métricas | Dice, sensibilidad, precisión e intervalos | Métricas principales sin intervalo | Métrica global insuficiente |
+| Preprocesamiento | Totalmente descrito | Parcialmente descrito | No descrito |
+| Código o reproducibilidad | Código o protocolo disponible | Descripción suficiente | No reproducible |
+:::
+
+## Matriz de extracción
+
+```{python}
+matriz = estudios[[
+    "estudio", "familia", "anio", "n_pacientes",
+    "dice_externo", "caida_intercentro", "riesgo_sesgo"
+]].copy()
+
+matriz.rename(columns={
+    "estudio": "Estudio",
+    "familia": "Familia",
+    "anio": "Año",
+    "n_pacientes": "Pacientes",
+    "dice_externo": "Dice externo",
+    "caida_intercentro": "Caída intercentro",
+    "riesgo_sesgo": "Riesgo de sesgo"
+}, inplace=True)
+
+matriz
+```
+
+## Síntesis por familia
+
+```{python}
+sintesis = (
+    estudios
+    .groupby("familia")
+    .agg(
+        estudios=("estudio", "count"),
+        pacientes_mediana=("n_pacientes", "median"),
+        dice_mediano=("dice_externo", "median"),
+        caida_mediana=("caida_intercentro", "median")
+    )
+    .reset_index()
+    .sort_values("dice_mediano", ascending=False)
+)
+
+sintesis
+```
+
+## Interpretación de la síntesis
+
+::: {.small-table}
+| Familia | Lectura metodológica |
+|---|---|
+| U-Net | Base comparativa sólida, pero con mayor caída intercentro en este ejemplo |
+| Transformador | Mejor representación global, con mayor demanda de datos |
+| Robusto | Mejor estabilidad simulada fuera del dominio original |
+| Explicable | Aporta interpretabilidad, pero no siempre mejora desempeño |
+| Causal | Prometedor para generalización, aunque con menor volumen de estudios |
+:::
+
+La conclusión no debe ser “el modelo causal es mejor” de forma automática. La conclusión correcta es que, bajo estos datos simulados, los enfoques robustos y causales justifican mayor investigación comparativa con validación externa.
+
+## Diagrama de cosecha
+
+```{python}
+cosecha = estudios.copy()
+cosecha["posicion"] = cosecha.groupby("familia").cumcount() + 1
+
+fig, ax = plt.subplots(figsize=(7.5, 4.8))
+
+familias_orden = list(cosecha["familia"].unique())
+y_map = {f: i for i, f in enumerate(familias_orden)}
+
+for _, row in cosecha.iterrows():
+    altura = {"Alto": 0.35, "Moderado": 0.55, "Bajo": 0.8}[row["riesgo_sesgo"]]
+    ax.bar(
+        row["anio"],
+        altura,
+        width=0.35,
+        bottom=y_map[row["familia"]] - altura/2,
+        alpha=0.65
+    )
+
+ax.set_yticks(range(len(familias_orden)))
+ax.set_yticklabels(familias_orden)
+ax.set_xlabel("Año")
+ax.set_title("Diagrama de cosecha: dirección visual de la evidencia")
+ax.grid(axis="x", alpha=0.3)
+plt.show()
+```
+
+::: {.caption}
+En un diagrama de cosecha, la altura puede representar calidad metodológica. Aquí, mayor altura indica menor riesgo de sesgo.
+:::
+
+## Brechas accionables
+
+::: {.compact-table}
+| Brecha | Evidencia ilustrativa | Implicación |
+|---|---|---|
+| Validación externa insuficiente | No todos los estudios reportan prueba intercentro | Exigir conjuntos independientes |
+| Comparaciones no equivalentes | Diferentes particiones y preprocesamientos | Diseñar protocolos comunes |
+| Explicabilidad incompleta | Se muestran mapas, pero no se valida su utilidad | Evaluar estabilidad y plausibilidad clínica |
+| Causalidad débilmente formalizada | Algunos estudios usan el término causal sin grafo ni intervención | Separar robustez, asociación e inferencia causal |
+:::
+
+## Conclusión ilustrativa
+
+El flujo permite pasar de una pregunta amplia a una síntesis metodológicamente defendible.
+
+En el ejemplo simulado, los modelos robustos y causales muestran menor caída de desempeño intercentro, pero el número de estudios es menor. Por tanto, la conclusión prudente no es que sean superiores, sino que constituyen una línea prioritaria para estudios comparativos con validación externa, control de fuga de datos y criterios homogéneos de evaluación.
+
+## Producto final esperado
+
+::: {.small-table}
+| Sección del informe | Contenido mínimo |
+|---|---|
+| Introducción | Justificación, pregunta y alcance |
+| Métodos | Protocolo, búsqueda, selección y extracción |
+| Bibliometría | Producción, familias, redes e indicadores |
+| Evaluación crítica | Riesgo de sesgo y reproducibilidad |
+| Síntesis | Comparación por familias metodológicas |
+| Discusión | Brechas, limitaciones e implicaciones |
+| Conclusión | Mensaje técnico sustentado |
+:::
+
+## Mensaje de cierre
+
+Un estado del arte riguroso no se construye acumulando referencias. Se construye documentando decisiones, comparando evidencia y separando tres niveles: presencia bibliográfica, calidad metodológica y valor explicativo.
