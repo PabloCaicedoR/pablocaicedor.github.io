@@ -1,0 +1,860 @@
+---
+title: "Tutorial: kitty + Fira Code + Starship para Python en Ubuntu/Pop!_OS"
+subtitle: "Tema oscuro BioForge, prompt con Python, Git y cuenta de GitHub"
+author: "LinuxGPT"
+date: "2026-06-04"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+    theme: cosmo
+lang: es
+---
+
+<style>
+:root {
+  --bg: #05070a;
+  --panel: #0b0f14;
+  --panel-2: #111827;
+  --fg: #d7dde5;
+  --muted: #9aa5b1;
+  --green: #9ece6a;
+  --orange: #e0af68;
+  --yellow: #f6c177;
+  --blue: #7aa2f7;
+  --cyan: #7dcfff;
+  --magenta: #bb9af7;
+  --red: #f7768e;
+  --border: #263241;
+}
+body {
+  background: #f6f8fa;
+}
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+blockquote {
+  border-left: 4px solid var(--blue);
+  background: #eef4ff;
+  padding: 0.7rem 1rem;
+}
+.callout {
+  border: 1px solid #d0d7de;
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+  background: #ffffff;
+}
+.callout.warn { border-left-color: var(--orange); }
+.callout.danger { border-left-color: var(--red); }
+.callout.ok { border-left-color: var(--green); }
+.terminal-preview {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  font-family: "Fira Code", "DejaVu Sans Mono", monospace;
+  line-height: 1.55;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+}
+.t-green { color: var(--green); font-weight: 700; }
+.t-orange { color: var(--orange); font-weight: 700; }
+.t-blue { color: var(--blue); font-weight: 700; }
+.t-yellow { color: var(--yellow); font-weight: 700; }
+.t-magenta { color: var(--magenta); font-weight: 700; }
+.t-cyan { color: var(--cyan); font-weight: 700; }
+.t-red { color: var(--red); font-weight: 700; }
+.small { color: #586069; font-size: .92rem; }
+</style>
+
+# Objetivo
+
+Este tutorial configura un terminal de escritorio para desarrollo en Python con:
+
+- **kitty 0.32.2** como emulador de terminal.
+- **Fira Code** tamaño **12**.
+- Tema oscuro armónico inspirado en tu captura: fondo casi negro, acentos verdes, naranjas, azules y cian.
+- **bash** como shell.
+- **Starship** como prompt.
+- Indicadores de **Git**, **Python**, **entorno virtual** y **cuenta de GitHub**.
+- Comandos de verificación y reversión.
+
+<div class="callout ok">
+<strong>Parámetros detectados en tu sistema:</strong><br>
+<code>SHELL=/bin/bash</code><br>
+<code>XDG_SESSION_TYPE=x11</code><br>
+<code>kitty 0.32.2</code><br>
+<code>Fira Code instalada</code><br>
+<code>TERM=xterm-kitty</code><br>
+<code>sudo apt install starship</code> falla porque el paquete no está disponible en tus repositorios APT actuales.
+</div>
+
+# Diagnóstico inicial
+
+Tu entorno está casi listo. El problema real no es kitty ni Fira Code; el bloqueo ocurrió en esta orden:
+
+```bash
+sudo apt install starship
+```
+
+El error:
+
+```text
+E: No se ha podido localizar el paquete starship
+```
+
+significa que tu versión o configuración de repositorios APT no contiene el paquete `starship`.
+
+La solución recomendada es instalar Starship con el instalador oficial, pero de forma prudente: **descargar, inspeccionar y luego ejecutar**.
+
+Referencias oficiales:
+
+- Starship indica el archivo de configuración `~/.config/starship.toml` y la activación con `eval "$(starship init bash)"` para Bash: <https://starship.rs/config/> y <https://starship.rs/>.
+- kitty documenta `font_family`, `bold_font`, `italic_font` y `font_size` en `kitty.conf`: <https://sw.kovidgoyal.net/kitty/conf/>.
+- GitHub CLI se autentica con `gh auth login`: <https://docs.github.com/en/github-cli/github-cli/quickstart>.
+- GitHub CLI mantiene instrucciones oficiales de instalación para Linux/Debian/Ubuntu: <https://github.com/cli/cli/blob/trunk/docs/install_linux.md>.
+
+# Convención de riesgo
+
+Durante el tutorial se usan estas categorías:
+
+| Categoría | Significado |
+|---|---|
+| **Inspección** | No modifica el sistema. Solo muestra información. |
+| **Modificación reversible** | Cambia archivos de configuración del usuario o instala paquetes normales. Se puede revertir. |
+| **Modificación delicada** | Agrega repositorios, llaves o binarios en rutas del sistema. Requiere más cuidado. |
+| **Alto riesgo** | No se usa en este tutorial. Evitamos borrados recursivos, particiones, arranque y permisos masivos. |
+
+# Paso 1: inspección segura
+
+Ejecuta:
+
+```bash
+echo "$SHELL"
+echo "$XDG_SESSION_TYPE"
+kitty --version
+fc-match "Fira Code"
+echo "$TERM"
+```
+
+Qué valida cada comando:
+
+| Comando | Qué verifica |
+|---|---|
+| `echo "$SHELL"` | Confirma que usas Bash: `/bin/bash`. |
+| `echo "$XDG_SESSION_TYPE"` | Indica si estás en `x11` o `wayland`. |
+| `kitty --version` | Confirma la versión de kitty. |
+| `fc-match "Fira Code"` | Confirma que fontconfig encuentra Fira Code. |
+| `echo "$TERM"` | Dentro de kitty debe mostrar `xterm-kitty`. |
+
+Resultado esperado parecido:
+
+```text
+/bin/bash
+x11
+kitty 0.32.2 created by Kovid Goyal
+FiraCode-Regular.ttf: "Fira Code" "Regular"
+xterm-kitty
+```
+
+<div class="callout warn">
+<strong>Nota Wayland:</strong> en tu salida aparece <code>x11</code>. kitty puede funcionar bien así, pero no estás probando Wayland. Para usar Wayland debes iniciar sesión gráfica en Wayland desde el gestor de login. En Pop!_OS/Ubuntu con NVIDIA puede depender del controlador y de la versión del sistema.
+</div>
+
+# Paso 2: configurar kitty
+
+## 2.1 Crear respaldo
+
+**Tipo:** modificación reversible.
+
+```bash
+mkdir -p ~/.config/kitty
+cp ~/.config/kitty/kitty.conf ~/.config/kitty/kitty.conf.bak 2>/dev/null || true
+```
+
+Qué hace:
+
+- `mkdir -p ~/.config/kitty` crea el directorio si no existe.
+- `cp ... .bak` crea un respaldo si ya existía `kitty.conf`.
+- `2>/dev/null || true` evita error visible si el archivo aún no existía.
+
+## 2.2 Editar `kitty.conf`
+
+```bash
+nano ~/.config/kitty/kitty.conf
+```
+
+Pega este contenido completo:
+
+```conf
+# ============================================================
+# Kitty - tema oscuro BioForge
+# Ajustado para:
+# - Fira Code
+# - tamaño 12
+# - kitty 0.32.2
+# - bash
+# - buen contraste
+# ============================================================
+
+# Fuente
+font_family      Fira Code
+bold_font        auto
+italic_font      auto
+bold_italic_font auto
+font_size        12.0
+disable_ligatures never
+
+# Ventana
+background_opacity 1.0
+window_padding_width 6
+confirm_os_window_close 0
+enable_audio_bell no
+visual_bell_duration 0.0
+
+# Cursor
+cursor_shape beam
+cursor_blink_interval 0.5
+cursor            #9ece6a
+cursor_text_color #0b0f14
+
+# Selección
+selection_foreground #e6edf3
+selection_background #2d3743
+
+# Colores base
+foreground #d7dde5
+background #05070a
+
+# Negro / gris
+color0  #0b0f14
+color8  #4b5563
+
+# Rojo
+color1  #f7768e
+color9  #ff8fa3
+
+# Verde
+color2  #9ece6a
+color10 #b4f27a
+
+# Amarillo / naranja
+color3  #e0af68
+color11 #f6c177
+
+# Azul
+color4  #7aa2f7
+color12 #8fb8ff
+
+# Magenta
+color5  #bb9af7
+color13 #cba6ff
+
+# Cian
+color6  #7dcfff
+color14 #9defff
+
+# Blanco
+color7  #c0caf5
+color15 #ffffff
+
+# Tabs
+tab_bar_style powerline
+tab_powerline_style slanted
+
+active_tab_foreground   #05070a
+active_tab_background   #e0af68
+inactive_tab_foreground #9aa5b1
+inactive_tab_background #111827
+
+# Bordes de ventanas internas
+active_border_color   #e0af68
+inactive_border_color #263241
+
+# Enlaces
+url_color #7dcfff
+url_style curly
+
+# Atajos
+map ctrl+shift+enter new_window
+map ctrl+shift+t new_tab
+map ctrl+shift+w close_tab
+map ctrl+shift+[ previous_tab
+map ctrl+shift+] next_tab
+map ctrl+shift+c copy_to_clipboard
+map ctrl+shift+v paste_from_clipboard
+```
+
+Guarda en nano:
+
+```text
+Ctrl + O
+Enter
+Ctrl + X
+```
+
+Cierra kitty y vuelve a abrirlo.
+
+## 2.3 Verificar kitty
+
+```bash
+echo "$TERM"
+fc-match "Fira Code"
+```
+
+Resultado esperado:
+
+```text
+xterm-kitty
+FiraCode-Regular.ttf: "Fira Code" "Regular"
+```
+
+# Paso 3: instalar Starship cuando APT no encuentra el paquete
+
+## 3.1 Verificar herramientas
+
+**Tipo:** inspección.
+
+```bash
+command -v curl
+command -v sh
+```
+
+Si falta `curl`:
+
+**Tipo:** modificación reversible.
+
+```bash
+sudo apt update
+sudo apt install curl
+```
+
+## 3.2 Descargar instalador oficial sin ejecutarlo
+
+**Tipo:** inspección previa / modificación temporal en `/tmp`.
+
+```bash
+curl -fsSL https://starship.rs/install.sh -o /tmp/install-starship.sh
+```
+
+Revisa el archivo antes de ejecutarlo:
+
+```bash
+head -40 /tmp/install-starship.sh
+less /tmp/install-starship.sh
+```
+
+Sales de `less` con:
+
+```text
+q
+```
+
+## 3.3 Ejecutar instalador
+
+**Tipo:** modificación delicada.
+
+Este paso instala el binario `starship`, normalmente en `/usr/local/bin/starship`.
+
+```bash
+sh /tmp/install-starship.sh
+```
+
+Verifica:
+
+```bash
+command -v starship
+starship --version
+```
+
+Resultado esperado:
+
+```text
+/usr/local/bin/starship
+starship x.y.z
+```
+
+# Paso 4: configurar Starship
+
+## 4.1 Crear respaldo
+
+**Tipo:** modificación reversible.
+
+```bash
+mkdir -p ~/.config
+cp ~/.config/starship.toml ~/.config/starship.toml.bak 2>/dev/null || true
+```
+
+## 4.2 Crear `starship.toml`
+
+```bash
+nano ~/.config/starship.toml
+```
+
+Pega esto:
+
+```toml
+# ============================================================
+# Starship prompt - BioForge Dark
+# Ajustado para:
+# - bash
+# - Python
+# - Git
+# - Fira Code normal
+# - GitHub CLI opcional
+# ============================================================
+
+add_newline = true
+command_timeout = 800
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$python\
+${custom.github}\
+$cmd_duration\
+$line_break\
+$character
+"""
+
+palette = "bioforge"
+
+[palettes.bioforge]
+bg = "#05070a"
+fg = "#d7dde5"
+gray = "#7f8790"
+green = "#9ece6a"
+orange = "#e0af68"
+yellow = "#f6c177"
+blue = "#7aa2f7"
+cyan = "#7dcfff"
+magenta = "#bb9af7"
+red = "#f7768e"
+
+[username]
+show_always = true
+style_user = "bold green"
+style_root = "bold red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold gray"
+format = "[@$hostname]($style) "
+
+[directory]
+style = "bold orange"
+format = "[$path]($style) "
+truncate_to_repo = false
+truncation_length = 5
+home_symbol = "~"
+
+[git_branch]
+symbol = "git:"
+style = "bold blue"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "bold yellow"
+format = "([\\[$all_status$ahead_behind\\]]($style) )"
+
+[python]
+symbol = "py:"
+style = "bold yellow"
+format = "[$symbol$version]($style) [venv:$virtualenv](bold magenta) "
+detect_extensions = ["py"]
+detect_files = ["pyproject.toml", "requirements.txt", "setup.py", "environment.yml", ".python-version"]
+detect_folders = [".venv", "venv"]
+
+# Muestra la cuenta de GitHub autenticada con GitHub CLI.
+# Por defecto se muestra solo dentro de repositorios Git para no ensuciar el prompt.
+[custom.github]
+description = "Cuenta activa de GitHub"
+command = "gh auth status 2>&1 | awk '/Logged in to github.com account/ {print $7; exit}'"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1"
+symbol = "gh:"
+style = "bold blue"
+format = "[$symbol$output]($style) "
+
+[cmd_duration]
+min_time = 700
+style = "bold cyan"
+format = "[took:$duration]($style) "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+```
+
+<div class="callout warn">
+<strong>Privacidad:</strong> mostrar cuentas en el prompt es cómodo, pero puede exponer tu usuario en capturas de pantalla, clases, videos o documentación. Esta configuración muestra el usuario de GitHub, no el correo, y solo dentro de repositorios Git.
+</div>
+
+# Paso 5: activar Starship en Bash
+
+**Tipo:** modificación reversible.
+
+Primero revisa si ya existe una línea de Starship:
+
+```bash
+grep -n "starship init bash" ~/.bashrc
+```
+
+Si no aparece nada, agrega la línea al final:
+
+```bash
+printf '\n# Starship prompt\neval "$(starship init bash)"\n' >> ~/.bashrc
+```
+
+Recarga Bash:
+
+```bash
+source ~/.bashrc
+```
+
+También puedes cerrar y abrir kitty.
+
+# Paso 6: instalar y autenticar GitHub CLI
+
+El módulo `custom.github` necesita `gh`.
+
+## 6.1 Inspección
+
+```bash
+command -v gh
+gh --version
+```
+
+Si existe, pasa a la autenticación.
+
+## 6.2 Opción simple con APT de la distribución
+
+**Tipo:** modificación reversible.
+
+```bash
+sudo apt update
+sudo apt install gh
+```
+
+Verifica:
+
+```bash
+gh --version
+```
+
+Si funciona, continúa con `gh auth login`.
+
+## 6.3 Opción oficial de GitHub CLI para Debian/Ubuntu
+
+**Tipo:** modificación delicada.
+
+Usa esta opción si el paquete `gh` no existe o quieres el repositorio mantenido por GitHub CLI.
+
+```bash
+type -p wget >/dev/null || sudo apt install wget -y
+sudo mkdir -p -m 755 /etc/apt/keyrings
+out=$(mktemp)
+wget -nv -O "$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg
+cat "$out" | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+sudo mkdir -p -m 755 /etc/apt/sources.list.d
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update
+sudo apt install gh -y
+```
+
+Verifica:
+
+```bash
+gh --version
+```
+
+## 6.4 Autenticar GitHub
+
+**Tipo:** modificación reversible.
+
+```bash
+gh auth login
+```
+
+Opciones habituales:
+
+```text
+GitHub.com
+HTTPS
+Login with a web browser
+```
+
+Verifica:
+
+```bash
+gh auth status
+```
+
+# Paso 7: resultado esperado
+
+Dentro de un repositorio Git con entorno virtual Python activo, el prompt debería verse conceptualmente así:
+
+<div class="terminal-preview">
+<span class="t-green">pacaicedo</span><span class="t-muted">@promise</span>
+<span class="t-orange">~/Data_Cantatio/BioForja-Projects/bioforge</span>
+<span class="t-blue">git:main</span>
+<span class="t-yellow">py:3.12</span>
+<span class="t-magenta">venv:bioforge</span>
+<span class="t-blue">gh:caicasanalytics</span><br>
+<span class="t-green">❯</span>
+</div>
+
+La lógica visual queda así:
+
+| Elemento | Color |
+|---|---|
+| Usuario | Verde |
+| Host | Gris |
+| Directorio | Naranja |
+| Rama Git | Azul |
+| Estado Git | Amarillo |
+| Python | Amarillo |
+| Entorno virtual | Magenta |
+| GitHub | Azul |
+| Duración de comandos | Cian |
+| Error | Rojo |
+
+# Paso 8: prueba completa en un proyecto Python
+
+Entra a tu proyecto:
+
+```bash
+cd ~/Data_Cantatio/BioForja-Projects/bioforge
+```
+
+Activa tu entorno virtual:
+
+```bash
+source .venv/bin/activate
+```
+
+Verifica Python:
+
+```bash
+python --version
+which python
+```
+
+Verifica Git:
+
+```bash
+git status --short
+git branch --show-current
+```
+
+Verifica GitHub CLI:
+
+```bash
+gh auth status
+```
+
+Explica qué está mostrando Starship:
+
+```bash
+starship explain
+```
+
+# Paso 9: ajustes útiles
+
+## 9.1 Mostrar GitHub siempre, no solo en repositorios
+
+Edita:
+
+```bash
+nano ~/.config/starship.toml
+```
+
+Busca:
+
+```toml
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1"
+```
+
+Cámbialo por:
+
+```toml
+when = "command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1"
+```
+
+Recarga:
+
+```bash
+source ~/.bashrc
+```
+
+## 9.2 Ocultar Google Cloud del prompt
+
+Si aparece algo como:
+
+```text
+~ on ☁ usuario@gmail.com
+```
+
+eso viene del módulo `gcloud`.
+
+Para ocultarlo:
+
+```bash
+nano ~/.config/starship.toml
+```
+
+Agrega:
+
+```toml
+[gcloud]
+disabled = true
+```
+
+Recarga:
+
+```bash
+source ~/.bashrc
+```
+
+## 9.3 No mostrar usuario y host
+
+Si quieres un prompt más minimalista, cambia el `format`:
+
+```toml
+format = """
+$directory\
+$git_branch\
+$git_status\
+$python\
+${custom.github}\
+$cmd_duration\
+$line_break\
+$character
+"""
+```
+
+# Paso 10: verificación final
+
+Abre una ventana nueva de kitty y ejecuta:
+
+```bash
+echo "$TERM"
+echo "$SHELL"
+echo "$XDG_SESSION_TYPE"
+fc-match "Fira Code"
+starship --version
+starship explain
+```
+
+Resultados esperados:
+
+```text
+xterm-kitty
+/bin/bash
+x11
+FiraCode-Regular.ttf: "Fira Code" "Regular"
+starship x.y.z
+```
+
+Para validar GitHub:
+
+```bash
+gh auth status
+```
+
+Para validar Python:
+
+```bash
+cd ~/Data_Cantatio/BioForja-Projects/bioforge
+source .venv/bin/activate
+python --version
+```
+
+# Paso 11: reversión
+
+## 11.1 Revertir kitty
+
+```bash
+mv ~/.config/kitty/kitty.conf.bak ~/.config/kitty/kitty.conf
+```
+
+Si no había respaldo, puedes simplemente mover la configuración actual:
+
+```bash
+mv ~/.config/kitty/kitty.conf ~/.config/kitty/kitty.conf.disabled
+```
+
+## 11.2 Desactivar Starship
+
+Edita:
+
+```bash
+nano ~/.bashrc
+```
+
+Elimina esta línea:
+
+```bash
+eval "$(starship init bash)"
+```
+
+Recarga:
+
+```bash
+source ~/.bashrc
+```
+
+## 11.3 Quitar el binario de Starship
+
+**Tipo:** modificación delicada, pero acotada a un único archivo.
+
+```bash
+sudo rm /usr/local/bin/starship
+```
+
+No uses `rm -r` para esto.
+
+## 11.4 Revertir configuración de Starship
+
+```bash
+mv ~/.config/starship.toml.bak ~/.config/starship.toml
+```
+
+Si no quieres usar Starship:
+
+```bash
+mv ~/.config/starship.toml ~/.config/starship.toml.disabled
+```
+
+## 11.5 Quitar repositorio oficial de GitHub CLI
+
+Solo si agregaste el repositorio de GitHub CLI:
+
+```bash
+sudo rm /etc/apt/sources.list.d/github-cli.list
+sudo rm /etc/apt/keyrings/githubcli-archive-keyring.gpg
+sudo apt update
+```
+
+Esto no borra tus repositorios ni tus proyectos; solo elimina la fuente APT de GitHub CLI.
+
+# Resumen operativo
+
+1. kitty ya está instalado y usando `xterm-kitty`.
+2. Fira Code ya está instalada.
+3. Tu sesión actual es X11, no Wayland.
+4. `starship` no está disponible por APT en tus repositorios actuales.
+5. Instala Starship descargando el instalador oficial, revisándolo y ejecutándolo.
+6. Configura `~/.config/starship.toml`.
+7. Activa Starship en `~/.bashrc`.
+8. Usa `gh auth login` para que el prompt pueda mostrar tu cuenta de GitHub.
+9. Verifica con `starship explain`.
+

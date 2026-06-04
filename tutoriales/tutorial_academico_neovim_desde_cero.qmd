@@ -1,0 +1,1147 @@
+---
+title: "Tutorial académico de Neovim desde cero"
+subtitle: "Guía práctica para Linux, desarrollo, Git, Python y Quarto"
+author: "Generado con ChatGPT"
+lang: es
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    theme: cosmo
+    highlight-style: github
+execute:
+  eval: false
+  echo: true
+---
+
+# Propósito y alcance
+
+Este documento es un tutorial académico y práctico para empezar a usar **Neovim** (`nvim`) desde cero en Linux de escritorio, especialmente en **Ubuntu** y **Pop!_OS**. Está orientado a trabajo técnico, programación, escritura académica, Git, Python y proyectos Quarto.
+
+El objetivo no es convertir Neovim en un entorno complejo desde el primer día, sino construir una base reproducible:
+
+1. verificar la instalación;
+2. aprender los modos y comandos esenciales;
+3. crear una configuración mínima;
+4. usar Neovim para editar código, Markdown, Quarto y archivos de proyecto;
+5. saber verificar y revertir cambios.
+
+> Regla de seguridad: antes de modificar el sistema o editar archivos críticos, inspecciona. Este tutorial separa comandos de **inspección**, **modificación reversible** y **modificación delicada**.
+
+# 1. Conceptos fundamentales
+
+## 1.1 ¿Qué es Neovim?
+
+**Neovim** es un editor de texto modal derivado de Vim. Se usa desde la terminal y está diseñado para edición eficiente de texto, código y archivos de configuración.
+
+Se ejecuta con:
+
+```bash
+nvim archivo.txt
+```
+
+Si el archivo existe, lo abre. Si no existe, lo crea al guardar.
+
+## 1.2 Diferencia básica entre Vim y Neovim
+
+| Tema | Vim | Neovim |
+|---|---|---|
+| Comando | `vim` | `nvim` |
+| Configuración tradicional | `~/.vimrc` | `~/.config/nvim/init.vim` |
+| Configuración moderna | Vimscript | Lua o Vimscript |
+| Uso recomendado aquí | Conocimiento base y edición remota | Editor principal de trabajo |
+| Ecosistema moderno | Bueno | Muy activo para LSP, plugins, Lua y desarrollo |
+
+En este tutorial se usará **Neovim con configuración en Lua**:
+
+```text
+~/.config/nvim/init.lua
+```
+
+# 2. Diagnóstico inicial
+
+## 2.1 Verificar instalación
+
+### Inspección segura
+
+Ejecuta en la terminal:
+
+```bash
+nvim --version | head -n 5
+command -v nvim
+readlink -f "$(command -v nvim)"
+```
+
+Qué hace cada comando:
+
+- `nvim --version | head -n 5`: muestra la versión instalada.
+- `command -v nvim`: muestra desde dónde se ejecuta el comando.
+- `readlink -f "$(command -v nvim)"`: muestra el binario real, resolviendo enlaces simbólicos.
+
+Una salida esperada puede verse así:
+
+```text
+NVIM v0.9.5
+Build type: Release
+LuaJIT ...
+/usr/bin/nvim
+/usr/bin/nvim
+```
+
+Eso indica que Neovim está instalado correctamente.
+
+## 2.2 Verificar si existe configuración previa
+
+### Inspección segura
+
+```bash
+ls -la ~/.config/nvim 2>/dev/null
+find ~/.config/nvim -maxdepth 2 -type f 2>/dev/null
+```
+
+Interpretación:
+
+- Si no aparece nada, aún no tienes configuración personal.
+- Si aparece `init.lua`, `init.vim` o carpetas como `lua/`, ya existe una configuración.
+- Si ya tienes configuración, haz respaldo antes de modificar.
+
+## 2.3 Instalar Neovim si no existe
+
+En Ubuntu y Pop!_OS:
+
+### Modificación reversible
+
+```bash
+sudo apt update
+sudo apt install neovim
+```
+
+Verifica:
+
+```bash
+nvim --version | head -n 5
+```
+
+# 3. Primer contacto con Neovim
+
+## 3.1 Abrir un archivo
+
+```bash
+nvim notas.txt
+```
+
+Al abrir Neovim estarás en **modo normal**.
+
+## 3.2 Modos de Neovim
+
+Neovim es un editor **modal**: las teclas hacen cosas distintas según el modo.
+
+| Modo | Uso | Entrada | Salida |
+|---|---|---|---|
+| Normal | moverse, borrar, copiar, guardar | al abrir Neovim o con `Esc` | `i`, `a`, `v`, `:` |
+| Insert | escribir texto | `i`, `a`, `o`, `A` | `Esc` |
+| Visual | seleccionar texto | `v`, `V`, `Ctrl+v` | `Esc` |
+| Command | ejecutar comandos | `:` | `Enter` o `Esc` |
+| Terminal | usar shell interna | `:terminal` | `Ctrl+\` luego `Ctrl+n` |
+
+## 3.3 Escribir, guardar y salir
+
+Abre un archivo:
+
+```bash
+nvim prueba.txt
+```
+
+Dentro de Neovim:
+
+```text
+i
+```
+
+Escribe:
+
+```text
+Hola, estoy aprendiendo Neovim.
+```
+
+Vuelve al modo normal:
+
+```text
+Esc
+```
+
+Guarda y sal:
+
+```text
+:wq
+```
+
+Verifica desde la terminal:
+
+```bash
+cat prueba.txt
+```
+
+# 4. Comandos esenciales
+
+## 4.1 Guardar y salir
+
+Desde modo normal:
+
+| Acción | Comando |
+|---|---|
+| Guardar | `:w` |
+| Salir | `:q` |
+| Guardar y salir | `:wq` |
+| Salir sin guardar | `:q!` |
+| Guardar con otro nombre | `:w nuevo_nombre.txt` |
+
+## 4.2 Movimiento básico
+
+| Tecla | Acción |
+|---|---|
+| `h` | izquierda |
+| `j` | abajo |
+| `k` | arriba |
+| `l` | derecha |
+| `w` | siguiente palabra |
+| `b` | palabra anterior |
+| `0` | inicio de línea |
+| `$` | final de línea |
+| `gg` | inicio del archivo |
+| `G` | final del archivo |
+| `25G` | ir a la línea 25 |
+| `%` | saltar entre paréntesis, corchetes o llaves |
+
+## 4.3 Inserción de texto
+
+| Comando | Acción |
+|---|---|
+| `i` | insertar antes del cursor |
+| `a` | insertar después del cursor |
+| `I` | insertar al inicio de línea |
+| `A` | insertar al final de línea |
+| `o` | abrir línea nueva debajo |
+| `O` | abrir línea nueva arriba |
+
+Ejemplo útil:
+
+```text
+A
+```
+
+Mueve el cursor al final de la línea y entra en modo inserción.
+
+## 4.4 Borrar, copiar y pegar
+
+| Comando | Acción |
+|---|---|
+| `x` | borrar carácter |
+| `dd` | cortar línea |
+| `yy` | copiar línea |
+| `p` | pegar después |
+| `P` | pegar antes |
+| `dw` | borrar palabra |
+| `d$` | borrar hasta final de línea |
+| `3dd` | cortar tres líneas |
+| `3yy` | copiar tres líneas |
+
+En Neovim, muchos comandos se componen como “operador + movimiento”:
+
+```text
+d$
+```
+
+significa: borrar (`d`) hasta el final de la línea (`$`).
+
+```text
+dw
+```
+
+significa: borrar (`d`) hasta la siguiente palabra (`w`).
+
+## 4.5 Deshacer y rehacer
+
+| Acción | Comando |
+|---|---|
+| Deshacer | `u` |
+| Rehacer | `Ctrl+r` |
+
+# 5. Búsqueda y reemplazo
+
+## 5.1 Buscar texto
+
+Buscar hacia adelante:
+
+```text
+/palabra
+```
+
+Buscar hacia atrás:
+
+```text
+?palabra
+```
+
+Siguiente resultado:
+
+```text
+n
+```
+
+Resultado anterior:
+
+```text
+N
+```
+
+Ejemplo:
+
+```text
+/error
+```
+
+## 5.2 Reemplazar texto
+
+Reemplazar en todo el archivo:
+
+```text
+:%s/viejo/nuevo/g
+```
+
+Reemplazar con confirmación:
+
+```text
+:%s/viejo/nuevo/gc
+```
+
+Ejemplo académico:
+
+```text
+:%s/metodologia/metodología/gc
+```
+
+La opción `c` pide confirmación antes de cada reemplazo.
+
+# 6. Selección visual
+
+## 6.1 Modos visuales
+
+| Comando | Acción |
+|---|---|
+| `v` | selección por caracteres |
+| `V` | selección por líneas |
+| `Ctrl+v` | selección rectangular o por bloques |
+
+Después de seleccionar:
+
+| Comando | Acción |
+|---|---|
+| `y` | copiar |
+| `d` | cortar |
+| `>` | indentar |
+| `<` | quitar indentación |
+| `p` | pegar |
+
+Ejemplo: seleccionar tres líneas e indentarlas.
+
+```text
+V
+jj
+>
+```
+
+Interpretación:
+
+- `V`: selecciona la línea actual.
+- `jj`: extiende la selección dos líneas hacia abajo.
+- `>`: indenta el bloque.
+
+# 7. Buffers, ventanas y pestañas
+
+## 7.1 Buffers
+
+Un **buffer** es un archivo cargado en memoria.
+
+Abrir varios archivos:
+
+```bash
+nvim archivo1.py archivo2.py README.md
+```
+
+Comandos útiles:
+
+| Comando | Acción |
+|---|---|
+| `:buffers` | listar buffers |
+| `:bnext` | siguiente buffer |
+| `:bprevious` | buffer anterior |
+| `:buffer 2` | ir al buffer número 2 |
+| `:bd` | cerrar buffer actual |
+
+## 7.2 Ventanas divididas
+
+División horizontal:
+
+```text
+:split archivo.py
+```
+
+División vertical:
+
+```text
+:vsplit archivo.py
+```
+
+Moverse entre ventanas:
+
+```text
+Ctrl+w h
+Ctrl+w j
+Ctrl+w k
+Ctrl+w l
+```
+
+Cerrar una ventana:
+
+```text
+:q
+```
+
+## 7.3 Pestañas
+
+Las pestañas en Neovim agrupan ventanas.
+
+| Comando | Acción |
+|---|---|
+| `:tabnew archivo.py` | nueva pestaña |
+| `:tabnext` | siguiente pestaña |
+| `:tabprevious` | pestaña anterior |
+| `:tabclose` | cerrar pestaña |
+
+# 8. Configuración mínima en Lua
+
+## 8.1 Crear carpeta de configuración
+
+### Inspección segura
+
+```bash
+ls -la ~/.config/nvim 2>/dev/null
+```
+
+Si no existe, créala:
+
+### Modificación reversible
+
+```bash
+mkdir -p ~/.config/nvim
+```
+
+## 8.2 Respaldar configuración previa
+
+Si ya existe una carpeta `~/.config/nvim`, respáldala:
+
+### Modificación reversible
+
+```bash
+[ -d ~/.config/nvim ] && cp -a ~/.config/nvim ~/.config/nvim.bak.$(date +%Y%m%d-%H%M%S)
+```
+
+Este comando crea una copia con fecha y hora.
+
+## 8.3 Crear `init.lua`
+
+```bash
+nvim ~/.config/nvim/init.lua
+```
+
+Pega esta configuración:
+
+```lua
+-- =========================================================
+-- Configuración básica de Neovim
+-- Archivo: ~/.config/nvim/init.lua
+-- =========================================================
+
+-- Números de línea
+vim.opt.number = true
+vim.opt.relativenumber = true
+
+-- Indentación
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = true
+vim.opt.autoindent = true
+vim.opt.smartindent = true
+
+-- Interfaz
+vim.opt.mouse = "a"
+vim.opt.termguicolors = true
+vim.opt.signcolumn = "yes"
+vim.opt.wrap = false
+vim.opt.scrolloff = 8
+
+-- Búsqueda
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+vim.opt.hlsearch = true
+vim.opt.incsearch = true
+
+-- Portapapeles del sistema
+vim.opt.clipboard = "unnamedplus"
+
+-- Leader: tecla prefijo para atajos propios
+vim.g.mapleader = " "
+
+-- Atajos básicos
+vim.keymap.set("n", "<leader>w", ":w<CR>", { desc = "Guardar archivo" })
+vim.keymap.set("n", "<leader>q", ":q<CR>", { desc = "Salir" })
+vim.keymap.set("n", "<leader>h", ":nohlsearch<CR>", { desc = "Limpiar resaltado de búsqueda" })
+vim.keymap.set("n", "<leader>n", ":set number!<CR>", { desc = "Activar/desactivar números" })
+```
+
+Guarda y sal:
+
+```text
+:wq
+```
+
+## 8.4 Verificar carga de configuración
+
+Abre Neovim:
+
+```bash
+nvim
+```
+
+Dentro ejecuta:
+
+```text
+:set number?
+:set relativenumber?
+:scriptnames
+```
+
+Debes ver que `number` y `relativenumber` están activos. En `:scriptnames` busca:
+
+```text
+/home/tu_usuario/.config/nvim/init.lua
+```
+
+# 9. ¿Qué es el leader?
+
+El **leader** es una tecla prefijo para atajos personalizados.
+
+En la configuración anterior:
+
+```lua
+vim.g.mapleader = " "
+```
+
+significa:
+
+```text
+leader = tecla Espacio
+```
+
+Entonces:
+
+```lua
+vim.keymap.set("n", "<leader>w", ":w<CR>")
+```
+
+equivale a:
+
+```text
+Espacio + w = guardar
+```
+
+No se presionan necesariamente al mismo tiempo. Es una secuencia: primero `Espacio`, luego `w`.
+
+Ejemplos típicos:
+
+| Atajo | Acción |
+|---|---|
+| `<leader>w` | guardar |
+| `<leader>q` | salir |
+| `<leader>h` | limpiar resaltado |
+| `<leader>n` | activar/desactivar números |
+
+# 10. Portapapeles en Ubuntu y Pop!_OS
+
+Para que `vim.opt.clipboard = "unnamedplus"` funcione, Neovim necesita una herramienta externa según la sesión gráfica.
+
+## 10.1 Verificar sesión gráfica
+
+### Inspección segura
+
+```bash
+echo "$XDG_SESSION_TYPE"
+```
+
+Posibles salidas:
+
+```text
+wayland
+```
+
+o:
+
+```text
+x11
+```
+
+## 10.2 Instalar herramienta de portapapeles
+
+Para Wayland:
+
+### Modificación reversible
+
+```bash
+sudo apt install wl-clipboard
+```
+
+Para X11:
+
+### Modificación reversible
+
+```bash
+sudo apt install xclip
+```
+
+## 10.3 Diagnóstico dentro de Neovim
+
+```text
+:checkhealth clipboard
+```
+
+Si hay problemas, Neovim mostrará qué proveedor falta.
+
+# 11. Terminal integrada
+
+Abrir una terminal dentro de Neovim:
+
+```text
+:terminal
+```
+
+Ejecutar un comando directamente:
+
+```text
+:terminal python script.py
+```
+
+Salir del modo terminal hacia modo normal:
+
+```text
+Ctrl+\
+Ctrl+n
+```
+
+Cerrar el buffer de terminal:
+
+```text
+:bd!
+```
+
+Uso práctico:
+
+```text
+:terminal git status
+```
+
+o:
+
+```text
+:terminal quarto render informe.qmd
+```
+
+# 12. Neovim para Git
+
+## 12.1 Escribir mensajes de commit
+
+Git puede abrir Neovim para escribir mensajes de commit.
+
+Configura Git:
+
+### Modificación reversible
+
+```bash
+git config --global core.editor "nvim"
+```
+
+Verifica:
+
+```bash
+git config --global core.editor
+```
+
+Debe mostrar:
+
+```text
+nvim
+```
+
+Revertir:
+
+```bash
+git config --global --unset core.editor
+```
+
+## 12.2 Flujo básico de commit
+
+```bash
+git status
+git add archivo.py
+git commit
+```
+
+Cuando se abra Neovim:
+
+1. presiona `i`;
+2. escribe el mensaje del commit;
+3. presiona `Esc`;
+4. guarda y sal con `:wq`.
+
+Si quieres abortar el commit desde Neovim:
+
+```text
+:q!
+```
+
+# 13. Neovim para Python
+
+## 13.1 Abrir scripts
+
+```bash
+nvim script.py
+```
+
+## 13.2 Ejecutar el script desde Neovim
+
+Dentro de Neovim:
+
+```text
+:terminal python script.py
+```
+
+O desde la terminal normal:
+
+```bash
+python script.py
+```
+
+## 13.3 Flujo con entornos virtuales
+
+Crear entorno:
+
+```bash
+python3 -m venv .venv
+```
+
+Activar:
+
+```bash
+source .venv/bin/activate
+```
+
+Instalar dependencias:
+
+```bash
+pip install -r requirements.txt
+```
+
+Abrir proyecto:
+
+```bash
+nvim .
+```
+
+> Recomendación académica: guarda dependencias en `requirements.txt` o usa herramientas reproducibles como `uv`, `pip-tools`, `conda` o `renv` según el proyecto. No mezcles dependencias globales y del proyecto si necesitas reproducibilidad.
+
+# 14. Neovim para Quarto
+
+## 14.1 Abrir un archivo Quarto
+
+```bash
+nvim informe.qmd
+```
+
+Un archivo `.qmd` combina texto Markdown, metadatos YAML y bloques de código ejecutables.
+
+Estructura mínima:
+
+````markdown
+---
+title: "Mi informe"
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  eval: false
+---
+
+# Introducción
+
+Texto académico.
+
+```{python}
+print("Hola desde Quarto")
+```
+````
+
+## 14.2 Renderizar desde la terminal
+
+```bash
+quarto render informe.qmd
+```
+
+## 14.3 Renderizar desde Neovim
+
+Dentro de Neovim:
+
+```text
+:terminal quarto render %
+```
+
+En Neovim, `%` representa el archivo actual.
+
+## 14.4 Vista previa
+
+Desde terminal:
+
+```bash
+quarto preview informe.qmd
+```
+
+Esto inicia un servidor local para revisar cambios en el navegador.
+
+# 15. Editar archivos del sistema con seguridad
+
+Para archivos del sistema, evita abrir Neovim directamente con `sudo nvim archivo`. Es más seguro usar `sudoedit`.
+
+## 15.1 Ejemplo: `/etc/hosts`
+
+### Inspección segura
+
+```bash
+ls -l /etc/hosts
+cat /etc/hosts
+```
+
+### Respaldo
+
+### Modificación reversible
+
+```bash
+sudo cp /etc/hosts /etc/hosts.bak
+```
+
+### Edición
+
+### Modificación delicada
+
+```bash
+SUDO_EDITOR=nvim sudoedit /etc/hosts
+```
+
+### Verificación
+
+```bash
+cat /etc/hosts
+```
+
+### Reversión
+
+```bash
+sudo cp /etc/hosts.bak /etc/hosts
+```
+
+Advertencia: editar archivos del sistema puede afectar red, arranque, servicios o permisos. Revisa el archivo antes y después de cambiarlo.
+
+# 16. Tutorial interactivo incluido
+
+Neovim incluye un tutorial básico interactivo:
+
+```bash
+nvim +Tutor
+```
+
+Es recomendable completarlo una vez. Refuerza los comandos de movimiento, edición, borrado, búsqueda y guardado.
+
+# 17. Arrancar Neovim sin configuración
+
+Cuando algo falla, puedes abrir Neovim ignorando tu configuración:
+
+```bash
+nvim --clean
+```
+
+También puedes desactivar temporalmente toda tu configuración:
+
+### Modificación reversible
+
+```bash
+mv ~/.config/nvim ~/.config/nvim.disabled
+```
+
+Restaurar:
+
+```bash
+mv ~/.config/nvim.disabled ~/.config/nvim
+```
+
+# 18. Ejercicios guiados
+
+## 18.1 Ejercicio 1: archivo básico
+
+Crea un archivo:
+
+```bash
+nvim practica-nvim.txt
+```
+
+Dentro de Neovim:
+
+1. `i`
+2. escribe cinco líneas;
+3. `Esc`
+4. `gg`
+5. `yy`
+6. `G`
+7. `p`
+8. `:wq`
+
+Verifica:
+
+```bash
+cat practica-nvim.txt
+```
+
+## 18.2 Ejercicio 2: búsqueda y reemplazo
+
+Crea:
+
+```bash
+nvim resumen.md
+```
+
+Escribe:
+
+```markdown
+# Resumen
+
+La metodologia fue cualitativa.
+La metodologia incluyó entrevistas.
+```
+
+Corrige con:
+
+```text
+:%s/metodologia/metodología/gc
+```
+
+Guarda:
+
+```text
+:wq
+```
+
+## 18.3 Ejercicio 3: mini proyecto Quarto
+
+Crea carpeta:
+
+```bash
+mkdir -p ~/proyectos/nvim-quarto-demo
+cd ~/proyectos/nvim-quarto-demo
+```
+
+Crea archivo:
+
+```bash
+nvim informe.qmd
+```
+
+Contenido:
+
+````markdown
+---
+title: "Informe de prueba con Neovim y Quarto"
+format:
+  html:
+    toc: true
+    number-sections: true
+execute:
+  eval: false
+---
+
+# Introducción
+
+Este documento fue escrito en Neovim.
+
+# Código
+
+```{python}
+x = 2 + 2
+print(x)
+```
+````
+
+Renderiza:
+
+```bash
+quarto render informe.qmd
+```
+
+Verifica que se generó:
+
+```bash
+ls -lh informe.html
+```
+
+# 19. Tabla de comandos mínimos
+
+| Categoría | Comando | Acción |
+|---|---|---|
+| Modo | `i` | entrar en modo inserción |
+| Modo | `Esc` | volver a modo normal |
+| Archivo | `:w` | guardar |
+| Archivo | `:q` | salir |
+| Archivo | `:wq` | guardar y salir |
+| Edición | `dd` | cortar línea |
+| Edición | `yy` | copiar línea |
+| Edición | `p` | pegar |
+| Edición | `u` | deshacer |
+| Movimiento | `gg` | inicio del archivo |
+| Movimiento | `G` | final del archivo |
+| Búsqueda | `/texto` | buscar |
+| Búsqueda | `n` | siguiente resultado |
+| Visual | `V` | seleccionar línea |
+| Sistema | `:terminal` | abrir terminal integrada |
+
+# 20. Recomendación de aprendizaje progresivo
+
+## Semana 1: supervivencia
+
+Aprende:
+
+```text
+i, Esc, :w, :q, :wq, dd, yy, p, u, /texto
+```
+
+Objetivo: editar archivos sin perderte.
+
+## Semana 2: eficiencia
+
+Aprende:
+
+```text
+w, b, 0, $, gg, G, V, >, <, :split, :vsplit
+```
+
+Objetivo: moverte y editar más rápido.
+
+## Semana 3: flujo académico
+
+Practica con:
+
+```text
+README.md
+informe.qmd
+script.py
+.gitignore
+requirements.txt
+```
+
+Objetivo: usar Neovim dentro de proyectos reproducibles.
+
+## Semana 4: personalización controlada
+
+Agrega configuración poco a poco. Cada cambio debe cumplir:
+
+1. saber qué hace;
+2. poder verificarlo;
+3. poder revertirlo.
+
+# 21. Verificación final
+
+Para confirmar que tienes una instalación funcional:
+
+```bash
+nvim --version | head -n 5
+nvim --clean
+nvim ~/.config/nvim/init.lua
+```
+
+Dentro de Neovim:
+
+```text
+:set number?
+:checkhealth
+```
+
+Para confirmar que puedes escribir y guardar:
+
+```bash
+nvim prueba-final.txt
+```
+
+Dentro:
+
+```text
+i
+Neovim funciona correctamente.
+Esc
+:wq
+```
+
+Verifica:
+
+```bash
+cat prueba-final.txt
+```
+
+# 22. Reversión general
+
+Si quieres desactivar toda la configuración:
+
+```bash
+mv ~/.config/nvim ~/.config/nvim.disabled
+```
+
+Para restaurarla:
+
+```bash
+mv ~/.config/nvim.disabled ~/.config/nvim
+```
+
+Si solo quieres desactivar `init.lua`:
+
+```bash
+mv ~/.config/nvim/init.lua ~/.config/nvim/init.lua.bak
+```
+
+Neovim puede arrancar sin configuración con:
+
+```bash
+nvim --clean
+```
+
+# 23. Conclusión
+
+Neovim es especialmente útil para trabajo académico y científico porque permite editar código, notas, informes Quarto, archivos Markdown, configuraciones de proyecto y mensajes de Git desde un entorno consistente.
+
+La estrategia recomendada es:
+
+- usar `nvim` como editor principal;
+- aprender primero los comandos básicos;
+- configurar solo lo necesario;
+- mantener configuración reproducible en `~/.config/nvim/init.lua`;
+- respaldar antes de cambios importantes;
+- usar `nvim --clean` para diagnosticar problemas.
+
+Con esta base ya puedes trabajar con archivos `.py`, `.md`, `.qmd`, `.yml`, `.toml`, `.json`, `.gitignore` y documentación técnica desde Neovim.
