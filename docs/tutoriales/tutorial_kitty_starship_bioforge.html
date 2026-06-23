@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="LinuxGPT">
+
+<title>Tutorial: kitty + Fira Code + Starship para Python en Ubuntu/Pop!_OS – PECR Knowledge Hub</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-2dae92dc01c91c6c069251a8f0612d89.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No se han encontrado resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../recursos/estilos/styles_site.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src=".././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo light-content">
+    <img src=".././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Buscar"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Navegación de palanca" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Alternar modo oscuro"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En esta página</h2>
+   
+  <ul>
+  <li><a href="#objetivo" id="toc-objetivo" class="nav-link active" data-scroll-target="#objetivo"><span class="header-section-number">1</span> Objetivo</a></li>
+  <li><a href="#diagnóstico-inicial" id="toc-diagnóstico-inicial" class="nav-link" data-scroll-target="#diagnóstico-inicial"><span class="header-section-number">2</span> Diagnóstico inicial</a></li>
+  <li><a href="#convención-de-riesgo" id="toc-convención-de-riesgo" class="nav-link" data-scroll-target="#convención-de-riesgo"><span class="header-section-number">3</span> Convención de riesgo</a></li>
+  <li><a href="#paso-1-inspección-segura" id="toc-paso-1-inspección-segura" class="nav-link" data-scroll-target="#paso-1-inspección-segura"><span class="header-section-number">4</span> Paso 1: inspección segura</a></li>
+  <li><a href="#paso-2-configurar-kitty" id="toc-paso-2-configurar-kitty" class="nav-link" data-scroll-target="#paso-2-configurar-kitty"><span class="header-section-number">5</span> Paso 2: configurar kitty</a>
+  <ul class="collapse">
+  <li><a href="#crear-respaldo" id="toc-crear-respaldo" class="nav-link" data-scroll-target="#crear-respaldo"><span class="header-section-number">5.1</span> 2.1 Crear respaldo</a></li>
+  <li><a href="#editar-kitty.conf" id="toc-editar-kitty.conf" class="nav-link" data-scroll-target="#editar-kitty.conf"><span class="header-section-number">5.2</span> 2.2 Editar <code>kitty.conf</code></a></li>
+  <li><a href="#verificar-kitty" id="toc-verificar-kitty" class="nav-link" data-scroll-target="#verificar-kitty"><span class="header-section-number">5.3</span> 2.3 Verificar kitty</a></li>
+  </ul></li>
+  <li><a href="#paso-3-instalar-starship-cuando-apt-no-encuentra-el-paquete" id="toc-paso-3-instalar-starship-cuando-apt-no-encuentra-el-paquete" class="nav-link" data-scroll-target="#paso-3-instalar-starship-cuando-apt-no-encuentra-el-paquete"><span class="header-section-number">6</span> Paso 3: instalar Starship cuando APT no encuentra el paquete</a>
+  <ul class="collapse">
+  <li><a href="#verificar-herramientas" id="toc-verificar-herramientas" class="nav-link" data-scroll-target="#verificar-herramientas"><span class="header-section-number">6.1</span> 3.1 Verificar herramientas</a></li>
+  <li><a href="#descargar-instalador-oficial-sin-ejecutarlo" id="toc-descargar-instalador-oficial-sin-ejecutarlo" class="nav-link" data-scroll-target="#descargar-instalador-oficial-sin-ejecutarlo"><span class="header-section-number">6.2</span> 3.2 Descargar instalador oficial sin ejecutarlo</a></li>
+  <li><a href="#ejecutar-instalador" id="toc-ejecutar-instalador" class="nav-link" data-scroll-target="#ejecutar-instalador"><span class="header-section-number">6.3</span> 3.3 Ejecutar instalador</a></li>
+  </ul></li>
+  <li><a href="#paso-4-configurar-starship" id="toc-paso-4-configurar-starship" class="nav-link" data-scroll-target="#paso-4-configurar-starship"><span class="header-section-number">7</span> Paso 4: configurar Starship</a>
+  <ul class="collapse">
+  <li><a href="#crear-respaldo-1" id="toc-crear-respaldo-1" class="nav-link" data-scroll-target="#crear-respaldo-1"><span class="header-section-number">7.1</span> 4.1 Crear respaldo</a></li>
+  <li><a href="#crear-starship.toml" id="toc-crear-starship.toml" class="nav-link" data-scroll-target="#crear-starship.toml"><span class="header-section-number">7.2</span> 4.2 Crear <code>starship.toml</code></a></li>
+  </ul></li>
+  <li><a href="#paso-5-activar-starship-en-bash" id="toc-paso-5-activar-starship-en-bash" class="nav-link" data-scroll-target="#paso-5-activar-starship-en-bash"><span class="header-section-number">8</span> Paso 5: activar Starship en Bash</a></li>
+  <li><a href="#paso-6-instalar-y-autenticar-github-cli" id="toc-paso-6-instalar-y-autenticar-github-cli" class="nav-link" data-scroll-target="#paso-6-instalar-y-autenticar-github-cli"><span class="header-section-number">9</span> Paso 6: instalar y autenticar GitHub CLI</a>
+  <ul class="collapse">
+  <li><a href="#inspección" id="toc-inspección" class="nav-link" data-scroll-target="#inspección"><span class="header-section-number">9.1</span> 6.1 Inspección</a></li>
+  <li><a href="#opción-simple-con-apt-de-la-distribución" id="toc-opción-simple-con-apt-de-la-distribución" class="nav-link" data-scroll-target="#opción-simple-con-apt-de-la-distribución"><span class="header-section-number">9.2</span> 6.2 Opción simple con APT de la distribución</a></li>
+  <li><a href="#opción-oficial-de-github-cli-para-debianubuntu" id="toc-opción-oficial-de-github-cli-para-debianubuntu" class="nav-link" data-scroll-target="#opción-oficial-de-github-cli-para-debianubuntu"><span class="header-section-number">9.3</span> 6.3 Opción oficial de GitHub CLI para Debian/Ubuntu</a></li>
+  <li><a href="#autenticar-github" id="toc-autenticar-github" class="nav-link" data-scroll-target="#autenticar-github"><span class="header-section-number">9.4</span> 6.4 Autenticar GitHub</a></li>
+  </ul></li>
+  <li><a href="#paso-7-resultado-esperado" id="toc-paso-7-resultado-esperado" class="nav-link" data-scroll-target="#paso-7-resultado-esperado"><span class="header-section-number">10</span> Paso 7: resultado esperado</a></li>
+  <li><a href="#paso-8-prueba-completa-en-un-proyecto-python" id="toc-paso-8-prueba-completa-en-un-proyecto-python" class="nav-link" data-scroll-target="#paso-8-prueba-completa-en-un-proyecto-python"><span class="header-section-number">11</span> Paso 8: prueba completa en un proyecto Python</a></li>
+  <li><a href="#paso-9-ajustes-útiles" id="toc-paso-9-ajustes-útiles" class="nav-link" data-scroll-target="#paso-9-ajustes-útiles"><span class="header-section-number">12</span> Paso 9: ajustes útiles</a>
+  <ul class="collapse">
+  <li><a href="#mostrar-github-siempre-no-solo-en-repositorios" id="toc-mostrar-github-siempre-no-solo-en-repositorios" class="nav-link" data-scroll-target="#mostrar-github-siempre-no-solo-en-repositorios"><span class="header-section-number">12.1</span> 9.1 Mostrar GitHub siempre, no solo en repositorios</a></li>
+  <li><a href="#ocultar-google-cloud-del-prompt" id="toc-ocultar-google-cloud-del-prompt" class="nav-link" data-scroll-target="#ocultar-google-cloud-del-prompt"><span class="header-section-number">12.2</span> 9.2 Ocultar Google Cloud del prompt</a></li>
+  <li><a href="#no-mostrar-usuario-y-host" id="toc-no-mostrar-usuario-y-host" class="nav-link" data-scroll-target="#no-mostrar-usuario-y-host"><span class="header-section-number">12.3</span> 9.3 No mostrar usuario y host</a></li>
+  </ul></li>
+  <li><a href="#paso-10-verificación-final" id="toc-paso-10-verificación-final" class="nav-link" data-scroll-target="#paso-10-verificación-final"><span class="header-section-number">13</span> Paso 10: verificación final</a></li>
+  <li><a href="#paso-11-reversión" id="toc-paso-11-reversión" class="nav-link" data-scroll-target="#paso-11-reversión"><span class="header-section-number">14</span> Paso 11: reversión</a>
+  <ul class="collapse">
+  <li><a href="#revertir-kitty" id="toc-revertir-kitty" class="nav-link" data-scroll-target="#revertir-kitty"><span class="header-section-number">14.1</span> 11.1 Revertir kitty</a></li>
+  <li><a href="#desactivar-starship" id="toc-desactivar-starship" class="nav-link" data-scroll-target="#desactivar-starship"><span class="header-section-number">14.2</span> 11.2 Desactivar Starship</a></li>
+  <li><a href="#quitar-el-binario-de-starship" id="toc-quitar-el-binario-de-starship" class="nav-link" data-scroll-target="#quitar-el-binario-de-starship"><span class="header-section-number">14.3</span> 11.3 Quitar el binario de Starship</a></li>
+  <li><a href="#revertir-configuración-de-starship" id="toc-revertir-configuración-de-starship" class="nav-link" data-scroll-target="#revertir-configuración-de-starship"><span class="header-section-number">14.4</span> 11.4 Revertir configuración de Starship</a></li>
+  <li><a href="#quitar-repositorio-oficial-de-github-cli" id="toc-quitar-repositorio-oficial-de-github-cli" class="nav-link" data-scroll-target="#quitar-repositorio-oficial-de-github-cli"><span class="header-section-number">14.5</span> 11.5 Quitar repositorio oficial de GitHub CLI</a></li>
+  </ul></li>
+  <li><a href="#resumen-operativo" id="toc-resumen-operativo" class="nav-link" data-scroll-target="#resumen-operativo"><span class="header-section-number">15</span> Resumen operativo</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Tutorial: kitty + Fira Code + Starship para Python en Ubuntu/Pop!_OS</h1>
+<p class="subtitle lead">Tema oscuro BioForge, prompt con Python, Git y cuenta de GitHub</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Autor/a</div>
+    <div class="quarto-title-meta-contents">
+             <p>LinuxGPT </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Fecha de publicación</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">4 de junio de 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<style>
+:root {
+  --bg: #05070a;
+  --panel: #0b0f14;
+  --panel-2: #111827;
+  --fg: #d7dde5;
+  --muted: #9aa5b1;
+  --green: #9ece6a;
+  --orange: #e0af68;
+  --yellow: #f6c177;
+  --blue: #7aa2f7;
+  --cyan: #7dcfff;
+  --magenta: #bb9af7;
+  --red: #f7768e;
+  --border: #263241;
+}
+body {
+  background: #f6f8fa;
+}
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+blockquote {
+  border-left: 4px solid var(--blue);
+  background: #eef4ff;
+  padding: 0.7rem 1rem;
+}
+.callout {
+  border: 1px solid #d0d7de;
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+  background: #ffffff;
+}
+.callout.warn { border-left-color: var(--orange); }
+.callout.danger { border-left-color: var(--red); }
+.callout.ok { border-left-color: var(--green); }
+.terminal-preview {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  font-family: "Fira Code", "DejaVu Sans Mono", monospace;
+  line-height: 1.55;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+}
+.t-green { color: var(--green); font-weight: 700; }
+.t-orange { color: var(--orange); font-weight: 700; }
+.t-blue { color: var(--blue); font-weight: 700; }
+.t-yellow { color: var(--yellow); font-weight: 700; }
+.t-magenta { color: var(--magenta); font-weight: 700; }
+.t-cyan { color: var(--cyan); font-weight: 700; }
+.t-red { color: var(--red); font-weight: 700; }
+.small { color: #586069; font-size: .92rem; }
+</style>
+<section id="objetivo" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Objetivo</h1>
+<p>Este tutorial configura un terminal de escritorio para desarrollo en Python con:</p>
+<ul>
+<li><strong>kitty 0.32.2</strong> como emulador de terminal.</li>
+<li><strong>Fira Code</strong> tamaño <strong>12</strong>.</li>
+<li>Tema oscuro armónico inspirado en tu captura: fondo casi negro, acentos verdes, naranjas, azules y cian.</li>
+<li><strong>bash</strong> como shell.</li>
+<li><strong>Starship</strong> como prompt.</li>
+<li>Indicadores de <strong>Git</strong>, <strong>Python</strong>, <strong>entorno virtual</strong> y <strong>cuenta de GitHub</strong>.</li>
+<li>Comandos de verificación y reversión.</li>
+</ul>
+<div class="ok callout callout-style-simple callout-none no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Parámetros detectados en tu sistema:</strong><br>
+<code>SHELL=/bin/bash</code><br>
+<code>XDG_SESSION_TYPE=x11</code><br>
+<code>kitty 0.32.2</code><br>
+<code>Fira Code instalada</code><br>
+<code>TERM=xterm-kitty</code><br>
+<code>sudo apt install starship</code> falla porque el paquete no está disponible en tus repositorios APT actuales.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="diagnóstico-inicial" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Diagnóstico inicial</h1>
+<p>Tu entorno está casi listo. El problema real no es kitty ni Fira Code; el bloqueo ocurrió en esta orden:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sS</span> https://starship.rs/install.sh <span class="kw">|</span> <span class="fu">sh</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>El error:</p>
+<pre class="text"><code>E: No se ha podido localizar el paquete starship</code></pre>
+<p>significa que tu versión o configuración de repositorios APT no contiene el paquete <code>starship</code>.</p>
+<p>La solución recomendada es instalar Starship con el instalador oficial, pero de forma prudente: <strong>descargar, inspeccionar y luego ejecutar</strong>.</p>
+<p>Referencias oficiales:</p>
+<ul>
+<li>Starship indica el archivo de configuración <code>~/.config/starship.toml</code> y la activación con <code>eval "$(starship init bash)"</code> para Bash: <a href="https://starship.rs/config/" class="uri">https://starship.rs/config/</a> y <a href="https://starship.rs/" class="uri">https://starship.rs/</a>.</li>
+<li>kitty documenta <code>font_family</code>, <code>bold_font</code>, <code>italic_font</code> y <code>font_size</code> en <code>kitty.conf</code>: <a href="https://sw.kovidgoyal.net/kitty/conf/" class="uri">https://sw.kovidgoyal.net/kitty/conf/</a>.</li>
+<li>GitHub CLI se autentica con <code>gh auth login</code>: <a href="https://docs.github.com/en/github-cli/github-cli/quickstart" class="uri">https://docs.github.com/en/github-cli/github-cli/quickstart</a>.</li>
+<li>GitHub CLI mantiene instrucciones oficiales de instalación para Linux/Debian/Ubuntu: <a href="https://github.com/cli/cli/blob/trunk/docs/install_linux.md" class="uri">https://github.com/cli/cli/blob/trunk/docs/install_linux.md</a>.</li>
+</ul>
+</section>
+<section id="convención-de-riesgo" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Convención de riesgo</h1>
+<p>Durante el tutorial se usan estas categorías:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Categoría</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Inspección</strong></td>
+<td>No modifica el sistema. Solo muestra información.</td>
+</tr>
+<tr class="even">
+<td><strong>Modificación reversible</strong></td>
+<td>Cambia archivos de configuración del usuario o instala paquetes normales. Se puede revertir.</td>
+</tr>
+<tr class="odd">
+<td><strong>Modificación delicada</strong></td>
+<td>Agrega repositorios, llaves o binarios en rutas del sistema. Requiere más cuidado.</td>
+</tr>
+<tr class="even">
+<td><strong>Alto riesgo</strong></td>
+<td>No se usa en este tutorial. Evitamos borrados recursivos, particiones, arranque y permisos masivos.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="paso-1-inspección-segura" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Paso 1: inspección segura</h1>
+<p>Ejecuta:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$SHELL</span><span class="st">"</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$XDG_SESSION_TYPE</span><span class="st">"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">kitty</span> <span class="at">--version</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">fc-match</span> <span class="st">"Fira Code"</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$TERM</span><span class="st">"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Qué valida cada comando:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Comando</th>
+<th>Qué verifica</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>echo "$SHELL"</code></td>
+<td>Confirma que usas Bash: <code>/bin/bash</code>.</td>
+</tr>
+<tr class="even">
+<td><code>echo "$XDG_SESSION_TYPE"</code></td>
+<td>Indica si estás en <code>x11</code> o <code>wayland</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>kitty --version</code></td>
+<td>Confirma la versión de kitty.</td>
+</tr>
+<tr class="even">
+<td><code>fc-match "Fira Code"</code></td>
+<td>Confirma que fontconfig encuentra Fira Code.</td>
+</tr>
+<tr class="odd">
+<td><code>echo "$TERM"</code></td>
+<td>Dentro de kitty debe mostrar <code>xterm-kitty</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Resultado esperado parecido:</p>
+<pre class="text"><code>/bin/bash
+x11
+kitty 0.32.2 created by Kovid Goyal
+FiraCode-Regular.ttf: "Fira Code" "Regular"
+xterm-kitty</code></pre>
+<div class="warn callout callout-style-simple callout-none no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Nota Wayland:</strong> en tu salida aparece <code>x11</code>. kitty puede funcionar bien así, pero no estás probando Wayland. Para usar Wayland debes iniciar sesión gráfica en Wayland desde el gestor de login. En Pop!_OS/Ubuntu con NVIDIA puede depender del controlador y de la versión del sistema.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="paso-2-configurar-kitty" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Paso 2: configurar kitty</h1>
+<section id="crear-respaldo" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="crear-respaldo"><span class="header-section-number">5.1</span> 2.1 Crear respaldo</h2>
+<p><strong>Tipo:</strong> modificación reversible.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.config/kitty</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ~/.config/kitty/kitty.conf ~/.config/kitty/kitty.conf.bak <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Qué hace:</p>
+<ul>
+<li><code>mkdir -p ~/.config/kitty</code> crea el directorio si no existe.</li>
+<li><code>cp ... .bak</code> crea un respaldo si ya existía <code>kitty.conf</code>.</li>
+<li><code>2&gt;/dev/null || true</code> evita error visible si el archivo aún no existía.</li>
+</ul>
+</section>
+<section id="editar-kitty.conf" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="editar-kitty.conf"><span class="header-section-number">5.2</span> 2.2 Editar <code>kitty.conf</code></h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/kitty/kitty.conf</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Pega este contenido completo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode conf code-with-copy"><code class="sourceCode toml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Kitty - tema oscuro BioForge</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Ajustado para:</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># - Fira Code</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># - tamaño 12</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># - kitty 0.32.2</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># - bash</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># - buen contraste</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Fuente</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="dt">font_family</span>      <span class="dt">Fira</span> <span class="dt">Code</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="dt">bold_font</span>        <span class="dt">auto</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="dt">italic_font</span>      <span class="dt">auto</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="dt">bold_italic_font</span> <span class="dt">auto</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="dt">font_size</span>        <span class="dt">12.0</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="dt">disable_ligatures</span> <span class="dt">never</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Ventana</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="dt">background_opacity</span> <span class="dt">1.0</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="dt">window_padding_width</span> <span class="dt">6</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="dt">confirm_os_window_close</span> <span class="dt">0</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="dt">enable_audio_bell</span> <span class="dt">no</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="dt">visual_bell_duration</span> <span class="dt">0.0</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Cursor</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="dt">cursor_shape</span> <span class="dt">beam</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="dt">cursor_blink_interval</span> <span class="dt">0.5</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="dt">cursor</span>            <span class="co">#9ece6a</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="dt">cursor_text_color</span> <span class="co">#0b0f14</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Selección</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="dt">selection_foreground</span> <span class="co">#e6edf3</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="dt">selection_background</span> <span class="co">#2d3743</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Colores base</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="dt">foreground</span> <span class="co">#d7dde5</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="dt">background</span> <span class="co">#05070a</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Negro / gris</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="dt">color0</span>  <span class="co">#0b0f14</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="dt">color8</span>  <span class="co">#4b5563</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Rojo</span></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="dt">color1</span>  <span class="co">#f7768e</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="dt">color9</span>  <span class="co">#ff8fa3</span></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="co"># Verde</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a><span class="dt">color2</span>  <span class="co">#9ece6a</span></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a><span class="dt">color10</span> <span class="co">#b4f27a</span></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="co"># Amarillo / naranja</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="dt">color3</span>  <span class="co">#e0af68</span></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a><span class="dt">color11</span> <span class="co">#f6c177</span></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a><span class="co"># Azul</span></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a><span class="dt">color4</span>  <span class="co">#7aa2f7</span></span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a><span class="dt">color12</span> <span class="co">#8fb8ff</span></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a><span class="co"># Magenta</span></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="dt">color5</span>  <span class="co">#bb9af7</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="dt">color13</span> <span class="co">#cba6ff</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Cian</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a><span class="dt">color6</span>  <span class="co">#7dcfff</span></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="dt">color14</span> <span class="co">#9defff</span></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="co"># Blanco</span></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a><span class="dt">color7</span>  <span class="co">#c0caf5</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a><span class="dt">color15</span> <span class="co">#ffffff</span></span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a><span class="co"># Tabs</span></span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="dt">tab_bar_style</span> <span class="dt">powerline</span></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a><span class="dt">tab_powerline_style</span> <span class="dt">slanted</span></span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a><span class="dt">active_tab_foreground</span>   <span class="co">#05070a</span></span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a><span class="dt">active_tab_background</span>   <span class="co">#e0af68</span></span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a><span class="dt">inactive_tab_foreground</span> <span class="co">#9aa5b1</span></span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a><span class="dt">inactive_tab_background</span> <span class="co">#111827</span></span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a><span class="co"># Bordes de ventanas internas</span></span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a><span class="dt">active_border_color</span>   <span class="co">#e0af68</span></span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a><span class="dt">inactive_border_color</span> <span class="co">#263241</span></span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a><span class="co"># Enlaces</span></span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a><span class="dt">url_color</span> <span class="co">#7dcfff</span></span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a><span class="dt">url_style</span> <span class="dt">curly</span></span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a><span class="co"># Atajos</span></span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+</span><span class="dt">enter</span> <span class="dt">new_window</span></span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+</span><span class="dt">t</span> <span class="dt">new_tab</span></span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+</span><span class="dt">w</span> <span class="dt">close_tab</span></span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+</span><span class="kw">[</span> <span class="kw">previous_tab</span></span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+]</span> <span class="dt">next_tab</span></span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+</span><span class="dt">c</span> <span class="dt">copy_to_clipboard</span></span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a><span class="dt">map</span> <span class="dt">ctrl</span><span class="er">+</span><span class="dt">shift</span><span class="er">+</span><span class="dt">v</span> <span class="dt">paste_from_clipboard</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Guarda en nano:</p>
+<pre class="text"><code>Ctrl + O
+Enter
+Ctrl + X</code></pre>
+<p>Cierra kitty y vuelve a abrirlo.</p>
+</section>
+<section id="verificar-kitty" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="verificar-kitty"><span class="header-section-number">5.3</span> 2.3 Verificar kitty</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$TERM</span><span class="st">"</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">fc-match</span> <span class="st">"Fira Code"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Resultado esperado:</p>
+<pre class="text"><code>xterm-kitty
+FiraCode-Regular.ttf: "Fira Code" "Regular"</code></pre>
+</section>
+</section>
+<section id="paso-3-instalar-starship-cuando-apt-no-encuentra-el-paquete" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Paso 3: instalar Starship cuando APT no encuentra el paquete</h1>
+<section id="verificar-herramientas" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="verificar-herramientas"><span class="header-section-number">6.1</span> 3.1 Verificar herramientas</h2>
+<p><strong>Tipo:</strong> inspección.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">command</span> <span class="at">-v</span> curl</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">command</span> <span class="at">-v</span> sh</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si falta <code>curl</code>:</p>
+<p><strong>Tipo:</strong> modificación reversible.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install curl</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="descargar-instalador-oficial-sin-ejecutarlo" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="descargar-instalador-oficial-sin-ejecutarlo"><span class="header-section-number">6.2</span> 3.2 Descargar instalador oficial sin ejecutarlo</h2>
+<p><strong>Tipo:</strong> inspección previa / modificación temporal en <code>/tmp</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-fsSL</span> https://starship.rs/install.sh <span class="at">-o</span> /tmp/install-starship.sh</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Revisa el archivo antes de ejecutarlo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-40</span> /tmp/install-starship.sh</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">less</span> /tmp/install-starship.sh</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Sales de <code>less</code> con:</p>
+<pre class="text"><code>q</code></pre>
+</section>
+<section id="ejecutar-instalador" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="ejecutar-instalador"><span class="header-section-number">6.3</span> 3.3 Ejecutar instalador</h2>
+<p><strong>Tipo:</strong> modificación delicada.</p>
+<p>Este paso instala el binario <code>starship</code>, normalmente en <code>/usr/local/bin/starship</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sh</span> /tmp/install-starship.sh</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verifica:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="bu">command</span> <span class="at">-v</span> starship</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ex">starship</span> <span class="at">--version</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Resultado esperado:</p>
+<pre class="text"><code>/usr/local/bin/starship
+starship x.y.z</code></pre>
+</section>
+</section>
+<section id="paso-4-configurar-starship" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Paso 4: configurar Starship</h1>
+<section id="crear-respaldo-1" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="crear-respaldo-1"><span class="header-section-number">7.1</span> 4.1 Crear respaldo</h2>
+<p><strong>Tipo:</strong> modificación reversible.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/.config</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> ~/.config/starship.toml ~/.config/starship.toml.bak <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="crear-starship.toml" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="crear-starship.toml"><span class="header-section-number">7.2</span> 4.2 Crear <code>starship.toml</code></h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/starship.toml</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Pega esto:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Starship prompt - BioForge Dark</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Ajustado para:</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># - bash</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># - Python</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co"># - Git</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># - Fira Code normal</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co"># - GitHub CLI opcional</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="dt">add_newline</span> <span class="op">=</span> <span class="cn">true</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="dt">command_timeout</span> <span class="op">=</span> <span class="dv">800</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="st">$username</span><span class="sc">\</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="st">$hostname</span><span class="sc">\</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="st">$directory</span><span class="sc">\</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a><span class="st">$git_branch</span><span class="sc">\</span></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a><span class="st">$git_status</span><span class="sc">\</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="st">$python</span><span class="sc">\</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="st">${custom.github}</span><span class="sc">\</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="st">$cmd_duration</span><span class="sc">\</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a><span class="st">$line_break</span><span class="sc">\</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a><span class="st">$character</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a><span class="dt">palette</span> <span class="op">=</span> <span class="st">"bioforge"</span></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a><span class="kw">[palettes.bioforge]</span></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a><span class="dt">bg</span> <span class="op">=</span> <span class="st">"#05070a"</span></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a><span class="dt">fg</span> <span class="op">=</span> <span class="st">"#d7dde5"</span></span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a><span class="dt">gray</span> <span class="op">=</span> <span class="st">"#7f8790"</span></span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a><span class="dt">green</span> <span class="op">=</span> <span class="st">"#9ece6a"</span></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a><span class="dt">orange</span> <span class="op">=</span> <span class="st">"#e0af68"</span></span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a><span class="dt">yellow</span> <span class="op">=</span> <span class="st">"#f6c177"</span></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a><span class="dt">blue</span> <span class="op">=</span> <span class="st">"#7aa2f7"</span></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a><span class="dt">cyan</span> <span class="op">=</span> <span class="st">"#7dcfff"</span></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a><span class="dt">magenta</span> <span class="op">=</span> <span class="st">"#bb9af7"</span></span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a><span class="dt">red</span> <span class="op">=</span> <span class="st">"#f7768e"</span></span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a><span class="kw">[username]</span></span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a><span class="dt">show_always</span> <span class="op">=</span> <span class="cn">true</span></span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a><span class="dt">style_user</span> <span class="op">=</span> <span class="st">"bold green"</span></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a><span class="dt">style_root</span> <span class="op">=</span> <span class="st">"bold red"</span></span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[$user]($style)"</span></span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-47"><a href="#cb21-47" aria-hidden="true" tabindex="-1"></a><span class="kw">[hostname]</span></span>
+<span id="cb21-48"><a href="#cb21-48" aria-hidden="true" tabindex="-1"></a><span class="dt">ssh_only</span> <span class="op">=</span> <span class="cn">false</span></span>
+<span id="cb21-49"><a href="#cb21-49" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold gray"</span></span>
+<span id="cb21-50"><a href="#cb21-50" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[@$hostname]($style) "</span></span>
+<span id="cb21-51"><a href="#cb21-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-52"><a href="#cb21-52" aria-hidden="true" tabindex="-1"></a><span class="kw">[directory]</span></span>
+<span id="cb21-53"><a href="#cb21-53" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold orange"</span></span>
+<span id="cb21-54"><a href="#cb21-54" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[$path]($style) "</span></span>
+<span id="cb21-55"><a href="#cb21-55" aria-hidden="true" tabindex="-1"></a><span class="dt">truncate_to_repo</span> <span class="op">=</span> <span class="cn">false</span></span>
+<span id="cb21-56"><a href="#cb21-56" aria-hidden="true" tabindex="-1"></a><span class="dt">truncation_length</span> <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb21-57"><a href="#cb21-57" aria-hidden="true" tabindex="-1"></a><span class="dt">home_symbol</span> <span class="op">=</span> <span class="st">"~"</span></span>
+<span id="cb21-58"><a href="#cb21-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-59"><a href="#cb21-59" aria-hidden="true" tabindex="-1"></a><span class="kw">[git_branch]</span></span>
+<span id="cb21-60"><a href="#cb21-60" aria-hidden="true" tabindex="-1"></a><span class="dt">symbol</span> <span class="op">=</span> <span class="st">"git:"</span></span>
+<span id="cb21-61"><a href="#cb21-61" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold blue"</span></span>
+<span id="cb21-62"><a href="#cb21-62" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[$symbol$branch]($style) "</span></span>
+<span id="cb21-63"><a href="#cb21-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-64"><a href="#cb21-64" aria-hidden="true" tabindex="-1"></a><span class="kw">[git_status]</span></span>
+<span id="cb21-65"><a href="#cb21-65" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold yellow"</span></span>
+<span id="cb21-66"><a href="#cb21-66" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"([</span><span class="sc">\\</span><span class="st">[$all_status$ahead_behind</span><span class="sc">\\</span><span class="st">]]($style) )"</span></span>
+<span id="cb21-67"><a href="#cb21-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-68"><a href="#cb21-68" aria-hidden="true" tabindex="-1"></a><span class="kw">[python]</span></span>
+<span id="cb21-69"><a href="#cb21-69" aria-hidden="true" tabindex="-1"></a><span class="dt">symbol</span> <span class="op">=</span> <span class="st">"py:"</span></span>
+<span id="cb21-70"><a href="#cb21-70" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold yellow"</span></span>
+<span id="cb21-71"><a href="#cb21-71" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[$symbol$version]($style) [venv:$virtualenv](bold magenta) "</span></span>
+<span id="cb21-72"><a href="#cb21-72" aria-hidden="true" tabindex="-1"></a><span class="dt">detect_extensions</span> <span class="op">=</span> <span class="op">[</span><span class="st">"py"</span><span class="op">]</span></span>
+<span id="cb21-73"><a href="#cb21-73" aria-hidden="true" tabindex="-1"></a><span class="dt">detect_files</span> <span class="op">=</span> <span class="op">[</span><span class="st">"pyproject.toml"</span><span class="op">,</span> <span class="st">"requirements.txt"</span><span class="op">,</span> <span class="st">"setup.py"</span><span class="op">,</span> <span class="st">"environment.yml"</span><span class="op">,</span> <span class="st">".python-version"</span><span class="op">]</span></span>
+<span id="cb21-74"><a href="#cb21-74" aria-hidden="true" tabindex="-1"></a><span class="dt">detect_folders</span> <span class="op">=</span> <span class="op">[</span><span class="st">".venv"</span><span class="op">,</span> <span class="st">"venv"</span><span class="op">]</span></span>
+<span id="cb21-75"><a href="#cb21-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-76"><a href="#cb21-76" aria-hidden="true" tabindex="-1"></a><span class="co"># Muestra la cuenta de GitHub autenticada con GitHub CLI.</span></span>
+<span id="cb21-77"><a href="#cb21-77" aria-hidden="true" tabindex="-1"></a><span class="co"># Por defecto se muestra solo dentro de repositorios Git para no ensuciar el prompt.</span></span>
+<span id="cb21-78"><a href="#cb21-78" aria-hidden="true" tabindex="-1"></a><span class="kw">[custom.github]</span></span>
+<span id="cb21-79"><a href="#cb21-79" aria-hidden="true" tabindex="-1"></a><span class="dt">description</span> <span class="op">=</span> <span class="st">"Cuenta activa de GitHub"</span></span>
+<span id="cb21-80"><a href="#cb21-80" aria-hidden="true" tabindex="-1"></a><span class="dt">command</span> <span class="op">=</span> <span class="st">"gh auth status 2&gt;&amp;1 | awk '/Logged in to github.com account/ {print $7; exit}'"</span></span>
+<span id="cb21-81"><a href="#cb21-81" aria-hidden="true" tabindex="-1"></a><span class="dt">when</span> <span class="op">=</span> <span class="st">"git rev-parse --is-inside-work-tree &gt;/dev/null 2&gt;&amp;1 &amp;&amp; command -v gh &gt;/dev/null 2&gt;&amp;1 &amp;&amp; gh auth status &gt;/dev/null 2&gt;&amp;1"</span></span>
+<span id="cb21-82"><a href="#cb21-82" aria-hidden="true" tabindex="-1"></a><span class="dt">symbol</span> <span class="op">=</span> <span class="st">"gh:"</span></span>
+<span id="cb21-83"><a href="#cb21-83" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold blue"</span></span>
+<span id="cb21-84"><a href="#cb21-84" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[$symbol$output]($style) "</span></span>
+<span id="cb21-85"><a href="#cb21-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-86"><a href="#cb21-86" aria-hidden="true" tabindex="-1"></a><span class="kw">[cmd_duration]</span></span>
+<span id="cb21-87"><a href="#cb21-87" aria-hidden="true" tabindex="-1"></a><span class="dt">min_time</span> <span class="op">=</span> <span class="dv">700</span></span>
+<span id="cb21-88"><a href="#cb21-88" aria-hidden="true" tabindex="-1"></a><span class="dt">style</span> <span class="op">=</span> <span class="st">"bold cyan"</span></span>
+<span id="cb21-89"><a href="#cb21-89" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"[took:$duration]($style) "</span></span>
+<span id="cb21-90"><a href="#cb21-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-91"><a href="#cb21-91" aria-hidden="true" tabindex="-1"></a><span class="kw">[character]</span></span>
+<span id="cb21-92"><a href="#cb21-92" aria-hidden="true" tabindex="-1"></a><span class="dt">success_symbol</span> <span class="op">=</span> <span class="st">"[❯](bold green)"</span></span>
+<span id="cb21-93"><a href="#cb21-93" aria-hidden="true" tabindex="-1"></a><span class="dt">error_symbol</span> <span class="op">=</span> <span class="st">"[❯](bold red)"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="warn callout callout-style-simple callout-none no-icon">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Privacidad:</strong> mostrar cuentas en el prompt es cómodo, pero puede exponer tu usuario en capturas de pantalla, clases, videos o documentación. Esta configuración muestra el usuario de GitHub, no el correo, y solo dentro de repositorios Git.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="paso-5-activar-starship-en-bash" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Paso 5: activar Starship en Bash</h1>
+<p><strong>Tipo:</strong> modificación reversible.</p>
+<p>Primero revisa si ya existe una línea de Starship:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-n</span> <span class="st">"starship init bash"</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si no aparece nada, agrega la línea al final:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'\n# Starship prompt\neval "$(starship init bash)"\n'</span> <span class="op">&gt;&gt;</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Recarga Bash:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>También puedes cerrar y abrir kitty.</p>
+</section>
+<section id="paso-6-instalar-y-autenticar-github-cli" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Paso 6: instalar y autenticar GitHub CLI</h1>
+<p>El módulo <code>custom.github</code> necesita <code>gh</code>.</p>
+<section id="inspección" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="inspección"><span class="header-section-number">9.1</span> 6.1 Inspección</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="bu">command</span> <span class="at">-v</span> gh</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> <span class="at">--version</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si existe, pasa a la autenticación.</p>
+</section>
+<section id="opción-simple-con-apt-de-la-distribución" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="opción-simple-con-apt-de-la-distribución"><span class="header-section-number">9.2</span> 6.2 Opción simple con APT de la distribución</h2>
+<p><strong>Tipo:</strong> modificación reversible.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install gh</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verifica:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> <span class="at">--version</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si funciona, continúa con <code>gh auth login</code>.</p>
+</section>
+<section id="opción-oficial-de-github-cli-para-debianubuntu" class="level2" data-number="9.3">
+<h2 data-number="9.3" class="anchored" data-anchor-id="opción-oficial-de-github-cli-para-debianubuntu"><span class="header-section-number">9.3</span> 6.3 Opción oficial de GitHub CLI para Debian/Ubuntu</h2>
+<p><strong>Tipo:</strong> modificación delicada.</p>
+<p>Usa esta opción si el paquete <code>gh</code> no existe o quieres el repositorio mantenido por GitHub CLI.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span> <span class="at">-p</span> wget <span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">sudo</span> apt install wget <span class="at">-y</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> <span class="at">-m</span> 755 /etc/apt/keyrings</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="va">out</span><span class="op">=</span><span class="va">$(</span><span class="fu">mktemp</span><span class="va">)</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> <span class="at">-nv</span> <span class="at">-O</span> <span class="st">"</span><span class="va">$out</span><span class="st">"</span> https://cli.github.com/packages/githubcli-archive-keyring.gpg</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="st">"</span><span class="va">$out</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">sudo</span> tee /etc/apt/keyrings/githubcli-archive-keyring.gpg <span class="op">&gt;</span> /dev/null</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> <span class="at">-m</span> 755 /etc/apt/sources.list.d</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"deb [arch=</span><span class="va">$(</span><span class="ex">dpkg</span> <span class="at">--print-architecture</span><span class="va">)</span><span class="st"> signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"</span> <span class="kw">|</span> <span class="fu">sudo</span> tee /etc/apt/sources.list.d/github-cli.list <span class="op">&gt;</span> /dev/null</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install gh <span class="at">-y</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verifica:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> <span class="at">--version</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="autenticar-github" class="level2" data-number="9.4">
+<h2 data-number="9.4" class="anchored" data-anchor-id="autenticar-github"><span class="header-section-number">9.4</span> 6.4 Autenticar GitHub</h2>
+<p><strong>Tipo:</strong> modificación reversible.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> auth login</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Opciones habituales:</p>
+<pre class="text"><code>GitHub.com
+HTTPS
+Login with a web browser</code></pre>
+<p>Verifica:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> auth status</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="paso-7-resultado-esperado" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Paso 7: resultado esperado</h1>
+<p>Dentro de un repositorio Git con entorno virtual Python activo, el prompt debería verse conceptualmente así:</p>
+<div class="terminal-preview">
+<p><span class="t-green">pacaicedo</span><span class="t-muted"><span class="citation" data-cites="promise">@promise</span></span>
+<span class="t-orange">~/Data_Cantatio/BioForja-Projects/bioforge</span>
+<span class="t-blue">git:main</span>
+<span class="t-yellow">py:3.12</span>
+<span class="t-magenta">venv:bioforge</span>
+<span class="t-blue">gh:caicasanalytics</span><br>
+<span class="t-green">❯</span></p>
+</div>
+<p>La lógica visual queda así:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Elemento</th>
+<th>Color</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Usuario</td>
+<td>Verde</td>
+</tr>
+<tr class="even">
+<td>Host</td>
+<td>Gris</td>
+</tr>
+<tr class="odd">
+<td>Directorio</td>
+<td>Naranja</td>
+</tr>
+<tr class="even">
+<td>Rama Git</td>
+<td>Azul</td>
+</tr>
+<tr class="odd">
+<td>Estado Git</td>
+<td>Amarillo</td>
+</tr>
+<tr class="even">
+<td>Python</td>
+<td>Amarillo</td>
+</tr>
+<tr class="odd">
+<td>Entorno virtual</td>
+<td>Magenta</td>
+</tr>
+<tr class="even">
+<td>GitHub</td>
+<td>Azul</td>
+</tr>
+<tr class="odd">
+<td>Duración de comandos</td>
+<td>Cian</td>
+</tr>
+<tr class="even">
+<td>Error</td>
+<td>Rojo</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="paso-8-prueba-completa-en-un-proyecto-python" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Paso 8: prueba completa en un proyecto Python</h1>
+<p>Entra a tu proyecto:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Data_Cantatio/BioForja-Projects/bioforge</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Activa tu entorno virtual:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> .venv/bin/activate</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verifica Python:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">--version</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">which</span> python</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verifica Git:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> status <span class="at">--short</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> branch <span class="at">--show-current</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Verifica GitHub CLI:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> auth status</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Explica qué está mostrando Starship:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="ex">starship</span> explain</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="paso-9-ajustes-útiles" class="level1" data-number="12">
+<h1 data-number="12"><span class="header-section-number">12</span> Paso 9: ajustes útiles</h1>
+<section id="mostrar-github-siempre-no-solo-en-repositorios" class="level2" data-number="12.1">
+<h2 data-number="12.1" class="anchored" data-anchor-id="mostrar-github-siempre-no-solo-en-repositorios"><span class="header-section-number">12.1</span> 9.1 Mostrar GitHub siempre, no solo en repositorios</h2>
+<p>Edita:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/starship.toml</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Busca:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="dt">when</span> <span class="op">=</span> <span class="st">"git rev-parse --is-inside-work-tree &gt;/dev/null 2&gt;&amp;1 &amp;&amp; command -v gh &gt;/dev/null 2&gt;&amp;1 &amp;&amp; gh auth status &gt;/dev/null 2&gt;&amp;1"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Cámbialo por:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="dt">when</span> <span class="op">=</span> <span class="st">"command -v gh &gt;/dev/null 2&gt;&amp;1 &amp;&amp; gh auth status &gt;/dev/null 2&gt;&amp;1"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Recarga:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="ocultar-google-cloud-del-prompt" class="level2" data-number="12.2">
+<h2 data-number="12.2" class="anchored" data-anchor-id="ocultar-google-cloud-del-prompt"><span class="header-section-number">12.2</span> 9.2 Ocultar Google Cloud del prompt</h2>
+<p>Si aparece algo como:</p>
+<pre class="text"><code>~ on ☁ usuario@gmail.com</code></pre>
+<p>eso viene del módulo <code>gcloud</code>.</p>
+<p>Para ocultarlo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.config/starship.toml</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Agrega:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[gcloud]</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="dt">disabled</span> <span class="op">=</span> <span class="cn">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Recarga:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="no-mostrar-usuario-y-host" class="level2" data-number="12.3">
+<h2 data-number="12.3" class="anchored" data-anchor-id="no-mostrar-usuario-y-host"><span class="header-section-number">12.3</span> 9.3 No mostrar usuario y host</h2>
+<p>Si quieres un prompt más minimalista, cambia el <code>format</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode toml code-with-copy"><code class="sourceCode toml"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="dt">format</span> <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="st">$directory</span><span class="sc">\</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="st">$git_branch</span><span class="sc">\</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="st">$git_status</span><span class="sc">\</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="st">$python</span><span class="sc">\</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="st">${custom.github}</span><span class="sc">\</span></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="st">$cmd_duration</span><span class="sc">\</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a><span class="st">$line_break</span><span class="sc">\</span></span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="st">$character</span></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="paso-10-verificación-final" class="level1" data-number="13">
+<h1 data-number="13"><span class="header-section-number">13</span> Paso 10: verificación final</h1>
+<p>Abre una ventana nueva de kitty y ejecuta:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$TERM</span><span class="st">"</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$SHELL</span><span class="st">"</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$XDG_SESSION_TYPE</span><span class="st">"</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="ex">fc-match</span> <span class="st">"Fira Code"</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="ex">starship</span> <span class="at">--version</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="ex">starship</span> explain</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Resultados esperados:</p>
+<pre class="text"><code>xterm-kitty
+/bin/bash
+x11
+FiraCode-Regular.ttf: "Fira Code" "Regular"
+starship x.y.z</code></pre>
+<p>Para validar GitHub:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> auth status</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para validar Python:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb51"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Data_Cantatio/BioForja-Projects/bioforge</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> .venv/bin/activate</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">--version</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="paso-11-reversión" class="level1" data-number="14">
+<h1 data-number="14"><span class="header-section-number">14</span> Paso 11: reversión</h1>
+<section id="revertir-kitty" class="level2" data-number="14.1">
+<h2 data-number="14.1" class="anchored" data-anchor-id="revertir-kitty"><span class="header-section-number">14.1</span> 11.1 Revertir kitty</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> ~/.config/kitty/kitty.conf.bak ~/.config/kitty/kitty.conf</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si no había respaldo, puedes simplemente mover la configuración actual:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb53"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> ~/.config/kitty/kitty.conf ~/.config/kitty/kitty.conf.disabled</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="desactivar-starship" class="level2" data-number="14.2">
+<h2 data-number="14.2" class="anchored" data-anchor-id="desactivar-starship"><span class="header-section-number">14.2</span> 11.2 Desactivar Starship</h2>
+<p>Edita:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb54"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Elimina esta línea:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb55"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="bu">eval</span> <span class="st">"</span><span class="va">$(</span><span class="ex">starship</span> init bash<span class="va">)</span><span class="st">"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Recarga:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb56"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> ~/.bashrc</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="quitar-el-binario-de-starship" class="level2" data-number="14.3">
+<h2 data-number="14.3" class="anchored" data-anchor-id="quitar-el-binario-de-starship"><span class="header-section-number">14.3</span> 11.3 Quitar el binario de Starship</h2>
+<p><strong>Tipo:</strong> modificación delicada, pero acotada a un único archivo.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> rm /usr/local/bin/starship</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>No uses <code>rm -r</code> para esto.</p>
+</section>
+<section id="revertir-configuración-de-starship" class="level2" data-number="14.4">
+<h2 data-number="14.4" class="anchored" data-anchor-id="revertir-configuración-de-starship"><span class="header-section-number">14.4</span> 11.4 Revertir configuración de Starship</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb58"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> ~/.config/starship.toml.bak ~/.config/starship.toml</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si no quieres usar Starship:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb59"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> ~/.config/starship.toml ~/.config/starship.toml.disabled</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="quitar-repositorio-oficial-de-github-cli" class="level2" data-number="14.5">
+<h2 data-number="14.5" class="anchored" data-anchor-id="quitar-repositorio-oficial-de-github-cli"><span class="header-section-number">14.5</span> 11.5 Quitar repositorio oficial de GitHub CLI</h2>
+<p>Solo si agregaste el repositorio de GitHub CLI:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb60"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> rm /etc/apt/sources.list.d/github-cli.list</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> rm /etc/apt/keyrings/githubcli-archive-keyring.gpg</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Esto no borra tus repositorios ni tus proyectos; solo elimina la fuente APT de GitHub CLI.</p>
+</section>
+</section>
+<section id="resumen-operativo" class="level1" data-number="15">
+<h1 data-number="15"><span class="header-section-number">15</span> Resumen operativo</h1>
+<ol type="1">
+<li>kitty ya está instalado y usando <code>xterm-kitty</code>.</li>
+<li>Fira Code ya está instalada.</li>
+<li>Tu sesión actual es X11, no Wayland.</li>
+<li><code>starship</code> no está disponible por APT en tus repositorios actuales.</li>
+<li>Instala Starship descargando el instalador oficial, revisándolo y ejecutándolo.</li>
+<li>Configura <code>~/.config/starship.toml</code>.</li>
+<li>Activa Starship en <code>~/.bashrc</code>.</li>
+<li>Usa <code>gh auth login</code> para que el prompt pueda mostrar tu cuenta de GitHub.</li>
+<li>Verifica con <code>starship explain</code>.</li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

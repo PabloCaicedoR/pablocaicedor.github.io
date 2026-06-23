@@ -1,0 +1,2399 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Experto en Procesamiento de Imágenes Médicas">
+<meta name="dcterms.date" content="2026-02-09">
+
+<title>Reporte técnico: modelado de atenuación, respuesta de Flat Panel y formación de radiografías (enfoque RX y CT) – PECR Knowledge Hub</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-c40e139f9c4114c612eb61de435499b9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../recursos/estilos/styles_site.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo light-content">
+    <img src="../../.././recursos/imagenes/generales/logo.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#resumen-ejecutivo" id="toc-resumen-ejecutivo" class="nav-link active" data-scroll-target="#resumen-ejecutivo">1) Resumen ejecutivo</a>
+  <ul class="collapse">
+  <li><a href="#problema-que-resuelven-los-métodos" id="toc-problema-que-resuelven-los-métodos" class="nav-link" data-scroll-target="#problema-que-resuelven-los-métodos">1.1 Problema que resuelven los métodos</a></li>
+  <li><a href="#impacto-operativo-y-clínico-rxct-y-nota-sobre-mri" id="toc-impacto-operativo-y-clínico-rxct-y-nota-sobre-mri" class="nav-link" data-scroll-target="#impacto-operativo-y-clínico-rxct-y-nota-sobre-mri">1.2 Impacto operativo y clínico (RX/CT y nota sobre MRI)</a></li>
+  <li><a href="#limitaciones-críticas-no-negociables" id="toc-limitaciones-críticas-no-negociables" class="nav-link" data-scroll-target="#limitaciones-críticas-no-negociables">1.3 Limitaciones críticas (“no negociables”)</a></li>
+  <li><a href="#recomendaciones-acciones-concretas" id="toc-recomendaciones-acciones-concretas" class="nav-link" data-scroll-target="#recomendaciones-acciones-concretas">1.4 Recomendaciones (acciones concretas)</a></li>
+  </ul></li>
+  <li><a href="#introducción" id="toc-introducción" class="nav-link" data-scroll-target="#introducción">2) Introducción</a>
+  <ul class="collapse">
+  <li><a href="#modalidades-y-cadena-completa-rxct" id="toc-modalidades-y-cadena-completa-rxct" class="nav-link" data-scroll-target="#modalidades-y-cadena-completa-rxct">2.1 Modalidades y cadena completa (RX/CT)</a>
+  <ul class="collapse">
+  <li><a href="#rx-radiografía-digital" id="toc-rx-radiografía-digital" class="nav-link" data-scroll-target="#rx-radiografía-digital">RX (radiografía digital)</a></li>
+  <li><a href="#ct-tac" id="toc-ct-tac" class="nav-link" data-scroll-target="#ct-tac">CT (TAC)</a></li>
+  </ul></li>
+  <li><a href="#glosario-términos-clave" id="toc-glosario-términos-clave" class="nav-link" data-scroll-target="#glosario-términos-clave">2.2 Glosario (términos clave)</a></li>
+  </ul></li>
+  <li><a href="#fundamentos-físicos-por-modalidad" id="toc-fundamentos-físicos-por-modalidad" class="nav-link" data-scroll-target="#fundamentos-físicos-por-modalidad">3) Fundamentos físicos por modalidad</a>
+  <ul class="collapse">
+  <li><a href="#interacción-fotónmateria-rango-diagnóstico" id="toc-interacción-fotónmateria-rango-diagnóstico" class="nav-link" data-scroll-target="#interacción-fotónmateria-rango-diagnóstico">3.1 Interacción fotón–materia (rango diagnóstico)</a></li>
+  <li><a href="#ley-de-beerlambert-monoenergética" id="toc-ley-de-beerlambert-monoenergética" class="nav-link" data-scroll-target="#ley-de-beerlambert-monoenergética">3.2 Ley de Beer–Lambert (monoenergética)</a></li>
+  <li><a href="#haz-polienergético-filtración-y-endurecimiento-beam-hardening" id="toc-haz-polienergético-filtración-y-endurecimiento-beam-hardening" class="nav-link" data-scroll-target="#haz-polienergético-filtración-y-endurecimiento-beam-hardening">3.3 Haz polienergético, filtración y endurecimiento (beam hardening)</a></li>
+  <li><a href="#dispersión-scatter" id="toc-dispersión-scatter" class="nav-link" data-scroll-target="#dispersión-scatter">3.4 Dispersión (scatter)</a></li>
+  </ul></li>
+  <li><a href="#modelo-matemático-de-adquisición" id="toc-modelo-matemático-de-adquisición" class="nav-link" data-scroll-target="#modelo-matemático-de-adquisición">4) Modelo matemático de adquisición</a>
+  <ul class="collapse">
+  <li><a href="#rx-proyección-2d-con-blur-ruido-y-scatter" id="toc-rx-proyección-2d-con-blur-ruido-y-scatter" class="nav-link" data-scroll-target="#rx-proyección-2d-con-blur-ruido-y-scatter">4.1 RX: proyección 2D con blur, ruido y scatter</a>
+  <ul class="collapse">
+  <li><a href="#modelo-forward-mínimo-lineal-en-intensidad" id="toc-modelo-forward-mínimo-lineal-en-intensidad" class="nav-link" data-scroll-target="#modelo-forward-mínimo-lineal-en-intensidad">4.1.1 Modelo forward mínimo (lineal en intensidad)</a></li>
+  <li><a href="#transformación-log-radiografía-de-atenuación" id="toc-transformación-log-radiografía-de-atenuación" class="nav-link" data-scroll-target="#transformación-log-radiografía-de-atenuación">4.1.2 Transformación log (radiografía “de atenuación”)</a></li>
+  </ul></li>
+  <li><a href="#ct-sinograma-radon-y-geometrías" id="toc-ct-sinograma-radon-y-geometrías" class="nav-link" data-scroll-target="#ct-sinograma-radon-y-geometrías">4.2 CT: sinograma, Radon y geometrías</a>
+  <ul class="collapse">
+  <li><a href="#transformada-de-radon-ideal-2d" id="toc-transformada-de-radon-ideal-2d" class="nav-link" data-scroll-target="#transformada-de-radon-ideal-2d">4.2.1 Transformada de Radon (ideal 2D)</a></li>
+  <li><a href="#modelo-polienergético-y-calibración" id="toc-modelo-polienergético-y-calibración" class="nav-link" data-scroll-target="#modelo-polienergético-y-calibración">4.2.2 Modelo polienergético y calibración</a></li>
+  <li><a href="#hu-unidades-hounsfield" id="toc-hu-unidades-hounsfield" class="nav-link" data-scroll-target="#hu-unidades-hounsfield">4.2.3 HU (unidades Hounsfield)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#métodos-solicitados-y-métodos-estándar-de-reconstruccióncorrección" id="toc-métodos-solicitados-y-métodos-estándar-de-reconstruccióncorrección" class="nav-link" data-scroll-target="#métodos-solicitados-y-métodos-estándar-de-reconstruccióncorrección">5) Métodos solicitados y métodos estándar de reconstrucción/corrección</a>
+  <ul class="collapse">
+  <li><a href="#catálogo-de-métodos-incluidos" id="toc-catálogo-de-métodos-incluidos" class="nav-link" data-scroll-target="#catálogo-de-métodos-incluidos">5.0 Catálogo de métodos incluidos</a></li>
+  <li><a href="#m1-modelado-matemático-de-la-atenuación-de-fotones-y-la-formación-del-haz" id="toc-m1-modelado-matemático-de-la-atenuación-de-fotones-y-la-formación-del-haz" class="nav-link" data-scroll-target="#m1-modelado-matemático-de-la-atenuación-de-fotones-y-la-formación-del-haz">5.1 M1 — Modelado matemático de la atenuación de fotones y la formación del haz</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-formal-y-objetivo" id="toc-a-definición-formal-y-objetivo" class="nav-link" data-scroll-target="#a-definición-formal-y-objetivo">a) Definición formal y objetivo</a></li>
+  <li><a href="#b-supuestos-y-condiciones-de-validez" id="toc-b-supuestos-y-condiciones-de-validez" class="nav-link" data-scroll-target="#b-supuestos-y-condiciones-de-validez">b) Supuestos y condiciones de validez</a></li>
+  <li><a href="#c-derivaciónexplicación-matemática-esencial" id="toc-c-derivaciónexplicación-matemática-esencial" class="nav-link" data-scroll-target="#c-derivaciónexplicación-matemática-esencial">c) Derivación/explicación matemática esencial</a></li>
+  <li><a href="#d-algoritmo-paso-a-paso-pseudocódigo" id="toc-d-algoritmo-paso-a-paso-pseudocódigo" class="nav-link" data-scroll-target="#d-algoritmo-paso-a-paso-pseudocódigo">d) Algoritmo paso a paso + pseudocódigo</a></li>
+  <li><a href="#e-parámetros-significado-físico-rangos-típicos-y-selección" id="toc-e-parámetros-significado-físico-rangos-típicos-y-selección" class="nav-link" data-scroll-target="#e-parámetros-significado-físico-rangos-típicos-y-selección">e) Parámetros: significado físico, rangos típicos y selección</a></li>
+  <li><a href="#f-complejidad-computacional" id="toc-f-complejidad-computacional" class="nav-link" data-scroll-target="#f-complejidad-computacional">f) Complejidad computacional</a></li>
+  <li><a href="#g-comportamiento-frente-a-ruidoartefactos" id="toc-g-comportamiento-frente-a-ruidoartefactos" class="nav-link" data-scroll-target="#g-comportamiento-frente-a-ruidoartefactos">g) Comportamiento frente a ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-red-flags" id="toc-h-riesgos-red-flags" class="nav-link" data-scroll-target="#h-riesgos-red-flags">h) Riesgos (red flags)</a></li>
+  <li><a href="#i-recomendaciones-rx-vs-ct-vs-mri" id="toc-i-recomendaciones-rx-vs-ct-vs-mri" class="nav-link" data-scroll-target="#i-recomendaciones-rx-vs-ct-vs-mri">i) Recomendaciones RX vs CT vs MRI</a></li>
+  </ul></li>
+  <li><a href="#m2-respuesta-de-detectores-planos-flat-panel-y-cuantización" id="toc-m2-respuesta-de-detectores-planos-flat-panel-y-cuantización" class="nav-link" data-scroll-target="#m2-respuesta-de-detectores-planos-flat-panel-y-cuantización">5.2 M2 — Respuesta de detectores planos (Flat Panel) y cuantización</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-formal-y-objetivo-1" id="toc-a-definición-formal-y-objetivo-1" class="nav-link" data-scroll-target="#a-definición-formal-y-objetivo-1">a) Definición formal y objetivo</a></li>
+  <li><a href="#b-supuestos-y-condiciones-de-validez-1" id="toc-b-supuestos-y-condiciones-de-validez-1" class="nav-link" data-scroll-target="#b-supuestos-y-condiciones-de-validez-1">b) Supuestos y condiciones de validez</a></li>
+  <li><a href="#c-matemática-esencial-mtf-nps-dqe-cuantización" id="toc-c-matemática-esencial-mtf-nps-dqe-cuantización" class="nav-link" data-scroll-target="#c-matemática-esencial-mtf-nps-dqe-cuantización">c) Matemática esencial (MTF, NPS, DQE, cuantización)</a></li>
+  <li><a href="#d-algoritmo-paso-a-paso-pseudocódigo-1" id="toc-d-algoritmo-paso-a-paso-pseudocódigo-1" class="nav-link" data-scroll-target="#d-algoritmo-paso-a-paso-pseudocódigo-1">d) Algoritmo paso a paso + pseudocódigo</a></li>
+  <li><a href="#e-parámetros-típicos-y-elección" id="toc-e-parámetros-típicos-y-elección" class="nav-link" data-scroll-target="#e-parámetros-típicos-y-elección">e) Parámetros típicos y elección</a></li>
+  <li><a href="#f-complejidad-computacional-1" id="toc-f-complejidad-computacional-1" class="nav-link" data-scroll-target="#f-complejidad-computacional-1">f) Complejidad computacional</a></li>
+  <li><a href="#g-comportamiento-frente-a-ruidoartefactos-1" id="toc-g-comportamiento-frente-a-ruidoartefactos-1" class="nav-link" data-scroll-target="#g-comportamiento-frente-a-ruidoartefactos-1">g) Comportamiento frente a ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-red-flags-1" id="toc-h-riesgos-red-flags-1" class="nav-link" data-scroll-target="#h-riesgos-red-flags-1">h) Riesgos (red flags)</a></li>
+  <li><a href="#i-recomendaciones-rx-vs-ct-vs-mri-1" id="toc-i-recomendaciones-rx-vs-ct-vs-mri-1" class="nav-link" data-scroll-target="#i-recomendaciones-rx-vs-ct-vs-mri-1">i) Recomendaciones RX vs CT vs MRI</a></li>
+  </ul></li>
+  <li><a href="#m3-modelo-end-to-end-de-formación-de-radiografías-rx" id="toc-m3-modelo-end-to-end-de-formación-de-radiografías-rx" class="nav-link" data-scroll-target="#m3-modelo-end-to-end-de-formación-de-radiografías-rx">5.3 M3 — Modelo end-to-end de formación de radiografías (RX)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-formal-y-objetivo-2" id="toc-a-definición-formal-y-objetivo-2" class="nav-link" data-scroll-target="#a-definición-formal-y-objetivo-2">a) Definición formal y objetivo</a></li>
+  <li><a href="#b-supuestos" id="toc-b-supuestos" class="nav-link" data-scroll-target="#b-supuestos">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial" id="toc-c-matemática-esencial" class="nav-link" data-scroll-target="#c-matemática-esencial">c) Matemática esencial</a></li>
+  <li><a href="#d-algoritmo-pseudocódigo" id="toc-d-algoritmo-pseudocódigo" class="nav-link" data-scroll-target="#d-algoritmo-pseudocódigo">d) Algoritmo + pseudocódigo</a></li>
+  <li><a href="#e-parámetros-y-rangos" id="toc-e-parámetros-y-rangos" class="nav-link" data-scroll-target="#e-parámetros-y-rangos">e) Parámetros y rangos</a></li>
+  <li><a href="#f-complejidad" id="toc-f-complejidad" class="nav-link" data-scroll-target="#f-complejidad">f) Complejidad</a></li>
+  <li><a href="#g-frente-a-ruidoartefactos" id="toc-g-frente-a-ruidoartefactos" class="nav-link" data-scroll-target="#g-frente-a-ruidoartefactos">g) Frente a ruido/artefactos</a></li>
+  <li><a href="#h-riesgos" id="toc-h-riesgos" class="nav-link" data-scroll-target="#h-riesgos">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones" id="toc-i-recomendaciones" class="nav-link" data-scroll-target="#i-recomendaciones">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m4-calibración-darkflatair-linealización-y-log" id="toc-m4-calibración-darkflatair-linealización-y-log" class="nav-link" data-scroll-target="#m4-calibración-darkflatair-linealización-y-log">5.4 M4 — Calibración (dark/flat/air), linealización y log</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo" id="toc-a-definición-y-objetivo" class="nav-link" data-scroll-target="#a-definición-y-objetivo">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-1" id="toc-b-supuestos-1" class="nav-link" data-scroll-target="#b-supuestos-1">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-1" id="toc-c-matemática-esencial-1" class="nav-link" data-scroll-target="#c-matemática-esencial-1">c) Matemática esencial</a></li>
+  <li><a href="#d-pseudocódigo" id="toc-d-pseudocódigo" class="nav-link" data-scroll-target="#d-pseudocódigo">d) Pseudocódigo</a></li>
+  <li><a href="#e-parámetros-y-selección" id="toc-e-parámetros-y-selección" class="nav-link" data-scroll-target="#e-parámetros-y-selección">e) Parámetros y selección</a></li>
+  <li><a href="#f-complejidad-1" id="toc-f-complejidad-1" class="nav-link" data-scroll-target="#f-complejidad-1">f) Complejidad</a></li>
+  <li><a href="#g-frente-a-ruidoartefactos-1" id="toc-g-frente-a-ruidoartefactos-1" class="nav-link" data-scroll-target="#g-frente-a-ruidoartefactos-1">g) Frente a ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-1" id="toc-h-riesgos-1" class="nav-link" data-scroll-target="#h-riesgos-1">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-1" id="toc-i-recomendaciones-1" class="nav-link" data-scroll-target="#i-recomendaciones-1">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m5-corrección-de-beam-hardening-bh" id="toc-m5-corrección-de-beam-hardening-bh" class="nav-link" data-scroll-target="#m5-corrección-de-beam-hardening-bh">5.5 M5 — Corrección de beam hardening (BH)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-1" id="toc-a-definición-y-objetivo-1" class="nav-link" data-scroll-target="#a-definición-y-objetivo-1">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-2" id="toc-b-supuestos-2" class="nav-link" data-scroll-target="#b-supuestos-2">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-enfoque-de-pre-corrección" id="toc-c-matemática-esencial-enfoque-de-pre-corrección" class="nav-link" data-scroll-target="#c-matemática-esencial-enfoque-de-pre-corrección">c) Matemática esencial (enfoque de pre-corrección)</a></li>
+  <li><a href="#d-algoritmo-pseudocódigo-1" id="toc-d-algoritmo-pseudocódigo-1" class="nav-link" data-scroll-target="#d-algoritmo-pseudocódigo-1">d) Algoritmo + pseudocódigo</a></li>
+  <li><a href="#e-parámetros" id="toc-e-parámetros" class="nav-link" data-scroll-target="#e-parámetros">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-2" id="toc-f-complejidad-2" class="nav-link" data-scroll-target="#f-complejidad-2">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos" id="toc-g-ruidoartefactos" class="nav-link" data-scroll-target="#g-ruidoartefactos">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-2" id="toc-h-riesgos-2" class="nav-link" data-scroll-target="#h-riesgos-2">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-2" id="toc-i-recomendaciones-2" class="nav-link" data-scroll-target="#i-recomendaciones-2">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m6-corrección-de-scatter" id="toc-m6-corrección-de-scatter" class="nav-link" data-scroll-target="#m6-corrección-de-scatter">5.6 M6 — Corrección de scatter</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-2" id="toc-a-definición-y-objetivo-2" class="nav-link" data-scroll-target="#a-definición-y-objetivo-2">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-3" id="toc-b-supuestos-3" class="nav-link" data-scroll-target="#b-supuestos-3">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-2" id="toc-c-matemática-esencial-2" class="nav-link" data-scroll-target="#c-matemática-esencial-2">c) Matemática esencial</a></li>
+  <li><a href="#d-algoritmo-kernel-based-pseudocódigo" id="toc-d-algoritmo-kernel-based-pseudocódigo" class="nav-link" data-scroll-target="#d-algoritmo-kernel-based-pseudocódigo">d) Algoritmo (kernel-based) + pseudocódigo</a></li>
+  <li><a href="#e-parámetros-1" id="toc-e-parámetros-1" class="nav-link" data-scroll-target="#e-parámetros-1">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-3" id="toc-f-complejidad-3" class="nav-link" data-scroll-target="#f-complejidad-3">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-1" id="toc-g-ruidoartefactos-1" class="nav-link" data-scroll-target="#g-ruidoartefactos-1">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-3" id="toc-h-riesgos-3" class="nav-link" data-scroll-target="#h-riesgos-3">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-3" id="toc-i-recomendaciones-3" class="nav-link" data-scroll-target="#i-recomendaciones-3">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m7-ct-por-filtered-backprojection-fbp-en-fan-beamhelicoidal" id="toc-m7-ct-por-filtered-backprojection-fbp-en-fan-beamhelicoidal" class="nav-link" data-scroll-target="#m7-ct-por-filtered-backprojection-fbp-en-fan-beamhelicoidal">5.7 M7 — CT por Filtered Backprojection (FBP) en fan-beam/helicoidal</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-3" id="toc-a-definición-y-objetivo-3" class="nav-link" data-scroll-target="#a-definición-y-objetivo-3">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-4" id="toc-b-supuestos-4" class="nav-link" data-scroll-target="#b-supuestos-4">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-2d-paralelo-para-intuición" id="toc-c-matemática-esencial-2d-paralelo-para-intuición" class="nav-link" data-scroll-target="#c-matemática-esencial-2d-paralelo-para-intuición">c) Matemática esencial (2D paralelo para intuición)</a></li>
+  <li><a href="#d-algoritmo-pseudocódigo-2" id="toc-d-algoritmo-pseudocódigo-2" class="nav-link" data-scroll-target="#d-algoritmo-pseudocódigo-2">d) Algoritmo + pseudocódigo</a></li>
+  <li><a href="#e-parámetros-2" id="toc-e-parámetros-2" class="nav-link" data-scroll-target="#e-parámetros-2">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-4" id="toc-f-complejidad-4" class="nav-link" data-scroll-target="#f-complejidad-4">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-2" id="toc-g-ruidoartefactos-2" class="nav-link" data-scroll-target="#g-ruidoartefactos-2">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-4" id="toc-h-riesgos-4" class="nav-link" data-scroll-target="#h-riesgos-4">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-4" id="toc-i-recomendaciones-4" class="nav-link" data-scroll-target="#i-recomendaciones-4">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m8-cone-beam-ct-por-feldkampdaviskress-fdk" id="toc-m8-cone-beam-ct-por-feldkampdaviskress-fdk" class="nav-link" data-scroll-target="#m8-cone-beam-ct-por-feldkampdaviskress-fdk">5.8 M8 — Cone-Beam CT por Feldkamp–Davis–Kress (FDK)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-4" id="toc-a-definición-y-objetivo-4" class="nav-link" data-scroll-target="#a-definición-y-objetivo-4">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-5" id="toc-b-supuestos-5" class="nav-link" data-scroll-target="#b-supuestos-5">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-conceptual" id="toc-c-matemática-esencial-conceptual" class="nav-link" data-scroll-target="#c-matemática-esencial-conceptual">c) Matemática esencial (conceptual)</a></li>
+  <li><a href="#d-pseudocódigo-1" id="toc-d-pseudocódigo-1" class="nav-link" data-scroll-target="#d-pseudocódigo-1">d) Pseudocódigo</a></li>
+  <li><a href="#e-parámetros-3" id="toc-e-parámetros-3" class="nav-link" data-scroll-target="#e-parámetros-3">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-5" id="toc-f-complejidad-5" class="nav-link" data-scroll-target="#f-complejidad-5">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-3" id="toc-g-ruidoartefactos-3" class="nav-link" data-scroll-target="#g-ruidoartefactos-3">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-5" id="toc-h-riesgos-5" class="nav-link" data-scroll-target="#h-riesgos-5">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-5" id="toc-i-recomendaciones-5" class="nav-link" data-scroll-target="#i-recomendaciones-5">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m9-reconstrucción-iterativa-algebraica-artsirtsart" id="toc-m9-reconstrucción-iterativa-algebraica-artsirtsart" class="nav-link" data-scroll-target="#m9-reconstrucción-iterativa-algebraica-artsirtsart">5.9 M9 — Reconstrucción iterativa algebraica (ART/SIRT/SART)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-5" id="toc-a-definición-y-objetivo-5" class="nav-link" data-scroll-target="#a-definición-y-objetivo-5">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-6" id="toc-b-supuestos-6" class="nav-link" data-scroll-target="#b-supuestos-6">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-3" id="toc-c-matemática-esencial-3" class="nav-link" data-scroll-target="#c-matemática-esencial-3">c) Matemática esencial</a></li>
+  <li><a href="#d-pseudocódigo-2" id="toc-d-pseudocódigo-2" class="nav-link" data-scroll-target="#d-pseudocódigo-2">d) Pseudocódigo</a></li>
+  <li><a href="#e-parámetros-4" id="toc-e-parámetros-4" class="nav-link" data-scroll-target="#e-parámetros-4">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-6" id="toc-f-complejidad-6" class="nav-link" data-scroll-target="#f-complejidad-6">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-4" id="toc-g-ruidoartefactos-4" class="nav-link" data-scroll-target="#g-ruidoartefactos-4">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-6" id="toc-h-riesgos-6" class="nav-link" data-scroll-target="#h-riesgos-6">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-6" id="toc-i-recomendaciones-6" class="nav-link" data-scroll-target="#i-recomendaciones-6">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m10-reconstrucción-iterativa-estadística-mbir-map-penalized-likelihood-regularización-tvhuber" id="toc-m10-reconstrucción-iterativa-estadística-mbir-map-penalized-likelihood-regularización-tvhuber" class="nav-link" data-scroll-target="#m10-reconstrucción-iterativa-estadística-mbir-map-penalized-likelihood-regularización-tvhuber">5.10 M10 — Reconstrucción iterativa estadística / MBIR (MAP / Penalized Likelihood) + regularización (TV/Huber)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-6" id="toc-a-definición-y-objetivo-6" class="nav-link" data-scroll-target="#a-definición-y-objetivo-6">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-7" id="toc-b-supuestos-7" class="nav-link" data-scroll-target="#b-supuestos-7">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-4" id="toc-c-matemática-esencial-4" class="nav-link" data-scroll-target="#c-matemática-esencial-4">c) Matemática esencial</a></li>
+  <li><a href="#d-pseudocódigo-esquema-proximal" id="toc-d-pseudocódigo-esquema-proximal" class="nav-link" data-scroll-target="#d-pseudocódigo-esquema-proximal">d) Pseudocódigo (esquema proximal)</a></li>
+  <li><a href="#e-parámetros-5" id="toc-e-parámetros-5" class="nav-link" data-scroll-target="#e-parámetros-5">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-7" id="toc-f-complejidad-7" class="nav-link" data-scroll-target="#f-complejidad-7">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-5" id="toc-g-ruidoartefactos-5" class="nav-link" data-scroll-target="#g-ruidoartefactos-5">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-7" id="toc-h-riesgos-7" class="nav-link" data-scroll-target="#h-riesgos-7">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-7" id="toc-i-recomendaciones-7" class="nav-link" data-scroll-target="#i-recomendaciones-7">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m11-metal-artifact-reduction-mar" id="toc-m11-metal-artifact-reduction-mar" class="nav-link" data-scroll-target="#m11-metal-artifact-reduction-mar">5.11 M11 — Metal Artifact Reduction (MAR)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-7" id="toc-a-definición-y-objetivo-7" class="nav-link" data-scroll-target="#a-definición-y-objetivo-7">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-8" id="toc-b-supuestos-8" class="nav-link" data-scroll-target="#b-supuestos-8">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-5" id="toc-c-matemática-esencial-5" class="nav-link" data-scroll-target="#c-matemática-esencial-5">c) Matemática esencial</a></li>
+  <li><a href="#d-algoritmo-sinogram-inpainting-pseudocódigo" id="toc-d-algoritmo-sinogram-inpainting-pseudocódigo" class="nav-link" data-scroll-target="#d-algoritmo-sinogram-inpainting-pseudocódigo">d) Algoritmo (sinogram inpainting) + pseudocódigo</a></li>
+  <li><a href="#e-parámetros-6" id="toc-e-parámetros-6" class="nav-link" data-scroll-target="#e-parámetros-6">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-8" id="toc-f-complejidad-8" class="nav-link" data-scroll-target="#f-complejidad-8">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-6" id="toc-g-ruidoartefactos-6" class="nav-link" data-scroll-target="#g-ruidoartefactos-6">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-8" id="toc-h-riesgos-8" class="nav-link" data-scroll-target="#h-riesgos-8">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-8" id="toc-i-recomendaciones-8" class="nav-link" data-scroll-target="#i-recomendaciones-8">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m12-reducción-de-ruido-y-preservación-de-bordes-sinogramaimagen" id="toc-m12-reducción-de-ruido-y-preservación-de-bordes-sinogramaimagen" class="nav-link" data-scroll-target="#m12-reducción-de-ruido-y-preservación-de-bordes-sinogramaimagen">5.12 M12 — Reducción de ruido y preservación de bordes (sinograma/imagen)</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-8" id="toc-a-definición-y-objetivo-8" class="nav-link" data-scroll-target="#a-definición-y-objetivo-8">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-9" id="toc-b-supuestos-9" class="nav-link" data-scroll-target="#b-supuestos-9">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-6" id="toc-c-matemática-esencial-6" class="nav-link" data-scroll-target="#c-matemática-esencial-6">c) Matemática esencial</a></li>
+  <li><a href="#d-pseudocódigo-bilateral-conceptual" id="toc-d-pseudocódigo-bilateral-conceptual" class="nav-link" data-scroll-target="#d-pseudocódigo-bilateral-conceptual">d) Pseudocódigo (bilateral conceptual)</a></li>
+  <li><a href="#e-parámetros-7" id="toc-e-parámetros-7" class="nav-link" data-scroll-target="#e-parámetros-7">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-9" id="toc-f-complejidad-9" class="nav-link" data-scroll-target="#f-complejidad-9">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-7" id="toc-g-ruidoartefactos-7" class="nav-link" data-scroll-target="#g-ruidoartefactos-7">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-9" id="toc-h-riesgos-9" class="nav-link" data-scroll-target="#h-riesgos-9">h) Riesgos</a></li>
+  <li><a href="#i-recomendaciones-9" id="toc-i-recomendaciones-9" class="nav-link" data-scroll-target="#i-recomendaciones-9">i) Recomendaciones</a></li>
+  </ul></li>
+  <li><a href="#m13-reconstrucción-basada-en-deep-learning-dl-con-control-de-física" id="toc-m13-reconstrucción-basada-en-deep-learning-dl-con-control-de-física" class="nav-link" data-scroll-target="#m13-reconstrucción-basada-en-deep-learning-dl-con-control-de-física">5.13 M13 — Reconstrucción basada en Deep Learning (DL), con control de física</a>
+  <ul class="collapse">
+  <li><a href="#a-definición-y-objetivo-9" id="toc-a-definición-y-objetivo-9" class="nav-link" data-scroll-target="#a-definición-y-objetivo-9">a) Definición y objetivo</a></li>
+  <li><a href="#b-supuestos-10" id="toc-b-supuestos-10" class="nav-link" data-scroll-target="#b-supuestos-10">b) Supuestos</a></li>
+  <li><a href="#c-matemática-esencial-unrolled-physics-informed" id="toc-c-matemática-esencial-unrolled-physics-informed" class="nav-link" data-scroll-target="#c-matemática-esencial-unrolled-physics-informed">c) Matemática esencial (unrolled / physics-informed)</a></li>
+  <li><a href="#d-pseudocódigo-3" id="toc-d-pseudocódigo-3" class="nav-link" data-scroll-target="#d-pseudocódigo-3">d) Pseudocódigo</a></li>
+  <li><a href="#e-parámetros-8" id="toc-e-parámetros-8" class="nav-link" data-scroll-target="#e-parámetros-8">e) Parámetros</a></li>
+  <li><a href="#f-complejidad-10" id="toc-f-complejidad-10" class="nav-link" data-scroll-target="#f-complejidad-10">f) Complejidad</a></li>
+  <li><a href="#g-ruidoartefactos-8" id="toc-g-ruidoartefactos-8" class="nav-link" data-scroll-target="#g-ruidoartefactos-8">g) Ruido/artefactos</a></li>
+  <li><a href="#h-riesgos-red-flags-2" id="toc-h-riesgos-red-flags-2" class="nav-link" data-scroll-target="#h-riesgos-red-flags-2">h) Riesgos (red flags)</a></li>
+  <li><a href="#i-recomendaciones-10" id="toc-i-recomendaciones-10" class="nav-link" data-scroll-target="#i-recomendaciones-10">i) Recomendaciones</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#artefactos-y-fallas-típicas-con-red-flags" id="toc-artefactos-y-fallas-típicas-con-red-flags" class="nav-link" data-scroll-target="#artefactos-y-fallas-típicas-con-red-flags">6) Artefactos y fallas típicas (con red flags)</a>
+  <ul class="collapse">
+  <li><a href="#rx" id="toc-rx" class="nav-link" data-scroll-target="#rx">6.1 RX</a></li>
+  <li><a href="#ct" id="toc-ct" class="nav-link" data-scroll-target="#ct">6.2 CT</a></li>
+  <li><a href="#mri-contexto" id="toc-mri-contexto" class="nav-link" data-scroll-target="#mri-contexto">6.3 MRI (contexto)</a></li>
+  </ul></li>
+  <li><a href="#calidad-de-imagen-y-evaluación-cuantitativa" id="toc-calidad-de-imagen-y-evaluación-cuantitativa" class="nav-link" data-scroll-target="#calidad-de-imagen-y-evaluación-cuantitativa">7) Calidad de imagen y evaluación cuantitativa</a>
+  <ul class="collapse">
+  <li><a href="#métricas" id="toc-métricas" class="nav-link" data-scroll-target="#métricas">7.1 Métricas</a>
+  <ul class="collapse">
+  <li><a href="#snr-y-cnr" id="toc-snr-y-cnr" class="nav-link" data-scroll-target="#snr-y-cnr">7.1.1 SNR y CNR</a></li>
+  <li><a href="#mtf-nps-dqe" id="toc-mtf-nps-dqe" class="nav-link" data-scroll-target="#mtf-nps-dqe">7.1.2 MTF, NPS, DQE</a></li>
+  <li><a href="#detectabilidad-d-noción" id="toc-detectabilidad-d-noción" class="nav-link" data-scroll-target="#detectabilidad-d-noción">7.1.3 Detectabilidad (<span class="math inline">\(d'\)</span>) (noción)</a></li>
+  </ul></li>
+  <li><a href="#protocolos-con-phantoms-configuraciones-típicas" id="toc-protocolos-con-phantoms-configuraciones-típicas" class="nav-link" data-scroll-target="#protocolos-con-phantoms-configuraciones-típicas">7.2 Protocolos con phantoms (configuraciones típicas)</a></li>
+  <li><a href="#diseño-de-experimento-repetibilidad-y-sesgo" id="toc-diseño-de-experimento-repetibilidad-y-sesgo" class="nav-link" data-scroll-target="#diseño-de-experimento-repetibilidad-y-sesgo">7.3 Diseño de experimento (repetibilidad y sesgo)</a></li>
+  </ul></li>
+  <li><a href="#dosis-y-seguridad" id="toc-dosis-y-seguridad" class="nav-link" data-scroll-target="#dosis-y-seguridad">8) Dosis y seguridad</a>
+  <ul class="collapse">
+  <li><a href="#rxct-indicadores-y-trade-offs" id="toc-rxct-indicadores-y-trade-offs" class="nav-link" data-scroll-target="#rxct-indicadores-y-trade-offs">8.1 RX/CT: indicadores y trade-offs</a></li>
+  <li><a href="#mri-contexto-1" id="toc-mri-contexto-1" class="nav-link" data-scroll-target="#mri-contexto-1">8.2 MRI (contexto)</a></li>
+  <li><a href="#riesgos-operativos-y-mitigaciones-checklist" id="toc-riesgos-operativos-y-mitigaciones-checklist" class="nav-link" data-scroll-target="#riesgos-operativos-y-mitigaciones-checklist">8.3 Riesgos operativos y mitigaciones (checklist)</a></li>
+  </ul></li>
+  <li><a href="#recomendaciones-de-implementación-pipeline-y-qa" id="toc-recomendaciones-de-implementación-pipeline-y-qa" class="nav-link" data-scroll-target="#recomendaciones-de-implementación-pipeline-y-qa">9) Recomendaciones de implementación (pipeline y QA)</a>
+  <ul class="collapse">
+  <li><a href="#pipeline-sugerido-rx" id="toc-pipeline-sugerido-rx" class="nav-link" data-scroll-target="#pipeline-sugerido-rx">9.1 Pipeline sugerido — RX</a></li>
+  <li><a href="#pipeline-sugerido-ct" id="toc-pipeline-sugerido-ct" class="nav-link" data-scroll-target="#pipeline-sugerido-ct">9.2 Pipeline sugerido — CT</a></li>
+  <li><a href="#checklist-de-validación" id="toc-checklist-de-validación" class="nav-link" data-scroll-target="#checklist-de-validación">9.3 Checklist de validación</a></li>
+  </ul></li>
+  <li><a href="#casos-de-uso-y-guía-de-selección" id="toc-casos-de-uso-y-guía-de-selección" class="nav-link" data-scroll-target="#casos-de-uso-y-guía-de-selección">10) Casos de uso y guía de selección</a>
+  <ul class="collapse">
+  <li><a href="#matriz-de-decisión-objetivo-clínico-método" id="toc-matriz-de-decisión-objetivo-clínico-método" class="nav-link" data-scroll-target="#matriz-de-decisión-objetivo-clínico-método">10.1 Matriz de decisión (objetivo clínico → método)</a></li>
+  <li><a href="#reglas-rápidas-si-tu-objetivo-es-x-usa-y" id="toc-reglas-rápidas-si-tu-objetivo-es-x-usa-y" class="nav-link" data-scroll-target="#reglas-rápidas-si-tu-objetivo-es-x-usa-y">10.2 Reglas rápidas “Si tu objetivo es X, usa Y”</a></li>
+  </ul></li>
+  <li><a href="#conclusiones" id="toc-conclusiones" class="nav-link" data-scroll-target="#conclusiones">11) Conclusiones</a></li>
+  <li><a href="#referencias-formato-ieee-selección-mínima-25" id="toc-referencias-formato-ieee-selección-mínima-25" class="nav-link" data-scroll-target="#referencias-formato-ieee-selección-mínima-25">12) Referencias (formato IEEE, selección mínima ≥ 25)</a>
+  <ul class="collapse">
+  <li><a href="#anexo-a-plantilla-de-trazabilidad-mínima-recomendado" id="toc-anexo-a-plantilla-de-trazabilidad-mínima-recomendado" class="nav-link" data-scroll-target="#anexo-a-plantilla-de-trazabilidad-mínima-recomendado">Anexo A — Plantilla de trazabilidad mínima (recomendado)</a></li>
+  <li><a href="#cómo-generar-el-pdf-con-quarto-orientativo" id="toc-cómo-generar-el-pdf-con-quarto-orientativo" class="nav-link" data-scroll-target="#cómo-generar-el-pdf-con-quarto-orientativo">Cómo generar el PDF con Quarto (orientativo)</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="ModeladoFisicoRadiografía_v2.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Reporte técnico: modelado de atenuación, respuesta de Flat Panel y formación de radiografías (enfoque RX y CT)</h1>
+<p class="subtitle lead">Generación/adquisición y reconstrucción de imágenes médicas con enfoque ingenieril y clínico-operativo</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Experto en Procesamiento de Imágenes Médicas </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">February 9, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<blockquote class="blockquote">
+<p><strong>Alcance y supuestos explícitos (por falta de restricciones detalladas):</strong>
+- Modalidad principal: <strong>RX (radiografía digital) y CT (TAC)</strong>. MRI se menciona solo para contexto comparativo, artefactos y seguridad.
+- Restricciones asumidas: (i) <strong>baja dosis</strong> como objetivo frecuente, (ii) <strong>flujo clínico estándar</strong> (tiempo de reconstrucción segundos–minutos), (iii) hardware típico hospitalario (CPU multi-core; <strong>GPU opcional</strong>), (iv) población mixta (adulto/pediátrica) con énfasis en <strong>ALARA</strong>.
+- Nivel de matemáticas: <strong>medio</strong> (modelos, supuestos, ecuaciones esenciales; sin derivaciones largas).
+- No se reportan resultados experimentales reales; cualquier número es <strong>hipotético e ilustrativo</strong>.</p>
+</blockquote>
+<section id="resumen-ejecutivo" class="level1">
+<h1>1) Resumen ejecutivo</h1>
+<section id="problema-que-resuelven-los-métodos" class="level2">
+<h2 class="anchored" data-anchor-id="problema-que-resuelven-los-métodos">1.1 Problema que resuelven los métodos</h2>
+<p>En <strong>radiografía (RX)</strong> y <strong>tomografía computarizada (CT)</strong>, la calidad diagnóstica depende de una cadena física–digital:</p>
+<ol type="1">
+<li><strong>Formación del haz</strong> (espectro, filtración, geometría, dispersión),</li>
+<li><strong>Interacción con el paciente</strong> (atenuación polienergética y scatter),</li>
+<li><strong>Respuesta del detector</strong> (PSF/MTF, NPS, DQE, lag, saturación),</li>
+<li><strong>Muestreo y cuantización</strong> (ADC, rango dinámico, bit-depth),</li>
+<li><strong>Calibración y correcciones</strong> (dark/flat, beam hardening, scatter),</li>
+<li><strong>Reconstrucción</strong> (en CT: FBP/FDK/iterativa/MBIR; en RX: proyección 2D con procesamiento),</li>
+<li><strong>Posproceso y visualización</strong>,</li>
+<li><strong>QA/validación</strong> (phantoms, métricas, estabilidad).</li>
+</ol>
+<p>Los métodos solicitados atacan tres puntos críticos:</p>
+<ul>
+<li><strong>(A) Modelar matemáticamente la atenuación y la formación del haz:</strong> imprescindible para predecir señal, dosis, endurecimiento del haz, scatter y límites de contraste.</li>
+<li><strong>(B) Analizar detectores planos y cuantización:</strong> determina resolución, ruido, eficiencia cuántica y sesgos (lag, ghosting), y permite definir calibraciones y métricas (DQE/MTF/NPS).</li>
+<li><strong>(C) Formación de radiografías:</strong> integra geometría + física + detector + muestreo en un modelo “end-to-end” útil para simulación, diseño de protocolo, QA y reconstrucción/corrección.</li>
+</ul>
+</section>
+<section id="impacto-operativo-y-clínico-rxct-y-nota-sobre-mri" class="level2">
+<h2 class="anchored" data-anchor-id="impacto-operativo-y-clínico-rxct-y-nota-sobre-mri">1.2 Impacto operativo y clínico (RX/CT y nota sobre MRI)</h2>
+<ul>
+<li><strong>RX:</strong> optimizar el compromiso <strong>dosis–ruido–resolución</strong>; controlar scatter y exposición; evitar saturación; asegurar consistencia multi-equipo y multi-turno.</li>
+<li><strong>CT:</strong> reconstrucción robusta a <strong>baja dosis</strong>, metal y movimiento; estabilidad de HU y uniformidad; reducción de artefactos (beam hardening, rings, streaks).</li>
+<li><strong>MRI (contexto):</strong> aunque no usa radiación ionizante, comparte problemas de <strong>modelado del sistema</strong>, artefactos, muestreo y reconstrucción (k-space, regularización). Esto importa para equipos multimodales y cultura de QA.</li>
+</ul>
+</section>
+<section id="limitaciones-críticas-no-negociables" class="level2">
+<h2 class="anchored" data-anchor-id="limitaciones-críticas-no-negociables">1.3 Limitaciones críticas (“no negociables”)</h2>
+<ol type="1">
+<li><strong>Polienergía:</strong> el modelo monoenergético Beer–Lambert falla en presencia de espectro amplio → <strong>beam hardening</strong> y sesgos en CT (HU) y RX (contraste).</li>
+<li><strong>Scatter:</strong> si no se modela/corrige, produce <strong>capping</strong>, pérdida de contraste y errores cuantitativos.</li>
+<li><strong>Detector no ideal:</strong> MTF y NPS dependen de kVp, filtración, dosis, ángulo; hay <strong>lag/ghosting</strong> y no linealidades.</li>
+<li><strong>Calibración:</strong> errores en dark/flat/air-scan se traducen en <strong>banding</strong>, rings y drift de HU.</li>
+<li><strong>Reconstrucción y regularización:</strong> exceso de suavizado puede “borrar” hallazgos sutiles; métodos de IA pueden <strong>alucinar patrones</strong> si no se controlan.</li>
+</ol>
+</section>
+<section id="recomendaciones-acciones-concretas" class="level2">
+<h2 class="anchored" data-anchor-id="recomendaciones-acciones-concretas">1.4 Recomendaciones (acciones concretas)</h2>
+<ul>
+<li>Adoptar un <strong>modelo forward polienergético</strong> con scatter y respuesta del detector para simulación y diseño de protocolos.</li>
+<li>Medir/estimar <strong>MTF + NPS + DQE</strong> (o al menos MTF/NPS) y registrar <strong>exposure index</strong> (EI) y su consistencia.</li>
+<li>En CT, para baja dosis: priorizar <strong>recon iterativa estadística/MBIR</strong> o híbridos; usar FBP como referencia/QA.</li>
+<li>Implementar un <strong>pipeline de calibración</strong> con monitoreo de drift (offset/gain), estabilidad de HU, uniformidad, y artefactos (rings/streaks).</li>
+<li>Para IA: usar estrategias “physics-informed” o <strong>unrolled</strong> con validación estricta, <em>no</em> solo métricas promedio; documentar dominios de validez.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="introducción" class="level1">
+<h1>2) Introducción</h1>
+<section id="modalidades-y-cadena-completa-rxct" class="level2">
+<h2 class="anchored" data-anchor-id="modalidades-y-cadena-completa-rxct">2.1 Modalidades y cadena completa (RX/CT)</h2>
+<p><strong>Figura 1: Cadena de adquisición y reconstrucción (RX/CT).</strong>
+(1) Generador HV → (2) tubo RX (espectro) + filtración + colimación → (3) paciente (atenuación + scatter) → (4) anti-scatter grid/opciones → (5) detector flat panel (conversión + readout) → (6) muestreo/ADC → (7) calibración (dark/flat/air) → (8) correcciones (scatter, beam hardening) → (9) reconstrucción (CT) o procesamiento (RX) → (10) posproceso (ventaneo, realce) → (11) visualización/PACS → (12) QA y trazabilidad.</p>
+<section id="rx-radiografía-digital" class="level3">
+<h3 class="anchored" data-anchor-id="rx-radiografía-digital">RX (radiografía digital)</h3>
+<ul>
+<li>Resultado: <strong>imagen 2D</strong> de una proyección de atenuación (y scatter residual), con blur geométrico y del detector, y ruido cuántico/electrónico.</li>
+</ul>
+</section>
+<section id="ct-tac" class="level3">
+<h3 class="anchored" data-anchor-id="ct-tac">CT (TAC)</h3>
+<ul>
+<li>Resultado: <strong>volumen 3D</strong> reconstruido desde múltiples proyecciones (sinograma).</li>
+<li>Geometrías: axial/helicoidal, fan-beam, cone-beam.</li>
+<li>Métrica cuantitativa principal: <strong>HU (Hounsfield Units)</strong>.</li>
+</ul>
+</section>
+</section>
+<section id="glosario-términos-clave" class="level2">
+<h2 class="anchored" data-anchor-id="glosario-términos-clave">2.2 Glosario (términos clave)</h2>
+<blockquote class="blockquote">
+<p>Nota: Se incluyen también términos MRI por cultura general y porque muchos marcos de QA y reconstrucción comparten ideas (muestreo, regularización, artefactos).</p>
+</blockquote>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Término</th>
+<th>Definición operativa</th>
+<th>Comentario práctico</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SNR</td>
+<td>Relación señal/ruido</td>
+<td>Depende de dosis, MTF, NPS, filtrado</td>
+</tr>
+<tr class="even">
+<td>CNR</td>
+<td>Contraste/ruido</td>
+<td>Más correlacionado con detectabilidad</td>
+</tr>
+<tr class="odd">
+<td>PSF</td>
+<td>Respuesta puntual</td>
+<td>Determina blur; su FT es la MTF</td>
+</tr>
+<tr class="even">
+<td>MTF</td>
+<td>Modulación vs frecuencia espacial</td>
+<td>Métrica de resolución (linealidad asumida)</td>
+</tr>
+<tr class="odd">
+<td>NPS</td>
+<td>Espectro de potencia del ruido</td>
+<td>Caracteriza ruido espacialmente correlacionado</td>
+</tr>
+<tr class="even">
+<td>DQE</td>
+<td>Eficiencia cuántica detective</td>
+<td>Conecta señal y ruido con dosis (IEC)</td>
+</tr>
+<tr class="odd">
+<td>HU</td>
+<td>Unidades Hounsfield</td>
+<td>Normalización de <span class="math inline">\(\mu\)</span> en CT</td>
+</tr>
+<tr class="even">
+<td>CTDIvol/DLP</td>
+<td>Indicadores de dosis en CT</td>
+<td>Gestión de dosis y comparabilidad</td>
+</tr>
+<tr class="odd">
+<td>k-space</td>
+<td>Dominio de muestreo en MRI</td>
+<td>En CT el análogo operacional es el sinograma</td>
+</tr>
+<tr class="even">
+<td>Gibbs ringing</td>
+<td>Artefacto por truncamiento</td>
+<td>MRI y también en CT por filtrado/ventaneo</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="fundamentos-físicos-por-modalidad" class="level1">
+<h1>3) Fundamentos físicos por modalidad</h1>
+<section id="interacción-fotónmateria-rango-diagnóstico" class="level2">
+<h2 class="anchored" data-anchor-id="interacción-fotónmateria-rango-diagnóstico">3.1 Interacción fotón–materia (rango diagnóstico)</h2>
+<p>En diagnóstico (≈ 20–150 keV), dominan:</p>
+<ul>
+<li><strong>Efecto fotoeléctrico</strong> (∝ <span class="math inline">\(Z^n/E^3\)</span> aprox., con <span class="math inline">\(n\sim 3\)</span>–4): aporta <strong>contraste</strong> (alto en hueso/alto Z, iodados).</li>
+<li><strong>Compton</strong> (∝ densidad electrónica, débilmente dependiente de Z): aporta <strong>scatter</strong> y reduce contraste; domina en tejidos blandos y energías medias.</li>
+</ul>
+<p>Definimos el <strong>coeficiente de atenuación lineal</strong> <span class="math inline">\(\mu(E,\mathbf{r})\)</span> [1/cm] y el <strong>coeficiente másico</strong> <span class="math inline">\(\mu/\rho\)</span> [cm²/g].</p>
+</section>
+<section id="ley-de-beerlambert-monoenergética" class="level2">
+<h2 class="anchored" data-anchor-id="ley-de-beerlambert-monoenergética">3.2 Ley de Beer–Lambert (monoenergética)</h2>
+<p>Para un haz monoenergético de energía <span class="math inline">\(E\)</span>:</p>
+<p><span class="math display">\[
+I = I_0 \exp\left(-\int_{L} \mu(E,\mathbf{r})\,dl\right)
+\]</span></p>
+<p><strong>Símbolos:</strong>
+- <span class="math inline">\(I_0\)</span>: intensidad incidente (sin objeto)
+- <span class="math inline">\(I\)</span>: intensidad transmitida
+- <span class="math inline">\(L\)</span>: trayectoria del rayo
+- <span class="math inline">\(\mu(E,\mathbf{r})\)</span>: atenuación lineal</p>
+<p><strong>Limitación:</strong> En RX real, el haz es <strong>polienergético</strong> → la atenuación no es una exponencial simple.</p>
+</section>
+<section id="haz-polienergético-filtración-y-endurecimiento-beam-hardening" class="level2">
+<h2 class="anchored" data-anchor-id="haz-polienergético-filtración-y-endurecimiento-beam-hardening">3.3 Haz polienergético, filtración y endurecimiento (beam hardening)</h2>
+<p>El tubo produce un espectro <span class="math inline">\(S(E)\)</span> (bremsstrahlung + líneas características), modificado por:</p>
+<ul>
+<li>filtración inherente + adicional (Al, Cu, etc.),</li>
+<li>colimación y geometría,</li>
+<li>efecto talón (heel effect),</li>
+<li>dispersión y backscatter del paciente.</li>
+</ul>
+<p>Modelo básico:</p>
+<p><span class="math display">\[
+I = \int S(E)\, \exp\left(-\int_L \mu(E,\mathbf{r})\,dl\right)\, dE + I_{\text{sc}}
+\]</span></p>
+<p>donde <span class="math inline">\(I_{\text{sc}}\)</span> es componente de <strong>scatter</strong> detectada.</p>
+<p><strong>Endurecimiento:</strong> los fotones de baja energía se atenúan más → el espectro transmitido se desplaza a energías más altas, generando:
+- no linealidad en la relación log-señal vs espesor,
+- artefactos tipo <strong>cupping</strong> en CT,
+- sesgos de contraste en RX.</p>
+</section>
+<section id="dispersión-scatter" class="level2">
+<h2 class="anchored" data-anchor-id="dispersión-scatter">3.4 Dispersión (scatter)</h2>
+<p>En geometrías de proyección (RX/CT), el scatter:
+- añade un término <strong>aditivo</strong> (no sigue Beer–Lambert),
+- reduce contraste (eleva el “fondo”),
+- induce artefactos y sesgo cuantitativo.</p>
+<p>Modelos comunes:
+- aproximación “primary + scatter” (<span class="math inline">\(I = I_p + I_s\)</span>),
+- kernels dependientes de espesor y campo,
+- modelos físicos simplificados,
+- Monte Carlo (alto costo, referencia).</p>
+<hr>
+</section>
+</section>
+<section id="modelo-matemático-de-adquisición" class="level1">
+<h1>4) Modelo matemático de adquisición</h1>
+<section id="rx-proyección-2d-con-blur-ruido-y-scatter" class="level2">
+<h2 class="anchored" data-anchor-id="rx-proyección-2d-con-blur-ruido-y-scatter">4.1 RX: proyección 2D con blur, ruido y scatter</h2>
+<section id="modelo-forward-mínimo-lineal-en-intensidad" class="level3">
+<h3 class="anchored" data-anchor-id="modelo-forward-mínimo-lineal-en-intensidad">4.1.1 Modelo forward mínimo (lineal en intensidad)</h3>
+<p>Sea <span class="math inline">\((u,v)\)</span> el plano del detector. Modelo:</p>
+<p><span class="math display">\[
+Y(u,v) = \left[ \left(I_p(u,v) + I_s(u,v)\right) \ast h_{\text{det}}(u,v) \right] \downarrow_{\Delta} + n_e(u,v)
+\]</span></p>
+<ul>
+<li><span class="math inline">\(I_p\)</span>: intensidad primaria transmitida (polienergética)</li>
+<li><span class="math inline">\(I_s\)</span>: scatter en detector</li>
+<li><span class="math inline">\(h_{\text{det}}\)</span>: PSF efectiva del detector (incluye scintillator + óptica + charge sharing)</li>
+<li><span class="math inline">\(\ast\)</span>: convolución</li>
+<li><span class="math inline">\(\downarrow_{\Delta}\)</span>: muestreo con paso de pixel <span class="math inline">\(\Delta\)</span></li>
+<li><span class="math inline">\(n_e\)</span>: ruido electrónico/lectura</li>
+</ul>
+<p><strong>Ruido cuántico (Poisson):</strong> típicamente <span class="math inline">\(I_p\)</span> sigue Poisson con media proporcional a fotones detectados.</p>
+</section>
+<section id="transformación-log-radiografía-de-atenuación" class="level3">
+<h3 class="anchored" data-anchor-id="transformación-log-radiografía-de-atenuación">4.1.2 Transformación log (radiografía “de atenuación”)</h3>
+<p>Si se corrige dark/flat y se aproxima <span class="math inline">\(I_s \approx 0\)</span>:</p>
+<p><span class="math display">\[
+p(u,v) = -\ln \left( \frac{I(u,v)}{I_0(u,v)} \right) \approx \int_L \mu_{\text{eff}}(\mathbf{r})\,dl
+\]</span></p>
+<p>Pero con polienergía y scatter residual, <span class="math inline">\(p\)</span> queda <strong>sesgado</strong>.</p>
+</section>
+</section>
+<section id="ct-sinograma-radon-y-geometrías" class="level2">
+<h2 class="anchored" data-anchor-id="ct-sinograma-radon-y-geometrías">4.2 CT: sinograma, Radon y geometrías</h2>
+<section id="transformada-de-radon-ideal-2d" class="level3">
+<h3 class="anchored" data-anchor-id="transformada-de-radon-ideal-2d">4.2.1 Transformada de Radon (ideal 2D)</h3>
+<p>Para atenuación monoenergética <span class="math inline">\(\mu(x,y)\)</span>:</p>
+<p><span class="math display">\[
+p(\theta, s) = \int_{-\infty}^{\infty}\mu(x,y)\, d\ell
+\]</span></p>
+<p>donde <span class="math inline">\((\theta,s)\)</span> parametriza cada rayo. La reconstrucción ideal invierte la Radon.</p>
+</section>
+<section id="modelo-polienergético-y-calibración" class="level3">
+<h3 class="anchored" data-anchor-id="modelo-polienergético-y-calibración">4.2.2 Modelo polienergético y calibración</h3>
+<p>Medidas crudas (cuentas) <span class="math inline">\(Y\)</span>:</p>
+<p><span class="math display">\[
+Y(\theta,s) \sim \text{Poisson}\left( \int S(E)\exp(-\mathcal{P}[\mu(E)] )\, dE + S_{\text{sc}} \right) + \text{electrónico}
+\]</span></p>
+<p>Calibración típica con <strong>dark</strong> (<span class="math inline">\(D\)</span>) y <strong>air scan</strong> (<span class="math inline">\(A\)</span>):</p>
+<p><span class="math display">\[
+\tilde{I} = \frac{Y - D}{A - D}, \qquad p = -\ln(\tilde{I})
+\]</span></p>
+<p><strong>Red flag:</strong> si <span class="math inline">\(A-D\)</span> es pequeño (saturación, mala ganancia, drift), <span class="math inline">\(p\)</span> explota y aparecen streaks/rings.</p>
+</section>
+<section id="hu-unidades-hounsfield" class="level3">
+<h3 class="anchored" data-anchor-id="hu-unidades-hounsfield">4.2.3 HU (unidades Hounsfield)</h3>
+<p>Tras reconstruir <span class="math inline">\(\hat{\mu}(\mathbf{r})\)</span> a energía efectiva:</p>
+<p><span class="math display">\[
+HU(\mathbf{r}) = 1000 \cdot \frac{\hat{\mu}(\mathbf{r}) - \mu_{\text{agua}}}{\mu_{\text{agua}}}
+\]</span></p>
+<p><strong>Requisito clínico:</strong> estabilidad de HU (agua ≈ 0, aire ≈ -1000) dentro de tolerancias QA.</p>
+<hr>
+</section>
+</section>
+</section>
+<section id="métodos-solicitados-y-métodos-estándar-de-reconstruccióncorrección" class="level1">
+<h1>5) Métodos solicitados y métodos estándar de reconstrucción/corrección</h1>
+<section id="catálogo-de-métodos-incluidos" class="level2">
+<h2 class="anchored" data-anchor-id="catálogo-de-métodos-incluidos">5.0 Catálogo de métodos incluidos</h2>
+<p><strong>Tabla 5.0: Métodos (núcleo solicitado + estándar RX/CT).</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>ID</th>
+<th>Método</th>
+<th>Dominio</th>
+<th>Uso típico</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>M1</td>
+<td>Modelo polienergético de atenuación y formación del haz</td>
+<td>Física</td>
+<td>Simulación, correcciones BH/scatter</td>
+</tr>
+<tr class="even">
+<td>M2</td>
+<td>Modelo de detector Flat Panel + cuantización (MTF/NPS/DQE)</td>
+<td>Detector</td>
+<td>Diseño, QA, predicción SNR</td>
+</tr>
+<tr class="odd">
+<td>M3</td>
+<td>Modelo end-to-end de formación de radiografías</td>
+<td>Sistema</td>
+<td>Simulación, optimización protocolo</td>
+</tr>
+<tr class="even">
+<td>M4</td>
+<td>Calibración: dark/flat/air + linealización/log</td>
+<td>Operación</td>
+<td>Estabilidad y comparabilidad</td>
+</tr>
+<tr class="odd">
+<td>M5</td>
+<td>Corrección beam hardening (BH)</td>
+<td>RX/CT</td>
+<td>Reducción cupping/streaks</td>
+</tr>
+<tr class="even">
+<td>M6</td>
+<td>Corrección de scatter (grid + modelado)</td>
+<td>RX/CT</td>
+<td>Recuperar contraste y cuantificación</td>
+</tr>
+<tr class="odd">
+<td>M7</td>
+<td>Reconstrucción CT por FBP (fan-beam/helicoidal)</td>
+<td>CT</td>
+<td>Base clínica, referencia QA</td>
+</tr>
+<tr class="even">
+<td>M8</td>
+<td>Reconstrucción cone-beam por FDK</td>
+<td>CBCT</td>
+<td>Intervencionismo/RT/odontología</td>
+</tr>
+<tr class="odd">
+<td>M9</td>
+<td>Iterativa algebraica (ART/SIRT/SART)</td>
+<td>CT/CBCT</td>
+<td>Pocos ángulos, regularización simple</td>
+</tr>
+<tr class="even">
+<td>M10</td>
+<td>Iterativa estadística/MBIR (MAP/PL) + regularización (TV/Huber)</td>
+<td>CT</td>
+<td>Baja dosis, robustez</td>
+</tr>
+<tr class="odd">
+<td>M11</td>
+<td>Metal Artifact Reduction (MAR)</td>
+<td>CT</td>
+<td>Implantes, ortopedia, odontología</td>
+</tr>
+<tr class="even">
+<td>M12</td>
+<td>Reducción de ruido (sinograma/imagen) y preservación de bordes</td>
+<td>RX/CT</td>
+<td>Baja dosis, posproceso controlado</td>
+</tr>
+<tr class="odd">
+<td>M13</td>
+<td>Reconstrucción basada en Deep Learning (unrolled/priors)</td>
+<td>RX/CT</td>
+<td>Aceleración y denoising con control</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p>Formato repetible obligatorio (a–i) aplicado en cada método.</p>
+</blockquote>
+<hr>
+</section>
+<section id="m1-modelado-matemático-de-la-atenuación-de-fotones-y-la-formación-del-haz" class="level2">
+<h2 class="anchored" data-anchor-id="m1-modelado-matemático-de-la-atenuación-de-fotones-y-la-formación-del-haz">5.1 M1 — Modelado matemático de la atenuación de fotones y la formación del haz</h2>
+<section id="a-definición-formal-y-objetivo" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-formal-y-objetivo">a) Definición formal y objetivo</h3>
+<p>Construir un modelo <strong>forward</strong> que prediga la señal detectada <span class="math inline">\(I\)</span> a partir de:
+- espectro emitido <span class="math inline">\(S(E)\)</span>,
+- filtración y geometría,
+- atenuación del objeto <span class="math inline">\(\mu(E,\mathbf{r})\)</span>,
+- dispersión <span class="math inline">\(I_{\text{sc}}\)</span>.</p>
+<p><strong>Objetivo operacional:</strong> permitir (i) simulación realista, (ii) diseño de protocolo (kVp/filtración/mAs), (iii) correcciones (beam hardening, scatter), (iv) estimación de incertidumbre (ruido/dosis).</p>
+</section>
+<section id="b-supuestos-y-condiciones-de-validez" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-y-condiciones-de-validez">b) Supuestos y condiciones de validez</h3>
+<ul>
+<li>Sistema estable (espectro reproducible a igualdad de kVp/filtración).</li>
+<li>Linealidad del detector en el rango operativo (sin saturación).</li>
+<li><span class="math inline">\(\mu(E)\)</span> conocido o aproximable (tablas NIST/ICRU) para materiales relevantes.</li>
+<li>Scatter tratable como término aditivo y/o convolutivo a primer orden.</li>
+</ul>
+</section>
+<section id="c-derivaciónexplicación-matemática-esencial" class="level3">
+<h3 class="anchored" data-anchor-id="c-derivaciónexplicación-matemática-esencial">c) Derivación/explicación matemática esencial</h3>
+<p>Modelo polienergético por rayo <span class="math inline">\(r\)</span>:</p>
+<p><span class="math display">\[
+I_r = \int S(E)\, T_{\text{fil}}(E)\, \exp\left(-\int_{L_r}\mu(E,\mathbf{r})dl\right)\, dE + I_{\text{sc},r}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(T_{\text{fil}}(E)=\exp(-\sum_k \mu_k(E) t_k)\)</span> modela filtros (material <span class="math inline">\(k\)</span>, espesor <span class="math inline">\(t_k\)</span>).</li>
+<li>En CT, <span class="math inline">\(r\)</span> recorre ángulos <span class="math inline">\(\theta\)</span> y detector <span class="math inline">\(s\)</span> → sinograma.</li>
+</ul>
+<p><strong>Aproximación de energía efectiva:</strong>
+Definir <span class="math inline">\(E_{\text{eff}}\)</span> tal que:</p>
+<p><span class="math display">\[
+\exp\left(-\int \mu(E_{\text{eff}})dl\right) \approx
+\frac{\int S(E)\exp(-\int \mu(E)dl)dE}{\int S(E)dE}
+\]</span></p>
+<p>Útil para interpretación, <strong>no</strong> corrige BH por sí sola.</p>
+</section>
+<section id="d-algoritmo-paso-a-paso-pseudocódigo" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-paso-a-paso-pseudocódigo">d) Algoritmo paso a paso + pseudocódigo</h3>
+<p><strong>Algoritmo: simulación de proyección polienergética</strong></p>
+<pre class="pseudo"><code>Inputs:
+  - Geometry: ray paths L_r for each detector pixel (u,v) or (theta,s)
+  - Spectrum S(E) discretized on energies E_i with weights w_i
+  - Filters: T_fil(E_i)
+  - Object: material map or mu(E_i, r) along rays
+  - Scatter model (optional): Isc_r
+
+For each ray r:
+  I_primary = 0
+  For each energy bin i:
+    line_integral = integrate_over_path( mu(E_i, position) along L_r )
+    I_primary += w_i * S(E_i) * T_fil(E_i) * exp( -line_integral )
+  I_r = I_primary + scatter_estimate(r)
+Return I_r</code></pre>
+</section>
+<section id="e-parámetros-significado-físico-rangos-típicos-y-selección" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-significado-físico-rangos-típicos-y-selección">e) Parámetros: significado físico, rangos típicos y selección</h3>
+<ul>
+<li><strong>kVp:</strong> 60–150 kVp (RX general 60–120; CT 80–140).</li>
+<li><strong>Filtración:</strong> inherente (equipo) + adicional (p.ej., mm Al; opcional Cu).</li>
+<li><strong>Tamaño de foco efectivo:</strong> impacta blur geométrico (ver M3).</li>
+<li><strong>Discretización espectral:</strong> 1–5 keV por bin suele ser suficiente para simulación.</li>
+</ul>
+<p>Selección:
+- Para correcciones BH, se necesita sensibilidad a cambios espectrales → bins más finos.</p>
+</section>
+<section id="f-complejidad-computacional" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-computacional">f) Complejidad computacional</h3>
+<ul>
+<li><span class="math inline">\(O(N_{\text{ray}} \cdot N_E \cdot C_{\text{integral}})\)</span></li>
+<li>Acelerable con GPU y/o preintegración por materiales (material decomposition).</li>
+</ul>
+</section>
+<section id="g-comportamiento-frente-a-ruidoartefactos" class="level3">
+<h3 class="anchored" data-anchor-id="g-comportamiento-frente-a-ruidoartefactos">g) Comportamiento frente a ruido/artefactos</h3>
+<ul>
+<li>Permite predecir <strong>cuantitativamente</strong> dónde habrá BH y pérdida de contraste.</li>
+<li>Si el scatter no se modela, se subestima señal en regiones gruesas.</li>
+</ul>
+</section>
+<section id="h-riesgos-red-flags" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-red-flags">h) Riesgos (red flags)</h3>
+<ul>
+<li>Usar <span class="math inline">\(\mu(E)\)</span> incorrecto (material equivocado) → correcciones BH “empeoran”.</li>
+<li>Ignorar heel effect/colimación → gradientes espurios en RX.</li>
+<li>Ajustar parámetros para “parecerse” a una imagen sin medir físicamente → modelo no transferible.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-rx-vs-ct-vs-mri" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-rx-vs-ct-vs-mri">i) Recomendaciones RX vs CT vs MRI</h3>
+<ul>
+<li><strong>RX/CT:</strong> método central.</li>
+<li><strong>MRI:</strong> no aplica (no hay fotones ionizantes), pero la idea de “forward model” sí.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="m2-respuesta-de-detectores-planos-flat-panel-y-cuantización" class="level2">
+<h2 class="anchored" data-anchor-id="m2-respuesta-de-detectores-planos-flat-panel-y-cuantización">5.2 M2 — Respuesta de detectores planos (Flat Panel) y cuantización</h2>
+<section id="a-definición-formal-y-objetivo-1" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-formal-y-objetivo-1">a) Definición formal y objetivo</h3>
+<p>Modelar y caracterizar la conversión <strong>fotón → señal digital</strong> en un Flat Panel Detector (FPD), incluyendo:
+- PSF/MTF (resolución),
+- NPS (ruido),
+- DQE (eficiencia vs dosis),
+- no idealidades: lag/ghosting, no linealidad, saturación,
+- cuantización ADC y rango dinámico.</p>
+<p><strong>Objetivo:</strong> predecir desempeño (SNR/CNR), diseñar QA, evitar errores de exposición y sesgos por calibración.</p>
+</section>
+<section id="b-supuestos-y-condiciones-de-validez-1" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-y-condiciones-de-validez-1">b) Supuestos y condiciones de validez</h3>
+<ul>
+<li>Operación en región lineal (exposición dentro del rango recomendado).</li>
+<li>Estacionariedad local para métricas espectrales (MTF/NPS).</li>
+<li>Separabilidad aproximada de blur (foco vs detector) cuando aplica.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-mtf-nps-dqe-cuantización" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-mtf-nps-dqe-cuantización">c) Matemática esencial (MTF, NPS, DQE, cuantización)</h3>
+<p><strong>Modelo lineal shift-invariant (LSI) local:</strong>
+<span class="math display">\[
+y = (x \ast h) + n
+\]</span></p>
+<ul>
+<li><span class="math inline">\(h\)</span> PSF; su transformada de Fourier <span class="math inline">\(H(f)\)</span> define la <strong>MTF</strong>:
+<span class="math display">\[
+MTF(f) = \frac{|H(f)|}{|H(0)|}
+\]</span></li>
+</ul>
+<p><strong>NPS (2D):</strong> densidad espectral del ruido de imagen (tras detrending).
+Para una región uniforme:
+<span class="math display">\[
+NPS(f_x,f_y) = \frac{\Delta x \Delta y}{N_x N_y} \, \mathbb{E}\{ |\mathcal{F}\{ n(x,y)\}|^2 \}
+\]</span></p>
+<p><strong>DQE:</strong> (concepto) cuánto SNR se preserva por unidad de dosis:
+<span class="math display">\[
+DQE(f) = \frac{SNR_{\text{out}}^2(f)}{SNR_{\text{in}}^2(f)}
+\]</span>
+En práctica se calcula combinando MTF, NPS y kerma en aire bajo condiciones estándar (ver IEC).</p>
+<p><strong>Cuantización ADC:</strong> si el ADC tiene <span class="math inline">\(B\)</span> bits y rango full-scale <span class="math inline">\(FS\)</span>:
+- paso de cuantización <span class="math inline">\(q = FS/2^B\)</span>
+- varianza de ruido de cuantización (aprox uniforme):
+<span class="math display">\[
+\sigma_q^2 \approx \frac{q^2}{12}
+\]</span></p>
+<p><strong>Regla práctica:</strong> si <span class="math inline">\(\sigma_q\)</span> es comparable al ruido electrónico, estás perdiendo calidad por bit-depth insuficiente o mal uso del rango.</p>
+</section>
+<section id="d-algoritmo-paso-a-paso-pseudocódigo-1" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-paso-a-paso-pseudocódigo-1">d) Algoritmo paso a paso + pseudocódigo</h3>
+<p><strong>Medición conceptual de MTF (edge method):</strong></p>
+<pre class="pseudo"><code>Acquire image of sharp edge on uniform background
+Extract Edge Spread Function (ESF) by oversampling along edge normal
+Differentiate ESF -&gt; Line Spread Function (LSF)
+Compute Fourier magnitude of LSF -&gt; MTF
+Normalize MTF(0) = 1</code></pre>
+<p><strong>Medición conceptual de NPS:</strong></p>
+<pre class="pseudo"><code>Acquire K images of uniform field at fixed technique
+For each image:
+  select ROI(s), remove mean/trend
+  compute FFT2 of ROI noise
+  accumulate |FFT|^2
+Average over K -&gt; NPS</code></pre>
+</section>
+<section id="e-parámetros-típicos-y-elección" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-típicos-y-elección">e) Parámetros típicos y elección</h3>
+<ul>
+<li><strong>Pixel pitch:</strong> ~100–200 µm (RX), mayor en algunos sistemas portátiles.</li>
+<li><strong>Bit-depth:</strong> 12–16 bits (típico clínico).</li>
+<li><strong>Ganancia/offset:</strong> dependen de temperatura y electrónica; se controlan con calibración.</li>
+</ul>
+<p>Selección:
+- Ajustar ganancia para evitar saturación a técnicas habituales (incluye pacientes grandes y proyecciones difíciles).
+- Mantener EI en rango recomendado y estable (evitar “dose creep”).</p>
+</section>
+<section id="f-complejidad-computacional-1" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-computacional-1">f) Complejidad computacional</h3>
+<ul>
+<li>Cálculo MTF/NPS: FFTs 2D → <span class="math inline">\(O(N\log N)\)</span> por ROI.</li>
+</ul>
+</section>
+<section id="g-comportamiento-frente-a-ruidoartefactos-1" class="level3">
+<h3 class="anchored" data-anchor-id="g-comportamiento-frente-a-ruidoartefactos-1">g) Comportamiento frente a ruido/artefactos</h3>
+<ul>
+<li>Mayor MTF suele exigir diseño que puede elevar NPS (trade-off).</li>
+<li>Lag/ghosting produce “memoria” temporal: artefactos en series rápidas o fluoroscopia.</li>
+</ul>
+</section>
+<section id="h-riesgos-red-flags-1" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-red-flags-1">h) Riesgos (red flags)</h3>
+<ul>
+<li>Saturación oculta por LUT → “imagen bonita” pero sin cuantificación.</li>
+<li>Drift de offset → bandas o shading; en CT se manifiesta como <strong>rings</strong>.</li>
+<li>DQE “nominal” de fabricante sin condiciones claras → no comparable.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-rx-vs-ct-vs-mri-1" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-rx-vs-ct-vs-mri-1">i) Recomendaciones RX vs CT vs MRI</h3>
+<ul>
+<li><strong>RX:</strong> crítico (FPD define imagen final).</li>
+<li><strong>CT:</strong> crítico; detectores (a menudo de estado sólido + scintillator) con calibraciones aún más sensibles (rings).</li>
+<li><strong>MRI:</strong> no aplica (detector es RF coil + digitalización; analogía: SNR y ancho de banda).</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="m3-modelo-end-to-end-de-formación-de-radiografías-rx" class="level2">
+<h2 class="anchored" data-anchor-id="m3-modelo-end-to-end-de-formación-de-radiografías-rx">5.3 M3 — Modelo end-to-end de formación de radiografías (RX)</h2>
+<section id="a-definición-formal-y-objetivo-2" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-formal-y-objetivo-2">a) Definición formal y objetivo</h3>
+<p>Modelo integrado:
+<strong>espectro + objeto + scatter + geometría + blur + muestreo + cuantización</strong> → imagen digital RX.</p>
+<p>Objetivo: simulación y análisis de sensibilidad (qué domina la pérdida de detalle o el aumento de ruido).</p>
+</section>
+<section id="b-supuestos" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos">b) Supuestos</h3>
+<ul>
+<li>Geometría de proyección conocida (SID, SOD, magnificación).</li>
+<li>Foco y detector modelables como PSFs (aprox).</li>
+<li>Scatter aproximable por campo y espesor.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial">c) Matemática esencial</h3>
+<p><strong>Geometría y magnificación:</strong>
+- <span class="math inline">\(SID\)</span>: source-to-image distance
+- <span class="math inline">\(SOD\)</span>: source-to-object distance
+- Magnificación <span class="math inline">\(M = SID/SOD\)</span>
+- Blur geométrico por foco efectivo <span class="math inline">\(f\)</span>:
+<span class="math display">\[
+U_g \approx f \cdot \frac{SID - SOD}{SOD}
+\]</span></p>
+<p><strong>Modelo final:</strong>
+<span class="math display">\[
+Y = Q\left( \left[ (I_p + I_s) \ast h_{\text{foco}} \ast h_{\text{det}} \right] \downarrow_{\Delta} + n_e \right)
+\]</span>
+donde <span class="math inline">\(Q(\cdot)\)</span> es cuantización ADC.</p>
+</section>
+<section id="d-algoritmo-pseudocódigo" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-pseudocódigo">d) Algoritmo + pseudocódigo</h3>
+<pre class="pseudo"><code>Compute primary intensity using polienergetic model (M1)
+Estimate scatter map (low-frequency) Is (M6)
+Apply geometric blur due to focal spot (Ug) -&gt; PSF_foco
+Apply detector blur -&gt; PSF_det
+Sample to pixel grid
+Add Poisson noise (photon) + Gaussian electronic
+Quantize to B bits with full-scale FS
+Apply calibration pipeline (M4) if simulating processed image
+Return Y</code></pre>
+</section>
+<section id="e-parámetros-y-rangos" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-y-rangos">e) Parámetros y rangos</h3>
+<ul>
+<li>SID: ~100–180 cm (según estudio)</li>
+<li>Foco: ~0.6–1.2 mm (típico; depende de equipo)</li>
+<li>Pixel pitch: 100–200 µm</li>
+<li>kVp: 60–120 (RX general)</li>
+</ul>
+<p>Selección: controlar <span class="math inline">\(U_g\)</span> con geometría y foco apropiados según tarea (p.ej., microcalcificaciones).</p>
+</section>
+<section id="f-complejidad" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad">f) Complejidad</h3>
+<p>Dominada por trazado de rayos y convoluciones FFT: <span class="math inline">\(O(N_{\text{ray}}N_E + N\log N)\)</span>.</p>
+</section>
+<section id="g-frente-a-ruidoartefactos" class="level3">
+<h3 class="anchored" data-anchor-id="g-frente-a-ruidoartefactos">g) Frente a ruido/artefactos</h3>
+<ul>
+<li>Modela aliasing si <span class="math inline">\(\Delta\)</span> es grande frente a la banda espacial real.</li>
+<li>Predice pérdida de contraste por scatter (baja frecuencia).</li>
+</ul>
+</section>
+<section id="h-riesgos" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos">h) Riesgos</h3>
+<ul>
+<li>Ajustar PSF “a ojo” sin medición → conclusiones engañosas.</li>
+<li>Ignorar grid cutoff o desalineación → artefactos no explicados por el modelo.</li>
+</ul>
+</section>
+<section id="i-recomendaciones" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones">i) Recomendaciones</h3>
+<ul>
+<li>RX: aplicar para diseño de técnica y QA; CT: análogo a forward model del sinograma. MRI: no aplica.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="m4-calibración-darkflatair-linealización-y-log" class="level2">
+<h2 class="anchored" data-anchor-id="m4-calibración-darkflatair-linealización-y-log">5.4 M4 — Calibración (dark/flat/air), linealización y log</h2>
+<section id="a-definición-y-objetivo" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo">a) Definición y objetivo</h3>
+<p>Convertir señal cruda a una señal normalizada, estable y comparable:
+- corrección de offset (dark),
+- corrección de ganancia (flat/air),
+- corrección de píxeles defectuosos,
+- linealización (si aplica),
+- log-transform para proyecciones.</p>
+</section>
+<section id="b-supuestos-1" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-1">b) Supuestos</h3>
+<ul>
+<li>Dark y flat representativos del estado del detector (temperatura/tiempo).</li>
+<li>Exposición uniforme para flat (sin estructura).</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-1" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-1">c) Matemática esencial</h3>
+<p>Para cada píxel:
+<span class="math display">\[
+I_{\text{corr}} = \frac{Y - D}{F - D}
+\]</span>
+Luego:
+<span class="math display">\[
+p = -\ln(I_{\text{corr}})
+\]</span></p>
+</section>
+<section id="d-pseudocódigo" class="level3">
+<h3 class="anchored" data-anchor-id="d-pseudocódigo">d) Pseudocódigo</h3>
+<pre class="pseudo"><code>Acquire/Load D (dark), F (flat/air), and raw Y
+Check for saturation and low denominator (F-D)
+Icorr = (Y-D)/(F-D)
+Replace bad pixels via neighborhood interpolation
+If CT: p = -log(Icorr) to build sinogram
+Return calibrated data</code></pre>
+</section>
+<section id="e-parámetros-y-selección" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-y-selección">e) Parámetros y selección</h3>
+<ul>
+<li>Frecuencia de recalibración: según drift del equipo; en CT es crítica (rings).</li>
+<li>Umbrales: detectar saturación, clamp, o denominadores pequeños.</li>
+</ul>
+</section>
+<section id="f-complejidad-1" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-1">f) Complejidad</h3>
+<p>Lineal <span class="math inline">\(O(N)\)</span>.</p>
+</section>
+<section id="g-frente-a-ruidoartefactos-1" class="level3">
+<h3 class="anchored" data-anchor-id="g-frente-a-ruidoartefactos-1">g) Frente a ruido/artefactos</h3>
+<ul>
+<li>Reduce fixed-pattern noise; mejora uniformidad.</li>
+<li>Si <span class="math inline">\(F\)</span> está contaminado (scatter/estructura), introduce shading.</li>
+</ul>
+</section>
+<section id="h-riesgos-1" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-1">h) Riesgos</h3>
+<ul>
+<li>Reusar calibraciones antiguas tras mantenimiento → rings/banding.</li>
+<li>No registrar versión de calibración → no trazabilidad.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-1" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-1">i) Recomendaciones</h3>
+<p>RX y CT: obligatorio. MRI: calibración análoga existe (coil sensitivity, B0/B1 maps) pero distinta.</p>
+<hr>
+</section>
+</section>
+<section id="m5-corrección-de-beam-hardening-bh" class="level2">
+<h2 class="anchored" data-anchor-id="m5-corrección-de-beam-hardening-bh">5.5 M5 — Corrección de beam hardening (BH)</h2>
+<section id="a-definición-y-objetivo-1" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-1">a) Definición y objetivo</h3>
+<p>Compensar la no linealidad por polienergía para reducir:
+- cupping,
+- streaks entre materiales densos,
+- sesgos en HU.</p>
+</section>
+<section id="b-supuestos-2" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-2">b) Supuestos</h3>
+<ul>
+<li>Material dominante aproximable (agua-equivalente) o se dispone de multi-material.</li>
+<li>Relación medible entre espesor equivalente y señal.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-enfoque-de-pre-corrección" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-enfoque-de-pre-corrección">c) Matemática esencial (enfoque de pre-corrección)</h3>
+<p>Modelo empírico:
+<span class="math display">\[
+p_{\text{corr}} = p + \sum_{k=2}^{K} a_k p^k
+\]</span>
+donde <span class="math inline">\(a_k\)</span> se calibra con phantom de espesores conocidos (agua/aluminio).</p>
+<p>Enfoque físico (dos materiales):
+<span class="math display">\[
+p \approx \mathcal{F}(t_1,t_2), \quad \text{invertir para obtener } t_1,t_2
+\]</span></p>
+</section>
+<section id="d-algoritmo-pseudocódigo-1" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-pseudocódigo-1">d) Algoritmo + pseudocódigo</h3>
+<pre class="pseudo"><code>Calibration:
+  Acquire projections through known thicknesses (phantom)
+  Fit polynomial mapping p -&gt; p_corr (or table lookup)
+
+Application:
+  For each ray measurement p:
+    p_corr = apply_mapping(p)
+  Reconstruct using corrected sinogram</code></pre>
+</section>
+<section id="e-parámetros" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros">e) Parámetros</h3>
+<ul>
+<li>Orden K (2–4 suele bastar).</li>
+<li>Phantom/materiales de calibración (agua-equivalente, Al, etc.).</li>
+</ul>
+</section>
+<section id="f-complejidad-2" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-2">f) Complejidad</h3>
+<p>Lineal <span class="math inline">\(O(N)\)</span>.</p>
+</section>
+<section id="g-ruidoartefactos" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos">g) Ruido/artefactos</h3>
+<ul>
+<li>Reduce cupping; puede aumentar ruido si la corrección amplifica regiones de baja señal.</li>
+</ul>
+</section>
+<section id="h-riesgos-2" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-2">h) Riesgos</h3>
+<ul>
+<li>Calibrar con un espectro y operar con otro (kVp/filtración distinta).</li>
+<li>Ignorar presencia de contraste iodado/metal → corrección incompleta.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-2" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-2">i) Recomendaciones</h3>
+<p>CT: muy relevante. RX: útil si se busca cuantificación/consistencia, menos crítico que en CT.</p>
+<hr>
+</section>
+</section>
+<section id="m6-corrección-de-scatter" class="level2">
+<h2 class="anchored" data-anchor-id="m6-corrección-de-scatter">5.6 M6 — Corrección de scatter</h2>
+<section id="a-definición-y-objetivo-2" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-2">a) Definición y objetivo</h3>
+<p>Estimar y sustraer/compensar <span class="math inline">\(I_s\)</span> para recuperar contraste y cuantificación.</p>
+</section>
+<section id="b-supuestos-3" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-3">b) Supuestos</h3>
+<ul>
+<li>Scatter varía lentamente (baja frecuencia) respecto a primaria.</li>
+<li>Grid reduce scatter pero no lo elimina.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-2" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-2">c) Matemática esencial</h3>
+<p>Modelo aditivo:
+<span class="math display">\[
+I = I_p + I_s, \quad \hat{I}_p = I - \hat{I}_s
+\]</span>
+Modelos de <span class="math inline">\(\hat{I}_s\)</span>:
+- kernel-based: <span class="math inline">\(\hat{I}_s = (I \ast k)\)</span> con <span class="math inline">\(k\)</span> ancho dependiente de espesor/campo,
+- modelos físicos simplificados,
+- mediciones con beam-stop arrays (referencia experimental).</p>
+</section>
+<section id="d-algoritmo-kernel-based-pseudocódigo" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-kernel-based-pseudocódigo">d) Algoritmo (kernel-based) + pseudocódigo</h3>
+<pre class="pseudo"><code>Estimate low-frequency scatter:
+  smooth = lowpass_filter(I, large_kernel)
+  Is_hat = alpha * smooth   # alpha calibrated by phantom or grid ratio
+Primary_hat = max(I - Is_hat, epsilon)
+Proceed with log-transform / reconstruction</code></pre>
+</section>
+<section id="e-parámetros-1" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-1">e) Parámetros</h3>
+<ul>
+<li>Tamaño kernel (relacionado con tamaño campo y espesor).</li>
+<li>Factor alpha (calibración).</li>
+</ul>
+</section>
+<section id="f-complejidad-3" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-3">f) Complejidad</h3>
+<p>Convolución <span class="math inline">\(O(N)\)</span> (o <span class="math inline">\(N\log N\)</span> por FFT si kernel grande).</p>
+</section>
+<section id="g-ruidoartefactos-1" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-1">g) Ruido/artefactos</h3>
+<ul>
+<li>Mejora CNR; puede introducir “overcorrection” (fondo negativo) si mal calibrado.</li>
+</ul>
+</section>
+<section id="h-riesgos-3" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-3">h) Riesgos</h3>
+<ul>
+<li>En CT, scatter angularmente dependiente y colimación dinámica → modelo simple puede fallar.</li>
+<li>En RX portátil sin grid: scatter dominante → se requiere cuidado extremo.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-3" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-3">i) Recomendaciones</h3>
+<p>RX: crítico en abdomen/portátil. CT: crítico en CBCT y pacientes grandes; en MDCT el sistema incluye correcciones propietarias.</p>
+<hr>
+</section>
+</section>
+<section id="m7-ct-por-filtered-backprojection-fbp-en-fan-beamhelicoidal" class="level2">
+<h2 class="anchored" data-anchor-id="m7-ct-por-filtered-backprojection-fbp-en-fan-beamhelicoidal">5.7 M7 — CT por Filtered Backprojection (FBP) en fan-beam/helicoidal</h2>
+<section id="a-definición-y-objetivo-3" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-3">a) Definición y objetivo</h3>
+<p>Reconstrucción analítica rápida basada en inversión de Radon (o aproximación fan-beam), usando filtrado en frecuencia y retroproyección.</p>
+</section>
+<section id="b-supuestos-4" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-4">b) Supuestos</h3>
+<ul>
+<li>Datos suficientemente completos y calibrados.</li>
+<li>Modelo aproximadamente monoenergético y scatter corregido.</li>
+<li>Ruido moderado; FBP es sensible a baja dosis.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-2d-paralelo-para-intuición" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-2d-paralelo-para-intuición">c) Matemática esencial (2D paralelo para intuición)</h3>
+<p><span class="math display">\[
+\hat{\mu}(x,y) = \int_0^\pi \left( p(\theta, s) \ast h_{\text{rampa}}(s) \right)\Big|_{s=x\cos\theta + y\sin\theta}\, d\theta
+\]</span>
+El filtro “rampa” se suele apodizar (Shepp-Logan, Hamming, Hann) para controlar ruido.</p>
+</section>
+<section id="d-algoritmo-pseudocódigo-2" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-pseudocódigo-2">d) Algoritmo + pseudocódigo</h3>
+<pre class="pseudo"><code>Input: sinogram p(theta, s)
+For each theta:
+  pf = filter_1D(p(theta, :), ramp * window)
+Backproject:
+  For each voxel (x,y):
+    sum over theta of pf(theta, s=x cos theta + y sin theta)
+Return mu_hat</code></pre>
+</section>
+<section id="e-parámetros-2" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-2">e) Parámetros</h3>
+<ul>
+<li>Tipo de ventana (trade-off resolución/ruido).</li>
+<li>Paso angular y muestreo detector.</li>
+</ul>
+</section>
+<section id="f-complejidad-4" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-4">f) Complejidad</h3>
+<p><span class="math inline">\(O(N_{\theta} N_{\text{pix}})\)</span> (acelerable con GPU).</p>
+</section>
+<section id="g-ruidoartefactos-2" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-2">g) Ruido/artefactos</h3>
+<ul>
+<li>Amplifica altas frecuencias → ruido granular a baja dosis.</li>
+<li>Streaks por metal y errores de calibración.</li>
+</ul>
+</section>
+<section id="h-riesgos-4" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-4">h) Riesgos</h3>
+<ul>
+<li>Ajustar ventana para “hacerla ver bien” sin controlar detectabilidad.</li>
+<li>Confundir suavizado con mejora real.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-4" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-4">i) Recomendaciones</h3>
+<p>FBP como referencia QA; para baja dosis, preferir iterativa/MBIR.</p>
+<hr>
+</section>
+</section>
+<section id="m8-cone-beam-ct-por-feldkampdaviskress-fdk" class="level2">
+<h2 class="anchored" data-anchor-id="m8-cone-beam-ct-por-feldkampdaviskress-fdk">5.8 M8 — Cone-Beam CT por Feldkamp–Davis–Kress (FDK)</h2>
+<section id="a-definición-y-objetivo-4" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-4">a) Definición y objetivo</h3>
+<p>Extensión práctica de FBP a geometría cone-beam circular (CBCT), con ponderación geométrica + filtrado + backprojection 3D.</p>
+</section>
+<section id="b-supuestos-5" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-5">b) Supuestos</h3>
+<ul>
+<li>Trayectoria circular; ángulo de cono moderado.</li>
+<li>Correcciones de scatter/BH adecuadas.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-conceptual" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-conceptual">c) Matemática esencial (conceptual)</h3>
+<p>FDK aplica:
+1) ponderación por distancia,
+2) filtrado 1D tipo rampa en detector,
+3) retroproyección 3D.</p>
+</section>
+<section id="d-pseudocódigo-1" class="level3">
+<h3 class="anchored" data-anchor-id="d-pseudocódigo-1">d) Pseudocódigo</h3>
+<pre class="pseudo"><code>For each projection angle theta:
+  weight projection by geometry
+  filter along detector u direction (ramp*window)
+Backproject into volume with cone-beam geometry mapping
+Return volume</code></pre>
+</section>
+<section id="e-parámetros-3" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-3">e) Parámetros</h3>
+<ul>
+<li>Ventana de filtrado, voxel size, truncation handling.</li>
+</ul>
+</section>
+<section id="f-complejidad-5" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-5">f) Complejidad</h3>
+<p>Alta; típicamente GPU.</p>
+</section>
+<section id="g-ruidoartefactos-3" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-3">g) Ruido/artefactos</h3>
+<ul>
+<li>Sensible a scatter → capping.</li>
+<li>Artefactos por cono (incompletitud) si geometría no cumple condiciones.</li>
+</ul>
+</section>
+<section id="h-riesgos-5" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-5">h) Riesgos</h3>
+<ul>
+<li>Usar FDK sin corrección de scatter en CBCT abdominal → cuantificación pobre.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-5" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-5">i) Recomendaciones</h3>
+<p>CBCT: usar FDK como base; para cuantificación o baja dosis severa, considerar iterativa (M9–M10).</p>
+<hr>
+</section>
+</section>
+<section id="m9-reconstrucción-iterativa-algebraica-artsirtsart" class="level2">
+<h2 class="anchored" data-anchor-id="m9-reconstrucción-iterativa-algebraica-artsirtsart">5.9 M9 — Reconstrucción iterativa algebraica (ART/SIRT/SART)</h2>
+<section id="a-definición-y-objetivo-5" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-5">a) Definición y objetivo</h3>
+<p>Resolver <span class="math inline">\(\mathbf{A}\mathbf{x} \approx \mathbf{b}\)</span> donde:
+- <span class="math inline">\(\mathbf{x}\)</span>: voxeles de atenuación,
+- <span class="math inline">\(\mathbf{b}\)</span>: sinograma,
+- <span class="math inline">\(\mathbf{A}\)</span>: operador de proyección (forward).</p>
+<p>Objetivo: manejar datos incompletos (pocos ángulos), imponer restricciones simples (no negatividad), y mejorar robustez.</p>
+</section>
+<section id="b-supuestos-6" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-6">b) Supuestos</h3>
+<ul>
+<li>Modelo linealizado (post-log), scatter/BH suficientemente corregidos.</li>
+<li>Proyector y backproyector consistentes.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-3" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-3">c) Matemática esencial</h3>
+<p>ART (Kaczmarz):
+<span class="math display">\[
+\mathbf{x}^{k+1} = \mathbf{x}^k + \lambda \frac{b_i - \langle \mathbf{a}_i,\mathbf{x}^k\rangle}{\|\mathbf{a}_i\|^2}\mathbf{a}_i
+\]</span>
+SIRT actualiza promediando sobre todas las ecuaciones.</p>
+</section>
+<section id="d-pseudocódigo-2" class="level3">
+<h3 class="anchored" data-anchor-id="d-pseudocódigo-2">d) Pseudocódigo</h3>
+<pre class="pseudo"><code>Initialize x = 0
+For iter = 1..K:
+  For each ray i:
+    r = b[i] - dot(A[i], x)
+    x = x + lambda * r / norm(A[i])^2 * A[i]^T
+  Enforce constraints: x = max(x, 0)
+Return x</code></pre>
+</section>
+<section id="e-parámetros-4" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-4">e) Parámetros</h3>
+<ul>
+<li><span class="math inline">\(\lambda\)</span> (relajación), número de iteraciones K, regularización simple.</li>
+</ul>
+</section>
+<section id="f-complejidad-6" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-6">f) Complejidad</h3>
+<p>Costosa: múltiples forward/backprojections.</p>
+</section>
+<section id="g-ruidoartefactos-4" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-4">g) Ruido/artefactos</h3>
+<ul>
+<li>Puede reducir streaks por incompletitud, pero si no hay regularización, amplifica ruido.</li>
+</ul>
+</section>
+<section id="h-riesgos-6" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-6">h) Riesgos</h3>
+<ul>
+<li>Convergencia lenta; dependencia fuerte de proyector.</li>
+<li>Overfitting al ruido si K grande.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-6" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-6">i) Recomendaciones</h3>
+<p>Útil en CBCT y pocos ángulos; en CT diagnóstico moderno se prefiere PL/MBIR (M10).</p>
+<hr>
+</section>
+</section>
+<section id="m10-reconstrucción-iterativa-estadística-mbir-map-penalized-likelihood-regularización-tvhuber" class="level2">
+<h2 class="anchored" data-anchor-id="m10-reconstrucción-iterativa-estadística-mbir-map-penalized-likelihood-regularización-tvhuber">5.10 M10 — Reconstrucción iterativa estadística / MBIR (MAP / Penalized Likelihood) + regularización (TV/Huber)</h2>
+<section id="a-definición-y-objetivo-6" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-6">a) Definición y objetivo</h3>
+<p>Modelar estadísticamente la medición (Poisson + electrónica) y estimar <span class="math inline">\(\mathbf{x}\)</span> resolviendo:</p>
+<p><span class="math display">\[
+\hat{\mathbf{x}} = \arg\min_{\mathbf{x}\ge 0}\ \underbrace{D(\mathbf{y}\,\|\,\mathbf{g}(\mathbf{x}))}_{\text{fidelidad a datos}} + \beta\, R(\mathbf{x})
+\]</span></p>
+<ul>
+<li><span class="math inline">\(D\)</span>: discrepancia (p.ej., negativa log-verosimilitud Poisson)</li>
+<li><span class="math inline">\(\mathbf{g}(\mathbf{x})\)</span>: forward model (incluye <span class="math inline">\(\exp(-A x)\)</span>)</li>
+<li><span class="math inline">\(R(\mathbf{x})\)</span>: regularización (suavidad, bordes, sparsity)</li>
+</ul>
+<p><strong>Objetivo:</strong> mejor calidad a <strong>baja dosis</strong>, menos ruido, control de artefactos.</p>
+</section>
+<section id="b-supuestos-7" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-7">b) Supuestos</h3>
+<ul>
+<li>Forward model adecuado (al menos monoenergético en dominio log, o mejor).</li>
+<li>Parámetro <span class="math inline">\(\beta\)</span> calibrable por tarea clínica.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-4" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-4">c) Matemática esencial</h3>
+<p>Ejemplo (en dominio post-log linealizado):
+<span class="math display">\[
+\min_x \frac{1}{2}\|W(Ax-b)\|^2 + \beta R(x)
+\]</span>
+- <span class="math inline">\(W\)</span>: pesos (inversa de varianza aproximada).</p>
+<p>Regularización TV (total variation):
+<span class="math display">\[
+R_{\text{TV}}(x)=\sum_{j}\|\nabla x_j\|
+\]</span></p>
+<p>Huber / edge-preserving:
+penaliza poco gradientes grandes (bordes), más gradientes pequeños (ruido).</p>
+</section>
+<section id="d-pseudocódigo-esquema-proximal" class="level3">
+<h3 class="anchored" data-anchor-id="d-pseudocódigo-esquema-proximal">d) Pseudocódigo (esquema proximal)</h3>
+<pre class="pseudo"><code>Initialize x
+For k = 1..K:
+  grad_data = A^T * W^T * W * (A x - b)
+  x_temp = x - alpha * grad_data
+  x = prox_{alpha*beta*R}(x_temp)   # e.g., TV denoise step
+  x = max(x, 0)
+Return x</code></pre>
+</section>
+<section id="e-parámetros-5" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-5">e) Parámetros</h3>
+<ul>
+<li><span class="math inline">\(\beta\)</span>: controla suavizado vs detalle; depende de dosis y tarea.</li>
+<li>Iteraciones K, paso <span class="math inline">\(\alpha\)</span>, tipo de regularizador.</li>
+</ul>
+<p>Selección práctica:
+- Calibrar con phantom + evaluación clínica; evitar escoger por “me gusta cómo se ve”.</p>
+</section>
+<section id="f-complejidad-7" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-7">f) Complejidad</h3>
+<p>Alta (iteraciones + proyecciones); GPU ayuda, pero CPU puede servir con K moderado.</p>
+</section>
+<section id="g-ruidoartefactos-5" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-5">g) Ruido/artefactos</h3>
+<ul>
+<li>Reduce ruido y streaks; riesgo de “plastic look” o pérdida de microdetalle.</li>
+<li>TV puede introducir textura artificial (staircasing).</li>
+</ul>
+</section>
+<section id="h-riesgos-7" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-7">h) Riesgos</h3>
+<ul>
+<li>Sobre-regularización → pérdida de lesiones sutiles.</li>
+<li>Sub-regularización → ruido residual como FBP.</li>
+<li>Ajuste inestable entre protocolos/poblaciones.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-7" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-7">i) Recomendaciones</h3>
+<p>CT baja dosis: preferible. RX: conceptos aplican a deconvolución/denoising, pero no es “recon” 3D.</p>
+<hr>
+</section>
+</section>
+<section id="m11-metal-artifact-reduction-mar" class="level2">
+<h2 class="anchored" data-anchor-id="m11-metal-artifact-reduction-mar">5.11 M11 — Metal Artifact Reduction (MAR)</h2>
+<section id="a-definición-y-objetivo-7" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-7">a) Definición y objetivo</h3>
+<p>Reducir streaks por metal (implantes) debidos a:
+- atenuación extrema (photon starvation),
+- beam hardening severo,
+- scatter y no linealidades.</p>
+</section>
+<section id="b-supuestos-8" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-8">b) Supuestos</h3>
+<ul>
+<li>Metal identificable (segmentación inicial).</li>
+<li>Se acepta reconstrucción híbrida (analítica + correcciones).</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-5" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-5">c) Matemática esencial</h3>
+<p>En sinograma, el metal corrompe regiones específicas. Estrategias:
+- <strong>inpainting</strong> del sinograma (interpolación en zonas corruptas),
+- reproyección iterativa con máscara de metal,
+- modelos polienergéticos (más robustos).</p>
+</section>
+<section id="d-algoritmo-sinogram-inpainting-pseudocódigo" class="level3">
+<h3 class="anchored" data-anchor-id="d-algoritmo-sinogram-inpainting-pseudocódigo">d) Algoritmo (sinogram inpainting) + pseudocódigo</h3>
+<pre class="pseudo"><code>1) Reconstruct preliminary volume (FBP)
+2) Segment metal -&gt; mask M
+3) Forward project M to identify corrupted sinogram bins
+4) Replace corrupted bins by interpolation from neighbors (inpainting)
+5) Reconstruct corrected sinogram (FBP or iterative)
+6) Optionally blend with original to preserve non-metal details</code></pre>
+</section>
+<section id="e-parámetros-6" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-6">e) Parámetros</h3>
+<ul>
+<li>Umbral/criterio de metal, método de inpainting, blending.</li>
+</ul>
+</section>
+<section id="f-complejidad-8" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-8">f) Complejidad</h3>
+<p>Moderada–alta (requiere forward projection adicional).</p>
+</section>
+<section id="g-ruidoartefactos-6" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-6">g) Ruido/artefactos</h3>
+<ul>
+<li>Reduce streaks; puede introducir nuevos artefactos cerca del metal (pérdida de detalle o sesgo).</li>
+</ul>
+</section>
+<section id="h-riesgos-8" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-8">h) Riesgos</h3>
+<ul>
+<li>Segmentación errónea (confundir contraste denso con metal).</li>
+<li>“Sobre-corrección” que borra información adyacente.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-8" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-8">i) Recomendaciones</h3>
+<p>CT ortopédico/odontológico/intervencionista: muy útil; validar con casos reales y phantom.</p>
+<hr>
+</section>
+</section>
+<section id="m12-reducción-de-ruido-y-preservación-de-bordes-sinogramaimagen" class="level2">
+<h2 class="anchored" data-anchor-id="m12-reducción-de-ruido-y-preservación-de-bordes-sinogramaimagen">5.12 M12 — Reducción de ruido y preservación de bordes (sinograma/imagen)</h2>
+<section id="a-definición-y-objetivo-8" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-8">a) Definición y objetivo</h3>
+<p>Disminuir ruido (especialmente en baja dosis) preservando bordes relevantes.</p>
+</section>
+<section id="b-supuestos-9" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-9">b) Supuestos</h3>
+<ul>
+<li>Ruido aproximadamente Poisson-Gauss (mixto).</li>
+<li>Bordes clínicos importantes (vasos, nódulos, cortical ósea).</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-6" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-6">c) Matemática esencial</h3>
+<p>Filtros en imagen:
+- bilateral / anisotropic diffusion (edge-preserving),
+- non-local means (NLM),
+- wavelet shrinkage.</p>
+<p>En sinograma:
+- suavizado adaptativo por varianza (respetando estructura angular).</p>
+</section>
+<section id="d-pseudocódigo-bilateral-conceptual" class="level3">
+<h3 class="anchored" data-anchor-id="d-pseudocódigo-bilateral-conceptual">d) Pseudocódigo (bilateral conceptual)</h3>
+<pre class="pseudo"><code>For each pixel i:
+  weighted_sum = 0; norm = 0
+  For j in neighborhood(i):
+    w = exp( -||pos_i - pos_j||^2 / (2*sigma_s^2) ) *
+        exp( -||I_i - I_j||^2 / (2*sigma_r^2) )
+    weighted_sum += w * I_j
+    norm += w
+  I_out[i] = weighted_sum / norm</code></pre>
+</section>
+<section id="e-parámetros-7" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-7">e) Parámetros</h3>
+<ul>
+<li><span class="math inline">\(\sigma_s\)</span> (espacial), <span class="math inline">\(\sigma_r\)</span> (radiométrico).</li>
+<li>En wavelets: umbral (global o por subbanda).</li>
+</ul>
+</section>
+<section id="f-complejidad-9" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-9">f) Complejidad</h3>
+<p>Bilateral/NLM pueden ser costosos; optimizaciones o aproximaciones son habituales.</p>
+</section>
+<section id="g-ruidoartefactos-7" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-7">g) Ruido/artefactos</h3>
+<ul>
+<li>Puede suavizar microcalcificaciones o bordes finos si mal parametrizado.</li>
+</ul>
+</section>
+<section id="h-riesgos-9" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-9">h) Riesgos</h3>
+<ul>
+<li>“Textura sintética” o pérdida de granularidad útil para percepción diagnóstica.</li>
+<li>Filtrar después de reconstrucción puede no corregir artefactos estructurados.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-9" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-9">i) Recomendaciones</h3>
+<p>Preferir integrar regularización en reconstrucción (M10) para CT; en RX, filtrar con criterios de detectabilidad, no estética.</p>
+<hr>
+</section>
+</section>
+<section id="m13-reconstrucción-basada-en-deep-learning-dl-con-control-de-física" class="level2">
+<h2 class="anchored" data-anchor-id="m13-reconstrucción-basada-en-deep-learning-dl-con-control-de-física">5.13 M13 — Reconstrucción basada en Deep Learning (DL), con control de física</h2>
+<section id="a-definición-y-objetivo-9" class="level3">
+<h3 class="anchored" data-anchor-id="a-definición-y-objetivo-9">a) Definición y objetivo</h3>
+<p>Usar redes (denoising, super-res, recon directa, unrolled) para mejorar calidad o acelerar reconstrucción, manteniendo control sobre:
+- fidelidad a datos,
+- generalización,
+- seguridad clínica.</p>
+</section>
+<section id="b-supuestos-10" class="level3">
+<h3 class="anchored" data-anchor-id="b-supuestos-10">b) Supuestos</h3>
+<ul>
+<li>Dataset representativo y etiquetado/pareado (o auto-supervisión).</li>
+<li>Validación externa y monitoreo post-despliegue.</li>
+</ul>
+</section>
+<section id="c-matemática-esencial-unrolled-physics-informed" class="level3">
+<h3 class="anchored" data-anchor-id="c-matemática-esencial-unrolled-physics-informed">c) Matemática esencial (unrolled / physics-informed)</h3>
+<p>Desenrollar K iteraciones de un método tipo proximal:</p>
+<p><span class="math display">\[
+x^{k+1} = \mathcal{D}_{\theta_k}\left(x^k - \alpha_k A^T(Ax^k-b)\right)
+\]</span></p>
+<p>donde <span class="math inline">\(\mathcal{D}_{\theta_k}\)</span> es un “denoiser” aprendido. Esto preserva el vínculo con el modelo físico.</p>
+</section>
+<section id="d-pseudocódigo-3" class="level3">
+<h3 class="anchored" data-anchor-id="d-pseudocódigo-3">d) Pseudocódigo</h3>
+<pre class="pseudo"><code>Initialize x0 (e.g., FBP)
+For k = 1..K:
+  xk = xk - alpha_k * A^T(A xk - b)      # data consistency
+  xk = DenoiserNet_k(xk)                 # learned prior
+Return xK</code></pre>
+</section>
+<section id="e-parámetros-8" class="level3">
+<h3 class="anchored" data-anchor-id="e-parámetros-8">e) Parámetros</h3>
+<ul>
+<li>K (profundidad), pesos de consistencia, estrategia de entrenamiento, métricas de validación por tarea.</li>
+</ul>
+</section>
+<section id="f-complejidad-10" class="level3">
+<h3 class="anchored" data-anchor-id="f-complejidad-10">f) Complejidad</h3>
+<p>Entrenamiento alto; inferencia moderada (GPU preferida).</p>
+</section>
+<section id="g-ruidoartefactos-8" class="level3">
+<h3 class="anchored" data-anchor-id="g-ruidoartefactos-8">g) Ruido/artefactos</h3>
+<ul>
+<li>Excelente reducción de ruido; riesgo de <strong>hallazgos falsos</strong> (alucinación) o supresión de lesiones.</li>
+</ul>
+</section>
+<section id="h-riesgos-red-flags-2" class="level3">
+<h3 class="anchored" data-anchor-id="h-riesgos-red-flags-2">h) Riesgos (red flags)</h3>
+<ul>
+<li>Validar solo con PSNR/SSIM: insuficiente para clínica.</li>
+<li>Cambios de dominio (otro hospital/protocolo) → fallas silenciosas.</li>
+<li>“Imágenes demasiado limpias” sin granularidad esperada.</li>
+</ul>
+</section>
+<section id="i-recomendaciones-10" class="level3">
+<h3 class="anchored" data-anchor-id="i-recomendaciones-10">i) Recomendaciones</h3>
+<p>Usar DL preferiblemente en esquemas con consistencia física (unrolled) y con QA fuerte; limitar uso en hallazgos sutiles hasta robustecer evidencia.</p>
+<hr>
+</section>
+</section>
+</section>
+<section id="artefactos-y-fallas-típicas-con-red-flags" class="level1">
+<h1>6) Artefactos y fallas típicas (con red flags)</h1>
+<section id="rx" class="level2">
+<h2 class="anchored" data-anchor-id="rx">6.1 RX</h2>
+<ul>
+<li><strong>Scatter residual:</strong> “velo” y pérdida de contraste; red flag: imagen con fondo elevado y bordes lavados.</li>
+<li><strong>Grid artifacts / moiré:</strong> patrón periódico; red flag: bandas regulares.</li>
+<li><strong>Motion blur:</strong> bordes dobles; red flag: estructuras duplicadas.</li>
+<li><strong>Saturación / clipping:</strong> blancos planos o negros planos; red flag: histograma recortado.</li>
+<li><strong>Aliasing:</strong> patrones falsos en alta frecuencia (rejillas finas, estructuras repetitivas).</li>
+</ul>
+</section>
+<section id="ct" class="level2">
+<h2 class="anchored" data-anchor-id="ct">6.2 CT</h2>
+<ul>
+<li><strong>Streaks por metal:</strong> líneas radiadas; causa: photon starvation + BH.</li>
+<li><strong>Beam hardening / cupping:</strong> centro “más oscuro” en objetos homogéneos.</li>
+<li><strong>Ring artifacts:</strong> anillos concéntricos; causa: mala calibración/ganancia detector.</li>
+<li><strong>Partial volume:</strong> bordes borrosos y HU intermedios en voxeles mixtos.</li>
+<li><strong>Cone-beam artifacts:</strong> en CBCT por incompletitud.</li>
+</ul>
+</section>
+<section id="mri-contexto" class="level2">
+<h2 class="anchored" data-anchor-id="mri-contexto">6.3 MRI (contexto)</h2>
+<ul>
+<li><strong>Motion/ghosting</strong>, <strong>susceptibilidad</strong>, <strong>chemical shift</strong>, <strong>Gibbs</strong>, <strong>wrap-around</strong>.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="calidad-de-imagen-y-evaluación-cuantitativa" class="level1">
+<h1>7) Calidad de imagen y evaluación cuantitativa</h1>
+<section id="métricas" class="level2">
+<h2 class="anchored" data-anchor-id="métricas">7.1 Métricas</h2>
+<section id="snr-y-cnr" class="level3">
+<h3 class="anchored" data-anchor-id="snr-y-cnr">7.1.1 SNR y CNR</h3>
+<p>Para ROI señal <span class="math inline">\(S\)</span> y fondo <span class="math inline">\(B\)</span>:
+<span class="math display">\[
+SNR = \frac{\mu_S}{\sigma_S},\qquad
+CNR = \frac{|\mu_S - \mu_B|}{\sigma_B}
+\]</span></p>
+</section>
+<section id="mtf-nps-dqe" class="level3">
+<h3 class="anchored" data-anchor-id="mtf-nps-dqe">7.1.2 MTF, NPS, DQE</h3>
+<ul>
+<li>MTF: resolución (frecuencia espacial).</li>
+<li>NPS: textura del ruido.</li>
+<li>DQE: eficiencia global vs dosis (condiciones estandarizadas).</li>
+</ul>
+</section>
+<section id="detectabilidad-d-noción" class="level3">
+<h3 class="anchored" data-anchor-id="detectabilidad-d-noción">7.1.3 Detectabilidad (<span class="math inline">\(d'\)</span>) (noción)</h3>
+<p>En análisis ideal-observer, <span class="math inline">\(d'\)</span> depende de contraste, MTF y NPS; útil como guía para tareas.</p>
+</section>
+</section>
+<section id="protocolos-con-phantoms-configuraciones-típicas" class="level2">
+<h2 class="anchored" data-anchor-id="protocolos-con-phantoms-configuraciones-típicas">7.2 Protocolos con phantoms (configuraciones típicas)</h2>
+<p><strong>Figura 7: Esquema de evaluación RX (phantom uniforme + borde + patrón).</strong>
+- ROI uniformes (NPS/SNR), borde inclinado (MTF), objetos de contraste (CNR).</p>
+<p><strong>Figura 8: Esquema de QA CT (phantom tipo ACR/Catphan).</strong>
+- Módulos: uniformidad, resolución alta, bajo contraste, números CT, geometría.</p>
+<blockquote class="blockquote">
+<p>Nota: seguir guías institucionales (ACR/IEC/AAPM/IAEA) y el manual del fabricante del phantom.</p>
+</blockquote>
+</section>
+<section id="diseño-de-experimento-repetibilidad-y-sesgo" class="level2">
+<h2 class="anchored" data-anchor-id="diseño-de-experimento-repetibilidad-y-sesgo">7.3 Diseño de experimento (repetibilidad y sesgo)</h2>
+<ul>
+<li>Repetir adquisiciones (n≥10 ideal para estimar varianza).</li>
+<li>Controlar temperatura y estado del detector.</li>
+<li>Reportar intervalos de confianza (bootstrap si no normalidad).</li>
+<li>Definir tamaño de efecto clínicamente relevante (no solo estadísticamente significativo).</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="dosis-y-seguridad" class="level1">
+<h1>8) Dosis y seguridad</h1>
+<section id="rxct-indicadores-y-trade-offs" class="level2">
+<h2 class="anchored" data-anchor-id="rxct-indicadores-y-trade-offs">8.1 RX/CT: indicadores y trade-offs</h2>
+<ul>
+<li>RX: kerma en aire, ESAK, índices operacionales del equipo; foco en ALARA.</li>
+<li>CT: <strong>CTDIvol</strong> y <strong>DLP</strong> como indicadores operacionales; relacionarlos con protocolo y paciente.</li>
+</ul>
+<p><strong>Trade-off:</strong> bajar dosis aumenta ruido; se compensa con recon iterativa/regularización, pero con riesgo de pérdida de detalle.</p>
+</section>
+<section id="mri-contexto-1" class="level2">
+<h2 class="anchored" data-anchor-id="mri-contexto-1">8.2 MRI (contexto)</h2>
+<ul>
+<li>SAR, límites de gradiente, seguridad de implantes y calentamiento.</li>
+</ul>
+</section>
+<section id="riesgos-operativos-y-mitigaciones-checklist" class="level2">
+<h2 class="anchored" data-anchor-id="riesgos-operativos-y-mitigaciones-checklist">8.3 Riesgos operativos y mitigaciones (checklist)</h2>
+<ul>
+<li>Verificación de protocolos pediátricos.</li>
+<li>Alertas por EI fuera de rango (evitar “dose creep”).</li>
+<li>Bloqueo de técnicas no validadas (post-mantenimiento).</li>
+<li>Auditoría periódica de drift de HU y uniformidad.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="recomendaciones-de-implementación-pipeline-y-qa" class="level1">
+<h1>9) Recomendaciones de implementación (pipeline y QA)</h1>
+<section id="pipeline-sugerido-rx" class="level2">
+<h2 class="anchored" data-anchor-id="pipeline-sugerido-rx">9.1 Pipeline sugerido — RX</h2>
+<p><strong>Figura 9: Pipeline RX recomendado.</strong>
+Adquisición cruda → dark/flat (M4) → estimación scatter (M6) → log/normalización → corrección shading → realce controlado (M12) → métricas/registro EI → almacenamiento.</p>
+</section>
+<section id="pipeline-sugerido-ct" class="level2">
+<h2 class="anchored" data-anchor-id="pipeline-sugerido-ct">9.2 Pipeline sugerido — CT</h2>
+<p><strong>Figura 10: Pipeline CT recomendado.</strong>
+Cuentas crudas → dark/air (M4) → log → BH (M5) + scatter (M6) → detección metal (si aplica) (M11) → reconstrucción (FBP M7 / MBIR M10) → posproceso (ventana, kernels) → QA HU/uniformidad/artefactos.</p>
+</section>
+<section id="checklist-de-validación" class="level2">
+<h2 class="anchored" data-anchor-id="checklist-de-validación">9.3 Checklist de validación</h2>
+<ul>
+<li><strong>Calibración:</strong> dark/flat/air vigente, verificación de saturación.</li>
+<li><strong>Geométrico:</strong> centrado, colimación, SID/SOD correctos.</li>
+<li><strong>Métricas:</strong> MTF/NPS (o equivalentes), uniformidad.</li>
+<li><strong>CT:</strong> agua/aire HU, rings, uniformidad, resolución, bajo contraste.</li>
+<li><strong>Trazabilidad:</strong> protocolo, kVp/mAs, filtración, recon kernel, versión SW, fecha de calibración.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="casos-de-uso-y-guía-de-selección" class="level1">
+<h1>10) Casos de uso y guía de selección</h1>
+<section id="matriz-de-decisión-objetivo-clínico-método" class="level2">
+<h2 class="anchored" data-anchor-id="matriz-de-decisión-objetivo-clínico-método">10.1 Matriz de decisión (objetivo clínico → método)</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Objetivo</th>
+<th>RX</th>
+<th>CT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Reducir dosis manteniendo detectabilidad</td>
+<td>Control EI + M12 conservador</td>
+<td>M10 (MBIR) + evaluación d’/phantom</td>
+</tr>
+<tr class="even">
+<td>Minimizar scatter (portátil/abdomen)</td>
+<td>M6 + uso apropiado de grid</td>
+<td>M6 (especialmente CBCT)</td>
+</tr>
+<tr class="odd">
+<td>Estabilidad cuantitativa</td>
+<td>M1–M4</td>
+<td>M4 + M5 + control HU</td>
+</tr>
+<tr class="even">
+<td>Metal/implantes</td>
+<td>—</td>
+<td>M11 + (M10 si baja dosis)</td>
+</tr>
+<tr class="odd">
+<td>Pocos ángulos / tiempo real</td>
+<td>—</td>
+<td>M9 (si limitado) o DL (M13) con consistencia</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="reglas-rápidas-si-tu-objetivo-es-x-usa-y" class="level2">
+<h2 class="anchored" data-anchor-id="reglas-rápidas-si-tu-objetivo-es-x-usa-y">10.2 Reglas rápidas “Si tu objetivo es X, usa Y”</h2>
+<ul>
+<li><strong>Si</strong> hay cupping/HU inestables → revisar M4 y aplicar M5 con calibración correcta.</li>
+<li><strong>Si</strong> el contraste está “lavado” en RX → priorizar M6 y revisar uso de grid/colimación.</li>
+<li><strong>Si</strong> baja dosis en CT genera ruido inaceptable → M10 antes que suavizar agresivamente.</li>
+<li><strong>Si</strong> hay rings → casi siempre es M4 (calibración detector) antes que “filtrar”.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="conclusiones" class="level1">
+<h1>11) Conclusiones</h1>
+<ol type="1">
+<li>El desempeño clínico en RX/CT se explica mejor con un <strong>modelo forward polienergético</strong> (M1) acoplado a un <strong>modelo realista de detector</strong> (M2) y un modelo end-to-end de formación (M3).</li>
+<li>La <strong>calibración</strong> (M4) es el punto más costo-efectivo para prevenir fallas recurrentes (rings, banding, drift).</li>
+<li>En CT, FBP (M7) es base y referencia QA, pero para baja dosis y robustez los métodos <strong>iterativos/MBIR</strong> (M10) ofrecen ventajas claras si se controlan parámetros y se valida por tarea.</li>
+<li>Correcciones de <strong>beam hardening</strong> (M5) y <strong>scatter</strong> (M6) son determinantes para cuantificación y para evitar artefactos estructurados.</li>
+<li>IA (M13) aporta valor cuando se integra con consistencia física y QA fuerte; sin ello, aumenta el riesgo de sesgos y hallazgos no reales.</li>
+</ol>
+<hr>
+</section>
+<section id="referencias-formato-ieee-selección-mínima-25" class="level1">
+<h1>12) Referencias (formato IEEE, selección mínima ≥ 25)</h1>
+<blockquote class="blockquote">
+<p>Nota: Algunas normas IEC/ACR son de acceso restringido; se citan por identificador. Para implementación/QA se recomienda adquirir la versión vigente aplicable al país y al equipo.</p>
+</blockquote>
+<p>[1] J. T. Bushberg, J. A. Seibert, E. M. Leidholdt Jr., and J. M. Boone, <em>The Essential Physics of Medical Imaging</em>, 3rd ed.&nbsp;Lippincott Williams &amp; Wilkins, 2012.
+[2] E. Samei and M. J. Flynn (eds.), <em>Handbook of Medical Imaging: Physics and Psychophysics</em>. SPIE Press, 2000–2002.
+[3] W. R. Hendee and E. R. Ritenour, <em>Medical Imaging Physics</em>, 4th ed.&nbsp;Wiley-Liss, 2002.
+[4] M. Buzug, <em>Computed Tomography: From Photon Statistics to Modern Cone-Beam CT</em>. Springer, 2008.
+[5] J. Hsieh, <em>Computed Tomography: Principles, Design, Artifacts, and Recent Advances</em>, 3rd ed.&nbsp;SPIE Press, 2015.
+[6] A. C. Kak and M. Slaney, <em>Principles of Computerized Tomographic Imaging</em>. SIAM, 2001.
+[7] F. Natterer, <em>The Mathematics of Computerized Tomography</em>. SIAM, 2001.
+[8] H. H. Barrett and K. J. Myers, <em>Foundations of Image Science</em>. Wiley, 2004.
+[9] ICRU, “Tissue Substitutes in Radiation Dosimetry and Measurement,” ICRU Report 44, 1989.
+[10] ICRP, “Radiological Protection in Medicine,” ICRP Publication 105, 2007.
+[11] AAPM, “An Exposure Indicator for Digital Radiography,” AAPM Report No.&nbsp;116, 2009.
+[12] IEC, “Medical electrical equipment—Exposure index of digital X-ray imaging systems—Part 1: Definitions and requirements for general radiography,” IEC 62494-1.
+[13] IEC, “Medical electrical equipment—Characteristics of digital X-ray imaging devices—Part 1-1: Determination of the detective quantum efficiency (DQE) of digital X-ray detectors used in radiographic imaging,” IEC 62220-1-1.
+[14] IEC, “Medical electrical equipment—Part 2-44: Particular requirements for the basic safety and essential performance of X-ray equipment for computed tomography,” IEC 60601-2-44.
+[15] ACR, “CT Accreditation Program: Phantom and QC Guidance (ACR CT Phantom).” American College of Radiology, (documentación técnica).
+[16] E. A. Krupinski, “Current perspectives in medical image perception,” <em>Atten. Percept. Psychophys.</em>, vol.&nbsp;72, pp.&nbsp;1205–1217, 2010.
+[17] H. Kundel, “History of medical imaging perception research,” <em>Radiology</em>, vol.&nbsp;258, pp.&nbsp;1–8, 2011.
+[18] L. A. Feldkamp, L. C. Davis, and J. W. Kress, “Practical cone-beam algorithm,” <em>J. Opt. Soc. Am. A</em>, vol.&nbsp;1, no. 6, pp.&nbsp;612–619, 1984.
+[19] K. Sauer and C. Bouman, “A local update strategy for iterative reconstruction,” <em>IEEE Trans. Signal Process.</em>, vol.&nbsp;41, no. 2, pp.&nbsp;534–548, 1993.
+[20] J. Fessler, “Statistical image reconstruction methods for transmission tomography,” <em>Handbook of Medical Imaging</em>, SPIE, 2000.
+[21] S. Boyd et al., “Distributed optimization and statistical learning via the alternating direction method of multipliers,” <em>Found. Trends Mach. Learn.</em>, 2011.
+[22] L. Rudin, S. Osher, and E. Fatemi, “Nonlinear total variation based noise removal algorithms,” <em>Physica D</em>, 1992.
+[23] K. Thibault et al., “A three-dimensional statistical approach to improved image quality for multislice helical CT,” (MBIR concepts), <em>Med. Phys.</em>, 2007.
+[24] G. Wang, “A perspective on deep imaging,” <em>IEEE Access</em>, 2016.
+[25] K. Hammernik et al., “Learning a variational network for reconstruction of accelerated MRI data,” <em>Magn. Reson. Med.</em>, 2018. (referencia conceptual a unrolled; extrapolable por analogía)
+[26] J. Adler and O. Öktem, “Learned primal-dual reconstruction,” <em>IEEE Trans. Med. Imaging</em>, 2018.
+[27] C. McCollough et al., “CT dose index and patient dose considerations,” (revisiones AAPM/IAEA varias), <em>Radiology/Med. Phys.</em>, (lecturas recomendadas).
+[28] IAEA, “Diagnostic Radiology Physics: A Handbook for Teachers and Students.” International Atomic Energy Agency, training material.
+[29] NCRP, “Radiation Protection in Dentistry and Diagnostic Radiology,” (reportes y guías), National Council on Radiation Protection and Measurements.
+[30] EANM, “Quality Control in CT (technical guidance),” European Association of Nuclear Medicine, (guía técnica de QC; aplicable como referencia general).</p>
+<hr>
+<section id="anexo-a-plantilla-de-trazabilidad-mínima-recomendado" class="level2">
+<h2 class="anchored" data-anchor-id="anexo-a-plantilla-de-trazabilidad-mínima-recomendado">Anexo A — Plantilla de trazabilidad mínima (recomendado)</h2>
+<ul>
+<li>Equipo / modelo / versión SW</li>
+<li>Protocolo (kVp, mAs, colimación, pitch, kernel, recon type)</li>
+<li>Fecha/hora, operador</li>
+<li>Calibración (dark/flat/air) versión y fecha</li>
+<li>Indicadores dosis (CTDIvol/DLP)</li>
+<li>EI (RX) y exposición estimada</li>
+<li>Observaciones de artefactos y acciones correctivas</li>
+</ul>
+</section>
+<section id="cómo-generar-el-pdf-con-quarto-orientativo" class="level2">
+<h2 class="anchored" data-anchor-id="cómo-generar-el-pdf-con-quarto-orientativo">Cómo generar el PDF con Quarto (orientativo)</h2>
+<ol type="1">
+<li>Guardar este archivo como <code>reporte_rx_ct.qmd</code></li>
+<li>Ejecutar: <code>quarto render reporte_rx_ct.qmd --to pdf</code></li>
+</ol>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
