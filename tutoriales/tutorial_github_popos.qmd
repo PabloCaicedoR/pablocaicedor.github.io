@@ -1,340 +1,502 @@
 ---
-title: "GitHub con una cuenta alterna en Pop!_OS y PyCharm"
-subtitle: "Tutorial reproducible con SSH, separación de identidades y flujo de trabajo con ramas"
-author: "Material docente para estudiantes de pregrado"
-date: "2026-07-17"
+title: "Configuración de varias cuentas de Git y GitHub en Linux"
+subtitle: "Uso seguro de dos o tres identidades mediante SSH"
 lang: es
+image: "../recursos/imagenes/tutoriales/github/tutorial-github.png"
+author: "Ph.D. Pablo Eduardo Caicedo R."
 format:
   html:
     theme: cosmo
     toc: true
+    toc-title: "Contenido"
     toc-depth: 3
-    toc-location: left
-    number-sections: true
+    number-sections: false
     code-copy: true
     code-overflow: wrap
     smooth-scroll: true
     link-external-newwindow: true
-    self-contained: true
-    css: styles.css
-execute:
-  echo: true
-  warning: false
+    link-external-icon: true
 ---
 
-::: {.hero}
-Este tutorial configura **una segunda cuenta de GitHub** en un equipo con **Pop!_OS**, sin reemplazar la cuenta principal. El método usa una clave SSH exclusiva, un alias en `~/.ssh/config`, identidad Git local por repositorio y PyCharm como entorno de trabajo.
+# Introducción
 
-**Resultado esperado:** cada repositorio académico se conecta con la cuenta alterna correcta, mientras los repositorios personales continúan usando la cuenta principal.
-:::
+Es frecuente utilizar varias cuentas de GitHub desde un mismo computador. Por
+ejemplo, puede existir una cuenta personal, una cuenta institucional o laboral
+y una tercera cuenta destinada a proyectos académicos.
+
+Aunque Git y GitHub suelen utilizarse juntos, cumplen funciones diferentes:
+
+- **Git** registra el nombre y el correo del autor de cada cambio.
+- **GitHub** determina qué cuenta tiene permiso para acceder a un repositorio.
+- **SSH** permite seleccionar de forma segura qué cuenta debe utilizarse en cada
+  conexión con GitHub.
+
+Por esta razón, una configuración completa debe resolver dos aspectos:
+
+- La identidad registrada en los commits.
+- La autenticación utilizada para acceder a GitHub.
+
+En este tutorial se configurarán tres perfiles:
+
+| Perfil | Carpeta local | Alias SSH |
+|---|---|---|
+| Personal | `~/GitHub/personal/` | `github-personal` |
+| Trabajo | `~/GitHub/trabajo/` | `github-trabajo` |
+| Academia | `~/GitHub/academia/` | `github-academia` |
+
+La tercera cuenta es opcional. Si solamente se necesitan dos cuentas, pueden
+omitirse los bloques relacionados con el perfil académico.
+
+En resumen,
+
+# Esquema de conexión con GitHub mediante SSH
+
+El acceso a GitHub se realiza mediante un alias SSH asociado con una clave
+específica. Git utiliza la carpeta del repositorio para seleccionar el nombre y
+el correo del autor, mientras que SSH selecciona la cuenta utilizada para
+autenticarse en GitHub.
+
+```{mermaid}
+flowchart LR
+    A["Repositorio local"] --> B["Configuración de Git"]
+
+    B --> C{"Carpeta del proyecto"}
+
+    C -->|~/GitHub/personal/| D["Identidad personal<br/>nombre + correo"]
+    C -->|~/GitHub/trabajo/| E["Identidad de trabajo<br/>nombre + correo"]
+    C -->|~/GitHub/academia/| F["Identidad académica<br/>nombre + correo"]
+
+    D --> G["Remote SSH<br/>git@github-personal:..."]
+    E --> H["Remote SSH<br/>git@github-trabajo:..."]
+    F --> I["Remote SSH<br/>git@github-academia:..."]
+
+    G --> J["Clave SSH personal"]
+    H --> K["Clave SSH de trabajo"]
+    I --> L["Clave SSH académica"]
+
+    J --> M["GitHub"]
+    K --> M
+    L --> M
+```
+
+
+1. La ubicación del repositorio determina la identidad del commit.
+2. La dirección del remoto determina el alias SSH.
+3. El alias SSH selecciona una clave privada.
+4. GitHub identifica la cuenta asociada con la clave pública.
 
 ::: {.callout-important}
-## Regla de seguridad
-
-Nunca compartas el archivo de clave privada. En este tutorial, el archivo privado será `~/.ssh/id_ed25519_github_academica`; el único archivo que se copia a GitHub es el que termina en `.pub`.
+Reemplace los nombres, correos electrónicos, usuarios, organizaciones y nombres
+de repositorios utilizados en los ejemplos por sus datos reales.
 :::
 
-# 1. Objetivos de aprendizaje
+# Requisitos previos
 
-Al finalizar, podrás:
+Para realizar la configuración se necesita:
 
-1. distinguir autenticación, autorización e identidad de autor;
-2. crear una clave SSH exclusiva para una cuenta alterna;
-3. configurar dos identidades de GitHub en el mismo equipo;
-4. clonar un repositorio con la cuenta correcta desde la terminal y PyCharm;
-5. configurar el nombre y correo de los commits solo para un repositorio;
-6. crear una rama, hacer un commit, publicar la rama y abrir una solicitud de cambios;
-7. diagnosticar errores frecuentes de SSH, permisos y atribución de commits.
+- Una distribución Linux.
+- Dos o tres cuentas de GitHub.
+- Acceso a una terminal.
+- Git instalado.
+- OpenSSH instalado.
+- Un correo electrónico verificado en cada cuenta de GitHub.
 
-# 2. Escenario y modelo mental
+# Instalar Git y OpenSSH
 
-Supón que tienes:
+Los comandos dependen de la distribución Linux utilizada.
 
-- una cuenta personal de GitHub, usada para proyectos propios;
-- una cuenta académica o alterna, usada para una asignatura, laboratorio o grupo de investigación;
-- un equipo con Pop!_OS y PyCharm;
-- acceso a un repositorio privado o público mediante la cuenta académica.
+::: {.panel-tabset}
 
-Estas tres capas son independientes:
-
-| Capa | Pregunta que responde | Se configura con |
-|---|---|---|
-| Autenticación | ¿Qué cuenta está intentando conectarse? | Clave SSH y `~/.ssh/config` |
-| Autorización | ¿Esa cuenta puede leer o modificar el repositorio? | Permisos de GitHub, organización o equipo |
-| Autoría del commit | ¿Qué nombre y correo quedan registrados en el commit? | `git config user.name` y `git config user.email` |
-
-::: {.concept-map}
-<div class="concept-node"><strong>PyCharm / Git</strong><span>inicia una operación</span></div>
-<div class="concept-arrow">→</div>
-<div class="concept-node"><strong>Alias SSH</strong><span>elige la clave académica</span></div>
-<div class="concept-arrow">→</div>
-<div class="concept-node"><strong>GitHub</strong><span>identifica la cuenta</span></div>
-<div class="concept-arrow">→</div>
-<div class="concept-node"><strong>Permisos</strong><span>permiten o rechazan la acción</span></div>
-:::
-
-::: {.callout-note}
-## Idea clave
-
-Cambiar `user.email` no cambia la cuenta con la que te autenticas. Del mismo modo, cargar una clave SSH correcta no modifica automáticamente el autor de tus commits.
-:::
-
-# 3. Convenciones usadas en los comandos
-
-Reemplaza los siguientes marcadores por tus datos reales:
-
-| Marcador | Ejemplo |
-|---|---|
-| `USUARIO_ACADEMICO` | `ana-universidad` |
-| `CORREO_ACADEMICO` | `ana@universidad.edu` |
-| `PROPIETARIO` | usuario u organización que posee el repositorio |
-| `REPOSITORIO` | nombre exacto del repositorio |
-| `NOMBRE_ESTUDIANTE` | nombre que aparecerá en los commits |
-
-No escribas los signos `<` y `>` alrededor de los valores.
-
-# 4. Prerrequisitos
-
-## 4.1 Cuenta y permisos en GitHub
-
-Antes de configurar el equipo, comprueba desde el navegador que la cuenta alterna:
-
-- puede iniciar sesión;
-- tiene el correo verificado;
-- puede abrir la página del repositorio;
-- aparece como colaboradora o como miembro del equipo con acceso;
-- puede usar autenticación de dos factores si la organización la exige.
-
-Si la cuenta no puede ver el repositorio en el navegador, SSH tampoco resolverá el problema. La persona docente o administradora debe conceder acceso primero.
-
-## 4.2 Software en Pop!_OS
-
-Abre una terminal y ejecuta:
+## Ubuntu, Debian, Linux Mint y Pop!_OS
 
 ```bash
 sudo apt update
-sudo apt install git openssh-client
+sudo apt install -y git openssh-client
 ```
 
-Verifica las instalaciones:
+## Fedora
+
+```bash
+sudo dnf install -y git openssh-clients
+```
+
+## Arch Linux y Manjaro
+
+```bash
+sudo pacman -Syu git openssh
+```
+
+:::
+
+Comprobar que Git está instalado:
 
 ```bash
 git --version
+```
+
+Comprobar que SSH está instalado:
+
+```bash
 ssh -V
 ```
 
-Debes obtener una versión de Git y una versión de OpenSSH, sin mensajes de “comando no encontrado”.
+La versión de OpenSSH puede aparecer en la salida estándar de error. Esto es
+normal y no indica que exista un problema.
 
-## 4.3 Verificar Git en PyCharm
+# Definir las cuentas
 
-En PyCharm abre:
+Para cada cuenta se necesita registrar la siguiente información:
+
+| Dato | Ejemplo |
+|---|---|
+| Nombre para los commits | `Nombre Apellido` |
+| Correo verificado | `usuario@dominio.com` |
+| Usuario de GitHub | `nombre-usuario` |
+| Organización, si aplica | `nombre-organizacion` |
+
+Un ejemplo de configuración puede ser:
+
+| Cuenta | Usuario de GitHub | Correo |
+|---|---|---|
+| Personal | `usuario-personal` | `personal@ejemplo.com` |
+| Trabajo | `usuario-trabajo` | `nombre@empresa.com` |
+| Academia | `usuario-academico` | `nombre@universidad.edu` |
+
+Los nombres utilizados en los commits pueden ser iguales en varias cuentas. El
+correo electrónico es el dato utilizado por GitHub para asociar un commit con
+una cuenta.
+
+Puede utilizarse:
+
+- Un correo verificado en la cuenta.
+- El correo privado proporcionado por GitHub.
+
+El correo privado puede consultarse en:
 
 ```text
-File → Settings → Version Control → Git
+GitHub → Settings → Emails
 ```
 
-En **Path to Git executable**, normalmente debe aparecer:
+# Crear las carpetas de trabajo
 
-```text
-/usr/bin/git
-```
+Se recomienda separar físicamente los repositorios de cada cuenta. Esta
+estructura también permitirá que Git seleccione automáticamente el nombre y el
+correo correspondientes.
 
-Pulsa **Test**. PyCharm debe mostrar la versión de Git instalada.
-
-# 5. Revisar claves SSH existentes
-
-Lista el contenido del directorio SSH:
+Crear las carpetas:
 
 ```bash
-ls -la ~/.ssh
+mkdir -p ~/GitHub/personal
+mkdir -p ~/GitHub/trabajo
+mkdir -p ~/GitHub/academia
 ```
 
-Archivos comunes:
+Comprobar la estructura:
+
+```bash
+find ~/GitHub -maxdepth 1 -type d
+```
+
+La salida será similar a:
 
 ```text
-id_ed25519
-id_ed25519.pub
-id_rsa
-id_rsa.pub
-config
-known_hosts
+/home/usuario/GitHub
+/home/usuario/GitHub/personal
+/home/usuario/GitHub/trabajo
+/home/usuario/GitHub/academia
 ```
 
-::: {.callout-warning}
-## No sobrescribas una clave existente
-
-Cuando `ssh-keygen` pregunte dónde guardar una clave, no aceptes un nombre que ya exista. La cuenta alterna debe tener un archivo con nombre propio.
+::: {.callout-note}
+Linux diferencia entre mayúsculas y minúsculas. Las rutas `~/GitHub/` y
+`~/github/` son diferentes.
 :::
 
-Puedes revisar las claves públicas existentes sin mostrar las privadas:
+# Revisar las claves SSH existentes
 
-```bash
-find ~/.ssh -maxdepth 1 -type f -name "*.pub" -print
-```
-
-# 6. Crear una clave exclusiva para la cuenta alterna
-
-GitHub recomienda claves Ed25519 en sistemas modernos. Ejecuta:
-
-```bash
-ssh-keygen \
-  -t ed25519 \
-  -C "CORREO_ACADEMICO" \
-  -f ~/.ssh/id_ed25519_github_academica
-```
-
-El comando solicitará una frase de contraseña:
-
-```text
-Enter passphrase (empty for no passphrase):
-```
-
-Usa una frase de contraseña que puedas recordar. No debe ser la contraseña de GitHub.
-
-Se crean dos archivos:
-
-```text
-~/.ssh/id_ed25519_github_academica       # privada
-~/.ssh/id_ed25519_github_academica.pub   # pública
-```
-
-Comprueba que existen:
-
-```bash
-ls -l ~/.ssh/id_ed25519_github_academica*
-```
-
-Revisa la huella digital de la clave pública:
-
-```bash
-ssh-keygen -lf ~/.ssh/id_ed25519_github_academica.pub
-```
-
-# 7. Cargar la clave en el agente SSH
-
-Inicia un agente para la sesión actual:
-
-```bash
-eval "$(ssh-agent -s)"
-```
-
-Agrega la clave académica:
-
-```bash
-ssh-add ~/.ssh/id_ed25519_github_academica
-```
-
-Lista las claves cargadas:
-
-```bash
-ssh-add -l
-```
-
-La huella mostrada debe coincidir con la obtenida en la sección anterior.
-
-::: {.callout-tip}
-## PyCharm y el agente SSH
-
-Abre PyCharm después de cargar la clave. Si PyCharm ya estaba abierto y no detecta el agente, ciérralo, vuelve a ejecutar `ssh-add` y ábrelo de nuevo.
-:::
-
-# 8. Agregar la clave pública a la cuenta alterna de GitHub
-
-## 8.1 Evitar confundir las cuentas del navegador
-
-Usa uno de estos métodos:
-
-- un perfil de navegador exclusivo para la cuenta académica;
-- una ventana privada;
-- cerrar sesión de la cuenta principal antes de continuar.
-
-Confirma que el avatar y el nombre de usuario corresponden a `USUARIO_ACADEMICO`.
-
-## 8.2 Copiar la clave pública
-
-Muestra la clave pública:
-
-```bash
-cat ~/.ssh/id_ed25519_github_academica.pub
-```
-
-Copia la línea completa. Debe comenzar por `ssh-ed25519` y terminar con el comentario del correo.
-
-## 8.3 Registrar la clave
-
-En la cuenta alterna de GitHub:
-
-```text
-Profile picture → Settings → SSH and GPG keys → New SSH key
-```
-
-Completa los campos:
-
-- **Title:** `PopOS - PyCharm - cuenta académica`
-- **Key type:** `Authentication Key`
-- **Key:** pega el contenido completo del archivo `.pub`
-
-Pulsa **Add SSH key** y confirma la operación si GitHub lo solicita.
-
-::: {.callout-warning}
-## Organizaciones con inicio de sesión único
-
-Si la universidad usa SAML SSO, puede ser necesario autorizar la clave para esa organización. En **SSH and GPG keys**, busca la clave y usa la opción de configuración o autorización SSO correspondiente.
-:::
-
-# 9. Configurar un alias SSH para la cuenta alterna
-
-El problema de tener dos cuentas es que ambas usan el mismo servidor, `github.com`. Un alias permite indicar qué clave debe usarse para cada repositorio.
-
-Crea el directorio y ajusta permisos si todavía no existen:
+Crear la carpeta SSH si todavía no existe:
 
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
 ```
 
-Abre o crea el archivo de configuración:
+Listar su contenido:
+
+```bash
+ls -la ~/.ssh
+```
+
+Pueden aparecer archivos como:
+
+```text
+id_ed25519
+id_ed25519.pub
+id_rsa
+id_rsa.pub
+known_hosts
+config
+```
+
+No elimine claves existentes sin comprobar previamente dónde se utilizan.
+
+# Crear una clave SSH para cada cuenta
+
+Cada cuenta debe utilizar una clave SSH diferente. Se utilizará el algoritmo
+Ed25519.
+
+## Cuenta personal
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "CORREO_PERSONAL" \
+  -f ~/.ssh/id_ed25519_github_personal
+```
+
+Ejemplo:
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "personal@ejemplo.com" \
+  -f ~/.ssh/id_ed25519_github_personal
+```
+
+## Cuenta de trabajo
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "CORREO_TRABAJO" \
+  -f ~/.ssh/id_ed25519_github_trabajo
+```
+
+Ejemplo:
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "nombre@empresa.com" \
+  -f ~/.ssh/id_ed25519_github_trabajo
+```
+
+## Cuenta académica
+
+Este paso solamente es necesario cuando se utilizará una tercera cuenta.
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "CORREO_ACADEMICO" \
+  -f ~/.ssh/id_ed25519_github_academia
+```
+
+Ejemplo:
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "nombre@universidad.edu" \
+  -f ~/.ssh/id_ed25519_github_academia
+```
+
+Durante la generación de cada clave, SSH solicitará una frase de contraseña:
+
+```text
+Enter passphrase (empty for no passphrase):
+```
+
+Se recomienda establecer una frase de contraseña. Esta frase protege la clave
+privada en caso de que otra persona obtenga acceso al computador.
+
+Después de crear las claves, la carpeta `~/.ssh` contendrá archivos similares a
+los siguientes:
+
+```text
+id_ed25519_github_personal
+id_ed25519_github_personal.pub
+id_ed25519_github_trabajo
+id_ed25519_github_trabajo.pub
+id_ed25519_github_academia
+id_ed25519_github_academia.pub
+```
+
+Los archivos sin extensión son claves privadas. Nunca deben:
+
+- Publicarse.
+- Enviarse por correo electrónico.
+- Copiarse en servicios de mensajería.
+- Agregarse a repositorios.
+- Compartirse con otras personas.
+
+Los archivos terminados en `.pub` son las claves públicas que se registrarán en
+GitHub.
+
+# Configurar los permisos de las claves
+
+Asignar permisos restrictivos a las claves privadas:
+
+```bash
+chmod 600 ~/.ssh/id_ed25519_github_personal
+chmod 600 ~/.ssh/id_ed25519_github_trabajo
+chmod 600 ~/.ssh/id_ed25519_github_academia
+```
+
+Asignar permisos de lectura a las claves públicas:
+
+```bash
+chmod 644 ~/.ssh/id_ed25519_github_personal.pub
+chmod 644 ~/.ssh/id_ed25519_github_trabajo.pub
+chmod 644 ~/.ssh/id_ed25519_github_academia.pub
+```
+
+Cuando solo se utilizan dos cuentas, debe omitirse la línea correspondiente a
+la cuenta académica.
+
+# Registrar las claves públicas en GitHub
+
+Cada clave pública debe registrarse únicamente en la cuenta correspondiente.
+
+## Registrar la clave personal
+
+Mostrar la clave pública:
+
+```bash
+cat ~/.ssh/id_ed25519_github_personal.pub
+```
+
+La salida tendrá una estructura similar a:
+
+```text
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... personal@ejemplo.com
+```
+
+Copiar toda la línea.
+
+Ingresar a la cuenta personal de GitHub y abrir:
+
+```text
+Settings → SSH and GPG keys → New SSH key
+```
+
+Utilizar un título descriptivo:
+
+```text
+Computador Linux personal
+```
+
+Seleccionar el tipo:
+
+```text
+Authentication Key
+```
+
+Pegar la clave pública y guardar.
+
+## Registrar la clave de trabajo
+
+Mostrar la clave:
+
+```bash
+cat ~/.ssh/id_ed25519_github_trabajo.pub
+```
+
+Ingresar a la cuenta de trabajo de GitHub y abrir:
+
+```text
+Settings → SSH and GPG keys → New SSH key
+```
+
+Utilizar un título como:
+
+```text
+Computador Linux trabajo
+```
+
+Pegar la clave pública y guardar.
+
+## Registrar la clave académica
+
+Mostrar la clave:
+
+```bash
+cat ~/.ssh/id_ed25519_github_academia.pub
+```
+
+Ingresar a la cuenta académica y registrar la clave con un título como:
+
+```text
+Computador Linux academia
+```
+
+::: {.callout-warning}
+Una misma clave SSH pública no debe reutilizarse en varias cuentas. Cada cuenta
+debe tener su propia clave.
+:::
+
+# Iniciar el agente SSH
+
+El agente SSH mantiene las claves disponibles durante la sesión.
+
+Iniciar el agente:
+
+```bash
+eval "$(ssh-agent -s)"
+```
+
+La salida será similar a:
+
+```text
+Agent pid 12345
+```
+
+Agregar la clave personal:
+
+```bash
+ssh-add ~/.ssh/id_ed25519_github_personal
+```
+
+Agregar la clave de trabajo:
+
+```bash
+ssh-add ~/.ssh/id_ed25519_github_trabajo
+```
+
+Agregar la clave académica:
+
+```bash
+ssh-add ~/.ssh/id_ed25519_github_academia
+```
+
+Comprobar las claves cargadas:
+
+```bash
+ssh-add -l
+```
+
+Cuando solamente se utilizan dos cuentas, debe omitirse el comando de la cuenta
+académica.
+
+::: {.callout-note}
+Entornos de escritorio como GNOME o KDE pueden iniciar automáticamente un
+agente SSH. En servidores o terminales independientes puede ser necesario
+iniciarlo manualmente.
+:::
+
+# Crear los alias SSH
+
+El archivo `~/.ssh/config` permite asignar un alias diferente a cada cuenta,
+aunque todas se conecten realmente a `github.com`.
+
+Abrir el archivo:
 
 ```bash
 nano ~/.ssh/config
 ```
 
-Agrega este bloque:
+Agregar el siguiente contenido:
 
-```sshconfig
-# Cuenta académica o alterna de GitHub
-Host github-academico
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519_github_academica
-    IdentitiesOnly yes
-    AddKeysToAgent yes
-```
-
-Guarda con `Ctrl+O`, pulsa `Enter` y cierra con `Ctrl+X`.
-
-Protege el archivo:
-
-```bash
-chmod 600 ~/.ssh/config
-chmod 600 ~/.ssh/id_ed25519_github_academica
-chmod 644 ~/.ssh/id_ed25519_github_academica.pub
-```
-
-Comprueba la configuración efectiva:
-
-```bash
-ssh -G github-academico \
-  | grep -E '^(hostname|user|identityfile|identitiesonly) '
-```
-
-La salida debe apuntar a `github.com`, usar el usuario SSH `git` y mostrar la clave académica.
-
-## 9.1 Configuración opcional para separar ambas cuentas explícitamente
-
-Si también tienes una clave personal con nombre propio, puedes usar dos alias:
-
-```sshconfig
+```text
 Host github-personal
     HostName github.com
     User git
@@ -342,677 +504,1099 @@ Host github-personal
     IdentitiesOnly yes
     AddKeysToAgent yes
 
-Host github-academico
+Host github-trabajo
     HostName github.com
     User git
-    IdentityFile ~/.ssh/id_ed25519_github_academica
+    IdentityFile ~/.ssh/id_ed25519_github_trabajo
+    IdentitiesOnly yes
+    AddKeysToAgent yes
+
+Host github-academia
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_github_academia
     IdentitiesOnly yes
     AddKeysToAgent yes
 ```
 
-En ese caso, los repositorios personales deben usar `github-personal` y los académicos `github-academico`.
+Guardar el archivo en Nano:
 
-# 10. Probar la autenticación
+```text
+Ctrl + O
+Enter
+Ctrl + X
+```
 
-Ejecuta:
+Asignar los permisos correctos:
 
 ```bash
-ssh -T git@github-academico
+chmod 600 ~/.ssh/config
 ```
 
-La primera vez puede aparecer una pregunta sobre la huella del servidor. Verifica que el host sea GitHub y responde `yes` para registrar el servidor en `known_hosts`.
-
-Una autenticación correcta muestra un mensaje que incluye el nombre de usuario de la cuenta alterna y aclara que GitHub no ofrece acceso de terminal.
-
-Verificación esperada:
+Cuando solamente se utilizan dos cuentas, el archivo puede quedar así:
 
 ```text
-La respuesta identifica a USUARIO_ACADEMICO.
+Host github-personal
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_github_personal
+    IdentitiesOnly yes
+    AddKeysToAgent yes
+
+Host github-trabajo
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_github_trabajo
+    IdentitiesOnly yes
+    AddKeysToAgent yes
 ```
 
-No continúes si aparece el usuario principal.
+La opción:
 
-Para diagnosticar qué clave se ofrece:
+```text
+IdentitiesOnly yes
+```
+
+obliga a SSH a utilizar exclusivamente la clave definida en el bloque. Esto
+evita que SSH pruebe primero una clave perteneciente a otra cuenta.
+
+# Comprobar la configuración SSH
+
+Consultar la configuración efectiva del perfil personal:
 
 ```bash
-ssh -vT git@github-academico
+ssh -G github-personal | grep -E '^(hostname|user|identityfile) '
 ```
 
-Busca una línea parecida a:
+La salida debe incluir:
 
 ```text
-Offering public key: /home/.../.ssh/id_ed25519_github_academica
+hostname github.com
+user git
+identityfile ~/.ssh/id_ed25519_github_personal
 ```
 
-# 11. Obtener la URL correcta del repositorio
+Consultar el perfil de trabajo:
 
-En GitHub, abre el repositorio y selecciona:
+```bash
+ssh -G github-trabajo | grep -E '^(hostname|user|identityfile) '
+```
+
+Consultar el perfil académico:
+
+```bash
+ssh -G github-academia | grep -E '^(hostname|user|identityfile) '
+```
+
+# Probar las conexiones SSH
+
+## Cuenta personal
+
+```bash
+ssh -T git@github-personal
+```
+
+La respuesta esperada será similar a:
 
 ```text
-Code → Local → SSH
+Hi USUARIO_PERSONAL! You've successfully authenticated, but GitHub does not provide shell access.
 ```
 
-GitHub mostrará una URL con esta forma:
+## Cuenta de trabajo
+
+```bash
+ssh -T git@github-trabajo
+```
+
+La respuesta debe mencionar el usuario de trabajo:
+
+```text
+Hi USUARIO_TRABAJO! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+## Cuenta académica
+
+```bash
+ssh -T git@github-academia
+```
+
+La respuesta debe mencionar el usuario académico:
+
+```text
+Hi USUARIO_ACADEMICO! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+El mensaje indica que la autenticación fue exitosa. GitHub no ofrece acceso a
+una terminal remota, por lo que la referencia a la ausencia de acceso de shell
+es normal.
+
+Durante la primera conexión puede aparecer:
+
+```text
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+```
+
+Antes de aceptar, se recomienda comparar la huella digital mostrada con las
+huellas oficiales publicadas por GitHub.
+
+# Revisar la configuración global de Git
+
+Consultar la configuración actual:
+
+```bash
+git config --global --list
+```
+
+También puede consultarse el archivo de origen de cada valor:
+
+```bash
+git config --global --list --show-origin
+```
+
+Cuando se manejan varias cuentas, no es recomendable conservar globalmente un
+único nombre y correo.
+
+Eliminar un nombre global existente:
+
+```bash
+git config --global --unset-all user.name || true
+```
+
+Eliminar un correo global existente:
+
+```bash
+git config --global --unset-all user.email || true
+```
+
+Configurar el nombre de la rama inicial:
+
+```bash
+git config --global init.defaultBranch main
+```
+
+Impedir que Git construya automáticamente una identidad:
+
+```bash
+git config --global user.useConfigOnly true
+```
+
+Esta opción hace que Git rechace un commit cuando no encuentra una identidad
+configurada explícitamente. Esto ayuda a evitar commits con el correo
+equivocado.
+
+# Crear los perfiles de identidad de Git
+
+Se utilizará un archivo diferente para cada cuenta.
+
+## Perfil personal
+
+Crear el archivo:
+
+```bash
+nano ~/.gitconfig-personal
+```
+
+Agregar:
+
+```ini
+[user]
+    name = NOMBRE_PERSONAL
+    email = CORREO_PERSONAL
+```
+
+Ejemplo:
+
+```ini
+[user]
+    name = Andrea Pérez
+    email = personal@ejemplo.com
+```
+
+## Perfil de trabajo
+
+Crear el archivo:
+
+```bash
+nano ~/.gitconfig-trabajo
+```
+
+Agregar:
+
+```ini
+[user]
+    name = NOMBRE_TRABAJO
+    email = CORREO_TRABAJO
+```
+
+Ejemplo:
+
+```ini
+[user]
+    name = Andrea Pérez
+    email = nombre@empresa.com
+```
+
+## Perfil académico
+
+Crear el archivo:
+
+```bash
+nano ~/.gitconfig-academia
+```
+
+Agregar:
+
+```ini
+[user]
+    name = NOMBRE_ACADEMICO
+    email = CORREO_ACADEMICO
+```
+
+Ejemplo:
+
+```ini
+[user]
+    name = Andrea Pérez
+    email = nombre@universidad.edu
+```
+
+# Seleccionar automáticamente el perfil de Git
+
+Editar el archivo principal de configuración:
+
+```bash
+nano ~/.gitconfig
+```
+
+Agregar:
+
+```ini
+[init]
+    defaultBranch = main
+
+[user]
+    useConfigOnly = true
+
+[includeIf "gitdir:~/GitHub/personal/"]
+    path = ~/.gitconfig-personal
+
+[includeIf "gitdir:~/GitHub/trabajo/"]
+    path = ~/.gitconfig-trabajo
+
+[includeIf "gitdir:~/GitHub/academia/"]
+    path = ~/.gitconfig-academia
+```
+
+Cuando solamente existen dos cuentas, eliminar este bloque:
+
+```ini
+[includeIf "gitdir:~/GitHub/academia/"]
+    path = ~/.gitconfig-academia
+```
+
+La barra final de cada ruta es importante:
+
+```text
+gitdir:~/GitHub/personal/
+```
+
+La condición se aplicará a los repositorios ubicados dentro de esa carpeta y de
+sus subcarpetas.
+
+# Comprobar la selección automática
+
+Crear un repositorio temporal para la cuenta personal:
+
+```bash
+mkdir -p ~/GitHub/personal/prueba-identidad
+cd ~/GitHub/personal/prueba-identidad
+git init
+```
+
+Consultar el nombre:
+
+```bash
+git config --get user.name
+```
+
+Consultar el correo:
+
+```bash
+git config --get user.email
+```
+
+Consultar el origen de la configuración:
+
+```bash
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+La salida debe mencionar:
+
+```text
+.gitconfig-personal
+```
+
+Probar la cuenta de trabajo:
+
+```bash
+mkdir -p ~/GitHub/trabajo/prueba-identidad
+cd ~/GitHub/trabajo/prueba-identidad
+git init
+
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+La salida debe mencionar:
+
+```text
+.gitconfig-trabajo
+```
+
+Probar la cuenta académica:
+
+```bash
+mkdir -p ~/GitHub/academia/prueba-identidad
+cd ~/GitHub/academia/prueba-identidad
+git init
+
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+La salida debe mencionar:
+
+```text
+.gitconfig-academia
+```
+
+Eliminar los repositorios de prueba:
+
+```bash
+rm -rf ~/GitHub/personal/prueba-identidad
+rm -rf ~/GitHub/trabajo/prueba-identidad
+rm -rf ~/GitHub/academia/prueba-identidad
+```
+
+# Clonar repositorios con la cuenta correcta
+
+GitHub muestra normalmente direcciones SSH con este formato:
 
 ```text
 git@github.com:PROPIETARIO/REPOSITORIO.git
 ```
 
-Para usar la cuenta alterna, reemplaza únicamente `github.com` por el alias:
+En esta configuración debe reemplazarse `github.com` por el alias SSH de la
+cuenta.
 
-```text
-git@github-academico:PROPIETARIO/REPOSITORIO.git
-```
+## Repositorio personal
 
-Ejemplo conceptual:
-
-```text
-Original:  git@github.com:curso-programacion/proyecto-final.git
-Alterna:   git@github-academico:curso-programacion/proyecto-final.git
-```
-
-::: {.callout-important}
-## El alias debe quedar en el remoto
-
-Si el remoto conserva `github.com`, SSH puede elegir otra clave. Para este procedimiento, el remoto académico debe contener `github-academico`.
-:::
-
-# 12. Clonar desde la terminal
-
-Crea una carpeta para proyectos académicos:
+Cambiar a la carpeta personal:
 
 ```bash
-mkdir -p ~/Proyectos/academicos
-cd ~/Proyectos/academicos
+cd ~/GitHub/personal
 ```
 
-Clona con la URL modificada:
+Clonar el repositorio:
 
 ```bash
-git clone git@github-academico:PROPIETARIO/REPOSITORIO.git
+git clone \
+  git@github-personal:USUARIO_PERSONAL/NOMBRE_REPOSITORIO.git
 ```
 
-Entra al repositorio:
+Ejemplo:
 
 ```bash
-cd REPOSITORIO
+git clone git@github-personal:usuario-personal/portafolio.git
 ```
 
-Comprueba el remoto:
+## Repositorio de trabajo
+
+Cambiar a la carpeta de trabajo:
 
 ```bash
-git remote -v
+cd ~/GitHub/trabajo
 ```
 
-Debe mostrar algo equivalente a:
-
-```text
-origin  git@github-academico:PROPIETARIO/REPOSITORIO.git (fetch)
-origin  git@github-academico:PROPIETARIO/REPOSITORIO.git (push)
-```
-
-Prueba el acceso sin descargar cambios:
+Clonar un repositorio perteneciente a una organización:
 
 ```bash
-git ls-remote origin
+git clone \
+  git@github-trabajo:ORGANIZACION_TRABAJO/NOMBRE_REPOSITORIO.git
 ```
 
-Si aparecen referencias y hashes, Git puede leer el repositorio.
-
-# 13. Clonar directamente desde PyCharm
-
-Para garantizar que se use el alias SSH:
-
-1. Abre PyCharm.
-2. Selecciona **Git → Clone**. En algunas versiones aparece como **VCS → Get from Version Control** o **Get from VCS**.
-3. Elige la opción **Repository URL** o **Git**, no la lista automática de repositorios.
-4. Pega:
-
-```text
-git@github-academico:PROPIETARIO/REPOSITORIO.git
-```
-
-5. Selecciona la carpeta de destino.
-6. Pulsa **Clone**.
-7. Abre el proyecto cuando PyCharm lo solicite.
-
-## 13.1 Agregar la cuenta alterna a la integración de GitHub de PyCharm
-
-Esta parte es opcional para operaciones Git, pero útil para solicitudes de cambios y navegación en GitHub.
-
-Abre:
-
-```text
-File → Settings → Version Control → GitHub
-```
-
-Pulsa **+** y elige **Log In via GitHub**. En el navegador, inicia sesión con la cuenta alterna y autoriza JetBrains.
-
-::: {.callout-note}
-## Dos credenciales distintas dentro del mismo IDE
-
-La cuenta registrada en **Version Control → GitHub** controla funciones de la interfaz de GitHub. La URL con `github-academico` y la configuración SSH controlan `fetch`, `pull` y `push`.
-:::
-
-# 14. Configurar la autoría de commits solo para este repositorio
-
-Dentro del repositorio clonado, configura el nombre:
+Ejemplo:
 
 ```bash
-git config --local user.name "NOMBRE_ESTUDIANTE"
+git clone \
+  git@github-trabajo:empresa-analitica/modelos-predictivos.git
 ```
 
-Configura un correo asociado a la cuenta académica:
+## Repositorio académico
+
+Cambiar a la carpeta académica:
 
 ```bash
-git config --local user.email "CORREO_ACADEMICO"
+cd ~/GitHub/academia
 ```
 
-También puedes usar el correo privado `noreply` proporcionado por GitHub. Cópialo desde la configuración de correo de la cuenta; no intentes adivinar su formato.
-
-Verifica:
+Clonar el repositorio:
 
 ```bash
-git config --local user.name
-git config --local user.email
+git clone \
+  git@github-academia:ORGANIZACION_ACADEMICA/NOMBRE_REPOSITORIO.git
 ```
 
-Revisa de qué archivo procede cada valor:
+Ejemplo:
 
 ```bash
-git config --show-origin --get-regexp '^user\.(name|email)$'
+git clone \
+  git@github-academia:grupo-investigacion/procesamiento-eeg.git
 ```
 
-Los valores académicos deben proceder de `.git/config`, no únicamente de `~/.gitconfig`.
+# Crear un repositorio personal nuevo
 
-::: {.callout-tip}
-## Por qué se usa `--local`
-
-La opción local afecta únicamente al repositorio actual. La cuenta personal conserva su nombre y correo en otros proyectos.
-:::
-
-# 15. Verificación integral antes de modificar código
-
-Ejecuta este bloque desde la raíz del repositorio:
+Crear la carpeta:
 
 ```bash
-printf '\n--- Identidad Git ---\n'
-git config user.name
-git config user.email
-
-printf '\n--- Remoto ---\n'
-git remote -v
-
-printf '\n--- Rama actual ---\n'
-git branch --show-current
-
-printf '\n--- Acceso remoto ---\n'
-git ls-remote --heads origin | head
+cd ~/GitHub/personal
+mkdir mi-proyecto
+cd mi-proyecto
 ```
 
-Lista de comprobación:
-
-- [ ] `user.name` corresponde a la identidad académica.
-- [ ] `user.email` está asociado a la cuenta alterna.
-- [ ] el remoto contiene `github-academico`.
-- [ ] `git ls-remote` no produce errores.
-- [ ] `ssh -T git@github-academico` identifica la cuenta alterna.
-
-# 16. Primer flujo de trabajo reproducible
-
-## 16.1 Actualizar la rama principal
-
-Consulta el nombre de la rama principal:
+Inicializar Git:
 
 ```bash
-git branch --show-current
+git init
 ```
 
-Supongamos que se llama `main`:
+Crear un archivo inicial:
 
 ```bash
-git switch main
-git pull --ff-only origin main
+printf "# Mi proyecto\n" > README.md
 ```
 
-`--ff-only` evita crear una fusión accidental durante una actualización simple.
-
-## 16.2 Crear una rama de trabajo
-
-No trabajes directamente sobre `main` salvo que la asignatura lo indique expresamente.
+Crear el primer commit:
 
 ```bash
-git switch -c docs/verificacion-configuracion
+git add README.md
+git commit -m "Crear estructura inicial"
 ```
 
-Comprueba la rama:
+Después de crear un repositorio vacío en GitHub, asociar el remoto:
 
 ```bash
-git branch --show-current
+git remote add origin \
+  git@github-personal:USUARIO_PERSONAL/mi-proyecto.git
 ```
 
-## 16.3 Realizar un cambio pequeño
-
-Por ejemplo, crea un archivo de verificación:
+Publicar la rama:
 
 ```bash
-cat > VERIFICACION_GITHUB.md <<'MARKDOWN'
-# Verificación de entorno
-
-- Sistema: Pop!_OS
-- IDE: PyCharm
-- Autenticación: SSH con cuenta académica
-- Trabajo realizado en una rama independiente
-MARKDOWN
+git push -u origin main
 ```
 
-Revisa el estado:
+# Crear un repositorio de trabajo nuevo
+
+Crear la carpeta:
 
 ```bash
-git status
+cd ~/GitHub/trabajo
+mkdir proyecto-empresa
+cd proyecto-empresa
 ```
 
-## 16.4 Preparar y registrar el cambio
+Inicializar Git:
 
 ```bash
-git add VERIFICACION_GITHUB.md
-git diff --cached
-git commit -m "docs: agrega verificación del entorno GitHub"
+git init
 ```
 
-Comprueba el último commit:
+Crear un archivo inicial:
 
 ```bash
-git show --stat --oneline --decorate HEAD
+printf "# Proyecto de empresa\n" > README.md
 ```
 
-Comprueba el autor:
+Crear el commit:
 
 ```bash
-git show -s --format='Autor: %an <%ae>%nCommit: %h%nAsunto: %s' HEAD
+git add README.md
+git commit -m "Crear estructura inicial"
 ```
 
-## 16.5 Publicar la rama
+Asociar el remoto:
 
 ```bash
-git push -u origin docs/verificacion-configuracion
+git remote add origin \
+  git@github-trabajo:ORGANIZACION_TRABAJO/proyecto-empresa.git
 ```
 
-La opción `-u` registra la relación entre la rama local y la remota. En los siguientes envíos bastará con:
+Publicar:
 
 ```bash
-git push
+git push -u origin main
 ```
 
-## 16.6 Abrir una Pull Request
+# Crear un repositorio académico nuevo
 
-En GitHub:
-
-1. abre el repositorio;
-2. selecciona la rama recién publicada;
-3. pulsa **Compare & pull request**;
-4. usa un título claro;
-5. explica qué cambiaste, por qué y cómo lo verificaste;
-6. selecciona revisores si el curso lo exige;
-7. crea la Pull Request.
-
-Ejemplo de descripción:
-
-```markdown
-## Cambio
-Se agregó un archivo de verificación del entorno.
-
-## Motivo
-Confirmar que la cuenta académica, la clave SSH y la rama funcionan.
-
-## Verificación
-- `ssh -T git@github-academico` identifica la cuenta correcta.
-- `git push` finaliza sin errores.
-- El commit usa el correo académico.
-```
-
-# 17. Abrir un repositorio ya clonado con la cuenta incorrecta
-
-No es necesario volver a clonarlo. Entra al repositorio:
+Crear el proyecto:
 
 ```bash
-cd /ruta/al/REPOSITORIO
+cd ~/GitHub/academia
+mkdir proyecto-investigacion
+cd proyecto-investigacion
 ```
 
-Muestra el remoto actual:
+Inicializar Git:
+
+```bash
+git init
+```
+
+Crear un archivo inicial:
+
+```bash
+printf "# Proyecto de investigación\n" > README.md
+```
+
+Crear el commit:
+
+```bash
+git add README.md
+git commit -m "Crear estructura inicial"
+```
+
+Asociar el remoto:
+
+```bash
+git remote add origin \
+  git@github-academia:ORGANIZACION_ACADEMICA/proyecto-investigacion.git
+```
+
+Publicar:
+
+```bash
+git push -u origin main
+```
+
+# Configurar un repositorio existente
+
+Consultar el remoto actual:
 
 ```bash
 git remote -v
 ```
 
-Cambia la URL:
+Un repositorio puede tener una dirección como:
+
+```text
+git@github.com:ORGANIZACION/REPOSITORIO.git
+```
+
+Esta dirección no indica cuál de las claves configuradas debe utilizarse.
+
+## Asignar la cuenta personal
 
 ```bash
 git remote set-url origin \
-  git@github-academico:PROPIETARIO/REPOSITORIO.git
+  git@github-personal:USUARIO_PERSONAL/REPOSITORIO.git
 ```
 
-Configura la autoría local:
-
-```bash
-git config --local user.name "NOMBRE_ESTUDIANTE"
-git config --local user.email "CORREO_ACADEMICO"
-```
-
-Verifica:
-
-```bash
-git remote -v
-git config user.name
-git config user.email
-git fetch origin
-```
-
-# 18. Plugins y funciones recomendadas en PyCharm
-
-No se necesita un plugin de terceros para clonar, hacer commits o publicar ramas.
-
-| Componente | Tipo | Uso |
-|---|---|---|
-| Git | Integrado | ramas, commits, historial, `pull`, `push` y resolución de conflictos |
-| GitHub | Integrado | autenticación web, Pull Requests y navegación hacia GitHub |
-| Terminal | Integrado | ejecutar `ssh`, `git` y comandos de diagnóstico |
-| Markdown | Integrado | editar `README.md`, instrucciones y documentación |
-| Python | Núcleo de PyCharm | intérpretes, entornos virtuales, ejecución y depuración |
-
-Revisa que estén habilitados en:
-
-```text
-File → Settings → Plugins → Installed
-```
-
-::: {.callout-note}
-## Quarto en PyCharm
-
-El archivo `.qmd` puede editarse como Markdown. Para renderizarlo se usa Quarto desde la terminal. La integración Git/GitHub no depende de un plugin específico de Quarto.
-:::
-
-# 19. Solución de problemas
-
-## 19.1 `Permission denied (publickey)`
-
-Diagnóstico:
-
-```bash
-ssh -vT git@github-academico
-```
-
-Comprueba:
-
-```bash
-ssh-add -l
-ls -l ~/.ssh/id_ed25519_github_academica*
-ssh -G github-academico | grep identityfile
-```
-
-Causas habituales:
-
-- la clave no está agregada al agente;
-- la clave pública se agregó a la cuenta equivocada;
-- el archivo `~/.ssh/config` tiene un error de indentación o nombre;
-- el remoto usa `github.com` en lugar de `github-academico`;
-- la organización requiere autorización SSO.
-
-Corrección rápida:
-
-```bash
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519_github_academica
-ssh -T git@github-academico
-```
-
-## 19.2 La prueba SSH identifica la cuenta principal
-
-Verifica que uses el alias:
-
-```bash
-ssh -T git@github-academico
-```
-
-No uses esta prueba para la cuenta alterna:
-
-```bash
-ssh -T git@github.com
-```
-
-Revisa que el bloque incluya:
-
-```sshconfig
-IdentitiesOnly yes
-```
-
-Revisa el remoto:
-
-```bash
-git remote get-url origin
-```
-
-## 19.3 `Repository not found`
-
-Este error puede significar:
-
-- el propietario o nombre del repositorio está mal escrito;
-- la cuenta autenticada no tiene permiso;
-- la invitación de colaboración no fue aceptada;
-- la cuenta no está autorizada para la organización;
-- la organización requiere SSO y la clave no está autorizada.
-
-Primero confirma la cuenta:
-
-```bash
-ssh -T git@github-academico
-```
-
-Luego copia de nuevo la URL desde **Code → SSH** y reemplaza únicamente el host.
-
-## 19.4 Los commits aparecen asociados a la cuenta equivocada
-
-Comprueba el correo del último commit:
-
-```bash
-git show -s --format='%an <%ae>' HEAD
-```
-
-Comprueba la configuración local:
-
-```bash
-git config --show-origin --get-regexp '^user\.(name|email)$'
-```
-
-El correo del commit debe estar agregado y verificado en la cuenta GitHub que debe recibir la atribución.
-
-## 19.5 PyCharm clona con `github.com` y no con el alias
-
-Usa **Repository URL** y pega manualmente:
-
-```text
-git@github-academico:PROPIETARIO/REPOSITORIO.git
-```
-
-Si ya se clonó:
+## Asignar la cuenta de trabajo
 
 ```bash
 git remote set-url origin \
-  git@github-academico:PROPIETARIO/REPOSITORIO.git
+  git@github-trabajo:ORGANIZACION_TRABAJO/REPOSITORIO.git
 ```
 
-## 19.6 PyCharm solicita repetidamente la frase de contraseña
-
-Carga la clave antes de abrir el IDE:
+## Asignar la cuenta académica
 
 ```bash
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519_github_academica
+git remote set-url origin \
+  git@github-academia:ORGANIZACION_ACADEMICA/REPOSITORIO.git
 ```
 
-Verifica:
+Comprobar el cambio:
 
 ```bash
-ssh-add -l
+git remote -v
 ```
 
-## 19.7 El puerto SSH está bloqueado en la red institucional
+# Mover un repositorio a la carpeta correcta
 
-Algunas redes bloquean el puerto 22. GitHub documenta una alternativa para usar SSH por el puerto HTTPS. Antes de cambiar la configuración, confirma con la persona docente o administradora de red que ese es el problema.
+Si un repositorio está fuera de las carpetas configuradas, puede moverse al
+perfil correspondiente.
 
-Prueba:
+Por ejemplo, para un proyecto de trabajo:
 
 ```bash
-ssh -T -p 443 git@ssh.github.com
+mv ~/proyectos/mi-proyecto ~/GitHub/trabajo/
+cd ~/GitHub/trabajo/mi-proyecto
 ```
 
-Una configuración alternativa puede usar:
+Comprobar la identidad:
 
-```sshconfig
-Host github-academico
-    HostName ssh.github.com
-    Port 443
-    User git
-    IdentityFile ~/.ssh/id_ed25519_github_academica
-    IdentitiesOnly yes
+```bash
+git config --show-origin --get user.name
+git config --show-origin --get user.email
 ```
 
-# 20. Buenas prácticas para trabajo académico
+Comprobar el remoto:
 
-- Usa una rama por tarea, corrección o característica.
-- Ejecuta `git status` antes de `git add` y antes de `git commit`.
-- Revisa `git diff` y `git diff --cached`.
-- Escribe mensajes de commit breves y específicos.
-- No publiques contraseñas, tokens, claves privadas, archivos `.env` ni datos personales.
-- Agrega archivos generados, entornos virtuales y secretos a `.gitignore`.
-- Actualiza tu rama antes de iniciar una sesión de trabajo.
-- No uses `git push --force` en ramas compartidas sin autorización.
-- Verifica la cuenta con `ssh -T` cuando cambies de contexto.
-- Mantén la identidad académica con configuración `--local`.
+```bash
+git remote -v
+```
 
-Ejemplo mínimo de `.gitignore` para Python:
+Corregir el remoto si es necesario:
 
-```gitignore
-.venv/
-venv/
-__pycache__/
-*.py[cod]
-.env
-.env.*
-.idea/workspace.xml
-.pytest_cache/
-.mypy_cache/
+```bash
+git remote set-url origin \
+  git@github-trabajo:ORGANIZACION_TRABAJO/REPOSITORIO.git
+```
+
+# Configurar una identidad específica para un repositorio
+
+Un repositorio puede necesitar una identidad diferente de la configurada para
+su carpeta.
+
+Dentro del repositorio, ejecutar:
+
+```bash
+git config --local user.name "NOMBRE ESPECIFICO"
+git config --local user.email "CORREO_ESPECIFICO"
+```
+
+Comprobar el resultado:
+
+```bash
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+La configuración local se almacena en:
+
+```text
+.git/config
+```
+
+La configuración local tiene prioridad sobre los perfiles cargados mediante
+`includeIf`.
+
+Eliminar la configuración local:
+
+```bash
+git config --local --unset-all user.name
+git config --local --unset-all user.email
+```
+
+# Verificar la identidad antes de crear un commit
+
+Consultar el nombre:
+
+```bash
+git config --get user.name
+```
+
+Consultar el correo:
+
+```bash
+git config --get user.email
+```
+
+Consultar el remoto:
+
+```bash
+git remote -v
+```
+
+Consultar el archivo de origen de la identidad:
+
+```bash
+git config --show-origin --get user.name
+git config --show-origin --get user.email
+```
+
+Un repositorio de trabajo debería mostrar un resultado equivalente a:
+
+```text
+Nombre Apellido
+nombre@empresa.com
+git@github-trabajo:ORGANIZACION_TRABAJO/REPOSITORIO.git
+```
+
+Deben comprobarse dos elementos diferentes:
+
+- El nombre y correo determinan el autor del commit.
+- El alias SSH del remoto determina la cuenta utilizada para el `push`.
+
+# Crear un alias de diagnóstico
+
+Puede crearse un alias que muestre la identidad y el remoto del repositorio
+actual.
+
+Ejecutar:
+
+```bash
+git config --global alias.whoami \
+'!f() {
+  echo "Nombre:";
+  git config --get user.name || echo "No configurado";
+  echo;
+  echo "Correo:";
+  git config --get user.email || echo "No configurado";
+  echo;
+  echo "Remoto:";
+  git remote get-url origin 2>/dev/null || echo "No configurado";
+}; f'
+```
+
+Después podrá utilizarse:
+
+```bash
+git whoami
+```
+
+Una salida posible será:
+
+```text
+Nombre:
+Andrea Pérez
+
+Correo:
+nombre@empresa.com
+
+Remoto:
+git@github-trabajo:empresa-analitica/modelos.git
+```
+
+# Corregir el último commit
+
+Consultar el autor del último commit:
+
+```bash
+git log -1 --format='Autor: %an <%ae>'
+```
+
+Cuando el commit todavía no se ha publicado y contiene una identidad incorrecta,
+configurar la identidad adecuada:
+
+```bash
+git config user.name "NOMBRE CORRECTO"
+git config user.email "CORREO CORRECTO"
+```
+
+Corregir el autor:
+
+```bash
+git commit --amend --reset-author --no-edit
+```
+
+Comprobar el resultado:
+
+```bash
+git log -1 --format='Autor: %an <%ae>'
 ```
 
 ::: {.callout-warning}
-## `.gitignore` no elimina secretos ya publicados
-
-Si un secreto fue incluido en un commit, agregarlo después a `.gitignore` no lo borra del historial. Debe revocarse o rotarse inmediatamente y el incidente debe comunicarse a la persona responsable.
+Modificar commits que ya fueron publicados cambia el historial. No se recomienda
+reescribir una rama compartida sin coordinarlo previamente con las demás
+personas involucradas.
 :::
 
-# 21. Lista final de validación
+# Solucionar el error Permission denied
 
-## Cuenta y permisos
+El error puede aparecer como:
 
-- [ ] La cuenta alterna puede abrir el repositorio en el navegador.
-- [ ] La invitación de colaboración fue aceptada.
-- [ ] La clave pública está agregada a la cuenta correcta.
-- [ ] La clave está autorizada para SSO cuando corresponde.
+```text
+Permission denied (publickey).
+```
 
-## Equipo
-
-- [ ] Git y OpenSSH están instalados.
-- [ ] La clave privada tiene permisos `600`.
-- [ ] `~/.ssh/config` tiene permisos `600`.
-- [ ] El agente SSH contiene la clave académica.
-
-## Repositorio
-
-- [ ] El remoto contiene `github-academico`.
-- [ ] `ssh -T git@github-academico` identifica la cuenta alterna.
-- [ ] `git config user.name` devuelve el nombre correcto.
-- [ ] `git config user.email` devuelve el correo correcto.
-- [ ] `git fetch` y `git push` funcionan.
-- [ ] El trabajo se publicó en una rama independiente.
-
-# 22. Resumen de comandos
+Probar detalladamente la cuenta personal:
 
 ```bash
-# 1. Instalar herramientas
-sudo apt update
-sudo apt install git openssh-client
+ssh -vT git@github-personal
+```
 
-# 2. Crear clave académica
-ssh-keygen -t ed25519 \
-  -C "CORREO_ACADEMICO" \
-  -f ~/.ssh/id_ed25519_github_academica
+Probar la cuenta de trabajo:
 
-# 3. Iniciar agente y cargar clave
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519_github_academica
+```bash
+ssh -vT git@github-trabajo
+```
 
-# 4. Mostrar clave pública para copiarla a GitHub
-cat ~/.ssh/id_ed25519_github_academica.pub
+Probar la cuenta académica:
 
-# 5. Probar el alias después de configurar ~/.ssh/config
-ssh -T git@github-academico
+```bash
+ssh -vT git@github-academia
+```
 
-# 6. Clonar
-git clone git@github-academico:PROPIETARIO/REPOSITORIO.git
-cd REPOSITORIO
+Revisar las claves cargadas:
 
-# 7. Configurar identidad local
-git config --local user.name "NOMBRE_ESTUDIANTE"
-git config --local user.email "CORREO_ACADEMICO"
+```bash
+ssh-add -l
+```
 
-# 8. Crear rama, commit y publicar
-git switch -c docs/verificacion-configuracion
+Agregar nuevamente las claves si no aparecen:
+
+```bash
+ssh-add ~/.ssh/id_ed25519_github_personal
+ssh-add ~/.ssh/id_ed25519_github_trabajo
+ssh-add ~/.ssh/id_ed25519_github_academia
+```
+
+Revisar los permisos:
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config
+chmod 600 ~/.ssh/id_ed25519_github_personal
+chmod 600 ~/.ssh/id_ed25519_github_trabajo
+chmod 600 ~/.ssh/id_ed25519_github_academia
+```
+
+También debe comprobarse que cada clave pública esté registrada en la cuenta
+correcta de GitHub.
+
+# Solucionar el uso de una cuenta equivocada
+
+Probar cada alias:
+
+```bash
+ssh -T git@github-personal
+ssh -T git@github-trabajo
+ssh -T git@github-academia
+```
+
+Cada comando debe responder con un usuario de GitHub diferente.
+
+Después revisar el remoto del repositorio:
+
+```bash
+git remote -v
+```
+
+Un repositorio de trabajo no debe utilizar:
+
+```text
+git@github-personal:ORGANIZACION/REPOSITORIO.git
+```
+
+Debe utilizar:
+
+```text
+git@github-trabajo:ORGANIZACION/REPOSITORIO.git
+```
+
+Corregirlo:
+
+```bash
+git remote set-url origin \
+  git@github-trabajo:ORGANIZACION/REPOSITORIO.git
+```
+
+# Solucionar el uso de un correo incorrecto
+
+Consultar todas las configuraciones relacionadas con el nombre:
+
+```bash
+git config --show-origin --get-all user.name
+```
+
+Consultar todas las configuraciones relacionadas con el correo:
+
+```bash
+git config --show-origin --get-all user.email
+```
+
+Comprobar si existe una identidad local:
+
+```bash
+git config --local --list
+```
+
+Eliminar valores locales incorrectos:
+
+```bash
+git config --local --unset-all user.name
+git config --local --unset-all user.email
+```
+
+Comprobar nuevamente:
+
+```bash
+git config --get user.name
+git config --get user.email
+```
+
+# Solucionar el error Author identity unknown
+
+Git puede mostrar:
+
+```text
+Author identity unknown
+```
+
+Este error indica que el repositorio no está dentro de una carpeta administrada
+por `includeIf` y tampoco tiene una identidad local.
+
+Consultar la ubicación:
+
+```bash
+pwd
+```
+
+Mover el repositorio a la carpeta correspondiente o configurar una identidad
+local:
+
+```bash
+git config --local user.name "NOMBRE"
+git config --local user.email "CORREO"
+```
+
+# Solucionar el error Key already in use
+
+GitHub puede mostrar:
+
+```text
+Key already in use
+```
+
+Esto significa que la clave pública ya está registrada en otra cuenta o como
+clave de despliegue.
+
+La solución recomendada es generar una clave nueva:
+
+```bash
+ssh-keygen \
+  -t ed25519 \
+  -C "CORREO_DE_LA_CUENTA" \
+  -f ~/.ssh/id_ed25519_github_nueva_cuenta
+```
+
+Después debe registrarse la nueva clave pública en GitHub y crear un bloque
+adicional en `~/.ssh/config`.
+
+# Configuración final esperada
+
+La estructura general será similar a:
+
+```text
+/home/usuario/
+├── .gitconfig
+├── .gitconfig-personal
+├── .gitconfig-trabajo
+├── .gitconfig-academia
+├── .ssh/
+│   ├── config
+│   ├── id_ed25519_github_personal
+│   ├── id_ed25519_github_personal.pub
+│   ├── id_ed25519_github_trabajo
+│   ├── id_ed25519_github_trabajo.pub
+│   ├── id_ed25519_github_academia
+│   └── id_ed25519_github_academia.pub
+└── GitHub/
+    ├── personal/
+    ├── trabajo/
+    └── academia/
+```
+
+El archivo `~/.ssh/config` selecciona la clave utilizada para autenticarse.
+
+El archivo `~/.gitconfig` selecciona automáticamente el perfil según la carpeta
+del repositorio.
+
+Los archivos:
+
+```text
+~/.gitconfig-personal
+~/.gitconfig-trabajo
+~/.gitconfig-academia
+```
+
+contienen el nombre y el correo utilizados en los commits.
+
+# Lista de comprobación
+
+Antes de trabajar con un repositorio, comprobar:
+
+- El repositorio está en la carpeta del perfil correcto.
+- `git config --get user.name` muestra el nombre esperado.
+- `git config --get user.email` muestra un correo verificado.
+- `git remote -v` utiliza el alias SSH correcto.
+- `ssh -T` reconoce la cuenta esperada.
+- Las claves privadas tienen permisos `600`.
+- La carpeta `~/.ssh` tiene permisos `700`.
+- Las claves privadas no están almacenadas en repositorios.
+
+# Flujo de trabajo recomendado
+
+Para proyectos personales:
+
+```bash
+cd ~/GitHub/personal
+git clone git@github-personal:USUARIO_PERSONAL/REPOSITORIO.git
+```
+
+Para proyectos de trabajo:
+
+```bash
+cd ~/GitHub/trabajo
+git clone git@github-trabajo:ORGANIZACION_TRABAJO/REPOSITORIO.git
+```
+
+Para proyectos académicos:
+
+```bash
+cd ~/GitHub/academia
+git clone git@github-academia:ORGANIZACION_ACADEMICA/REPOSITORIO.git
+```
+
+Dentro de cada repositorio:
+
+```bash
+git whoami
+git status
 git add .
-git commit -m "docs: agrega verificación del entorno GitHub"
-git push -u origin docs/verificacion-configuracion
+git commit -m "Descripción del cambio"
+git push
 ```
 
-# 23. Renderizar este tutorial con Quarto
+Esta organización reduce el riesgo de publicar código con la cuenta incorrecta
+o registrar commits con un correo que no corresponde al proyecto.
 
-Guarda este archivo como:
+# Renderizar la página Quarto
+
+Guardar el contenido en un archivo llamado:
 
 ```text
-tutorial_github_popos.qmd
+configurar-varias-cuentas-github.qmd
 ```
 
-Desde la carpeta que contiene el archivo ejecuta:
+Generar la página HTML:
 
 ```bash
-quarto render tutorial_github_popos.qmd
+quarto render configurar-varias-cuentas-github.qmd
 ```
 
-Quarto generará:
+El archivo generado estará disponible en la misma carpeta con el nombre:
 
 ```text
-tutorial_github_popos.html
+configurar-varias-cuentas-github.html
 ```
 
-Para previsualizar y recargar automáticamente:
+Para visualizar la página durante la edición:
 
 ```bash
-quarto preview tutorial_github_popos.qmd
+quarto preview configurar-varias-cuentas-github.qmd
 ```
 
-# 24. Fuentes oficiales
+# Referencias
 
-- [GitHub Docs: administrar varias cuentas](https://docs.github.com/en/account-and-profile/how-tos/account-management/managing-multiple-accounts)
-- [GitHub Docs: configurar Git](https://docs.github.com/en/get-started/git-basics/set-up-git)
-- [GitHub Docs: generar una clave SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
-- [GitHub Docs: agregar una clave SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
-- [GitHub Docs: probar la conexión SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection)
-- [GitHub Docs: clonar un repositorio](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-- [GitHub Docs: configurar el correo de los commits](https://docs.github.com/en/account-and-profile/how-tos/email-preferences/setting-your-commit-email-address)
-- [GitHub Docs: usar SSH por el puerto HTTPS](https://docs.github.com/en/authentication/troubleshooting-ssh/using-ssh-over-the-https-port)
-- [PyCharm: configurar una cuenta de GitHub](https://www.jetbrains.com/help/pycharm/set-up-a-github-account.html)
-- [PyCharm: administrar proyectos de GitHub](https://www.jetbrains.com/help/pycharm/manage-projects-hosted-on-github.html)
-- [PyCharm: usar claves SSH](https://www.jetbrains.com/help/pycharm/using-ssh-keys.html)
-- [Quarto: formato HTML](https://quarto.org/docs/output-formats/html-basics.html)
-
-::: {.footer-note}
-Documento orientado a prácticas de laboratorio y cursos de programación. Los nombres de menús pueden variar ligeramente entre versiones de PyCharm y GitHub.
-:::
+- [Administración de varias cuentas de GitHub](https://docs.github.com/en/account-and-profile/how-tos/account-management/managing-multiple-accounts)
+- [Conexión con GitHub mediante SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+- [Generación de una clave SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+- [Agregar una clave SSH a GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
+- [Probar una conexión SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection)
+- [Documentación de git-config](https://git-scm.com/docs/git-config)

@@ -1,146 +1,1929 @@
 ---
-title: "Instalación de Entorno de trabajo. UV"
-description: "Tutorial"
-subtitle: "Ingeniería Biomédica"
+title: "Configuración de uv para gestionar entornos Python"
+subtitle: "Instalación y uso en Linux y Windows sin permisos de administrador"
+author: "Ph.D. Pablo Eduardo Caicedo R."
+image: "../recursos/imagenes/tutoriales/uv/tutorial-uv.png"
 lang: es
-author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
-image: "../recursos/imagenes/tutoriales/InstalacionPython/portada.png"
-date: last-modified
 format:
   html:
+    theme: cosmo
     toc: true
+    toc-title: "Contenido"
     toc-location: left
-    code-tools: true
-    code-overflow: wrap
-    code-line-numbers: true
+    toc-depth: 3
+    number-sections: false
+    smooth-scroll: true
     code-copy: true
+    code-overflow: wrap
+    anchor-sections: true
+    link-external-newwindow: true
     fig-align: center
-    align: justify
-    self-contained: true
-    theme:
-      - simple
-      - ../recursos/estilos/metropolis.scss
-    slide-number: true
-    preview-links: auto
-    logo: ../recursos/imagenes/generales/Escuela_Rosario_logo.png
-    css: ../recursos/estilos/styles_pres.scss
-    footer: <https://pablocaicedor.github.io/>
-    transition: fade
-    progress: true
-    scrollable: true
-    mainfont: "Fira Code"
-
-resources:
-  - demo.pdf
+    fig-responsive: true
+execute:
+  echo: true
+  warning: false
 ---
 
-# Descarga de UV
+# Introducción
 
-# Instalación de UV
+`uv` es un administrador de proyectos, paquetes, versiones de Python y entornos virtuales desarrollado por [Astral](https://astral.sh/). Puede reemplazar o complementar herramientas como `pip`, `pip-tools`, `virtualenv`, `venv`, `pipx`, Poetry y Pyenv.
 
-# Configuración de UV
+Entre sus principales funciones se encuentran:
 
-## Escalabilidad y Reproducibilidad
+- instalar diferentes versiones de Python;
+- crear entornos virtuales aislados;
+- inicializar proyectos Python;
+- declarar y resolver dependencias;
+- generar archivos de bloqueo reproducibles;
+- ejecutar scripts dentro del entorno correcto;
+- instalar herramientas de línea de comandos;
+- administrar una caché compartida de paquetes.
 
-Para asegurar la escalabilidad y la reproducibilidad en proyectos de procesamiento de señales e IA, la integración de módulos desde una carpeta `src/` hacia un punto de entrada raíz (`main.py`) debe seguir estándares de desarrollo **Senior**. En este documento se detalla la configuración técnica requerida utilizando `uv`.
+Una ventaja importante es que el instalador autónomo de `uv` no necesita que Python esté previamente instalado.
 
-## 1. Definición de Paquetes mediante `__init__.py`
+::: {.callout-note}
+## Objetivo del tutorial
 
-En arquitecturas profesionales, cada subdirectorio dentro de `src/` debe ser tratado como un paquete. Aunque Python 3.3+ permite *Namespace Packages*, la inclusión explícita de archivos `__init__.py` es la norma en desarrollo robusto para delimitar el alcance de los módulos.
+Al finalizar este tutorial se podrá:
 
-Su estructura debe consolidarse de la siguiente manera:
+- instalar `uv` en Linux;
+- instalar `uv` en Windows sin una cuenta de administrador;
+- instalar y seleccionar versiones de Python;
+- crear entornos virtuales;
+- iniciar proyectos reproducibles;
+- agregar, actualizar y eliminar dependencias;
+- ejecutar aplicaciones sin activar manualmente el entorno virtual.
+:::
+
+# Arquitectura general de uv
+
+`uv` funciona como una capa de administración entre el usuario, las versiones de Python, las dependencias y los archivos del proyecto.
+
+```{dot}
+//| echo: false
+//| label: fig-arquitectura-uv
+//| fig-cap: "Componentes principales administrados por uv."
+//| fig-width: 8
+digraph uv_architecture {
+    graph [
+        rankdir=LR,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.5,
+        ranksep=0.8
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Arial",
+        fontsize=11,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.18,0.12"
+    ];
+
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=10,
+        arrowsize=0.8
+    ];
+
+    usuario [
+        label="Usuario\nTerminal o IDE",
+        fillcolor="#dbeafe"
+    ];
+
+    uv [
+        label="uv\nAdministrador central",
+        shape=ellipse,
+        fillcolor="#fef3c7",
+        penwidth=2
+    ];
+
+    python [
+        label="Versiones de Python\n3.11, 3.12, 3.13...",
+        fillcolor="#dcfce7"
+    ];
+
+    proyecto [
+        label="Proyecto Python\npyproject.toml",
+        fillcolor="#ede9fe"
+    ];
+
+    entorno [
+        label="Entorno virtual\n.venv/",
+        fillcolor="#ffe4e6"
+    ];
+
+    lock [
+        label="Dependencias resueltas\nuv.lock",
+        fillcolor="#e0f2fe"
+    ];
+
+    cache [
+        label="Caché global\nPaquetes compartidos",
+        fillcolor="#f1f5f9"
+    ];
+
+    ejecucion [
+        label="Ejecución aislada\nuv run",
+        fillcolor="#ecfccb"
+    ];
+
+    usuario -> uv [label=" comandos"];
+    uv -> python [label=" instala y selecciona"];
+    uv -> proyecto [label=" inicializa"];
+    uv -> entorno [label=" crea y sincroniza"];
+    uv -> lock [label=" resuelve"];
+    uv -> cache [label=" reutiliza"];
+    proyecto -> entorno [label=" dependencias"];
+    lock -> entorno [label=" versiones exactas"];
+    entorno -> ejecucion [label=" proporciona"];
+    ejecucion -> usuario [label=" resultados"];
+}
+```
+
+El entorno virtual de cada proyecto se guarda, por defecto, en una carpeta llamada `.venv`. Esta carpeta se mantiene separada de las instalaciones globales de Python y de los entornos de otros proyectos.
+
+# Conceptos fundamentales
+
+Antes de instalar `uv`, conviene diferenciar los elementos que administra.
+
+| Elemento | Función |
+|---|---|
+| `uv` | Ejecutable que administra Python, proyectos, paquetes y entornos. |
+| Python | Intérprete utilizado para ejecutar el código. |
+| `.venv/` | Entorno virtual aislado del proyecto. |
+| `pyproject.toml` | Configuración y declaración principal de dependencias. |
+| `uv.lock` | Versiones exactas resueltas para obtener instalaciones reproducibles. |
+| `.python-version` | Versión de Python seleccionada para el proyecto. |
+| Caché de `uv` | Almacén compartido que evita descargar repetidamente los mismos paquetes. |
+
+::: {.callout-important}
+## No confundir uv con Python
+
+Instalar `uv` no significa instalar automáticamente todas las versiones de Python. Después de instalarlo, se puede pedir a `uv` que descargue las versiones necesarias.
+
+Por ejemplo:
+
+```bash
+uv python install 3.12
+```
+:::
+
+# Instalación en Linux
+
+## Flujo de instalación
+
+```{dot}
+//| label: fig-instalacion-linux
+//| fig-cap: "Proceso recomendado para instalar uv en Linux."
+//| fig-width: 7
+//| echo: false
+
+digraph linux_install {
+    graph [
+        rankdir=TB,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.4,
+        ranksep=0.55
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Arial",
+        fontsize=11,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.18,0.12"
+    ];
+
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=10
+    ];
+
+    inicio [
+        label="Abrir una terminal",
+        shape=ellipse,
+        fillcolor="#dbeafe"
+    ];
+
+    comprobar [
+        label="Comprobar si existe\ncurl o wget",
+        shape=diamond,
+        fillcolor="#fef3c7"
+    ];
+
+    instalar_curl [
+        label="Instalar curl\nsegún la distribución",
+        fillcolor="#fee2e2"
+    ];
+
+    revisar [
+        label="Opcional: inspeccionar\nel script de instalación",
+        fillcolor="#f1f5f9"
+    ];
+
+    instalar [
+        label="Ejecutar el instalador\noficial de uv",
+        fillcolor="#dcfce7"
+    ];
+
+    recargar [
+        label="Reabrir la terminal\no recargar el shell",
+        fillcolor="#ede9fe"
+    ];
+
+    verificar [
+        label="Ejecutar\nuv --version",
+        fillcolor="#e0f2fe"
+    ];
+
+    fin [
+        label="uv disponible",
+        shape=ellipse,
+        fillcolor="#ecfccb"
+    ];
+
+    inicio -> comprobar;
+    comprobar -> revisar [label=" sí"];
+    comprobar -> instalar_curl [label=" no"];
+    instalar_curl -> revisar;
+    revisar -> instalar;
+    instalar -> recargar;
+    recargar -> verificar;
+    verificar -> fin;
+}
+```
+
+## Identificar el shell utilizado
+
+En Linux, el instalador puede modificar la configuración del shell para agregar `uv` al `PATH`. Para identificar el shell actual, ejecute:
+
+```bash
+echo "$SHELL"
+```
+
+Los resultados más comunes son:
 
 ```text
-.
-├── src/
-│   ├── __init__.py
-│   ├── features/
-│   │   ├── __init__.py
-│   │   └── extraction.py
-│   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   └── filters.py
-│   └── models/
-│       ├── __init__.py
-│       └── causal_ia.py
+/bin/bash
+/bin/zsh
+/usr/bin/fish
+```
+
+También puede consultar el nombre del proceso actual:
+
+```bash
+ps -p $$ -o comm=
+```
+
+## Comprobar curl o wget
+
+Compruebe si `curl` está disponible:
+
+```bash
+curl --version
+```
+
+Como alternativa, compruebe `wget`:
+
+```bash
+wget --version
+```
+
+Cuando ninguno esté instalado, utilice el administrador de paquetes de la distribución.
+
+### Ubuntu, Debian y distribuciones derivadas
+
+```bash
+sudo apt update
+sudo apt install -y curl
+```
+
+### Fedora
+
+```bash
+sudo dnf install -y curl
+```
+
+### Arch Linux y distribuciones derivadas
+
+```bash
+sudo pacman -S curl
+```
+
+::: {.callout-tip}
+Solo se necesita una de las dos herramientas: `curl` o `wget`.
+:::
+
+## Inspeccionar el instalador
+
+Antes de ejecutar un script descargado desde Internet, es posible revisar su contenido:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | less
+```
+
+Presione `q` para salir de `less`.
+
+También se puede guardar el script en un archivo temporal:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh \
+  -o /tmp/install-uv.sh
+
+less /tmp/install-uv.sh
+```
+
+Después de revisarlo:
+
+```bash
+sh /tmp/install-uv.sh
+```
+
+## Instalar uv con curl
+
+El método recomendado por Astral es:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+El instalador normalmente guarda los ejecutables del usuario en:
+
+```text
+~/.local/bin/
+```
+
+Los ejecutables principales son:
+
+```text
+uv
+uvx
+```
+
+## Instalar uv con wget
+
+Cuando `curl` no esté disponible:
+
+```bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
+
+## Recargar la terminal
+
+La opción más sencilla es cerrar la terminal y abrirla nuevamente.
+
+También puede recargarse manualmente la configuración del shell.
+
+### Bash
+
+```bash
+source ~/.bashrc
+```
+
+### Zsh
+
+```bash
+source ~/.zshrc
+```
+
+## Verificar la instalación
+
+Ejecute:
+
+```bash
+uv --version
+```
+
+También puede localizar el ejecutable:
+
+```bash
+command -v uv
+```
+
+El resultado normalmente será similar a:
+
+```text
+/home/usuario/.local/bin/uv
+```
+
+Consulte la ayuda general:
+
+```bash
+uv --help
+```
+
+## Corregir el PATH manualmente
+
+Cuando aparezca el mensaje `uv: command not found`, agregue el directorio de instalación al `PATH`.
+
+### Bash
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Zsh
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Fish
+
+```fish
+fish_add_path "$HOME/.local/bin"
+```
+
+Compruebe nuevamente:
+
+```bash
+uv --version
+```
+
+## Configurar autocompletado en Bash
+
+```bash
+echo 'eval "$(uv generate-shell-completion bash)"' \
+  >> ~/.bashrc
+
+echo 'eval "$(uvx --generate-shell-completion bash)"' \
+  >> ~/.bashrc
+
+source ~/.bashrc
+```
+
+## Configurar autocompletado en Zsh
+
+```bash
+echo 'eval "$(uv generate-shell-completion zsh)"' \
+  >> ~/.zshrc
+
+echo 'eval "$(uvx --generate-shell-completion zsh)"' \
+  >> ~/.zshrc
+
+source ~/.zshrc
+```
+
+## Actualizar uv en Linux
+
+Cuando se utilizó el instalador autónomo oficial:
+
+```bash
+uv self update
+```
+
+Compruebe la versión instalada:
+
+```bash
+uv --version
+```
+
+# Instalación en Windows sin administrador
+
+La instalación puede realizarse desde una sesión normal de PowerShell. No es necesario abrir PowerShell con la opción **Ejecutar como administrador**.
+
+El instalador se ejecuta en el contexto del usuario y almacena el ejecutable en un directorio perteneciente a ese usuario.
+
+## Flujo de instalación
+
+```{dot}
+//| label: fig-instalacion-windows
+//| fig-cap: "Instalación de uv en Windows sin permisos administrativos."
+//| fig-width: 8
+//| echo: false
+
+digraph windows_install {
+    graph [
+        rankdir=TB,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.4,
+        ranksep=0.55
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Arial",
+        fontsize=11,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.18,0.12"
+    ];
+
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=10
+    ];
+
+    inicio [
+        label="Abrir PowerShell\ncomo usuario normal",
+        shape=ellipse,
+        fillcolor="#dbeafe"
+    ];
+
+    revisar [
+        label="Opcional: revisar\nel script remoto",
+        fillcolor="#f1f5f9"
+    ];
+
+    ejecutar [
+        label="Ejecutar el instalador con\nExecutionPolicy ByPass",
+        fillcolor="#dcfce7"
+    ];
+
+    usuario [
+        label="Instalación dentro del\nperfil del usuario",
+        fillcolor="#ede9fe"
+    ];
+
+    reiniciar [
+        label="Cerrar y abrir\nPowerShell",
+        fillcolor="#fef3c7"
+    ];
+
+    detectar [
+        label="¿PowerShell encuentra uv?",
+        shape=diamond,
+        fillcolor="#fee2e2"
+    ];
+
+    path [
+        label="Agregar .local\\bin al\nPATH del usuario",
+        fillcolor="#ffe4e6"
+    ];
+
+    verificar [
+        label="uv --version",
+        fillcolor="#e0f2fe"
+    ];
+
+    fin [
+        label="uv disponible\nsin administrador",
+        shape=ellipse,
+        fillcolor="#ecfccb"
+    ];
+
+    inicio -> revisar;
+    revisar -> ejecutar;
+    ejecutar -> usuario;
+    usuario -> reiniciar;
+    reiniciar -> detectar;
+    detectar -> verificar [label=" sí"];
+    detectar -> path [label=" no"];
+    path -> verificar;
+    verificar -> fin;
+}
+```
+
+## Abrir PowerShell
+
+Abra el menú Inicio, busque **PowerShell** y ejecútelo normalmente.
+
+No seleccione:
+
+```text
+Ejecutar como administrador
+```
+
+Para comprobar la identidad de la sesión:
+
+```powershell
+whoami
+```
+
+## Inspeccionar el instalador
+
+Antes de ejecutarlo, puede revisar su contenido:
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | more"
+```
+
+`irm` es un alias de `Invoke-RestMethod`.
+
+## Ejecutar el instalador oficial
+
+Ejecute:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+En este comando:
+
+- `-ExecutionPolicy ByPass` aplica la política únicamente al proceso lanzado;
+- `irm` descarga el script;
+- `iex` ejecuta el contenido descargado;
+- no se modifica la política de ejecución de todo el computador;
+- no se requiere acceso a la cuenta de administrador.
+
+::: {.callout-warning}
+No cambie la política de ejecución con alcance `LocalMachine`. Para instalar `uv` no es necesario modificar la configuración global del equipo.
+:::
+
+## Cerrar y volver a abrir PowerShell
+
+Después de instalar, cierre todas las ventanas de PowerShell y abra una nueva.
+
+Compruebe la instalación:
+
+```powershell
+uv --version
+```
+
+Localice el comando:
+
+```powershell
+Get-Command uv
+```
+
+## Corregir el PATH del usuario
+
+Cuando PowerShell indique que `uv` no se reconoce como comando, agregue el directorio de instalación al `PATH` del usuario.
+
+```powershell
+$uvBin = Join-Path $env:USERPROFILE ".local\bin"
+
+$currentUserPath = [Environment]::GetEnvironmentVariable(
+    "Path",
+    "User"
+)
+
+$pathEntries = $currentUserPath -split ";"
+
+if ($pathEntries -notcontains $uvBin) {
+    $newUserPath = if ([string]::IsNullOrWhiteSpace($currentUserPath)) {
+        $uvBin
+    }
+    else {
+        "$currentUserPath;$uvBin"
+    }
+
+    [Environment]::SetEnvironmentVariable(
+        "Path",
+        $newUserPath,
+        "User"
+    )
+}
+```
+
+Actualice también el `PATH` de la sesión actual:
+
+```powershell
+$env:Path = "$env:Path;$uvBin"
+```
+
+Verifique:
+
+```powershell
+uv --version
+```
+
+::: {.callout-note}
+La modificación anterior afecta solamente el `PATH` del usuario actual. No modifica el `PATH` del sistema y no necesita permisos administrativos.
+:::
+
+## Configurar autocompletado en PowerShell
+
+Compruebe si existe un perfil:
+
+```powershell
+Test-Path $PROFILE
+```
+
+Créelo cuando sea necesario:
+
+```powershell
+if (!(Test-Path -Path $PROFILE)) {
+    New-Item -ItemType File -Path $PROFILE -Force
+}
+```
+
+Agregue el autocompletado de `uv`:
+
+```powershell
+Add-Content `
+    -Path $PROFILE `
+    -Value '(& uv generate-shell-completion powershell) | Out-String | Invoke-Expression'
+```
+
+Agregue el autocompletado de `uvx`:
+
+```powershell
+Add-Content `
+    -Path $PROFILE `
+    -Value '(& uvx --generate-shell-completion powershell) | Out-String | Invoke-Expression'
+```
+
+Cierre y abra PowerShell.
+
+## Actualizar uv en Windows
+
+Cuando se utilizó el instalador autónomo:
+
+```powershell
+uv self update
+```
+
+Compruebe la versión:
+
+```powershell
+uv --version
+```
+
+# Instalar y administrar Python con uv
+
+Después de instalar `uv`, puede administrar versiones de Python sin depender de una instalación global realizada por un administrador.
+
+## Consultar versiones disponibles
+
+```bash
+uv python list
+```
+
+La lista puede incluir:
+
+- versiones instaladas por `uv`;
+- versiones del sistema;
+- versiones disponibles para descargar.
+
+## Instalar una versión de Python
+
+Para instalar Python 3.12:
+
+```bash
+uv python install 3.12
+```
+
+Para instalar varias versiones:
+
+```bash
+uv python install 3.11 3.12 3.13
+```
+
+Para instalar la versión estable seleccionada por `uv`:
+
+```bash
+uv python install
+```
+
+## Ver las versiones instaladas por uv
+
+```bash
+uv python list --only-installed
+```
+
+También puede consultar el directorio donde `uv` almacena Python:
+
+```bash
+uv python dir
+```
+
+## Seleccionar una versión para un proyecto
+
+Desde la raíz del proyecto:
+
+```bash
+uv python pin 3.12
+```
+
+Este comando crea o actualiza:
+
+```text
+.python-version
+```
+
+Para consultar la selección actual:
+
+```bash
+uv python pin
+```
+
+## Seleccionar una versión global del usuario
+
+```bash
+uv python pin --global 3.12
+```
+
+La selección local de un proyecto tiene prioridad sobre la configuración global.
+
+## Eliminar una versión administrada
+
+```bash
+uv python uninstall 3.11
+```
+
+# Crear un proyecto Python
+
+## Flujo de trabajo recomendado
+
+```{dot}
+//| label: fig-flujo-proyecto
+//| fig-cap: "Ciclo básico de un proyecto administrado con uv."
+//| fig-width: 9
+//| echo: false
+
+digraph uv_project_flow {
+    graph [
+        rankdir=LR,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.45,
+        ranksep=0.7
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Arial",
+        fontsize=10,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.16,0.1"
+    ];
+
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=9
+    ];
+
+    init [
+        label="uv init\nCrear proyecto",
+        fillcolor="#dbeafe"
+    ];
+
+    pin [
+        label="uv python pin\nElegir Python",
+        fillcolor="#e0f2fe"
+    ];
+
+    add [
+        label="uv add\nAgregar dependencias",
+        fillcolor="#dcfce7"
+    ];
+
+    resolve [
+        label="Resolver versiones\nActualizar uv.lock",
+        fillcolor="#fef3c7"
+    ];
+
+    sync [
+        label="Sincronizar\nCrear .venv",
+        fillcolor="#ede9fe"
+    ];
+
+    run [
+        label="uv run\nEjecutar código",
+        fillcolor="#ecfccb"
+    ];
+
+    test [
+        label="Pruebas y calidad\npytest, ruff",
+        fillcolor="#ffe4e6"
+    ];
+
+    update [
+        label="Actualizar o retirar\ndependencias",
+        fillcolor="#f1f5f9"
+    ];
+
+    init -> pin;
+    pin -> add;
+    add -> resolve;
+    resolve -> sync;
+    sync -> run;
+    run -> test;
+    test -> update;
+    update -> resolve [label=" nuevo ciclo"];
+}
+```
+
+## Inicializar un proyecto nuevo
+
+```bash
+uv init mi-proyecto
+cd mi-proyecto
+```
+
+También puede especificar la versión de Python desde el inicio:
+
+```bash
+uv init --python 3.12 mi-proyecto
+cd mi-proyecto
+```
+
+Para inicializar el directorio actual:
+
+```bash
+mkdir mi-proyecto
+cd mi-proyecto
+uv init --python 3.12
+```
+
+## Estructura inicial
+
+Después de ejecutar `uv init`, la estructura será similar a:
+
+```text
+mi-proyecto/
+├── .git/
+├── .gitignore
+├── .python-version
+├── README.md
 ├── main.py
 └── pyproject.toml
 ```
 
-## 2. Sintaxis de Importación en `main.py`
+Después de ejecutar `uv run`, `uv sync` o `uv lock`, aparecerán otros elementos:
 
-Dado que `main.py` se encuentra en la raíz, Python añade este directorio al `sys.path` automáticamente. La forma correcta de acceder a la lógica de procesamiento es mediante **importaciones absolutas**.
-
-```python
-# Ejemplo de implementación en main.py
-from src.preprocessing.filters import butterworth_filter
-from src.features.extraction import compute_emg_rms
-from src.models.causal_ia import structural_model_fit
-
-def main():
-    """
-    Pipeline principal para el análisis de señales de espasticidad.
-    """
-    # Ejemplo de aplicación de un filtro digital: H(z)
-    print("Iniciando procesamiento de señales...")
-    # ... lógica del programa ...
-
-if __name__ == "__main__":
-    main()
+```text
+mi-proyecto/
+├── .git/
+├── .venv/
+├── .gitignore
+├── .python-version
+├── README.md
+├── main.py
+├── pyproject.toml
+└── uv.lock
 ```
 
-## 3. Configuración del Entorno con `uv`
+```{dot}
+//| label: fig-estructura-proyecto
+//| fig-cap: "Relación entre los archivos principales de un proyecto uv."
+//| fig-width: 8
+//| echo: false
 
-Para evitar errores de tipo `ModuleNotFoundError`, el proyecto debe ser instalado en modo editable dentro del entorno virtual. Esto permite que el gestor de paquetes reconozca la carpeta `src` como una fuente legítima de módulos instalados.
+digraph uv_files {
+    graph [
+        rankdir=TB,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.4,
+        ranksep=0.55
+    ];
 
-### Configuración de `pyproject.toml`
+    node [
+        shape=folder,
+        style="filled",
+        fontname="Arial",
+        fontsize=10,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.15,0.1"
+    ];
 
-Ajuste su archivo de configuración para declarar el sistema de construcción y los paquetes incluidos:
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=9
+    ];
 
-```toml
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+    root [
+        label="mi-proyecto/",
+        fillcolor="#dbeafe",
+        penwidth=2
+    ];
 
-[project]
-name = "spasticity-signal-analysis"
-version = "0.1.0"
-dependencies = [
-    "numpy",
-    "scipy",
-    # Agregue sus dependencias de IA aquí
-]
+    pyproject [
+        label="pyproject.toml\nMetadatos y dependencias",
+        shape=note,
+        fillcolor="#dcfce7"
+    ];
 
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
+    lock [
+        label="uv.lock\nVersiones exactas",
+        shape=note,
+        fillcolor="#fef3c7"
+    ];
+
+    python_version [
+        label=".python-version\nVersión seleccionada",
+        shape=note,
+        fillcolor="#e0f2fe"
+    ];
+
+    venv [
+        label=".venv/\nEntorno aislado",
+        fillcolor="#ffe4e6"
+    ];
+
+    source [
+        label="Código fuente\nmain.py o src/",
+        fillcolor="#ede9fe"
+    ];
+
+    readme [
+        label="README.md\nDocumentación",
+        shape=note,
+        fillcolor="#f1f5f9"
+    ];
+
+    root -> pyproject;
+    root -> lock;
+    root -> python_version;
+    root -> venv;
+    root -> source;
+    root -> readme;
+
+    pyproject -> lock [
+        label=" se resuelve en",
+        style=dashed
+    ];
+
+    lock -> venv [
+        label=" se instala en",
+        style=dashed
+    ];
+
+    python_version -> venv [
+        label=" define intérprete",
+        style=dashed
+    ];
+
+    venv -> source [
+        label=" ejecuta",
+        style=dashed
+    ];
+}
 ```
 
-### Ejecución de la Instalación Editable
-
-Desde la terminal, ejecute el siguiente comando para que `uv` gestione el enlace simbólico:
+## Ejecutar el programa inicial
 
 ```bash
-uv pip install -e .
+uv run main.py
 ```
 
-Esto garantiza que cualquier cambio realizado en los scripts dentro de `src/` se refleje inmediatamente en `main.py` sin necesidad de reinstalación.
+`uv run` realiza automáticamente las siguientes operaciones:
 
-## 4. Consideraciones Críticas y Errores Comunes
+1. identifica el proyecto;
+2. comprueba la versión de Python;
+3. crea `.venv` cuando no existe;
+4. verifica `pyproject.toml`;
+5. actualiza el archivo de bloqueo cuando sea necesario;
+6. sincroniza las dependencias;
+7. ejecuta el comando dentro del entorno.
+
+Por esta razón, generalmente no es necesario activar manualmente `.venv`.
+
+# Administrar dependencias
+
+## Agregar una dependencia
+
+```bash
+uv add requests
+```
+
+Para agregar varias dependencias:
+
+```bash
+uv add numpy pandas matplotlib
+```
+
+El comando modifica:
+
+```text
+pyproject.toml
+uv.lock
+.venv/
+```
+
+## Agregar una versión específica
+
+```bash
+uv add "pandas==2.3.0"
+```
+
+También puede utilizar restricciones:
+
+```bash
+uv add "numpy>=2.0,<3.0"
+```
+
+::: {.callout-tip}
+En Linux, coloque entre comillas los requisitos que contengan operadores como `>`, `<` o `*`. Esto evita que el shell los interprete.
+:::
+
+## Agregar dependencias de desarrollo
+
+Las herramientas utilizadas para pruebas, formato o análisis estático pueden agregarse al grupo de desarrollo:
+
+```bash
+uv add --dev pytest ruff
+```
+
+Otro ejemplo:
+
+```bash
+uv add --dev mypy coverage
+```
+
+Estas dependencias no se consideran requisitos de ejecución de la aplicación publicada.
+
+## Eliminar una dependencia
+
+```bash
+uv remove matplotlib
+```
+
+## Actualizar una dependencia
+
+Para actualizar un paquete específico dentro de sus restricciones:
+
+```bash
+uv lock --upgrade-package pandas
+uv sync
+```
+
+Para intentar actualizar todas las dependencias compatibles:
+
+```bash
+uv lock --upgrade
+uv sync
+```
+
+## Mostrar el árbol de dependencias
+
+```bash
+uv tree
+```
+
+## Sincronizar el entorno
+
+```bash
+uv sync
+```
+
+Este comando hace que `.venv` corresponda con las dependencias declaradas y bloqueadas.
+
+## Generar o actualizar el archivo de bloqueo
+
+```bash
+uv lock
+```
 
 ::: {.callout-important}
-### Evite el uso de `sys.path.append()`
-Es una práctica deficiente que compromete la portabilidad del código. La resolución de rutas debe ser gestionada por el entorno de ejecución o el sistema de empaquetado.
+## Conservar uv.lock
+
+En aplicaciones y proyectos colaborativos, `uv.lock` debe incluirse en Git. No debe agregarse a `.gitignore`.
+
+El archivo `.venv/`, en cambio, no debe almacenarse en el repositorio.
 :::
+
+# Ejecutar comandos dentro del entorno
+
+## Ejecutar un script
+
+```bash
+uv run python main.py
+```
+
+También puede utilizar:
+
+```bash
+uv run main.py
+```
+
+## Ejecutar un módulo
+
+```bash
+uv run python -m pytest
+```
+
+## Ejecutar pruebas
+
+```bash
+uv run pytest
+```
+
+## Ejecutar Ruff
+
+```bash
+uv run ruff check .
+```
+
+Para aplicar formato:
+
+```bash
+uv run ruff format .
+```
+
+## Ejecutar una aplicación FastAPI
+
+Primero agregue las dependencias:
+
+```bash
+uv add fastapi "uvicorn[standard]"
+```
+
+Ejecute el servidor:
+
+```bash
+uv run uvicorn main:app --reload
+```
+
+# Activar manualmente el entorno virtual
+
+Aunque `uv run` evita la activación manual, algunos IDE o flujos tradicionales pueden necesitarla.
+
+## Linux con Bash o Zsh
+
+```bash
+source .venv/bin/activate
+```
+
+Para salir:
+
+```bash
+deactivate
+```
+
+## Windows con PowerShell
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Para salir:
+
+```powershell
+deactivate
+```
+
+## Windows con CMD
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+Para salir:
+
+```bat
+deactivate
+```
+
+## Activación bloqueada en PowerShell
+
+Cuando PowerShell impida ejecutar `Activate.ps1`, puede habilitar temporalmente los scripts únicamente para la sesión actual:
+
+```powershell
+Set-ExecutionPolicy `
+    -Scope Process `
+    -ExecutionPolicy Bypass
+```
+
+Después:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+La configuración desaparece al cerrar PowerShell.
+
+Una opción más sencilla es no activar el entorno y utilizar directamente:
+
+```powershell
+uv run python main.py
+```
+
+# Crear solamente un entorno virtual
+
+No todos los directorios necesitan convertirse inmediatamente en proyectos administrados mediante `pyproject.toml`.
+
+Para crear únicamente un entorno virtual:
+
+```bash
+uv venv
+```
+
+Para seleccionar una versión:
+
+```bash
+uv venv --python 3.12
+```
+
+Para asignar otro nombre:
+
+```bash
+uv venv entorno-desarrollo --python 3.12
+```
+
+## Activación en Linux
+
+```bash
+source .venv/bin/activate
+```
+
+## Activación en Windows
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+# Trabajar con requirements.txt
+
+`uv` ofrece dos enfoques diferentes.
+
+## Enfoque de compatibilidad con pip
+
+Cree un entorno:
+
+```bash
+uv venv
+```
+
+Instale las dependencias:
+
+```bash
+uv pip install -r requirements.txt
+```
+
+Sincronice exactamente el archivo:
+
+```bash
+uv pip sync requirements.txt
+```
+
+Este enfoque es útil cuando se mantiene una estructura tradicional basada en `requirements.txt`.
+
+## Migrar a un proyecto uv
+
+Inicialice el proyecto:
+
+```bash
+uv init
+```
+
+Importe las dependencias:
+
+```bash
+uv add -r requirements.txt
+```
+
+Después de verificar el resultado, las dependencias principales estarán declaradas en `pyproject.toml` y bloqueadas en `uv.lock`.
+
+# Configurar JupyterLab
+
+Agregue JupyterLab y el kernel como dependencias de desarrollo:
+
+```bash
+uv add --dev jupyterlab ipykernel
+```
+
+Inicie JupyterLab:
+
+```bash
+uv run jupyter lab
+```
+
+Para registrar un kernel con nombre propio:
+
+```bash
+uv run python -m ipykernel install \
+  --user \
+  --name mi-proyecto \
+  --display-name "Python - mi-proyecto"
+```
+
+En Windows PowerShell, el mismo comando puede escribirse así:
+
+```powershell
+uv run python -m ipykernel install `
+    --user `
+    --name mi-proyecto `
+    --display-name "Python - mi-proyecto"
+```
+
+# Ejecutar herramientas temporales con uvx
+
+`uvx` permite ejecutar herramientas Python sin instalarlas permanentemente en el proyecto.
+
+Por ejemplo, para ejecutar Ruff:
+
+```bash
+uvx ruff check .
+```
+
+Para ejecutar una versión específica:
+
+```bash
+uvx ruff@0.12.0 check .
+```
+
+Para ejecutar Black:
+
+```bash
+uvx black .
+```
+
+```{dot}
+//| label: fig-uv-vs-uvx
+//| fig-cap: "Diferencia conceptual entre uv run y uvx."
+//| fig-width: 8
+//| echo: false
+
+digraph run_vs_uvx {
+    graph [
+        rankdir=LR,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.55,
+        ranksep=0.7
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Arial",
+        fontsize=10,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.16,0.1"
+    ];
+
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=9
+    ];
+
+    command [
+        label="Comando solicitado",
+        shape=ellipse,
+        fillcolor="#dbeafe"
+    ];
+
+    decision [
+        label="¿La herramienta pertenece\nal proyecto?",
+        shape=diamond,
+        fillcolor="#fef3c7"
+    ];
+
+    run [
+        label="uv run\nUsa .venv y uv.lock",
+        fillcolor="#dcfce7"
+    ];
+
+    uvx [
+        label="uvx\nCrea un entorno temporal",
+        fillcolor="#ede9fe"
+    ];
+
+    project_result [
+        label="Ejecución reproducible\ndel proyecto",
+        fillcolor="#ecfccb"
+    ];
+
+    isolated_result [
+        label="Herramienta aislada\nsin alterar el proyecto",
+        fillcolor="#e0f2fe"
+    ];
+
+    command -> decision;
+    decision -> run [label=" sí"];
+    decision -> uvx [label=" no"];
+    run -> project_result;
+    uvx -> isolated_result;
+}
+```
+
+# Configurar un IDE
+
+## Visual Studio Code
+
+Abra la carpeta del proyecto y seleccione el intérprete correspondiente.
+
+### Linux
+
+```text
+mi-proyecto/.venv/bin/python
+```
+
+### Windows
+
+```text
+mi-proyecto\.venv\Scripts\python.exe
+```
+
+En Visual Studio Code:
+
+1. presione `Ctrl + Shift + P`;
+2. busque `Python: Select Interpreter`;
+3. seleccione el intérprete ubicado en `.venv`.
+
+## PyCharm
+
+En PyCharm:
+
+1. abra **Settings**;
+2. seleccione **Project: nombre-del-proyecto**;
+3. abra **Python Interpreter**;
+4. seleccione **Add Interpreter**;
+5. elija **Existing environment**;
+6. seleccione el ejecutable de `.venv`.
+
+No cree un segundo entorno desde PyCharm cuando `uv` ya haya generado `.venv`.
+
+# Configuración recomendada de Git
+
+Un archivo `.gitignore` básico puede contener:
+
+```gitignore
+# Entorno virtual
+.venv/
+
+# Bytecode de Python
+__pycache__/
+*.py[cod]
+
+# Pruebas
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Herramientas
+.ruff_cache/
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editores
+.vscode/
+.idea/
+
+# Variables sensibles
+.env
+.env.*
+```
+
+Los siguientes archivos sí deben almacenarse en Git:
+
+```text
+pyproject.toml
+uv.lock
+.python-version
+README.md
+Código fuente
+Pruebas
+```
 
 ::: {.callout-warning}
-### Importaciones Relativas
-No intente usar `from .src import ...` en `main.py`. Las importaciones relativas solo son válidas dentro de paquetes definidos, no en scripts de ejecución principal (top-level scripts).
+Nunca almacene contraseñas, tokens, claves de API o archivos `.env` con información sensible en un repositorio.
 :::
 
+# Reproducir un proyecto existente
 
-# Uso de UV
+Cuando se clona un proyecto que ya contiene `pyproject.toml` y `uv.lock`, el proceso es:
 
-# Ejemplos de uso
+```bash
+git clone URL_DEL_REPOSITORIO
+cd NOMBRE_DEL_PROYECTO
+uv sync
+uv run python main.py
+```
+
+```{dot}
+//| label: fig-reproducir-proyecto
+//| fig-cap: "Reproducción de un proyecto uv en otro computador."
+//| fig-width: 9
+//| echo: false
+
+digraph reproduce_project {
+    graph [
+        rankdir=LR,
+        bgcolor="transparent",
+        pad=0.3,
+        nodesep=0.45,
+        ranksep=0.7
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Arial",
+        fontsize=10,
+        color="#334155",
+        fillcolor="#f8fafc",
+        margin="0.16,0.1"
+    ];
+
+    edge [
+        color="#475569",
+        fontname="Arial",
+        fontsize=9
+    ];
+
+    repository [
+        label="Repositorio Git\nCódigo + pyproject.toml\n+ uv.lock",
+        fillcolor="#dbeafe"
+    ];
+
+    clone [
+        label="git clone",
+        fillcolor="#f1f5f9"
+    ];
+
+    sync [
+        label="uv sync",
+        fillcolor="#fef3c7"
+    ];
+
+    python [
+        label="Instalar o localizar\nla versión de Python",
+        fillcolor="#e0f2fe"
+    ];
+
+    environment [
+        label="Crear .venv e instalar\nversiones bloqueadas",
+        fillcolor="#ffe4e6"
+    ];
+
+    run [
+        label="uv run",
+        fillcolor="#dcfce7"
+    ];
+
+    result [
+        label="Proyecto reproducido",
+        shape=ellipse,
+        fillcolor="#ecfccb"
+    ];
+
+    repository -> clone;
+    clone -> sync;
+    sync -> python;
+    python -> environment;
+    environment -> run;
+    run -> result;
+}
+```
+
+No es necesario copiar la carpeta `.venv` de un computador a otro. Cada sistema debe reconstruirla mediante `uv sync`.
 
 # Solución de problemas
 
+## uv no se encuentra en Linux
+
+Compruebe si existe el ejecutable:
+
+```bash
+ls -la "$HOME/.local/bin/uv"
+```
+
+Agregue el directorio al `PATH`:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Para hacerlo permanente en Bash:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## uv no se encuentra en Windows
+
+Compruebe el archivo:
+
+```powershell
+Test-Path "$env:USERPROFILE\.local\bin\uv.exe"
+```
+
+Agregue temporalmente el directorio:
+
+```powershell
+$env:Path += ";$env:USERPROFILE\.local\bin"
+```
+
+Pruebe:
+
+```powershell
+uv --version
+```
+
+## La versión de Python no está disponible
+
+Instale explícitamente la versión:
+
+```bash
+uv python install 3.12
+```
+
+Después selecciónela:
+
+```bash
+uv python pin 3.12
+```
+
+Sincronice nuevamente:
+
+```bash
+uv sync
+```
+
+## El entorno parece desactualizado
+
+```bash
+uv sync
+```
+
+Para forzar la reinstalación de los paquetes:
+
+```bash
+uv sync --reinstall
+```
+
+## Limpiar la caché
+
+Consulte el tamaño de la caché:
+
+```bash
+uv cache dir
+```
+
+Limpie los archivos no utilizados:
+
+```bash
+uv cache prune
+```
+
+Para eliminar completamente la caché:
+
+```bash
+uv cache clean
+```
+
+::: {.callout-warning}
+`uv cache clean` obliga a descargar nuevamente los paquetes cuando vuelvan a necesitarse.
+:::
+
+## Problemas con certificados corporativos
+
+En algunas redes institucionales, el tráfico HTTPS pasa por certificados internos. Puede indicarse a `uv` que utilice el almacén de certificados del sistema.
+
+### Linux
+
+```bash
+export UV_SYSTEM_CERTS=true
+```
+
+### Windows PowerShell
+
+```powershell
+$env:UV_SYSTEM_CERTS = "true"
+```
+
+Después, repita el comando que estaba fallando.
+
+No utilice opciones que desactiven la validación TLS salvo que comprenda sus implicaciones de seguridad y controle la red utilizada.
+
+## Consultar información detallada
+
+Active la salida detallada:
+
+```bash
+uv --verbose sync
+```
+
+También puede consultar la ayuda de un comando:
+
+```bash
+uv help
+uv help sync
+uv help python
+uv help add
+```
+
+# Desinstalar uv
+
+## Linux
+
+Primero puede limpiar los datos administrados:
+
+```bash
+uv cache clean
+rm -rf "$(uv python dir)"
+rm -rf "$(uv tool dir)"
+```
+
+Elimine los ejecutables:
+
+```bash
+rm -f "$HOME/.local/bin/uv"
+rm -f "$HOME/.local/bin/uvx"
+```
+
+Finalmente, retire de `.bashrc` o `.zshrc` las líneas de configuración agregadas para `uv`.
+
+## Windows
+
+Antes de eliminar el ejecutable, puede limpiar la caché:
+
+```powershell
+uv cache clean
+```
+
+Elimine los ejecutables del usuario:
+
+```powershell
+Remove-Item `
+    "$env:USERPROFILE\.local\bin\uv.exe" `
+    -ErrorAction SilentlyContinue
+
+Remove-Item `
+    "$env:USERPROFILE\.local\bin\uvx.exe" `
+    -ErrorAction SilentlyContinue
+
+Remove-Item `
+    "$env:USERPROFILE\.local\bin\uvw.exe" `
+    -ErrorAction SilentlyContinue
+```
+
+Después puede retirar el directorio `.local\bin` del `PATH` del usuario mediante la configuración de variables de entorno de Windows.
+
+# Resumen de comandos
+
+| Acción | Comando |
+|---|---|
+| Ver versión de uv | `uv --version` |
+| Actualizar uv | `uv self update` |
+| Listar versiones de Python | `uv python list` |
+| Instalar Python | `uv python install 3.12` |
+| Fijar Python en un proyecto | `uv python pin 3.12` |
+| Crear proyecto | `uv init mi-proyecto` |
+| Crear entorno virtual | `uv venv` |
+| Agregar dependencia | `uv add pandas` |
+| Agregar dependencia de desarrollo | `uv add --dev pytest` |
+| Eliminar dependencia | `uv remove pandas` |
+| Sincronizar entorno | `uv sync` |
+| Crear o actualizar bloqueo | `uv lock` |
+| Mostrar dependencias | `uv tree` |
+| Ejecutar script | `uv run main.py` |
+| Ejecutar herramienta temporal | `uvx ruff check .` |
+| Limpiar archivos no usados de caché | `uv cache prune` |
+
+# Flujo mínimo recomendado
+
+Para comenzar un proyecto desde cero:
+
+```bash
+uv init --python 3.12 mi-proyecto
+cd mi-proyecto
+
+uv add numpy pandas
+uv add --dev pytest ruff
+
+uv run python main.py
+uv run pytest
+uv run ruff check .
+```
+
+Para abrir un proyecto existente:
+
+```bash
+git clone URL_DEL_REPOSITORIO
+cd NOMBRE_DEL_PROYECTO
+
+uv sync
+uv run python main.py
+```
+
+# Conclusiones
+
+`uv` permite mantener separadas tres responsabilidades que con frecuencia se mezclan en una instalación tradicional de Python:
+
+- la instalación del intérprete;
+- la administración de dependencias;
+- la creación del entorno de ejecución.
+
+En Linux, puede instalarse dentro del directorio del usuario mediante el script oficial. En Windows, el mismo procedimiento puede realizarse desde una sesión normal de PowerShell, sin modificar la configuración global del equipo y sin utilizar una cuenta de administrador.
+
+Para proyectos nuevos, el flujo recomendado es utilizar `uv init`, declarar las dependencias mediante `uv add`, conservar `uv.lock` en Git y ejecutar el código con `uv run`. Este enfoque reduce la necesidad de activar manualmente los entornos y facilita la reproducción del proyecto en otros computadores.
+
+# Referencias
+
+- [Documentación oficial de uv](https://docs.astral.sh/uv/)
+- [Instalación de uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [Opciones del instalador](https://docs.astral.sh/uv/reference/installer/)
+- [Administración de proyectos](https://docs.astral.sh/uv/guides/projects/)
+- [Instalación de Python con uv](https://docs.astral.sh/uv/guides/install-python/)
+- [Administración de dependencias](https://docs.astral.sh/uv/concepts/projects/dependencies/)
+- [Bloqueo y sincronización](https://docs.astral.sh/uv/concepts/projects/sync/)
+- [Diagramas Graphviz en Quarto](https://quarto.org/docs/authoring/diagrams.html)

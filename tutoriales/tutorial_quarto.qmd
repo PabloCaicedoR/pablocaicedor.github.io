@@ -1,0 +1,1295 @@
+---
+title: "Instalación y configuración de Quarto en Linux y Windows"
+subtitle: "Guía para generar documentos HTML reproducibles"
+author: "Ph.D. Pablo Eduardo Caicedo R."
+date: last-modified
+image: "../recursos/imagenes/tutoriales/quarto/tutorial-quarto.png"
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-title: "Contenido"
+    toc-location: right
+    toc-depth: 3
+    number-sections: false
+    code-copy: true
+    code-overflow: wrap
+    smooth-scroll: true
+    link-external-newwindow: true
+    fig-responsive: true
+    embed-resources: false
+execute:
+  freeze: auto
+---
+
+## Propósito
+
+Este tutorial explica cómo instalar y configurar **Quarto** para producir
+documentos HTML en:
+
+- Linux con permisos administrativos.
+- Linux sin permisos administrativos.
+- Windows sin utilizar una cuenta de administrador.
+
+También se explica cómo comprobar la instalación, configurar la variable
+`PATH`, crear un primer documento `.qmd` y representar diagramas mediante
+Graphviz y el lenguaje DOT.
+
+::: {.callout-note}
+## Versión utilizada
+
+Los comandos de esta guía utilizan como ejemplo **Quarto 1.10.11**.
+
+Antes de realizar la instalación, compruebe la versión estable disponible en:
+
+<https://quarto.org/docs/download/>
+
+Cuando exista una versión más reciente, solo debe modificar el valor de la
+variable `QUARTO_VERSION`.
+:::
+
+## ¿Qué es Quarto?
+
+Quarto es un sistema de publicación científica y técnica basado en Pandoc.
+Permite combinar texto Markdown, ecuaciones, referencias, diagramas y código
+ejecutable para generar diferentes formatos de salida.
+
+Entre los formatos disponibles se encuentran:
+
+- HTML.
+- PDF.
+- Microsoft Word.
+- Presentaciones Reveal.js.
+- Sitios web.
+- Libros.
+- Blogs.
+- Documentación técnica.
+
+El flujo general de trabajo se muestra en @fig-arquitectura-quarto.
+
+```{dot}
+//| label: fig-arquitectura-quarto
+//| fig-cap: "Flujo general de procesamiento de un documento Quarto."
+//| echo: false
+//| fig-width: 10
+//| fig-height: 5
+
+digraph quarto_workflow {
+  graph [
+    rankdir = LR,
+    bgcolor = "transparent",
+    pad = 0.3,
+    nodesep = 0.45,
+    ranksep = 0.65
+  ];
+
+  node [
+    shape = box,
+    style = "rounded,filled",
+    fontname = "Arial",
+    fontsize = 11,
+    margin = "0.16,0.10",
+    color = "#335C67",
+    fillcolor = "#EAF4F4"
+  ];
+
+  edge [
+    color = "#52796F",
+    penwidth = 1.5,
+    arrowsize = 0.8,
+    fontname = "Arial",
+    fontsize = 9
+  ];
+
+  source [
+    label = "Documento fuente\n.qmd"
+    fillcolor = "#FFF3B0"
+    color = "#C58C00"
+  ];
+
+  quarto [
+    label = "Quarto CLI"
+    fillcolor = "#D8F3DC"
+    color = "#2D6A4F"
+  ];
+
+  engines [
+    label = "Motor opcional\nJupyter · Knitr · Julia"
+    fillcolor = "#E9ECEF"
+    color = "#495057"
+  ];
+
+  pandoc [
+    label = "Pandoc"
+    fillcolor = "#DDE5FF"
+    color = "#3A5A9F"
+  ];
+
+  html [
+    label = "HTML"
+    fillcolor = "#FFE5D9"
+    color = "#B5654D"
+  ];
+
+  pdf [
+    label = "PDF"
+    fillcolor = "#FFE5D9"
+    color = "#B5654D"
+  ];
+
+  docx [
+    label = "Word"
+    fillcolor = "#FFE5D9"
+    color = "#B5654D"
+  ];
+
+  slides [
+    label = "Presentación"
+    fillcolor = "#FFE5D9"
+    color = "#B5654D"
+  ];
+
+  source -> quarto;
+  quarto -> engines [
+    label = "si existe\ncódigo ejecutable"
+  ];
+  engines -> pandoc;
+  quarto -> pandoc [
+    label = "solo Markdown"
+  ];
+
+  pandoc -> html;
+  pandoc -> pdf;
+  pandoc -> docx;
+  pandoc -> slides;
+}
+```
+
+Quarto incluye su propia distribución de Pandoc. Por tanto, para producir un
+documento HTML básico no es necesario instalar Pandoc por separado.
+
+## Componentes de la instalación
+
+Una configuración básica tiene cuatro componentes.
+
+| Componente | Función | Obligatorio |
+|---|---|---:|
+| Quarto CLI | Renderiza documentos y proyectos | Sí |
+| Editor de texto | Permite editar archivos `.qmd` | Sí |
+| Navegador web | Muestra la salida HTML | Sí |
+| Python, R o Julia | Ejecuta bloques de código | No |
+
+Para un documento formado exclusivamente por Markdown, ecuaciones y diagramas
+DOT, no es necesario instalar Python o R.
+
+## Comprobar si Quarto ya está instalado
+
+Antes de instalar Quarto, abra una terminal y ejecute:
+
+```bash
+quarto --version
+```
+
+También puede ejecutar una comprobación más completa:
+
+```bash
+quarto check
+```
+
+Si la terminal muestra un mensaje como `command not found`, `quarto no se
+reconoce` o una respuesta equivalente, deberá realizar la instalación.
+
+## Configuración en Linux
+
+En Linux se puede instalar Quarto mediante un paquete del sistema o mediante
+un archivo comprimido instalado en el directorio personal.
+
+```{dot}
+//| label: fig-instalacion-linux
+//| fig-cap: "Alternativas para instalar Quarto en Linux."
+//| echo: false
+//| fig-width: 9
+//| fig-height: 5
+
+digraph linux_install {
+  graph [
+    rankdir = TB,
+    bgcolor = "transparent",
+    pad = 0.3,
+    nodesep = 0.35,
+    ranksep = 0.55
+  ];
+
+  node [
+    shape = box,
+    style = "rounded,filled",
+    fontname = "Arial",
+    fontsize = 11,
+    color = "#3D5A80",
+    fillcolor = "#EAF2F8"
+  ];
+
+  edge [
+    color = "#526D82",
+    penwidth = 1.4,
+    arrowsize = 0.8,
+    fontname = "Arial",
+    fontsize = 9
+  ];
+
+  start [
+    label = "Iniciar instalación"
+    shape = ellipse
+    fillcolor = "#FFF3B0"
+    color = "#B08900"
+  ];
+
+  decision [
+    label = "¿Tiene permisos sudo?"
+    shape = diamond
+    fillcolor = "#FDE2E4"
+    color = "#9D4E57"
+  ];
+
+  package [
+    label = "Instalar paquete .deb\ncon apt"
+    fillcolor = "#D8F3DC"
+    color = "#2D6A4F"
+  ];
+
+  tarball [
+    label = "Extraer tarball en\n$HOME/.local/opt"
+    fillcolor = "#DDE5FF"
+    color = "#3A5A9F"
+  ];
+
+  path [
+    label = "Agregar enlace en\n$HOME/.local/bin"
+  ];
+
+  check [
+    label = "Ejecutar\nquarto check"
+    shape = ellipse
+    fillcolor = "#FFE5D9"
+    color = "#B5654D"
+  ];
+
+  start -> decision;
+  decision -> package [label = "Sí"];
+  decision -> tarball [label = "No"];
+  package -> check;
+  tarball -> path;
+  path -> check;
+}
+```
+
+## Identificar la arquitectura de Linux
+
+Ejecute:
+
+```bash
+uname -m
+```
+
+Los resultados más frecuentes son:
+
+| Resultado | Arquitectura de Quarto |
+|---|---|
+| `x86_64` | `amd64` |
+| `aarch64` | `arm64` |
+| `arm64` | `arm64` |
+
+Los siguientes comandos detectan automáticamente estas arquitecturas:
+
+```bash
+case "$(uname -m)" in
+  x86_64)
+    QUARTO_ARCH="amd64"
+    ;;
+  aarch64|arm64)
+    QUARTO_ARCH="arm64"
+    ;;
+  *)
+    echo "Arquitectura no soportada automáticamente: $(uname -m)"
+    exit 1
+    ;;
+esac
+
+echo "Arquitectura seleccionada: ${QUARTO_ARCH}"
+```
+
+## Linux con permisos administrativos
+
+Esta alternativa es adecuada para Ubuntu, Debian, Linux Mint y Pop!_OS. Quarto
+quedará disponible para todos los usuarios del sistema.
+
+Defina la versión y la arquitectura:
+
+```bash
+QUARTO_VERSION="1.10.11"
+
+case "$(uname -m)" in
+  x86_64)
+    QUARTO_ARCH="amd64"
+    ;;
+  aarch64|arm64)
+    QUARTO_ARCH="arm64"
+    ;;
+  *)
+    echo "Arquitectura no soportada: $(uname -m)"
+    exit 1
+    ;;
+esac
+```
+
+Descargue el paquete:
+
+```bash
+wget \
+  "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb"
+```
+
+Instálelo mediante `apt`:
+
+```bash
+sudo apt install \
+  "./quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb"
+```
+
+Compruebe la instalación:
+
+```bash
+quarto --version
+quarto check
+```
+
+Puede eliminar el instalador descargado:
+
+```bash
+rm "quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.deb"
+```
+
+## Linux sin permisos administrativos
+
+Esta es la alternativa recomendada cuando:
+
+- No se dispone de `sudo`.
+- Se trabaja en un servidor institucional.
+- Se desea mantener la instalación dentro del directorio personal.
+- Se necesita controlar directamente la versión instalada.
+
+La instalación se realizará en:
+
+```text
+$HOME/.local/opt/quarto-<versión>
+```
+
+El comando ejecutable quedará accesible mediante:
+
+```text
+$HOME/.local/bin/quarto
+```
+
+### Descargar el archivo comprimido
+
+Defina la versión y detecte la arquitectura:
+
+```bash
+QUARTO_VERSION="1.10.11"
+
+case "$(uname -m)" in
+  x86_64)
+    QUARTO_ARCH="amd64"
+    ;;
+  aarch64|arm64)
+    QUARTO_ARCH="arm64"
+    ;;
+  *)
+    echo "Arquitectura no soportada: $(uname -m)"
+    exit 1
+    ;;
+esac
+```
+
+Cree un directorio temporal:
+
+```bash
+mkdir -p "$HOME/Downloads/quarto-install"
+cd "$HOME/Downloads/quarto-install"
+```
+
+Descargue Quarto:
+
+```bash
+wget \
+  "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.tar.gz"
+```
+
+También puede utilizar `curl`:
+
+```bash
+curl -LO \
+  "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.tar.gz"
+```
+
+### Extraer Quarto
+
+Cree el directorio de aplicaciones del usuario:
+
+```bash
+mkdir -p "$HOME/.local/opt"
+```
+
+Extraiga el archivo:
+
+```bash
+tar \
+  -C "$HOME/.local/opt" \
+  -xzf "quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.tar.gz"
+```
+
+Compruebe que se creó el directorio:
+
+```bash
+ls "$HOME/.local/opt/quarto-${QUARTO_VERSION}"
+```
+
+### Crear el enlace ejecutable
+
+Cree el directorio personal de ejecutables:
+
+```bash
+mkdir -p "$HOME/.local/bin"
+```
+
+Cree un enlace simbólico:
+
+```bash
+ln -sfn \
+  "$HOME/.local/opt/quarto-${QUARTO_VERSION}/bin/quarto" \
+  "$HOME/.local/bin/quarto"
+```
+
+La opción `-f` reemplaza un enlace anterior y la opción `-n` evita seguir un
+enlace simbólico que ya exista.
+
+### Agregar el directorio al PATH
+
+Compruebe si `$HOME/.local/bin` ya se encuentra en el `PATH`:
+
+```bash
+echo "$PATH" | tr ':' '\n' | grep "$HOME/.local/bin"
+```
+
+Si no aparece ningún resultado, agréguelo al archivo de configuración de la
+terminal.
+
+Para Bash:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+source "$HOME/.bashrc"
+```
+
+Para Zsh:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+source "$HOME/.zshrc"
+```
+
+Para que la ruta también esté disponible en sesiones de inicio de Linux:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.profile"
+source "$HOME/.profile"
+```
+
+::: {.callout-warning}
+## Evitar entradas duplicadas en el PATH
+
+Antes de agregar la línea a `.bashrc`, `.zshrc` o `.profile`, revise si ya
+existe:
+
+```bash
+grep -n 'HOME/.local/bin' \
+  "$HOME/.bashrc" \
+  "$HOME/.zshrc" \
+  "$HOME/.profile" 2>/dev/null
+```
+:::
+
+### Comprobar la instalación
+
+Ejecute:
+
+```bash
+which quarto
+quarto --version
+quarto check
+```
+
+El primer comando debería mostrar una ruta semejante a:
+
+```text
+/home/usuario/.local/bin/quarto
+```
+
+## Script completo para Linux sin sudo
+
+El siguiente script reúne los pasos anteriores:
+
+```bash
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+QUARTO_VERSION="1.10.11"
+INSTALL_ROOT="$HOME/.local/opt"
+BIN_ROOT="$HOME/.local/bin"
+DOWNLOAD_ROOT="$HOME/Downloads/quarto-install"
+
+case "$(uname -m)" in
+  x86_64)
+    QUARTO_ARCH="amd64"
+    ;;
+  aarch64|arm64)
+    QUARTO_ARCH="arm64"
+    ;;
+  *)
+    echo "Arquitectura no soportada: $(uname -m)" >&2
+    exit 1
+    ;;
+esac
+
+ARCHIVE="quarto-${QUARTO_VERSION}-linux-${QUARTO_ARCH}.tar.gz"
+DOWNLOAD_URL="https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/${ARCHIVE}"
+INSTALL_DIR="${INSTALL_ROOT}/quarto-${QUARTO_VERSION}"
+
+mkdir -p "$INSTALL_ROOT" "$BIN_ROOT" "$DOWNLOAD_ROOT"
+cd "$DOWNLOAD_ROOT"
+
+echo "Descargando Quarto ${QUARTO_VERSION}..."
+curl --fail --location "$DOWNLOAD_URL" --output "$ARCHIVE"
+
+echo "Extrayendo archivos..."
+tar -C "$INSTALL_ROOT" -xzf "$ARCHIVE"
+
+if [[ ! -x "${INSTALL_DIR}/bin/quarto" ]]; then
+  echo "No se encontró el ejecutable de Quarto." >&2
+  exit 1
+fi
+
+ln -sfn "${INSTALL_DIR}/bin/quarto" "${BIN_ROOT}/quarto"
+
+if [[ ":$PATH:" != *":${BIN_ROOT}:"* ]]; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.profile"
+  export PATH="$BIN_ROOT:$PATH"
+fi
+
+echo
+echo "Instalación terminada."
+echo "Ruta: ${BIN_ROOT}/quarto"
+
+quarto --version
+quarto check
+```
+
+Guarde el archivo como `instalar-quarto.sh` y concédale permisos:
+
+```bash
+chmod +x instalar-quarto.sh
+```
+
+Ejecútelo:
+
+```bash
+./instalar-quarto.sh
+```
+
+## Actualizar Quarto en Linux sin sudo
+
+Cambie la versión en el script:
+
+```bash
+QUARTO_VERSION="NUEVA_VERSION"
+```
+
+Ejecute nuevamente la descarga, extracción y creación del enlace:
+
+```bash
+ln -sfn \
+  "$HOME/.local/opt/quarto-NUEVA_VERSION/bin/quarto" \
+  "$HOME/.local/bin/quarto"
+```
+
+Compruebe qué versión está activa:
+
+```bash
+quarto --version
+readlink -f "$HOME/.local/bin/quarto"
+```
+
+Después de verificar que la versión nueva funciona, puede borrar la anterior:
+
+```bash
+rm -rf "$HOME/.local/opt/quarto-VERSION_ANTERIOR"
+```
+
+## Configuración en Windows sin administrador
+
+En Windows no se utilizará el instalador MSI. Se descargará el paquete ZIP y
+se extraerá dentro del perfil del usuario.
+
+La ubicación propuesta es:
+
+```text
+C:\Users\<usuario>\AppData\Local\Programs\Quarto
+```
+
+Este directorio corresponde en PowerShell a:
+
+```powershell
+$env:LOCALAPPDATA\Programs\Quarto
+```
+
+```{dot}
+//| label: fig-instalacion-windows
+//| fig-cap: "Instalación portátil de Quarto en Windows sin permisos administrativos."
+//| echo: false
+//| fig-width: 10
+//| fig-height: 5
+
+digraph windows_install {
+  graph [
+    rankdir = LR,
+    bgcolor = "transparent",
+    pad = 0.3,
+    nodesep = 0.35,
+    ranksep = 0.55
+  ];
+
+  node [
+    shape = box,
+    style = "rounded,filled",
+    fontname = "Arial",
+    fontsize = 10,
+    color = "#3D5A80",
+    fillcolor = "#EDF2F4"
+  ];
+
+  edge [
+    color = "#526D82",
+    penwidth = 1.4,
+    arrowsize = 0.8
+  ];
+
+  download [
+    label = "Descargar\nquarto-<versión>-win.zip"
+    fillcolor = "#FFF3B0"
+    color = "#B08900"
+  ];
+
+  extract [
+    label = "Extraer en\n%LOCALAPPDATA%\\Programs\\Quarto"
+    fillcolor = "#DDE5FF"
+    color = "#3A5A9F"
+  ];
+
+  bin [
+    label = "Identificar\nQuarto\\bin"
+  ];
+
+  path [
+    label = "Agregar Quarto\\bin\nal PATH del usuario"
+    fillcolor = "#D8F3DC"
+    color = "#2D6A4F"
+  ];
+
+  restart [
+    label = "Abrir una terminal nueva"
+  ];
+
+  check [
+    label = "Ejecutar\nquarto check"
+    shape = ellipse
+    fillcolor = "#FFE5D9"
+    color = "#B5654D"
+  ];
+
+  download -> extract -> bin -> path -> restart -> check;
+}
+```
+
+## Instalación automática con PowerShell
+
+Abra **PowerShell** con su cuenta normal. No seleccione la opción
+“Ejecutar como administrador”.
+
+Copie y ejecute el siguiente bloque:
+
+```powershell
+$ErrorActionPreference = "Stop"
+
+$QuartoVersion = "1.10.11"
+
+$DownloadUrl = `
+    "https://github.com/quarto-dev/quarto-cli/releases/download/" +
+    "v$QuartoVersion/quarto-$QuartoVersion-win.zip"
+
+$ZipFile = Join-Path `
+    $env:TEMP `
+    "quarto-$QuartoVersion-win.zip"
+
+$ExtractRoot = Join-Path `
+    $env:TEMP `
+    "quarto-$QuartoVersion-extract"
+
+$ProgramsRoot = Join-Path `
+    $env:LOCALAPPDATA `
+    "Programs"
+
+$InstallDirectory = Join-Path `
+    $ProgramsRoot `
+    "Quarto"
+
+Write-Host "Descargando Quarto $QuartoVersion..."
+
+Invoke-WebRequest `
+    -Uri $DownloadUrl `
+    -OutFile $ZipFile
+
+if (Test-Path $ExtractRoot) {
+    Remove-Item `
+        -Path $ExtractRoot `
+        -Recurse `
+        -Force
+}
+
+New-Item `
+    -ItemType Directory `
+    -Path $ExtractRoot `
+    -Force | Out-Null
+
+Write-Host "Extrayendo archivos..."
+
+Expand-Archive `
+    -Path $ZipFile `
+    -DestinationPath $ExtractRoot `
+    -Force
+
+$ExtractedDirectory = Get-ChildItem `
+    -Path $ExtractRoot `
+    -Directory |
+    Where-Object {
+        $_.Name -like "quarto-*-win"
+    } |
+    Select-Object -First 1
+
+if ($null -eq $ExtractedDirectory) {
+    throw "No se encontró el directorio extraído de Quarto."
+}
+
+New-Item `
+    -ItemType Directory `
+    -Path $ProgramsRoot `
+    -Force | Out-Null
+
+if (Test-Path $InstallDirectory) {
+    Write-Host "Eliminando instalación anterior..."
+    Remove-Item `
+        -Path $InstallDirectory `
+        -Recurse `
+        -Force
+}
+
+Move-Item `
+    -Path $ExtractedDirectory.FullName `
+    -Destination $InstallDirectory
+
+$QuartoBin = Join-Path `
+    $InstallDirectory `
+    "bin"
+
+$QuartoCommand = Join-Path `
+    $QuartoBin `
+    "quarto.cmd"
+
+if (-not (Test-Path $QuartoCommand)) {
+    throw "No se encontró quarto.cmd en $QuartoBin"
+}
+
+$CurrentUserPath = [Environment]::GetEnvironmentVariable(
+    "Path",
+    "User"
+)
+
+$PathEntries = @()
+
+if (-not [string]::IsNullOrWhiteSpace($CurrentUserPath)) {
+    $PathEntries = $CurrentUserPath.Split(
+        ";",
+        [System.StringSplitOptions]::RemoveEmptyEntries
+    )
+}
+
+$QuartoAlreadyInPath = $PathEntries |
+    Where-Object {
+        $_.TrimEnd("\") -eq $QuartoBin.TrimEnd("\")
+    }
+
+if (-not $QuartoAlreadyInPath) {
+    $NewUserPath = (
+        $PathEntries + $QuartoBin |
+        Select-Object -Unique
+    ) -join ";"
+
+    [Environment]::SetEnvironmentVariable(
+        "Path",
+        $NewUserPath,
+        "User"
+    )
+
+    Write-Host "Quarto fue agregado al PATH del usuario."
+}
+else {
+    Write-Host "Quarto ya estaba registrado en el PATH."
+}
+
+# Actualizar también la sesión actual de PowerShell.
+if ($env:Path -notlike "*$QuartoBin*") {
+    $env:Path = "$QuartoBin;$env:Path"
+}
+
+Write-Host
+Write-Host "Instalación terminada."
+Write-Host "Directorio: $InstallDirectory"
+Write-Host
+
+quarto --version
+quarto check
+```
+
+El script realiza las siguientes operaciones:
+
+- Descarga el archivo ZIP oficial.
+- Extrae los archivos en una carpeta temporal.
+- Instala Quarto dentro de `LOCALAPPDATA`.
+- Agrega el directorio `bin` al `PATH` del usuario.
+- Actualiza el `PATH` de la sesión actual.
+- Ejecuta las comprobaciones finales.
+
+::: {.callout-note}
+## PATH del usuario
+
+El script modifica únicamente el `PATH` del usuario actual mediante:
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    $NewUserPath,
+    "User"
+)
+```
+
+No modifica variables globales del sistema y no requiere una cuenta de
+administrador.
+:::
+
+## Instalación manual en Windows
+
+También puede realizar el procedimiento manualmente.
+
+### Descargar el paquete ZIP
+
+Descargue el archivo:
+
+```text
+quarto-1.10.11-win.zip
+```
+
+desde:
+
+<https://quarto.org/docs/download/>
+
+No descargue el archivo MSI cuando no tenga permisos administrativos.
+
+### Extraer el archivo
+
+Cree la carpeta:
+
+```text
+C:\Users\<usuario>\AppData\Local\Programs\Quarto
+```
+
+Extraiga allí el contenido del ZIP.
+
+Después de la extracción debería existir una ruta semejante a:
+
+```text
+C:\Users\<usuario>\AppData\Local\Programs\Quarto\bin\quarto.cmd
+```
+
+### Agregar Quarto al PATH
+
+En PowerShell, ejecute:
+
+```powershell
+$QuartoBin = Join-Path `
+    $env:LOCALAPPDATA `
+    "Programs\Quarto\bin"
+
+$CurrentUserPath = [Environment]::GetEnvironmentVariable(
+    "Path",
+    "User"
+)
+
+if ([string]::IsNullOrWhiteSpace($CurrentUserPath)) {
+    $NewUserPath = $QuartoBin
+}
+elseif ($CurrentUserPath -notlike "*$QuartoBin*") {
+    $NewUserPath = "$CurrentUserPath;$QuartoBin"
+}
+else {
+    $NewUserPath = $CurrentUserPath
+}
+
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    $NewUserPath,
+    "User"
+)
+
+$env:Path = "$QuartoBin;$env:Path"
+```
+
+Cierre PowerShell y abra una ventana nueva.
+
+### Comprobar la instalación
+
+Ejecute:
+
+```powershell
+Get-Command quarto
+quarto --version
+quarto check
+```
+
+`Get-Command quarto` debería mostrar una ruta dentro de:
+
+```text
+AppData\Local\Programs\Quarto\bin
+```
+
+## Actualizar Quarto en Windows
+
+Cambie el valor de la versión en el script:
+
+```powershell
+$QuartoVersion = "NUEVA_VERSION"
+```
+
+Ejecute nuevamente el script completo.
+
+Como se utiliza una ruta estable:
+
+```text
+%LOCALAPPDATA%\Programs\Quarto\bin
+```
+
+no es necesario volver a modificar el `PATH`.
+
+## Configurar un editor
+
+Quarto puede utilizarse con cualquier editor de texto. Una opción frecuente es
+Visual Studio Code.
+
+Después de instalar VS Code, abra la sección de extensiones y busque:
+
+```text
+Quarto
+```
+
+También puede instalar la extensión desde una terminal si el comando `code`
+está disponible:
+
+```bash
+code --install-extension quarto.quarto
+```
+
+La extensión proporciona:
+
+- Resaltado de sintaxis.
+- Previsualización de documentos.
+- Autocompletado de opciones YAML.
+- Ejecución de bloques de código.
+- Previsualización de diagramas.
+- Comandos para renderizar documentos.
+
+Después de instalar Quarto o modificar el `PATH`, cierre y vuelva a abrir VS
+Code.
+
+## Crear el primer documento
+
+Cree un directorio de trabajo.
+
+En Linux:
+
+```bash
+mkdir -p "$HOME/proyectos/quarto-prueba"
+cd "$HOME/proyectos/quarto-prueba"
+```
+
+En Windows PowerShell:
+
+```powershell
+$ProjectDirectory = Join-Path `
+    $HOME `
+    "proyectos\quarto-prueba"
+
+New-Item `
+    -ItemType Directory `
+    -Path $ProjectDirectory `
+    -Force | Out-Null
+
+Set-Location $ProjectDirectory
+```
+
+Cree un archivo llamado:
+
+```text
+hola-quarto.qmd
+```
+
+Agregue el siguiente contenido:
+
+```markdown
+---
+title: "Mi primer documento Quarto"
+author: "Nombre del autor"
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-copy: true
+---
+
+## Introducción
+
+Este documento fue generado con **Quarto**.
+
+Quarto permite combinar:
+
+- Markdown.
+- Ecuaciones.
+- Tablas.
+- Código.
+- Diagramas.
+
+## Una ecuación
+
+La ecuación de una recta puede escribirse como:
+
+$$
+y = mx + b
+$$
+
+## Diagrama de ejemplo
+
+Como se observa en @fig-primer-diagrama Quarto transforma el archivo fuente
+en un documento publicable.
+
+```{dot}
+//| label: fig-primer-diagrama
+//| fig-cap: "Proceso básico de publicación."
+//| echo: false
+
+digraph proceso {
+  graph [
+    rankdir = LR,
+    bgcolor = "transparent"
+  ];
+
+  node [
+    shape = box,
+    style = "rounded,filled",
+    fontname = "Arial",
+    fillcolor = "#EAF4F4",
+    color = "#335C67"
+  ];
+
+  edge [
+    color = "#52796F",
+    penwidth = 1.5
+  ];
+
+  escribir [label = "Escribir .qmd"];
+  renderizar [label = "Renderizar"];
+  publicar [label = "Obtener HTML"];
+
+  escribir -> renderizar -> publicar;
+}
+```
+
+## Renderizar el documento
+
+Desde la carpeta que contiene `hola-quarto.qmd`, ejecute:
+
+```bash
+quarto render hola-quarto.qmd
+```
+
+El resultado será:
+
+```text
+hola-quarto.html
+```
+
+Abra el archivo HTML en un navegador.
+
+## Utilizar la previsualización
+
+Durante la escritura es más conveniente utilizar:
+
+```bash
+quarto preview hola-quarto.qmd
+```
+
+Quarto realizará las siguientes acciones:
+
+- Renderizará el documento.
+- Iniciará un servidor web local.
+- Abrirá el resultado en el navegador.
+- Volverá a renderizar el archivo después de guardar cambios.
+
+El proceso se representa en @fig-vista-previa.
+
+```{dot}
+//| label: fig-vista-previa
+//| fig-cap: "Ciclo de trabajo mediante quarto preview."
+//| echo: false
+//| fig-width: 9
+//| fig-height: 4
+
+digraph preview_cycle {
+  graph [
+    rankdir = LR,
+    bgcolor = "transparent",
+    pad = 0.3
+  ];
+
+  node [
+    shape = box,
+    style = "rounded,filled",
+    fontname = "Arial",
+    fontsize = 10,
+    fillcolor = "#EDF2F4",
+    color = "#3D5A80"
+  ];
+
+  edge [
+    color = "#526D82",
+    penwidth = 1.4,
+    arrowsize = 0.8
+  ];
+
+  edit [
+    label = "Editar archivo .qmd"
+    fillcolor = "#FFF3B0"
+    color = "#B08900"
+  ];
+
+  save [label = "Guardar cambios"];
+
+  render [
+    label = "Quarto vuelve\na renderizar"
+    fillcolor = "#D8F3DC"
+    color = "#2D6A4F"
+  ];
+
+  browser [
+    label = "Navegador actualiza\nla vista HTML"
+    fillcolor = "#DDE5FF"
+    color = "#3A5A9F"
+  ];
+
+  edit -> save -> render -> browser;
+  browser -> edit [
+    label = "continuar editando"
+    style = dashed
+  ];
+}
+```
+
+Para detener la previsualización, presione:
+
+```text
+Ctrl + C
+```
+
+## Crear un proyecto Quarto
+
+Para crear un proyecto básico:
+
+```bash
+quarto create project default mi-proyecto
+```
+
+Entre en el directorio:
+
+```bash
+cd mi-proyecto
+```
+
+Renderice todo el proyecto:
+
+```bash
+quarto render
+```
+
+Inicie la previsualización:
+
+```bash
+quarto preview
+```
+
+Una estructura mínima puede ser:
+
+```text
+mi-proyecto/
+├── _quarto.yml
+├── index.qmd
+├── imagenes/
+└── referencias.bib
+```
+
+Un archivo `_quarto.yml` básico para HTML puede contener:
+
+```yaml
+project:
+  type: default
+  output-dir: _output
+
+lang: es
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-copy: true
+```
+
+## Uso correcto de diagramas Graphviz
+
+Quarto reconoce Graphviz mediante bloques ejecutables `{dot}`.
+
+La apertura correcta del bloque es:
+
+````markdown
+```{dot}
+digraph ejemplo {
+  A -> B;
+}
+```
