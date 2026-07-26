@@ -1,0 +1,3289 @@
+---
+title: "Laboratorio 01"
+subtitle: "Python científico legible y reproducible"
+description: "Guía del estudiante para Análisis de Señales e Imágenes Biomédicas"
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
+date: last-modified
+lang: es
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    number-depth: 2
+    code-copy: true
+    code-line-numbers: true
+    code-overflow: wrap
+    code-tools:
+      source: false
+      toggle: true
+      caption: "Código"
+    anchor-sections: true
+    link-external-newwindow: true
+    smooth-scroll: true
+execute:
+  enabled: false
+---
+
+::: {.text-center}
+![Logo institucional](../../recursos/imagenes/generales/Escuela_Rosario_logo.png){width=300}
+:::
+
+# Presentación del laboratorio
+
+::: {.hero}
+**Programa:** Ingeniería Biomédica  
+**Modalidad:** equipos de tres estudiantes  
+**Producto central:** proyecto Python reproducible con `uv`, pruebas, informe
+LaTeX y presentación LaTeX Beamer  
+**Uso:** esta estructura deberá conservarse y ampliarse durante todo el semestre.
+:::
+
+## Planteamiento
+
+Un resultado científico no es reproducible porque el código “funcione en el
+computador del autor”. Debe poder reconstruirse desde archivos explícitos,
+ejecutarse en un orden conocido y producir resultados trazables en otro equipo.
+En este laboratorio cada equipo construirá esa base antes de abordar señales
+biomédicas, filtros o análisis espectral.
+
+La actividad integra cuatro dimensiones:
+
+1. **Lenguaje:** variables, decisiones, colecciones, ciclos y funciones.
+2. **Cómputo científico:** arreglos NumPy, estadística descriptiva, álgebra
+   lineal, derivación e integración numérica.
+3. **Comunicación:** figuras informativas con Matplotlib, informe científico en
+   LaTeX y presentación en LaTeX Beamer.
+4. **Ingeniería reproducible:** estructura de carpetas, dependencias bloqueadas,
+   pruebas automáticas y reconstrucción en otro computador.
+
+::: {.callout-important title="Criterio rector"}
+El producto evaluado no es solamente una gráfica ni un conjunto de respuestas.
+Es un **proceso auditable**: otra persona debe poder identificar qué entra, qué
+transformaciones se aplican, qué sale y con qué versiones se ejecutó.
+:::
+
+## Resultados de aprendizaje
+
+Al terminar, el estudiante estará en capacidad de:
+
+- instalar `uv` y una versión administrada de Python sin contraseña de
+  administrador;
+- explicar la diferencia entre intérprete, entorno virtual, dependencia,
+  `pyproject.toml` y `uv.lock`;
+- seleccionar estructuras de datos de Python según sus propiedades, no por
+  costumbre;
+- escribir código con nombres informativos, funciones pequeñas, validación de
+  entradas, anotaciones de tipo y documentación mínima;
+- usar NumPy para cálculos vectorizados y distinguir una lista de un arreglo;
+- interpretar medidas descriptivas, productos matriciales, aproximaciones de
+  derivadas e integrales;
+- construir figuras que indiquen variable, unidad, escala y procedencia;
+- redactar y compilar un informe científico en LaTeX y una presentación en
+  LaTeX Beamer;
+- separar datos originales, datos procesados, código, pruebas, figuras y
+  resultados;
+- reconstruir el proyecto mediante `uv sync --locked` y demostrarlo en un
+  computador diferente.
+
+## Evidencias finales
+
+Cada equipo entregará una carpeta comprimida o un repositorio con:
+
+| Evidencia | Debe incluir |
+|---|---|
+| Configuración | `pyproject.toml`, `.python-version`, `uv.lock`, `.gitignore` |
+| Código | paquete bajo `src/`, funciones documentadas y script de reproducción |
+| Datos | datos originales separados de los derivados; datos sintéticos con semilla |
+| Control de calidad | pruebas en `tests/` y análisis estático con Ruff |
+| Resultados | resumen numérico en JSON y figura en PNG |
+| Informe | `reports/informe.tex` y PDF compilado |
+| Presentación | `slides/presentacion.tex` en Beamer y PDF compilado |
+| Trazabilidad | README con comandos exactos y distribución de responsabilidades |
+| Reproducción externa | evidencia presencial de reconstrucción en otro equipo |
+
+## Organización propuesta
+
+La carga estimada es de **10 horas**, además de la sustentación:
+
+| Fase | Actividad | Tiempo |
+|---|---|---:|
+| 0 | Diagnóstico e instalación sin administrador | 2 h |
+| 1 | Fundamentos de Python y legibilidad | 2 h |
+| 2 | NumPy y contexto matemático | 2 h |
+| 3 | Visualización científica | 1.5 h |
+| 4 | Arquitectura, pruebas y automatización | 2 h |
+| 5 | Reto integrador y ensayo de reproducción | 1.5 h |
+
+La sustentación dura **12 minutos**, seguidos por hasta **5 minutos de
+verificación técnica**. El equipo tiene tres integrantes y presenta una sola
+persona. El expositor puede ser seleccionado por el docente al iniciar la
+actividad; por tanto, los tres integrantes deben comprender el proyecto
+completo.
+
+## Ruta de trabajo
+
+```{mermaid}
+flowchart TD
+    A["Instalar uv"] --> B["Obtener Python 3.13"]
+    B --> C["Sincronizar uv.lock"]
+    C --> D["Completar funciones"]
+    D --> E["Ejecutar pruebas"]
+    E --> F["Generar resultados"]
+    F --> G["Compilar informe y presentación LaTeX"]
+    G --> H["Reproducir en otro equipo"]
+```
+
+## Reglas técnicas no negociables
+
+- No se entrega la carpeta `.venv`.
+- No se editan manualmente archivos dentro de `.venv`.
+- No se usa `pip install` para “arreglar” el entorno al momento de sustentar.
+- No se editan manualmente versiones dentro de `uv.lock`.
+- Los datos originales no se sobrescriben.
+- Los resultados generados deben poder eliminarse y reconstruirse.
+- Toda aleatoriedad debe usar una semilla explícita.
+- Las rutas deben construirse con `pathlib`; no se aceptan rutas absolutas del
+  computador personal.
+- Los gráficos deben tener ejes, unidades y leyenda cuando corresponda.
+- El informe y la presentación deben conservar su fuente `.tex` y compilarse
+  con `latexmk`; no se aceptan archivos creados únicamente en un editor visual.
+- El README debe permitir que una persona nueva ejecute el proyecto sin recibir
+  instrucciones orales adicionales.
+
+
+# Preparación sin permisos de administrador
+
+## Antes de instalar
+
+En una terminal ejecute:
+
+::: {.panel-tabset}
+### Windows PowerShell
+
+```powershell
+uv --version
+python --version
+pdflatex --version
+latexmk --version
+```
+
+### Linux
+
+```bash
+uv --version
+python3 --version
+pdflatex --version
+latexmk --version
+```
+:::
+
+Un mensaje del tipo “comando no reconocido” confirma que la herramienta no está
+disponible en `PATH`; no demuestra que el computador esté dañado. Registre en su
+bitácora:
+
+- sistema operativo y arquitectura;
+- comandos que sí respondieron;
+- mensaje exacto de los comandos que fallaron;
+- fecha y hora del diagnóstico.
+
+::: {.callout-warning title="No use la contraseña de otra persona"}
+El laboratorio está diseñado para instalar `uv` y Python dentro del perfil del
+usuario. No requiere `sudo`, una consola elevada ni credenciales de
+administrador.
+:::
+
+## Modelo mental mínimo
+
+| Elemento | Función | ¿Se comparte? |
+|---|---|---|
+| `uv` | administra Python, dependencias, entorno y bloqueo | se instala en cada equipo |
+| Python 3.13 | interpreta el código | se descarga con `uv` |
+| `.venv/` | contiene paquetes instalados para un equipo | **no** |
+| `pyproject.toml` | declara proyecto y rangos de dependencias | sí |
+| `uv.lock` | registra resolución exacta y multiplataforma | sí |
+| `.python-version` | fija la línea de Python solicitada | sí |
+| distribución LaTeX | aporta `pdflatex`, paquetes y fuentes | se instala en cada equipo |
+| `latexmk` | automatiza las pasadas necesarias para producir PDF | se instala en cada equipo |
+
+La reproducibilidad no consiste en copiar `.venv`. Esa carpeta puede contener
+rutas, ejecutables y binarios específicos del sistema operativo. Se comparten
+las **instrucciones** que permiten reconstruirla.
+
+## Instalar `uv`
+
+Los instaladores autónomos oficiales trabajan dentro de la cuenta del usuario
+([documentación oficial de instalación de uv](https://docs.astral.sh/uv/getting-started/installation/)).
+
+::: {.panel-tabset}
+### Windows PowerShell
+
+Abra una ventana normal de PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Cierre y abra PowerShell. Después:
+
+```powershell
+uv --version
+```
+
+Si el comando todavía no aparece, pruebe la ruta de usuario:
+
+```powershell
+& "$env:USERPROFILE\.local\bin\uv.exe" --version
+```
+
+No cambie la política de ejecución de todo el computador. La opción anterior se
+aplica únicamente al proceso utilizado para instalar.
+
+### Linux
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Abra una terminal nueva. Si no puede hacerlo todavía:
+
+```bash
+source "$HOME/.local/bin/env"
+uv --version
+```
+
+Si `curl` no existe pero `wget` está disponible:
+
+```bash
+wget -qO- https://astral.sh/uv/install.sh | sh
+```
+:::
+
+::: {.evidence}
+**Evidencia P1.** Capture la salida de `uv --version`. No recorte el nombre del
+comando. En la bitácora explique por qué esa salida verifica el ejecutable, pero
+no verifica todavía el entorno del proyecto.
+:::
+
+## Instalar Python sin instalador del sistema
+
+El proyecto del laboratorio exige Python 3.13. `uv` descarga una distribución administrada en
+el espacio del usuario; no depende de que Python ya esté instalado
+([documentación oficial de administración de Python con uv](https://docs.astral.sh/uv/guides/install-python/)).
+
+```bash
+uv python install 3.13
+uv python list
+```
+
+Compruebe el intérprete mediante `uv`, sin asumir el nombre global del comando:
+
+```bash
+uv run --python 3.13 python -c "import sys; print(sys.version); print(sys.executable)"
+```
+
+### ¿Por qué fijar 3.13 y no “la versión más nueva”?
+
+Porque “la más nueva” cambia con el tiempo. Un proyecto semestral necesita un
+objetivo estable. Fijar `3.13` permite recibir correcciones de esa línea sin
+saltar inadvertidamente a otra versión menor con posibles incompatibilidades.
+El archivo `uv.lock` aporta el segundo nivel de control: fija las dependencias
+resueltas.
+
+## Crear el proyecto base
+
+En este laboratorio no se entrega una plantilla independiente. Cada equipo
+debe construir la estructura desde una carpeta vacía siguiendo esta guía. Este
+procedimiento permite demostrar que comprende qué crea cada herramienta.
+
+::: {.panel-tabset}
+### Windows PowerShell
+
+```powershell
+New-Item -ItemType Directory -Path "laboratorio_python" -Force | Out-Null
+Set-Location "laboratorio_python"
+
+uv init --package --name python-scientific --python 3.13 --vcs none
+
+$folders = @(
+    "data/raw",
+    "data/processed",
+    "build/reports",
+    "build/slides",
+    "figures",
+    "reports",
+    "results",
+    "scripts",
+    "slides",
+    "tests"
+)
+$folders | ForEach-Object {
+    New-Item -ItemType Directory -Path $_ -Force | Out-Null
+}
+New-Item -ItemType File -Path ".gitignore" -Force | Out-Null
+
+uv add "numpy>=2,<3" "matplotlib>=3.9,<4" "scipy>=1.14,<2"
+uv add --dev "pytest>=8.3,<10" "ruff>=0.12,<1"
+
+Get-ChildItem
+```
+
+### Linux
+
+```bash
+mkdir -p laboratorio_python
+cd laboratorio_python
+
+uv init --package --name python-scientific --python 3.13 --vcs none
+
+mkdir -p build/{reports,slides} data/{raw,processed} \
+    figures reports results scripts slides tests
+touch .gitignore
+
+uv add "numpy>=2,<3" "matplotlib>=3.9,<4" "scipy>=1.14,<2"
+uv add --dev "pytest>=8.3,<10" "ruff>=0.12,<1"
+
+pwd
+ls
+```
+:::
+
+Antes de continuar deben verse, como mínimo:
+
+```text
+pyproject.toml
+uv.lock
+.python-version
+README.md
+src/python_scientific/
+tests/
+scripts/
+reports/
+slides/
+build/
+data/
+figures/
+results/
+```
+
+::: {.callout-note title="Qué hizo `uv init` y qué hizo el equipo"}
+`uv init --package` creó los metadatos y la distribución `src`; `uv add`
+declaró las dependencias y actualizó el bloqueo. Las demás carpetas separan
+entradas, transformaciones, productos y pruebas. No confunda creación de
+carpetas con implementación: todavía debe desarrollar las funciones indicadas
+en esta guía.
+:::
+
+## Sincronizar el entorno
+
+```bash
+uv sync --locked
+```
+
+El modificador `--locked` impide que el equipo destino cambie silenciosamente la
+resolución de dependencias. Si `pyproject.toml` y `uv.lock` no concuerdan, la
+orden debe fallar; ese fallo protege la trazabilidad ([documentación oficial sobre bloqueo y sincronización](https://docs.astral.sh/uv/concepts/projects/sync/)).
+
+Verifique:
+
+```bash
+uv run python -c "import sys, numpy, matplotlib; print(sys.version); print(numpy.__version__); print(matplotlib.__version__)"
+uv tree
+```
+
+::: {.callout-tip title="No es obligatorio activar `.venv`"}
+`uv run` ejecuta el comando dentro del entorno del proyecto. Evitar la
+activación manual reduce diferencias entre PowerShell, CMD, Bash y otros
+intérpretes de comandos.
+:::
+
+::: {.evidence}
+**Evidencia P2.** Guarde en `results/entorno.txt` la versión de Python, la
+plataforma y las versiones de NumPy, Matplotlib y SciPy.
+
+::: {.panel-tabset}
+### Windows PowerShell
+
+```powershell
+uv run python -c "import platform,sys,numpy,matplotlib,scipy; print('Python:',sys.version); print('Plataforma:',platform.platform()); print('NumPy:',numpy.__version__); print('Matplotlib:',matplotlib.__version__); print('SciPy:',scipy.__version__)" |
+    Tee-Object -FilePath "results/entorno.txt"
+```
+
+### Linux
+
+```bash
+uv run python -c "import platform,sys,numpy,matplotlib,scipy; print('Python:',sys.version); print('Plataforma:',platform.platform()); print('NumPy:',numpy.__version__); print('Matplotlib:',matplotlib.__version__); print('SciPy:',scipy.__version__)" \
+    | tee results/entorno.txt
+```
+:::
+
+El archivo debe indicar versión de Python, plataforma y versiones de NumPy,
+Matplotlib y SciPy. No escriba esos valores a mano.
+:::
+
+## Preparar LaTeX sin permisos de administrador
+
+LaTeX es independiente del entorno Python administrado por `uv`. El informe y
+la presentación requieren una distribución TeX con `pdflatex` y la herramienta
+`latexmk`. Esta última automatiza las pasadas necesarias para resolver
+referencias y producir el PDF
+([documentación de `latexmk`](https://ctan.org/pkg/latexmk)).
+
+### Windows: instalación privada de MiKTeX
+
+1. Descargue el instalador básico desde la
+   [página oficial de MiKTeX](https://miktex.org/download).
+2. Ejecútelo desde una cuenta normal y seleccione la instalación
+   **privada o por usuario**. No seleccione instalación compartida.
+3. En MiKTeX Console, configure la instalación de paquetes faltantes como
+   `Ask me first` durante el desarrollo.
+4. Compile una vez el informe y la presentación antes de la sustentación para
+   que todos los paquetes necesarios queden instalados.
+5. Abra una terminal nueva y verifique:
+
+```powershell
+pdflatex --version
+latexmk --version
+kpsewhich beamer.cls
+```
+
+MiKTeX recomienda la instalación privada; la instalación compartida sí requiere
+privilegios administrativos
+([instrucciones oficiales para Windows](https://miktex.org/howto/install-miktex)).
+
+### Linux: TeX Live en el perfil del usuario
+
+Si el sistema ya proporciona `pdflatex` y `latexmk`, no instale otra
+distribución. En caso contrario, use el instalador oficial de
+[TeX Live por Internet](https://www.tug.org/texlive/acquire-netinstall.html),
+elija un directorio escribible dentro de su perfil y no use `sudo`. El
+instalador permite una instalación portátil que no modifica el sistema
+([guía oficial de TeX Live](https://www.tug.org/texlive/doc/install-tl.html)).
+
+Después agregue temporalmente el directorio `bin` informado por el instalador a
+`PATH`, abra una terminal nueva y compruebe:
+
+```bash
+pdflatex --version
+latexmk --version
+kpsewhich beamer.cls
+```
+
+La ruta exacta contiene la plataforma y la versión instalada; no copie a ciegas
+una ruta tomada de otro computador. Registre la ruta real que mostró el
+instalador.
+
+::: {.callout-important title="Preparación previa"}
+No se instalarán una distribución TeX ni paquetes LaTeX durante los minutos
+cronometrados. El equipo debe verificar antes que `article`, `beamer`,
+`babel-spanish`, `amsmath`, `booktabs`, `graphicx`, `hyperref`, `siunitx` y
+`latexmk` estén disponibles.
+:::
+
+## Verificar la compilación mínima
+
+Cree temporalmente `results/latex_smoke_test.tex`:
+
+```latex
+\documentclass{article}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\begin{document}
+Prueba de compilación: \(x(t)=\sin(2\pi f t)\).
+\end{document}
+```
+
+Desde la raíz del proyecto ejecute:
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/smoke results/latex_smoke_test.tex
+```
+
+En PowerShell escriba la misma orden en una sola línea. El criterio de éxito es
+la existencia de `build/smoke/latex_smoke_test.pdf` y un código de salida cero.
+No basta con que un editor muestre una vista previa.
+
+## Diagnóstico de errores frecuentes
+
+### `uv` no se reconoce después de instalar
+
+1. Abra una terminal nueva.
+2. Ejecute el binario mediante la ruta de usuario mostrada anteriormente.
+3. No descargue otro instalador hasta identificar el resultado.
+4. Registre el mensaje completo.
+
+### `uv sync --locked` indica que el bloqueo está desactualizado
+
+Alguien modificó dependencias sin actualizar `uv.lock`. En el computador de
+desarrollo:
+
+```bash
+uv lock
+uv sync --locked
+```
+
+Revise y comparta el nuevo `uv.lock`. No quite `--locked` en la sustentación
+para ocultar la inconsistencia.
+
+### El módulo propio no se importa
+
+Confirme que:
+
+- está situado en la raíz que contiene `pyproject.toml`;
+- ejecutó `uv sync --locked`;
+- el paquete conserva la ruta `src/python_scientific`;
+- ejecuta `uv run python ...`, no un Python global.
+
+### `latexmk` no encuentra una clase o un paquete
+
+Lea la primera línea del registro que contenga `LaTeX Error`. En desarrollo:
+
+1. confirme el nombre del paquete con `kpsewhich nombre.sty`;
+2. instálelo desde MiKTeX Console o `tlmgr`, según la distribución;
+3. compile nuevamente ambos documentos;
+4. registre en el README el requisito que faltaba.
+
+No elimine `\usepackage` ni active `-shell-escape` para ocultar el problema.
+
+### LaTeX compila, pero no encuentra la figura
+
+Ejecute la compilación desde la raíz del proyecto y use la ruta relativa
+`figures/summary.png`. Confirme primero que
+`uv run python scripts/reproduce.py` haya generado el archivo. Copiar la figura
+a mano dentro de `reports/` rompe el flujo definido.
+
+## Control de salida
+
+Antes de pasar al repaso de sintaxis, todos los integrantes deben poder explicar:
+
+1. ¿Por qué `.venv` no se entrega?
+2. ¿Qué diferencia existe entre `pyproject.toml` y `uv.lock`?
+3. ¿Qué protege `--locked`?
+4. ¿Por qué `uv run python` es más reproducible que llamar `python` a secas?
+5. ¿Qué herramienta reconstruye Python y cuál compila los documentos LaTeX?
+6. ¿Por qué el entorno `.venv` y la distribución TeX son dependencias
+   diferentes?
+
+Si una respuesta se reduce a “porque lo dice la guía”, el criterio aún no está
+dominado.
+
+# Fundamentos de Python y legibilidad
+
+## Propósito
+
+El repaso no busca memorizar símbolos. Busca relacionar cada construcción con
+una decisión científica: qué representa el dato, qué operaciones admite, qué
+supuestos se validan y cómo podrá otra persona leer el análisis.
+
+Ejecute ejemplos y ejercicios con:
+
+```bash
+uv run python
+```
+
+Para abandonar el intérprete use `exit()`. Para código que deba conservarse,
+cree o modifique un archivo `.py`; el historial de la terminal no es una
+evidencia reproducible.
+
+## Variables: nombre, valor y significado
+
+Una variable enlaza un nombre con un objeto. El nombre debe expresar el papel de
+la magnitud:
+
+```{python}
+#| eval: false
+sampling_frequency_hz = 250.0
+recording_duration_s = 8.0
+number_of_samples = int(sampling_frequency_hz * recording_duration_s)
+
+print(number_of_samples)
+```
+
+Compare:
+
+```{python}
+#| eval: false
+# Débil: exige contexto externo
+f = 250
+t = 8
+n = f * t
+
+# Mejor: contiene magnitud y unidad
+sampling_frequency_hz = 250.0
+duration_s = 8.0
+n_samples = int(sampling_frequency_hz * duration_s)
+```
+
+::: {.callout-important title="Las unidades forman parte del modelo"}
+Python no sabe si `250.0` representa hertz, segundos o milivoltios. Un nombre
+como `sampling_frequency_hz` reduce errores de interpretación; no sustituye una
+biblioteca de unidades cuando el proyecto la necesite.
+:::
+
+### Tipos escalares
+
+```{python}
+#| eval: false
+participant_id = "P017"       # str: identificador, no magnitud
+n_channels = 3                # int
+sampling_frequency_hz = 250.0 # float
+is_calibrated = True          # bool
+missing_value = None          # ausencia explícita
+
+for value in (
+    participant_id,
+    n_channels,
+    sampling_frequency_hz,
+    is_calibrated,
+    missing_value,
+):
+    print(value, type(value))
+```
+
+Un identificador numérico no se convierte automáticamente en `int`. Si el
+código `"0017"` identifica a un participante, convertirlo a `17` destruye
+información.
+
+### Asignación no significa copia independiente
+
+```{python}
+#| eval: false
+original = [0.1, 0.2, 0.3]
+alias = original
+alias.append(0.4)
+
+print(original)
+```
+
+`alias` y `original` apuntan a la misma lista. Si se requiere una copia
+superficial:
+
+```{python}
+#| eval: false
+copy_of_original = original.copy()
+```
+
+Este detalle importa cuando se pretende conservar una serie “sin procesar”.
+La práctica preferida es no modificar datos originales y producir un nuevo
+objeto con un nombre que describa la transformación.
+
+## Operadores y comparaciones
+
+```{python}
+#| eval: false
+amplitude_mv = -0.85
+is_negative = amplitude_mv < 0
+is_in_expected_range = -5.0 <= amplitude_mv <= 5.0
+
+power = amplitude_mv**2
+absolute_amplitude = abs(amplitude_mv)
+```
+
+No compare números de punto flotante mediante igualdad exacta después de
+cálculos:
+
+```{python}
+#| eval: false
+import math
+
+result = 0.1 + 0.2
+print(result == 0.3)
+print(math.isclose(result, 0.3, rel_tol=1e-9, abs_tol=1e-12))
+```
+
+La representación binaria de muchos decimales es aproximada. La tolerancia debe
+relacionarse con el problema; copiar una tolerancia sin justificarla tampoco es
+una buena práctica.
+
+## Condicionales: codificar una regla explícita
+
+Suponga una regla didáctica para revisar la amplitud absoluta de una señal:
+
+```{python}
+#| eval: false
+absolute_amplitude_mv = 3.2
+
+if absolute_amplitude_mv > 5.0:
+    quality_label = "fuera_de_rango"
+elif absolute_amplitude_mv >= 1.0:
+    quality_label = "revisar"
+else:
+    quality_label = "dentro_de_rango"
+```
+
+Esta clasificación **no es un criterio clínico**. Solo demuestra el orden de
+evaluación. La primera condición verdadera detiene la cadena.
+
+### Validar antes de clasificar
+
+```{python}
+#| eval: false
+def classify_amplitude(absolute_amplitude_mv: float) -> str:
+    """Clasifica una amplitud según umbrales didácticos."""
+    if absolute_amplitude_mv < 0:
+        raise ValueError("La amplitud absoluta no puede ser negativa.")
+    if absolute_amplitude_mv > 5.0:
+        return "fuera_de_rango"
+    if absolute_amplitude_mv >= 1.0:
+        return "revisar"
+    return "dentro_de_rango"
+```
+
+El `else` no es obligatorio después de un `return`. Reducir niveles de
+indentación suele mejorar la lectura.
+
+### Errores frecuentes
+
+- usar varios `if` independientes cuando las categorías deben ser mutuamente
+  excluyentes;
+- definir límites que dejan huecos o producen solapamientos;
+- emplear `=` en lugar de `==`;
+- comparar texto sin controlar mayúsculas, tildes o espacios;
+- convertir un valor inválido en una categoría válida.
+
+::: {.checkpoint}
+**Actividad 2.1.** Diseñe `classify_sampling_frequency(fs_hz)` con estas reglas
+didácticas:
+
+- rechace valores no positivos;
+- retorne `"insuficiente"` cuando `fs_hz < 100`;
+- retorne `"aceptable"` entre 100 y menos de 500;
+- retorne `"alta"` desde 500.
+
+Escriba al menos cuatro casos de prueba, incluidos dos límites. Explique por qué
+probar 99.9, 100 y 500 aporta más información que probar solamente 200.
+:::
+
+## Tuplas: registros inmutables y desempaquetado
+
+Una tupla conserva un orden y no permite reemplazar sus posiciones:
+
+```{python}
+#| eval: false
+frequency_band_hz = (0.5, 40.0)
+low_hz, high_hz = frequency_band_hz
+
+print(low_hz, high_hz)
+```
+
+Es apropiada para un par de límites que conceptualmente permanece fijo durante
+una operación. Que una tupla sea inmutable no garantiza que los objetos
+contenidos también lo sean.
+
+```{python}
+#| eval: false
+channel = ("ECG_I", "mV", 250.0)
+name, unit, sampling_frequency_hz = channel
+```
+
+No use posiciones crípticas en todo el proyecto (`channel[2]`). Después de
+desempaquetar, los nombres comunican el significado.
+
+## Listas: secuencias ordenadas y modificables
+
+```{python}
+#| eval: false
+channels = ["ECG_I", "ECG_II"]
+channels.append("RESP")
+channels.extend(["EMG_1", "EMG_2"])
+
+first_channel = channels[0]
+last_two = channels[-2:]
+```
+
+Las listas son útiles para:
+
+- conservar orden de llegada;
+- añadir o retirar elementos;
+- almacenar objetos heterogéneos cuando el modelo lo exige;
+- construir una colección antes de convertirla a NumPy.
+
+No son la estructura preferida para álgebra numérica masiva. La expresión
+`[1, 2] * 3` repite una lista; no multiplica cada elemento.
+
+### Comprensiones
+
+```{python}
+#| eval: false
+amplitudes_mv = [-0.5, 0.2, 1.4, -2.1]
+absolute_amplitudes_mv = [abs(value) for value in amplitudes_mv]
+large_amplitudes_mv = [
+    value for value in absolute_amplitudes_mv if value >= 1.0
+]
+```
+
+Una comprensión breve puede ser legible. Si contiene varias condiciones,
+efectos secundarios o lógica científica compleja, use un ciclo explícito o una
+función con nombre.
+
+## Conjuntos: pertenencia y unicidad
+
+```{python}
+#| eval: false
+observed_channels = {"ECG_I", "ECG_II", "RESP", "ECG_I"}
+required_channels = {"ECG_I", "RESP"}
+
+missing_channels = required_channels - observed_channels
+extra_channels = observed_channels - required_channels
+has_all_required = required_channels <= observed_channels
+```
+
+Un conjunto:
+
+- elimina duplicados;
+- permite comprobar pertenencia eficientemente;
+- no representa una secuencia temporal;
+- no debe usarse cuando el orden es evidencia.
+
+Convertir muestras de una señal a `set` destruiría repeticiones y orden. En
+cambio, un conjunto de nombres de canales puede ser adecuado.
+
+## Diccionarios: significado por clave
+
+Aunque el repaso solicitado se concentra en tuplas, listas y conjuntos, un
+proyecto reproducible necesita diccionarios para resultados estructurados:
+
+```{python}
+#| eval: false
+summary = {
+    "count": 2000,
+    "mean_mv": 0.012,
+    "standard_deviation_mv": 0.47,
+    "sampling_frequency_hz": 250.0,
+}
+
+print(summary["mean_mv"])
+```
+
+Las claves deben ser estables. Si el resultado se exporta como JSON, use tipos
+serializables: `str`, `int`, `float`, `bool`, `None`, listas y diccionarios.
+
+## Selección razonada de estructuras
+
+| Necesidad | Estructura sugerida | Justificación |
+|---|---|---|
+| límites inferior y superior fijos | tupla | orden semántico, sin reemplazo accidental |
+| canales en orden de adquisición | lista | orden y modificación |
+| nombres únicos requeridos | conjunto | unicidad y operaciones de pertenencia |
+| estadísticos con nombres | diccionario | acceso por clave y exportación JSON |
+| muestras numéricas homogéneas | `numpy.ndarray` | vectorización y forma explícita |
+
+::: {.checkpoint}
+**Actividad 2.2.** Para cada caso, seleccione una estructura y defienda la
+decisión en máximo dos oraciones:
+
+1. frecuencia y amplitud de tres componentes sinusoidales;
+2. identificadores únicos de sensores;
+3. orden de etapas de un procesamiento;
+4. matriz de calibración \(3\times3\);
+5. resumen que se guardará como JSON.
+
+Incluya un caso donde dos estructuras podrían funcionar y explique qué propiedad
+inclina la decisión.
+:::
+
+## Ciclos: iterar con intención
+
+### Iterar sobre elementos
+
+```{python}
+#| eval: false
+channels = ["ECG_I", "ECG_II", "RESP"]
+
+for channel in channels:
+    print(channel)
+```
+
+### Iterar con índice
+
+```{python}
+#| eval: false
+for index, channel in enumerate(channels, start=1):
+    print(index, channel)
+```
+
+Evite `range(len(channels))` si solo necesita el elemento. Use índices cuando
+la posición sea parte real del problema.
+
+### Recorrer dos secuencias
+
+```{python}
+#| eval: false
+channels = ["ECG_I", "RESP"]
+units = ["mV", "%"]
+
+if len(channels) != len(units):
+    raise ValueError("Cada canal debe tener una unidad.")
+
+for channel, unit in zip(channels, units, strict=True):
+    print(f"{channel}: {unit}")
+```
+
+`strict=True` evita que `zip` oculte una longitud desigual truncando la
+secuencia más larga.
+
+### `while`: condición de terminación visible
+
+```{python}
+#| eval: false
+iteration = 0
+maximum_iterations = 20
+error = 1.0
+tolerance = 1e-4
+
+while error > tolerance and iteration < maximum_iterations:
+    error *= 0.5
+    iteration += 1
+```
+
+Todo `while` debe permitir identificar:
+
+1. estado inicial;
+2. condición;
+3. actualización;
+4. límite de seguridad cuando exista riesgo de no converger.
+
+## Ciclo o vectorización
+
+Un ciclo es correcto para tareas heterogéneas, lectura de archivos o control de
+flujo. En operaciones elemento a elemento sobre datos numéricos homogéneos,
+NumPy suele expresar mejor la intención:
+
+```{python}
+#| eval: false
+import numpy as np
+
+signal_mv = np.array([-0.5, 0.2, 1.4, -2.1], dtype=float)
+absolute_signal_mv = np.abs(signal_mv)
+```
+
+No convierta cada ciclo a NumPy de forma automática. Primero pregunte si la
+operación es realmente vectorial.
+
+## Funciones: unidad de razonamiento y prueba
+
+Una función científica útil:
+
+- hace una tarea delimitada;
+- recibe entradas explícitas;
+- retorna un resultado;
+- valida supuestos críticos;
+- no depende de variables globales ocultas;
+- puede probarse sin ejecutar el proyecto completo.
+
+```{python}
+#| eval: false
+from collections.abc import Sequence
+
+
+def arithmetic_mean(values: Sequence[float]) -> float:
+    """Calcula la media aritmética de una secuencia no vacía."""
+    if not values:
+        raise ValueError("Se requiere al menos un valor.")
+    return sum(values) / len(values)
+```
+
+### Separar cálculo y presentación
+
+```{python}
+#| eval: false
+def root_mean_square(values: Sequence[float]) -> float:
+    """Calcula el valor cuadrático medio de una secuencia no vacía."""
+    if not values:
+        raise ValueError("Se requiere al menos un valor.")
+    mean_square = sum(value**2 for value in values) / len(values)
+    return mean_square**0.5
+
+
+rms_mv = root_mean_square([0.2, -0.1, 0.3])
+print(f"RMS: {rms_mv:.3f} mV")
+```
+
+La función calcula; el código exterior decide cómo mostrar. Una función que
+imprime en vez de retornar es más difícil de reutilizar y probar.
+
+### Anotaciones de tipo
+
+Las anotaciones comunican intención, pero Python no las hace cumplir por sí
+mismo:
+
+```{python}
+#| eval: false
+def sample_period(sampling_frequency_hz: float) -> float:
+    """Retorna el periodo de muestreo en segundos."""
+    if sampling_frequency_hz <= 0:
+        raise ValueError("La frecuencia de muestreo debe ser positiva.")
+    return 1.0 / sampling_frequency_hz
+```
+
+## Excepciones informativas
+
+No capture todos los errores con `except Exception` para continuar como si nada.
+El error debe detener el cálculo cuando el resultado dejaría de ser confiable.
+
+```{python}
+#| eval: false
+def parse_sampling_frequency(text: str) -> float:
+    """Convierte texto a frecuencia positiva."""
+    try:
+        value = float(text)
+    except ValueError as error:
+        raise ValueError(
+            f"No se pudo interpretar la frecuencia: {text!r}."
+        ) from error
+
+    if value <= 0:
+        raise ValueError("La frecuencia debe ser positiva.")
+    return value
+```
+
+## Estilo legible
+
+Use estas reglas durante el semestre:
+
+- nombres en `snake_case`;
+- constantes del módulo en `UPPER_CASE`;
+- cuatro espacios por nivel de indentación;
+- máximo una responsabilidad científica principal por función;
+- comentarios que expliquen el **porqué**, no que traduzcan cada línea;
+- docstrings en funciones públicas;
+- importaciones al inicio y agrupadas;
+- f-strings para mensajes;
+- `pathlib.Path` para rutas;
+- Ruff para detectar inconsistencias mecánicas.
+
+### Comentario débil y comentario útil
+
+```{python}
+#| eval: false
+# Suma uno a i
+i += 1
+
+# Se descarta la primera muestra porque corresponde al transitorio de arranque
+steady_state_signal = signal[1:]
+```
+
+El segundo comentario registra una decisión. Esa decisión todavía debe
+justificarse en el contexto del experimento.
+
+## Práctica integradora de fundamentos
+
+Implemente en `src/python_scientific/quality.py`:
+
+```{python}
+#| eval: false
+def validate_channel_configuration(
+    observed_channels: list[str],
+    required_channels: set[str],
+) -> dict[str, object]:
+    """Resume duplicados, faltantes y canales adicionales."""
+    ...
+```
+
+Requisitos:
+
+1. conservar el orden original de `observed_channels`;
+2. identificar duplicados sin perder información;
+3. calcular faltantes y adicionales mediante conjuntos;
+4. retornar un diccionario serializable;
+5. no modificar las entradas;
+6. rechazar nombres vacíos o que solo contengan espacios;
+7. incluir pruebas para configuración completa, faltante y duplicada.
+
+::: {.evidence}
+**Evidencia F1.** Entregue la función, sus pruebas y una explicación de máximo
+150 palabras sobre las estructuras seleccionadas. Una salida visual correcta
+sin pruebas de límites no satisface la evidencia.
+:::
+
+## Preguntas de verificación
+
+1. ¿Por qué una cadena puede ser mejor que un entero para un identificador?
+2. ¿Qué diferencia hay entre `alias = original` y `original.copy()`?
+3. ¿Cuándo una tupla comunica mejor intención que una lista?
+4. ¿Qué información se pierde al convertir una señal en conjunto?
+5. ¿Por qué `zip(..., strict=True)` es valioso en datos científicos?
+6. ¿Qué ventaja aporta retornar un valor en lugar de imprimirlo?
+7. ¿Qué condición de borde probaría primero en una función de clasificación?
+
+# NumPy y contexto matemático
+
+## De una lista a un arreglo
+
+Una lista de Python es una colección general. Un `numpy.ndarray` representa
+datos homogéneos organizados por dimensiones y permite operaciones vectorizadas
+([guía oficial de NumPy](https://numpy.org/doc/stable/user/)).
+
+```{python}
+#| eval: false
+import numpy as np
+
+samples_mv = np.array([0.12, 0.18, -0.05, 0.31], dtype=float)
+
+print(samples_mv.dtype)
+print(samples_mv.shape)
+print(samples_mv.ndim)
+print(samples_mv.size)
+```
+
+### Operaciones distintas
+
+```{python}
+#| eval: false
+python_values = [1.0, 2.0, 3.0]
+numpy_values = np.array([1.0, 2.0, 3.0])
+
+print(python_values * 2)  # repite la lista
+print(numpy_values * 2)   # multiplica elemento a elemento
+```
+
+La diferencia no es solo de velocidad. NumPy hace explícita una operación
+matemática sobre todos los elementos.
+
+## Construcción reproducible de ejes
+
+Para una señal muestreada con frecuencia \(f_s\), el periodo es:
+
+$$
+T_s = \frac{1}{f_s}.
+$$
+
+Si hay \(N\) muestras iniciando en cero:
+
+$$
+t_n = \frac{n}{f_s}, \qquad n = 0,1,\ldots,N-1.
+$$
+
+```{python}
+#| eval: false
+sampling_frequency_hz = 250.0
+duration_s = 4.0
+n_samples = int(sampling_frequency_hz * duration_s)
+
+time_s = np.arange(n_samples, dtype=float) / sampling_frequency_hz
+```
+
+Para incluir un extremo matemático en una malla, `linspace` suele ser más claro:
+
+```{python}
+#| eval: false
+x = np.linspace(0.0, 1.0, num=101, endpoint=True)
+```
+
+No mezcle ambos propósitos: un registro de \(N\) muestras a \(f_s\) normalmente
+no incluye la marca \(N/f_s\).
+
+## Forma y ejes
+
+Una matriz puede organizarse como muestras por canales:
+
+```{python}
+#| eval: false
+signals_mv = np.array(
+    [
+        [0.10, -0.04],
+        [0.15, -0.01],
+        [0.05, 0.03],
+    ],
+    dtype=float,
+)
+
+n_samples, n_channels = signals_mv.shape
+```
+
+En esta convención:
+
+- `axis=0` reduce las muestras y produce un resultado por canal;
+- `axis=1` reduce los canales y produce un resultado por instante.
+
+```{python}
+#| eval: false
+channel_means_mv = np.mean(signals_mv, axis=0)
+sample_means_mv = np.mean(signals_mv, axis=1)
+```
+
+::: {.callout-warning title="El eje no se adivina"}
+Un resultado con la “forma esperada” todavía puede ser científicamente
+incorrecto si se redujo el eje equivocado. Documente siempre la convención de
+filas y columnas.
+:::
+
+## Indexación, cortes y vistas
+
+```{python}
+#| eval: false
+first_channel_mv = signals_mv[:, 0]
+first_two_samples = signals_mv[:2, :]
+single_value = signals_mv[1, 0]
+```
+
+Muchos cortes de NumPy son **vistas** sobre el arreglo original:
+
+```{python}
+#| eval: false
+segment = signals_mv[:2, :]
+segment[0, 0] = 999.0
+```
+
+Ese cambio puede afectar `signals_mv`. Si necesita independencia:
+
+```{python}
+#| eval: false
+segment_copy = signals_mv[:2, :].copy()
+```
+
+En un flujo reproducible, evite mutaciones ocultas. Prefiera nombres nuevos para
+datos transformados.
+
+## Máscaras booleanas
+
+```{python}
+#| eval: false
+signal_mv = np.array([-1.2, -0.4, 0.1, 0.9, 1.6])
+within_range = np.abs(signal_mv) <= 1.0
+accepted_samples_mv = signal_mv[within_range]
+```
+
+La máscara debe conservarse si la exclusión forma parte del análisis:
+
+```{python}
+#| eval: false
+rejected_indices = np.flatnonzero(~within_range)
+```
+
+No elimine datos sin registrar la regla y la cantidad excluida.
+
+## Broadcasting
+
+Suponga una matriz de señales con una línea base diferente por canal:
+
+```{python}
+#| eval: false
+baseline_mv = np.mean(signals_mv, axis=0)
+centered_signals_mv = signals_mv - baseline_mv
+```
+
+`baseline_mv` tiene forma `(n_channels,)` y NumPy lo expande conceptualmente
+sobre todas las filas. Antes de confiar en broadcasting:
+
+1. escriba las formas;
+2. identifique qué dimensión representa cada eje;
+3. compruebe la forma del resultado.
+
+```{python}
+#| eval: false
+assert baseline_mv.shape == (n_channels,)
+assert centered_signals_mv.shape == signals_mv.shape
+```
+
+## Aleatoriedad controlada
+
+Use un generador local:
+
+```{python}
+#| eval: false
+seed = 2026
+rng = np.random.default_rng(seed)
+noise_mv = rng.normal(loc=0.0, scale=0.05, size=n_samples)
+```
+
+La semilla permite repetir la secuencia en el mismo ecosistema numérico. Debe
+registrarse junto al modelo de generación; por sí sola no documenta
+distribución, parámetros ni tamaño.
+
+## Señal sintética de trabajo
+
+Construya una señal didáctica:
+
+$$
+x(t) =
+0.8\sin(2\pi 1.2t)
++ 0.25\sin(2\pi 10t)
++ \varepsilon(t),
+$$
+
+donde \(\varepsilon(t)\sim\mathcal{N}(0,0.08^2)\).
+
+```{python}
+#| eval: false
+sampling_frequency_hz = 250.0
+duration_s = 8.0
+n_samples = int(sampling_frequency_hz * duration_s)
+time_s = np.arange(n_samples) / sampling_frequency_hz
+
+rng = np.random.default_rng(2026)
+noise_mv = rng.normal(0.0, 0.08, size=n_samples)
+
+signal_mv = (
+    0.8 * np.sin(2 * np.pi * 1.2 * time_s)
+    + 0.25 * np.sin(2 * np.pi * 10.0 * time_s)
+    + noise_mv
+)
+```
+
+Esta señal no reproduce una fisiología ni autoriza interpretación clínica. Es un
+objeto controlado para comprobar programación, estadística y cálculo numérico.
+
+## Estadística descriptiva
+
+Para valores \(x_1,\ldots,x_N\), la media es:
+
+$$
+\bar{x} = \frac{1}{N}\sum_{i=1}^{N}x_i.
+$$
+
+La varianza poblacional divide por \(N\):
+
+$$
+\sigma^2 = \frac{1}{N}\sum_{i=1}^{N}(x_i-\bar{x})^2.
+$$
+
+La varianza muestral insesgada usual divide por \(N-1\):
+
+$$
+s^2 = \frac{1}{N-1}\sum_{i=1}^{N}(x_i-\bar{x})^2.
+$$
+
+```{python}
+#| eval: false
+mean_mv = np.mean(signal_mv)
+median_mv = np.median(signal_mv)
+population_std_mv = np.std(signal_mv, ddof=0)
+sample_std_mv = np.std(signal_mv, ddof=1)
+minimum_mv = np.min(signal_mv)
+maximum_mv = np.max(signal_mv)
+q1_mv, q3_mv = np.quantile(signal_mv, [0.25, 0.75])
+iqr_mv = q3_mv - q1_mv
+rms_mv = np.sqrt(np.mean(signal_mv**2))
+```
+
+### Interpretar, no enumerar
+
+- **Media:** nivel promedio; sensible a valores extremos.
+- **Mediana:** centro por orden; más resistente a valores extremos.
+- **Desviación estándar:** dispersión alrededor de la media; depende de `ddof`.
+- **IQR:** amplitud del 50 % central.
+- **RMS:** magnitud energética media en la escala de la señal; no es sinónimo de
+  desviación estándar si la media no es cero.
+
+::: {.checkpoint}
+**Actividad 3.1.** Compare media, mediana, desviación estándar muestral e IQR
+antes y después de añadir un valor extremo controlado a una copia de la señal.
+No se limite a decir “cambió más”: explique qué propiedad matemática produce la
+diferencia. Conserve ambos arreglos.
+:::
+
+## Valores faltantes
+
+NumPy puede representar un faltante numérico mediante `np.nan`:
+
+```{python}
+#| eval: false
+measurements = np.array([0.2, np.nan, 0.4, 0.1])
+
+valid_count = np.count_nonzero(~np.isnan(measurements))
+mean_ignoring_nan = np.nanmean(measurements)
+```
+
+Omitir faltantes no siempre es válido. El reporte debe indicar:
+
+- cuántos faltan;
+- por qué faltan, si se conoce;
+- qué función los omitió;
+- cómo cambia el denominador.
+
+Una función científica debe rechazar valores no finitos cuando no exista una
+política explícita.
+
+## Álgebra lineal
+
+### Producto matricial
+
+Para una transformación lineal:
+
+$$
+\mathbf{y}=\mathbf{A}\mathbf{x}.
+$$
+
+```{python}
+#| eval: false
+calibration_matrix = np.array(
+    [
+        [1.02, -0.01],
+        [0.03, 0.98],
+    ],
+    dtype=float,
+)
+raw_vector = np.array([0.50, -0.20])
+
+calibrated_vector = calibration_matrix @ raw_vector
+```
+
+`*` representa multiplicación elemento a elemento; `@` representa producto
+matricial. Intercambiarlos puede ejecutar sin error y producir una interpretación
+completamente distinta.
+
+### Resolver un sistema
+
+Para:
+
+$$
+\mathbf{A}\mathbf{x}=\mathbf{b},
+$$
+
+use:
+
+```{python}
+#| eval: false
+matrix_a = np.array([[3.0, 1.0], [1.0, 2.0]])
+vector_b = np.array([9.0, 8.0])
+
+solution = np.linalg.solve(matrix_a, vector_b)
+residual = matrix_a @ solution - vector_b
+```
+
+No calcule `np.linalg.inv(A) @ b` para resolver un sistema. `solve` expresa la
+operación directamente y evita formar la inversa de manera innecesaria.
+
+### Condicionamiento
+
+```{python}
+#| eval: false
+condition_number = np.linalg.cond(matrix_a)
+```
+
+Un número de condición grande advierte que perturbaciones pequeñas en datos o
+redondeo pueden amplificarse en la solución. No existe un único umbral
+universal: debe interpretarse con precisión, escala y aplicación.
+
+::: {.checkpoint}
+**Actividad 3.2.** Resuelva el sistema anterior, calcule la norma del residuo
+\(\lVert A\hat{x}-b\rVert_2\) y verifique la solución con una prueba
+`np.testing.assert_allclose`. Luego modifique una matriz para hacer sus filas
+casi dependientes y compare el número de condición.
+:::
+
+## Derivación numérica
+
+La derivada central aproxima:
+
+$$
+f'(t_i) \approx
+\frac{f(t_{i+1})-f(t_{i-1})}{2\Delta t}.
+$$
+
+Para validar el método use una función con derivada conocida:
+
+$$
+f(t)=\sin(2\pi f_0t),
+\qquad
+f'(t)=2\pi f_0\cos(2\pi f_0t).
+$$
+
+```{python}
+#| eval: false
+frequency_hz = 2.0
+time_s = np.linspace(0.0, 1.0, 1001)
+function_values = np.sin(2 * np.pi * frequency_hz * time_s)
+analytical_derivative = (
+    2 * np.pi * frequency_hz
+    * np.cos(2 * np.pi * frequency_hz * time_s)
+)
+
+numerical_derivative = np.gradient(function_values, time_s)
+absolute_error = np.abs(numerical_derivative - analytical_derivative)
+interior_max_error = np.max(absolute_error[1:-1])
+```
+
+Se excluyen los extremos al resumir el error interior porque NumPy necesita
+aproximaciones laterales en los bordes. Esa exclusión debe declararse, no
+ocultarse.
+
+### Interpretación biomédica
+
+Derivar una señal resalta cambios rápidos y también amplifica componentes de
+alta frecuencia, incluido ruido. Por tanto, una derivada numérica no debe
+interpretarse sin considerar muestreo, ruido y posible filtrado previo.
+
+::: {.checkpoint}
+**Actividad 3.3.** Evalúe el error de derivación para 101, 501 y 1001 puntos en
+el mismo intervalo. Construya una tabla con \(\Delta t\), error máximo interior
+y error RMS. Explique la tendencia y por qué la reducción del paso no elimina
+todos los problemas cuando los datos contienen ruido.
+:::
+
+## Integración numérica
+
+La regla del trapecio aproxima:
+
+$$
+\int_a^b f(t)\,dt
+\approx
+\sum_{i=0}^{N-2}
+\frac{f(t_i)+f(t_{i+1})}{2}
+(t_{i+1}-t_i).
+$$
+
+Valide con una función conocida:
+
+$$
+\int_0^1 t^2\,dt=\frac{1}{3}.
+$$
+
+```{python}
+#| eval: false
+time_s = np.linspace(0.0, 1.0, 101)
+function_values = time_s**2
+
+numerical_integral = np.trapezoid(function_values, x=time_s)
+analytical_integral = 1.0 / 3.0
+absolute_error = abs(numerical_integral - analytical_integral)
+```
+
+### Integral acumulada
+
+```{python}
+#| eval: false
+from scipy.integrate import cumulative_trapezoid
+
+cumulative_integral = cumulative_trapezoid(
+    function_values,
+    time_s,
+    initial=0.0,
+)
+```
+
+Integrar una señal con componente constante o deriva puede producir una
+tendencia creciente. Antes de atribuir significado fisiológico, evalúe línea
+base, unidades y condiciones iniciales.
+
+## Unidades
+
+Si \(x(t)\) está en mV y \(t\) en s:
+
+- \(dx/dt\) queda en mV/s;
+- \(\int x(t)\,dt\) queda en mV·s;
+- la media conserva mV;
+- la varianza queda en mV²;
+- la desviación estándar y RMS quedan en mV.
+
+Una figura o un JSON sin unidades está incompleto aunque el número sea correcto.
+
+## Función de resumen exigida
+
+La siguiente versión sirve como referencia. El equipo debe comprenderla y
+ser capaz de reconstruir:
+
+```{python}
+#| eval: false
+from typing import TypeAlias
+
+import numpy as np
+import numpy.typing as npt
+
+FloatArray: TypeAlias = npt.NDArray[np.float64]
+
+
+def descriptive_statistics(values: FloatArray) -> dict[str, float | int]:
+    """Calcula estadísticos sobre un arreglo 1D, no vacío y finito."""
+    array = np.asarray(values, dtype=float)
+    if array.ndim != 1:
+        raise ValueError("Se esperaba un arreglo unidimensional.")
+    if array.size == 0:
+        raise ValueError("El arreglo no puede estar vacío.")
+    if not np.all(np.isfinite(array)):
+        raise ValueError("El arreglo contiene valores no finitos.")
+
+    q1, q3 = np.quantile(array, [0.25, 0.75])
+    return {
+        "count": int(array.size),
+        "mean": float(np.mean(array)),
+        "median": float(np.median(array)),
+        "sample_standard_deviation": float(np.std(array, ddof=1))
+        if array.size > 1
+        else 0.0,
+        "minimum": float(np.min(array)),
+        "maximum": float(np.max(array)),
+        "q1": float(q1),
+        "q3": float(q3),
+        "iqr": float(q3 - q1),
+        "rms": float(np.sqrt(np.mean(array**2))),
+    }
+```
+
+Observe la conversión de escalares NumPy a tipos nativos antes de exportar JSON.
+
+## Errores frecuentes
+
+- confundir `shape`, `size` y `ndim`;
+- reducir el eje equivocado;
+- modificar una vista creyendo que es copia;
+- comparar arreglos con `if array == other`;
+- usar `*` cuando la operación matemática exige `@`;
+- calcular una desviación estándar sin declarar `ddof`;
+- omitir `NaN` sin registrar cuántos valores se excluyeron;
+- usar aleatoriedad sin generador ni semilla;
+- derivar datos ruidosos y llamar “evento” a cada cambio rápido;
+- integrar sin revisar línea base ni unidades.
+
+## Cierre
+
+Antes de continuar, cada integrante debe poder explicar con un ejemplo:
+
+1. la forma de un arreglo y el significado de cada eje;
+2. la diferencia entre vista y copia;
+3. la diferencia entre desviación poblacional y muestral;
+4. por qué `solve` es preferible a formar una inversa;
+5. por qué derivar amplifica ruido;
+6. cómo cambian las unidades después de derivar o integrar.
+
+# Visualización científica con Matplotlib
+
+## Una figura es parte del argumento
+
+Una gráfica científica debe permitir responder:
+
+- ¿qué variable se representa?;
+- ¿contra qué eje o condición?;
+- ¿en qué unidades?;
+- ¿qué transformación se aplicó?;
+- ¿qué comparación es válida?;
+- ¿dónde se conserva el archivo?
+
+Matplotlib permite separar la figura completa (`Figure`) de cada sistema de ejes
+(`Axes`) ([guía oficial de Matplotlib](https://matplotlib.org/stable/users/explain/quick_start.html)).
+
+## Interfaz orientada a objetos
+
+```{python}
+#| eval: false
+import matplotlib.pyplot as plt
+import numpy as np
+
+time_s = np.linspace(0.0, 2.0, 501)
+signal_mv = np.sin(2 * np.pi * 2.0 * time_s)
+
+fig, ax = plt.subplots(figsize=(9, 4.5), constrained_layout=True)
+ax.plot(time_s, signal_mv, color="#145da0", linewidth=1.4)
+ax.set(
+    title="Señal sinusoidal de referencia",
+    xlabel="Tiempo [s]",
+    ylabel="Amplitud [mV]",
+)
+ax.grid(True, alpha=0.25)
+```
+
+Esta forma es preferible a una secuencia larga de llamadas globales a
+`plt.*` porque el objeto que se modifica queda explícito.
+
+## Guardar antes de mostrar
+
+```{python}
+#| eval: false
+from pathlib import Path
+
+output_path = Path("figures") / "signal_reference.png"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+
+fig.savefig(output_path, dpi=180, bbox_inches="tight")
+plt.close(fig)
+```
+
+En scripts automatizados no dependa de `plt.show()`. Guardar y cerrar evita
+ventanas bloqueantes y acumulación de figuras en memoria.
+
+::: {.callout-important title="Rutas relativas y controladas"}
+Nunca use una ruta como
+`C:\Users\Nombre\Desktop\figura.png` o
+`/home/nombre/figura.png`. Esa ruta solo describe el computador del autor.
+:::
+
+## Función de visualización reutilizable
+
+```{python}
+#| eval: false
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing as npt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+
+
+def plot_signal(
+    time_s: npt.NDArray[np.float64],
+    signal_mv: npt.NDArray[np.float64],
+    *,
+    title: str,
+) -> tuple[Figure, Axes]:
+    """Crea una figura temporal sin mostrarla ni guardarla."""
+    if time_s.ndim != 1 or signal_mv.ndim != 1:
+        raise ValueError("Tiempo y señal deben ser unidimensionales.")
+    if time_s.shape != signal_mv.shape:
+        raise ValueError("Tiempo y señal deben tener igual longitud.")
+    if time_s.size == 0:
+        raise ValueError("No se puede graficar una señal vacía.")
+
+    fig, ax = plt.subplots(figsize=(9, 4.5), constrained_layout=True)
+    ax.plot(time_s, signal_mv, color="#145da0", linewidth=1.2)
+    ax.set(title=title, xlabel="Tiempo [s]", ylabel="Amplitud [mV]")
+    ax.grid(True, alpha=0.25)
+    return fig, ax
+```
+
+La función crea y retorna. El script decide dónde guardar:
+
+```{python}
+#| eval: false
+fig, ax = plot_signal(time_s, signal_mv, title="Registro sintético")
+figure_path = Path("figures") / "synthetic_signal.png"
+fig.savefig(figure_path, dpi=180, bbox_inches="tight")
+plt.close(fig)
+```
+
+Esta separación hace posible probar la figura sin escribir archivos y reutilizar
+el PNG generado tanto en el informe LaTeX como en la presentación Beamer.
+
+## Comparaciones mediante subgráficos
+
+```{python}
+#| eval: false
+centered_signal_mv = signal_mv - np.mean(signal_mv)
+derivative_mv_per_s = np.gradient(centered_signal_mv, time_s)
+
+fig, axes = plt.subplots(
+    nrows=2,
+    ncols=1,
+    figsize=(10, 7),
+    sharex=True,
+    constrained_layout=True,
+)
+
+axes[0].plot(time_s, centered_signal_mv, color="#145da0")
+axes[0].set(ylabel="Amplitud [mV]", title="Señal centrada")
+
+axes[1].plot(time_s, derivative_mv_per_s, color="#b04a3f")
+axes[1].set(xlabel="Tiempo [s]", ylabel="Derivada [mV/s]")
+
+for axis in axes:
+    axis.grid(True, alpha=0.25)
+```
+
+Compartir el eje temporal facilita comparar eventos. No comparta el eje vertical
+si las unidades son diferentes.
+
+## Distribuciones
+
+```{python}
+#| eval: false
+fig, ax = plt.subplots(figsize=(8, 4.5), constrained_layout=True)
+ax.hist(
+    signal_mv,
+    bins=30,
+    color="#0b8fac",
+    edgecolor="white",
+    alpha=0.9,
+)
+ax.set(
+    title="Distribución de amplitudes",
+    xlabel="Amplitud [mV]",
+    ylabel="Frecuencia [muestras]",
+)
+```
+
+El histograma depende del número y ubicación de los intervalos. No lo use como
+prueba suficiente de normalidad. Declare `bins` para que la figura pueda
+reconstruirse.
+
+## Superponer con criterio
+
+```{python}
+#| eval: false
+clean_component_mv = np.sin(2 * np.pi * 2.0 * time_s)
+noisy_component_mv = clean_component_mv + 0.15 * np.sin(
+    2 * np.pi * 30.0 * time_s
+)
+
+fig, ax = plt.subplots(figsize=(10, 4.5), constrained_layout=True)
+ax.plot(
+    time_s,
+    noisy_component_mv,
+    label="Señal observada",
+    color="#7c3f91",
+    linewidth=1.0,
+)
+ax.plot(
+    time_s,
+    clean_component_mv,
+    label="Componente de referencia",
+    color="#145da0",
+    linewidth=1.6,
+)
+ax.set(xlabel="Tiempo [s]", ylabel="Amplitud [mV]")
+ax.legend(frameon=False)
+ax.grid(True, alpha=0.25)
+```
+
+Una leyenda es necesaria si color o estilo codifican una categoría. No añada
+una leyenda que repita el único título de un gráfico.
+
+## Color y accesibilidad
+
+- no use únicamente rojo/verde para codificar estados;
+- combine color con estilo de línea o marcador;
+- conserve contraste con fondo claro y oscuro;
+- evite mapas de color arcoíris para magnitudes ordenadas;
+- no use color decorativo que compita con la información.
+
+```{python}
+#| eval: false
+fig, ax = plt.subplots(figsize=(9, 4.5), constrained_layout=True)
+ax.plot(time_s, clean_component_mv, label="Referencia", linestyle="-")
+ax.plot(time_s, noisy_component_mv, label="Observada", linestyle="--")
+ax.legend(frameon=False)
+```
+
+## Escala, límites y honestidad visual
+
+Modificar límites puede ocultar variación o exagerarla:
+
+```{python}
+#| eval: false
+ax.set_xlim(0.0, 1.0)
+```
+
+Si recorta el intervalo:
+
+- indique el intervalo en texto o título;
+- no presente el recorte como si fuera el registro completo;
+- conserve una figura o estadístico del conjunto total cuando sea relevante.
+
+No aplique suavizado solo para que la figura “se vea mejor”. Todo filtrado es una
+transformación y debe aparecer en el método.
+
+## Barras de error
+
+Antes de usar barras de error defina qué representan:
+
+- desviación estándar: dispersión de observaciones;
+- error estándar: incertidumbre del estimador de la media bajo supuestos;
+- intervalo de confianza: rango inferencial asociado a método y nivel;
+- rango o IQR: descripciones distintas.
+
+No escriba simplemente “media ± error”:
+
+```{python}
+#| eval: false
+conditions = ["A", "B", "C"]
+means_mv = np.array([0.8, 1.1, 0.9])
+standard_deviations_mv = np.array([0.2, 0.25, 0.18])
+
+fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
+ax.errorbar(
+    conditions,
+    means_mv,
+    yerr=standard_deviations_mv,
+    fmt="o",
+    capsize=4,
+    color="#145da0",
+)
+ax.set(
+    xlabel="Condición",
+    ylabel="Amplitud media [mV]",
+    title="Media y desviación estándar por condición",
+)
+```
+
+## Estilo consistente
+
+Defina ajustes al inicio del script, no antes de cada línea:
+
+```{python}
+#| eval: false
+PLOT_STYLE = {
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": True,
+    "grid.alpha": 0.25,
+    "figure.dpi": 120,
+    "savefig.dpi": 180,
+}
+
+with plt.rc_context(PLOT_STYLE):
+    fig, ax = plt.subplots()
+    ax.plot(time_s, signal_mv)
+```
+
+`plt.rc_context` limita el cambio de estilo al bloque y evita contaminar otras
+figuras.
+
+## Prueba estructural de una figura
+
+Una prueba automática no evalúa la calidad completa de comunicación, pero puede
+verificar requisitos básicos:
+
+```{python}
+#| eval: false
+def test_plot_signal_has_labels() -> None:
+    time_s = np.array([0.0, 0.5, 1.0])
+    signal_mv = np.array([0.0, 1.0, 0.0])
+
+    fig, ax = plot_signal(time_s, signal_mv, title="Prueba")
+
+    assert ax.get_xlabel() == "Tiempo [s]"
+    assert ax.get_ylabel() == "Amplitud [mV]"
+    assert ax.get_title() == "Prueba"
+    assert len(ax.lines) == 1
+    plt.close(fig)
+```
+
+La revisión humana debe evaluar además legibilidad, interpretación y ausencia de
+recursos engañosos.
+
+## Actividad principal
+
+Construya una figura de tres paneles para la señal sintética:
+
+1. señal completa en el tiempo;
+2. histograma de amplitudes;
+3. derivada numérica en un intervalo de un segundo.
+
+Requisitos:
+
+- unidades en todos los ejes;
+- títulos informativos;
+- colores distinguibles;
+- intervalo recortado declarado;
+- función que retorne `Figure`;
+- guardado a `figures/summary.png`;
+- cierre explícito;
+- prueba de etiquetas y número de ejes.
+
+::: {.evidence}
+**Evidencia V1.** Figura PNG, función generadora, prueba estructural y un párrafo
+de interpretación. El párrafo debe diferenciar lo que se observa de la causa
+que se propone; no se aceptan conclusiones fisiológicas a partir de la señal
+sintética.
+:::
+
+## Lista de inspección
+
+Antes de conservar una figura:
+
+- [ ] el título describe el contenido, no dice solo “Gráfica 1”;
+- [ ] los ejes tienen variable y unidad;
+- [ ] las curvas comparadas tienen leyenda;
+- [ ] los colores y estilos pueden distinguirse;
+- [ ] la escala no oculta información importante;
+- [ ] el código fija parámetros que afectan la forma;
+- [ ] la ruta de salida es relativa;
+- [ ] el archivo puede regenerarse;
+- [ ] el pie de figura explica cualquier transformación;
+- [ ] la interpretación no excede la evidencia.
+
+## Preguntas de verificación
+
+1. ¿Qué diferencia existe entre `Figure` y `Axes`?
+2. ¿Por qué una función de dibujo debería retornar objetos?
+3. ¿Qué información falta si el eje dice únicamente “Amplitud”?
+4. ¿Por qué no es correcto suavizar una señal solo por estética?
+5. ¿Qué significa realmente una barra de error en su figura?
+6. ¿Qué podría probar automáticamente y qué requiere juicio humano?
+
+# Proyecto científico reproducible
+
+## Reproducibilidad operativa
+
+En este laboratorio, un proyecto es reproducible si una persona puede:
+
+1. obtener la carpeta o repositorio;
+2. identificar versión de Python y dependencias;
+3. reconstruir el entorno sin copiar `.venv`;
+4. ejecutar pruebas;
+5. regenerar datos derivados, resultados y figuras;
+6. compilar el informe y la presentación desde sus fuentes LaTeX;
+7. comparar lo producido con los criterios documentados.
+
+No se afirma reproducibilidad científica externa de un estudio real. Se evalúa
+una base de **reproducibilidad computacional** adecuada para el curso.
+
+## Estructura semestral
+
+```text
+laboratorio_python/
+├── .python-version
+├── .gitignore
+├── README.md
+├── pyproject.toml
+├── uv.lock
+├── build/
+├── data/
+│   ├── raw/
+│   │   └── README.md
+│   └── processed/
+├── figures/
+├── reports/
+│   └── informe.tex
+├── results/
+│   └── summary_table.tex
+├── scripts/
+│   ├── environment_report.py
+│   └── reproduce.py
+├── slides/
+│   └── presentacion.tex
+├── src/
+│   └── python_scientific/
+│       ├── __init__.py
+│       ├── analysis.py
+│       ├── simulation.py
+│       └── visualization.py
+└── tests/
+    ├── test_analysis.py
+    ├── test_simulation.py
+    └── test_visualization.py
+```
+
+## Responsabilidad de cada carpeta
+
+| Ruta | Contenido permitido | Contenido que debe evitarse |
+|---|---|---|
+| `data/raw/` | datos recibidos o generados originalmente | archivos sobrescritos |
+| `data/processed/` | datos derivados regenerables | copias manuales sin método |
+| `src/` | lógica reutilizable e importable | código exploratorio inconexo |
+| `scripts/` | puntos de entrada y orquestación | implementación científica extensa |
+| `tests/` | casos automáticos y datos mínimos | resultados reales enormes |
+| `figures/` | figuras generadas | edición manual posterior |
+| `results/` | JSON, tablas y reportes de ejecución | archivos temporales |
+| `reports/` | fuente LaTeX del informe | rutas absolutas o resultados copiados a mano |
+| `slides/` | fuente LaTeX Beamer de la presentación | diapositivas de otro formato |
+| `build/` | PDF y auxiliares regenerables de LaTeX | fuentes únicas del trabajo |
+
+Los archivos vacíos no se conservan en muchos sistemas de control de versiones.
+Por eso se usan `.gitkeep` o un `README.md` dentro de carpetas que todavía no
+tienen resultados.
+
+## Archivos de entorno
+
+### `.python-version`
+
+```text
+3.13
+```
+
+Indica a `uv` la línea de Python. No contiene paquetes del proyecto.
+
+### `pyproject.toml`
+
+Este archivo declara metadatos, dependencias y herramientas:
+
+```toml
+[project]
+name = "python-proyecto-cientifico"
+version = "0.1.0"
+requires-python = ">=3.13,<3.13"
+dependencies = [
+    "matplotlib>=3.9,<4",
+    "numpy>=2,<3",
+    "scipy>=1.14,<2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<10",
+    "ruff>=0.12,<1",
+]
+```
+
+Los rangos expresan compatibilidad deseada. No sustituyen el bloqueo exacto.
+
+### `uv.lock`
+
+`uv.lock` registra la resolución concreta, incluidas dependencias transitivas,
+para plataformas compatibles. Se comparte y no se edita manualmente
+([documentación oficial sobre proyectos uv](https://docs.astral.sh/uv/guides/projects/)).
+
+### `.venv/`
+
+Contiene el entorno materializado para un computador. Se reconstruye:
+
+```bash
+uv sync --locked
+```
+
+No se entrega ni se sube al repositorio.
+
+## Gestionar dependencias
+
+Agregar una dependencia:
+
+```bash
+uv add nombre-del-paquete
+```
+
+Agregar una herramienta de desarrollo:
+
+```bash
+uv add --dev nombre-del-paquete
+```
+
+Retirar:
+
+```bash
+uv remove nombre-del-paquete
+```
+
+Después de cualquier cambio:
+
+```bash
+uv lock
+uv sync --locked
+```
+
+No agregue un paquete “por si acaso”. Cada dependencia incrementa superficie de
+fallo, tiempo de instalación y responsabilidad de mantenimiento.
+
+## Diseño `src`
+
+El paquete separa lógica de orquestación:
+
+```{python}
+#| eval: false
+# scripts/reproduce.py
+from pathlib import Path
+
+from python_scientific.analysis import descriptive_statistics
+from python_scientific.simulation import generate_synthetic_signal
+from python_scientific.visualization import save_summary_figure
+
+
+def main() -> None:
+    """Regenera los productos del laboratorio."""
+    project_root = Path(__file__).resolve().parents[1]
+    ...
+
+
+if __name__ == "__main__":
+    main()
+```
+
+La condición final evita ejecutar `main()` al importar el módulo. El script
+orquesta; las funciones científicas permanecen en `src/` y pueden probarse de
+forma aislada.
+
+## Rutas con `pathlib`
+
+```{python}
+#| eval: false
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parents[1]
+raw_data_path = project_root / "data" / "raw" / "synthetic_signal.csv"
+result_path = project_root / "results" / "summary.json"
+```
+
+`Path` usa separadores adecuados para Windows y Linux. Resolver la raíz a partir
+del archivo, en lugar del directorio actual, permite invocar el script desde
+ubicaciones distintas.
+
+## Datos originales y derivados
+
+El flujo esperado del proyecto es:
+
+```{mermaid}
+flowchart TD
+    A["Parámetros + semilla"] --> B["data/raw/synthetic_signal.csv"]
+    B --> C["Validación y estadísticos"]
+    C --> D["data/processed/centered_signal.csv"]
+    C --> E["results/summary.json"]
+    C --> H["results/summary_table.tex"]
+    C --> F["figures/summary.png"]
+    D --> G["reports/informe.tex"]
+    E --> G
+    H --> G
+    F --> G
+    E --> I["slides/presentacion.tex"]
+    H --> I
+    F --> I
+```
+
+En un laboratorio posterior, `data/raw` contendrá el archivo entregado por el
+docente o descargado de una fuente identificada. La regla se conserva: no se
+sobrescribe el original.
+
+## Configuración y constantes
+
+Las decisiones que controlan el experimento deben ser visibles:
+
+```{python}
+#| eval: false
+SAMPLING_FREQUENCY_HZ = 250.0
+DURATION_S = 8.0
+RANDOM_SEED = 2026
+```
+
+Una constante no es “un número escrito en mayúsculas” solamente. Representa una
+decisión central que no cambia durante una ejecución.
+
+Evite números mágicos:
+
+```{python}
+#| eval: false
+# Débil
+noise = rng.normal(0, 0.08, 2000)
+
+# Mejor
+NOISE_STANDARD_DEVIATION_MV = 0.08
+noise_mv = rng.normal(
+    loc=0.0,
+    scale=NOISE_STANDARD_DEVIATION_MV,
+    size=n_samples,
+)
+```
+
+## Pruebas automáticas
+
+Las pruebas no demuestran que el estudio sea correcto. Comprueban contratos
+concretos y reducen regresiones.
+
+### Patrón organizar–actuar–comprobar
+
+```{python}
+#| eval: false
+import numpy as np
+
+from python_scientific.analysis import descriptive_statistics
+
+
+def test_descriptive_statistics_for_known_values() -> None:
+    # Organizar
+    values = np.array([1.0, 2.0, 3.0])
+
+    # Actuar
+    result = descriptive_statistics(values)
+
+    # Comprobar
+    assert result["count"] == 3
+    assert result["mean"] == 2.0
+    assert result["median"] == 2.0
+```
+
+### Probar un error esperado
+
+```{python}
+#| eval: false
+import pytest
+
+
+def test_descriptive_statistics_rejects_empty_array() -> None:
+    with pytest.raises(ValueError, match="vacío"):
+        descriptive_statistics(np.array([]))
+```
+
+### Comparar punto flotante
+
+```{python}
+#| eval: false
+def test_linear_solution_has_small_residual() -> None:
+    matrix = np.array([[3.0, 1.0], [1.0, 2.0]])
+    right_side = np.array([9.0, 8.0])
+
+    solution = np.linalg.solve(matrix, right_side)
+
+    np.testing.assert_allclose(
+        matrix @ solution,
+        right_side,
+        rtol=1e-12,
+        atol=1e-12,
+    )
+```
+
+Las tolerancias no se copian sin evaluar escala y algoritmo.
+
+Ejecutar:
+
+```bash
+uv run pytest
+```
+
+Para ver nombres y progreso:
+
+```bash
+uv run pytest -v
+```
+
+## Análisis estático con Ruff
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+```
+
+Durante desarrollo puede formatear:
+
+```bash
+uv run ruff format .
+```
+
+El formateador resuelve presentación mecánica. No mejora nombres, supuestos,
+arquitectura ni interpretación.
+
+## Script único de reproducción
+
+La orden:
+
+```bash
+uv run python scripts/reproduce.py
+```
+
+debe:
+
+1. crear directorios de salida si faltan;
+2. generar datos sintéticos con semilla fija;
+3. escribir CSV original;
+4. validar datos;
+5. producir datos centrados;
+6. calcular estadísticas;
+7. escribir JSON;
+8. escribir una tabla LaTeX regenerable en `results/summary_table.tex`;
+9. crear figura;
+10. terminar con código de salida cero si todo fue correcto.
+
+No debe requerir clics, edición de rutas ni copiar resultados a mano.
+
+## Informe científico en LaTeX
+
+El archivo `reports/informe.tex` es la fuente del informe. No ejecuta Python:
+lee la figura y la tabla LaTeX producidas previamente por
+`scripts/reproduce.py`. Esta separación evita esconder cálculo científico
+dentro del documento.
+
+Una estructura mínima válida es:
+
+```latex
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+
+\title{Laboratorio 0: Python científico reproducible}
+\author{Equipo XX}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Indique el problema, el método, la evidencia principal y el alcance sintético.
+\end{abstract}
+
+\section{Métodos}
+Describa los parámetros, la semilla, las ecuaciones y las unidades.
+
+\section{Resultados}
+\input{results/summary_table.tex}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/summary.png}
+  \caption{Resumen del procesamiento. Indique señales, unidades y
+  transformaciones.}
+  \label{fig:summary}
+\end{figure}
+
+\section{Reproducibilidad y limitaciones}
+Documente los comandos, el ensayo externo y los límites de interpretación.
+
+\end{document}
+```
+
+La plantilla es un punto de partida: el equipo debe completar contenido,
+referencias cruzadas y tablas sin pegar resultados inventados. La tabla
+`results/summary_table.tex` debe generarse a partir de los cálculos; no debe
+editarse manualmente.
+
+### Compilar el informe
+
+Desde la raíz:
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/reports reports/informe.tex
+```
+
+En PowerShell escriba la orden en una sola línea. El PDF esperado es
+`build/reports/informe.pdf`. `latexmk` automatiza las pasadas de compilación,
+pero no corrige referencias rotas, unidades ausentes ni resultados
+inconsistentes.
+
+## Presentación en LaTeX Beamer
+
+La exposición usará `slides/presentacion.tex`, creada con la clase
+[Beamer](https://ctan.org/pkg/beamer). Debe producir un PDF de **máximo cinco
+diapositivas, incluida la portada**:
+
+```latex
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{siunitx}
+
+\title{Laboratorio 0}
+\subtitle{Python científico reproducible}
+\author{Equipo XX}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Problema y arquitectura}
+  Presente la pregunta de trabajo y el flujo reproducible.
+\end{frame}
+
+\begin{frame}{Métodos y validación}
+  Muestre las decisiones matemáticas y las pruebas esenciales.
+\end{frame}
+
+\begin{frame}{Resultados}
+  \centering
+  \includegraphics[width=0.88\linewidth]{figures/summary.png}
+\end{frame}
+
+\begin{frame}{Reproducibilidad y limitaciones}
+  Resuma la demostración externa, los fallos encontrados y el alcance.
+\end{frame}
+
+\end{document}
+```
+
+Compile desde la raíz:
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/slides slides/presentacion.tex
+```
+
+El PDF esperado es `build/slides/presentacion.pdf`. No use `minted`,
+`-shell-escape`, videos incrustados ni recursos remotos: agregan dependencias
+innecesarias para esta evaluación. La presentación apoya la defensa; no
+reemplaza la demostración en terminal.
+
+## README como protocolo
+
+El README debe responder sin conversación adicional:
+
+1. ¿qué problema resuelve el proyecto?;
+2. ¿qué versión de Python solicita?;
+3. ¿qué comando reconstruye el entorno?;
+4. ¿qué comando prueba?;
+5. ¿qué comando genera resultados?;
+6. ¿qué comandos compilan el informe y la presentación?;
+7. ¿dónde quedan datos, figuras y reportes?;
+8. ¿qué supuestos y limitaciones existen?
+
+Un README que solo contiene el título no es documentación.
+
+## `.gitignore`
+
+El archivo `.gitignore` debe excluir:
+
+```gitignore
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.pyc
+```
+
+Para este laboratorio se conservan `uv.lock`, las fuentes `.tex`, el código y
+los PDF finales entregables. Los auxiliares de compilación se regeneran y no se
+conservan.
+La política sobre datos y figuras puede cambiar en proyectos reales según
+tamaño, sensibilidad y mecanismo de distribución.
+
+## Protocolo de reconstrucción en otro equipo
+
+### Preparación del archivo de transferencia
+
+Incluya:
+
+- código y pruebas;
+- archivos de configuración;
+- `uv.lock`;
+- datos permitidos;
+- README;
+- `reports/informe.tex` y `slides/presentacion.tex`;
+- PDF finales del informe y de la presentación.
+
+Excluya:
+
+- `.venv`;
+- cachés;
+- archivos personales del editor;
+- credenciales;
+- rutas o accesos directos del equipo original.
+
+### Ejecución cronometrada
+
+Desde una copia nueva:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+```
+
+### Criterio de éxito
+
+- sincronización sin editar archivos;
+- pruebas aprobadas;
+- análisis estático aprobado;
+- creación automática de CSV, JSON, tabla LaTeX y PNG;
+- informe PDF compilado desde `reports/informe.tex`;
+- presentación PDF compilada desde `slides/presentacion.tex`;
+- explicación de cualquier diferencia de plataforma;
+- ausencia de `.venv` en el material transferido.
+
+## Ensayo limpio obligatorio
+
+No espere al día de presentación. En el equipo de desarrollo:
+
+1. duplique la carpeta en una ubicación temporal;
+2. elimine de esa **copia** `.venv`, resultados y cachés;
+3. ejecute el protocolo;
+4. registre tiempo, comandos y problemas;
+5. corrija el proyecto original;
+6. repita hasta que no requiera intervención manual.
+
+::: {.callout-warning title="Acción destructiva controlada"}
+No elimine la única copia del proyecto. Verifique la ruta antes de borrar
+resultados regenerables. Nunca use un borrado recursivo sobre una ruta amplia,
+variable vacía o directorio personal.
+:::
+
+## Cómo se reutiliza durante el semestre
+
+En cada laboratorio:
+
+- cree un módulo nuevo bajo `src/python_scientific/`;
+- añada pruebas;
+- declare cualquier dependencia mediante `uv add`;
+- actualice y comparta `uv.lock`;
+- coloque datos originales en `data/raw`;
+- genere derivados y resultados mediante scripts;
+- agregue o actualice el informe LaTeX en `reports/`;
+- agregue o actualice la presentación Beamer en `slides/`;
+- documente el nuevo comando o parámetro en README.
+
+No cree un entorno diferente para cada archivo del mismo proyecto semestral.
+Las dependencias deben evolucionar de forma controlada dentro del proyecto.
+
+## Antipatrones que serán penalizados
+
+- “En mi computador funciona” como única evidencia.
+- Copiar `.venv` al equipo destino.
+- Instalar paquetes manualmente durante la sustentación.
+- Importar con modificaciones dinámicas de `sys.path`.
+- Mezclar código reusable y todo el flujo en un único archivo de cientos de
+  líneas.
+- Modificar datos originales.
+- Guardar resultados con rutas absolutas.
+- Generar aleatoriedad sin semilla.
+- Editar figuras fuera del código.
+- No probar entradas inválidas.
+- Entregar `uv.lock` desactualizado.
+- Entregar solo los PDF sin las fuentes `.tex`.
+- Modificar manualmente tablas o figuras generadas para que coincidan con el
+  texto.
+- Compilar con `-shell-escape` o depender de recursos remotos.
+- Ocultar advertencias o errores sin explicar su causa.
+
+## Control de salida
+
+Cada integrante debe poder señalar en la estructura:
+
+1. dónde se declara una dependencia;
+2. dónde queda fijada su resolución;
+3. qué archivo inicia la reproducción;
+4. qué módulos contienen la lógica;
+5. qué prueba protege cada función principal;
+6. qué productos pueden regenerarse;
+7. qué comandos compilan el informe y la presentación;
+8. por qué LaTeX no forma parte de `.venv`.
+
+# Reto integrador y entrega
+
+## Reto
+
+Cada equipo completará la estructura base hasta obtener un proyecto capaz de generar, validar,
+analizar y documentar una señal sintética reproducible. El propósito es
+demostrar prácticas de ingeniería científica, no construir un modelo
+fisiológico ni producir una conclusión clínica.
+
+### Pregunta de trabajo
+
+> ¿Puede el equipo reconstruir en un computador distinto un análisis que
+> conserve los mismos parámetros, datos sintéticos, estadísticas, validaciones
+> y figuras, sin copiar el entorno virtual ni editar rutas?
+
+## Organización del equipo
+
+El equipo tiene tres integrantes. Durante el desarrollo se sugieren estos roles:
+
+| Rol | Responsabilidad principal |
+|---|---|
+| Entorno y reproducción | `uv`, archivos de configuración, script, ensayo limpio |
+| Métodos y pruebas | funciones, validaciones, cálculo, `pytest`, Ruff |
+| Comunicación científica | figuras, informe LaTeX, presentación Beamer, README, bitácora |
+
+Los roles no delimitan conocimiento. Deben rotarse al menos una vez y registrarse
+en `results/contributions.md`. El día de la sustentación habrá **un único
+expositor**. El docente puede seleccionarlo al iniciar; por ello los tres deben
+poder asumir esa función.
+
+## Punto de partida
+
+Ejecute sin modificar:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+```
+
+Registre:
+
+- duración aproximada de sincronización;
+- número de pruebas aprobadas;
+- archivos generados;
+- semilla;
+- forma y frecuencia de muestreo;
+- cualquier advertencia.
+
+No informe resultados inventados. Copie las salidas reales o haga que el script
+las escriba.
+
+## Fase A. Auditar la estructura del proyecto
+
+Construya una tabla en el informe:
+
+| Archivo o carpeta | Entrada | Transformación | Salida | Regenerable |
+|---|---|---|---|---|
+| `scripts/reproduce.py` | ... | ... | ... | sí/no |
+
+La tabla debe cubrir al menos:
+
+- `pyproject.toml`;
+- `uv.lock`;
+- `src/python_scientific/`;
+- `tests/`;
+- `data/raw/`;
+- `data/processed/`;
+- `results/`;
+- `figures/`;
+- `reports/`.
+
+### Criterio
+
+No basta con escribir “contiene código”. Describa la responsabilidad y cómo se
+relaciona con otros componentes.
+
+## Fase B. Extender configuración y control de calidad
+
+Implemente `quality.py` con:
+
+```{python}
+#| eval: false
+def validate_channel_configuration(
+    observed_channels: list[str],
+    required_channels: set[str],
+) -> dict[str, object]:
+    """Resume duplicados, faltantes y canales adicionales."""
+    ...
+```
+
+Condiciones:
+
+- use lista para preservar orden;
+- use conjunto para faltantes/adicionales;
+- retorne un diccionario serializable;
+- rechace nombres vacíos;
+- no modifique las entradas;
+- documente al menos un caso límite.
+
+Integre una configuración:
+
+```{python}
+#| eval: false
+observed_channels = ["SYNTH_A", "SYNTH_B", "SYNTH_A"]
+required_channels = {"SYNTH_A", "SYNTH_B", "REFERENCE"}
+```
+
+No use esos valores como único caso de prueba.
+
+## Fase C. Estadística y álgebra lineal
+
+### Estadística
+
+Para la señal cruda y la señal centrada calcule:
+
+- número de muestras;
+- media;
+- mediana;
+- desviación estándar muestral;
+- mínimo y máximo;
+- cuartiles e IQR;
+- RMS.
+
+Guarde un JSON con unidades o nombres de claves que incluyan unidades. Explique:
+
+1. por qué la señal centrada debe tener una media cercana a cero, pero no
+   necesariamente exactamente cero en todas las representaciones;
+2. por qué RMS y desviación estándar no son idénticos si la media no es cero;
+3. qué convención se usó para la desviación estándar.
+
+### Álgebra lineal
+
+Defina una matriz de mezcla \(2\times2\), documentada como transformación
+didáctica:
+
+$$
+\mathbf{y}[n] = \mathbf{A}\mathbf{x}[n].
+$$
+
+Construya dos canales sintéticos, aplique la matriz y:
+
+- verifique formas;
+- calcule el número de condición;
+- recupere los canales mediante `np.linalg.solve`;
+- calcule error RMS de reconstrucción;
+- pruebe con tolerancia explícita.
+
+No use una matriz singular. Justifique la matriz seleccionada y explique qué
+ocurriría si fuera mal condicionada.
+
+## Fase D. Cálculo numérico
+
+### Derivación
+
+Implemente o use una función documentada para derivar una señal respecto al
+tiempo. Valide primero con:
+
+$$
+f(t)=\sin(2\pi f_0t).
+$$
+
+Debe reportar:
+
+- paso temporal;
+- error máximo interior;
+- error RMS;
+- tratamiento de extremos;
+- unidades.
+
+Después aplique la función a la señal sintética y explique por qué el resultado
+es sensible al ruido.
+
+### Integración
+
+Valide la regla trapezoidal con:
+
+$$
+\int_0^1 t^2\,dt=\frac{1}{3}.
+$$
+
+Después calcule una integral acumulada de la señal centrada. Indique:
+
+- condición inicial;
+- unidad final;
+- efecto esperado de una línea base no nula;
+- limitación interpretativa.
+
+## Fase E. Visualización
+
+Genere `figures/summary.png` con al menos tres paneles:
+
+1. señal cruda y señal centrada;
+2. distribución de amplitudes;
+3. derivada en un intervalo declarado.
+
+Requisitos:
+
+- título y ejes con unidades;
+- estilos distinguibles sin depender solo del color;
+- leyenda únicamente donde haga falta;
+- misma figura generada desde código;
+- no editar el PNG manualmente;
+- prueba estructural del número de ejes y etiquetas.
+
+## Fase F. Automatización
+
+El script `scripts/reproduce.py` debe regenerar todo lo necesario. Puede
+dividirse internamente, pero el comando público será uno:
+
+```bash
+uv run python scripts/reproduce.py
+```
+
+Debe terminar con un resumen de rutas creadas. Los valores científicos deben
+provenir del cálculo, no de cadenas escritas a mano.
+
+### Idempotencia práctica
+
+Ejecute dos veces. La segunda ejecución debe:
+
+- reemplazar de forma controlada los mismos derivados;
+- no duplicar filas;
+- no cambiar resultados aleatorios;
+- no requerir confirmar sobrescrituras.
+
+Compare archivos o estadísticas relevantes y documente el resultado.
+
+## Fase G. Pruebas mínimas
+
+El conjunto de pruebas debe cubrir:
+
+| Área | Casos mínimos |
+|---|---|
+| Estadística | arreglo conocido, un valor, vacío, no finito, forma incorrecta |
+| Configuración | completa, faltante, duplicada, nombre vacío |
+| Simulación | forma, eje temporal, misma semilla, semilla diferente |
+| Álgebra lineal | solución conocida, forma inválida o matriz no cuadrada |
+| Derivación | función analítica y longitudes inválidas |
+| Integración | \(t^2\) y mallas incompatibles |
+| Figura | etiquetas, cantidad de ejes, archivo creado |
+
+Se permiten más pruebas. No se calificará por cantidad aislada, sino por
+cobertura de contratos y límites.
+
+## Fase H. Informe LaTeX
+
+El archivo `reports/informe.tex` y su PDF incluirán:
+
+1. **Identificación:** equipo, integrantes y fecha.
+2. **Pregunta de trabajo.**
+3. **Arquitectura:** árbol y responsabilidades.
+4. **Métodos:** datos sintéticos, semilla, fórmulas y unidades.
+5. **Validación:** estadística, sistema lineal, derivada e integral.
+6. **Resultados:** tablas y figura generadas.
+7. **Pruebas:** qué contrato cubre cada grupo.
+8. **Reproducibilidad:** comandos y resultado del ensayo externo.
+9. **Limitaciones:** alcance sintético y límites de interpretación.
+10. **Contribuciones:** responsabilidades verificables.
+
+No copie todo el código dentro de la narrativa. Muestre fragmentos donde ayudan
+a explicar una decisión; el código completo permanece bajo `src/`, `scripts/` y
+`tests/`.
+
+El informe debe usar referencias cruzadas (`\label` y `\ref`) para sus figuras,
+tablas o ecuaciones. La tabla de resultados se incorporará desde
+`results/summary_table.tex`; no se transcribirán números a mano.
+
+## Fase I. Presentación LaTeX Beamer
+
+El archivo `slides/presentacion.tex` debe:
+
+- usar la clase `beamer` con relación de aspecto 16:9;
+- tener máximo cinco diapositivas, incluida la portada;
+- mostrar problema, arquitectura, métodos, evidencia y limitaciones;
+- reutilizar `figures/summary.png` o tablas generadas;
+- evitar párrafos extensos y código ilegible;
+- compilar sin `-shell-escape` ni recursos remotos.
+
+Entregue la fuente `.tex` y `build/slides/presentacion.pdf`. El contenido del
+PDF debe corresponder con la versión de código y resultados presentada.
+
+## Fase J. Ensayo en equipo diferente
+
+Use un computador que no contenga la `.venv` del desarrollo. El ensayo debe
+partir del material transferible y ejecutar:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+```
+
+Registre:
+
+- sistema operativo;
+- versión de `uv`;
+- versión de Python usada;
+- distribución TeX y versión de `latexmk`;
+- tiempo total;
+- comandos exactos;
+- pruebas aprobadas;
+- archivos producidos;
+- problemas y correcciones.
+
+Si el ensayo falla, el informe debe conservar el problema y la corrección. Una
+bitácora honesta aporta más evidencia que ocultar el primer fallo.
+
+## Entrega
+
+Nombre sugerido:
+
+```text
+equipo_XX_lab00_python_reproducible.zip
+```
+
+Antes de comprimir:
+
+- [ ] `uv.lock` está actualizado;
+- [ ] `.python-version` exige 3.13;
+- [ ] `.venv` no está incluida;
+- [ ] las pruebas pasan;
+- [ ] Ruff pasa;
+- [ ] el script regenera resultados;
+- [ ] `reports/informe.tex` compila a `build/reports/informe.pdf`;
+- [ ] `slides/presentacion.tex` compila a `build/slides/presentacion.pdf`;
+- [ ] la presentación tiene máximo cinco diapositivas;
+- [ ] el README contiene comandos;
+- [ ] no hay rutas absolutas;
+- [ ] no hay credenciales ni datos sensibles;
+- [ ] la bitácora de reproducción externa está incluida.
+
+## Manifiesto esperado
+
+Incluya `results/delivery_manifest.txt`, generado mediante un script, que liste:
+
+- archivos entregados;
+- versión de Python;
+- versión de `uv`;
+- fecha de generación;
+- semilla;
+- estado de pruebas;
+- advertencia de que la señal es sintética.
+
+No incluya información personal del computador más allá de la necesaria para
+reproducibilidad.
+
+## Criterios de no conformidad
+
+La entrega se considera no reproducible si ocurre cualquiera:
+
+- solo funciona después de copiar `.venv`;
+- requiere editar rutas;
+- instala dependencias fuera de `pyproject.toml`;
+- no incluye `uv.lock`;
+- los resultados dependen de una semilla no registrada;
+- los datos originales fueron sobrescritos;
+- el informe muestra números diferentes de los archivos generados;
+- el informe o la presentación no compilan desde sus fuentes `.tex`;
+- solo se entregan PDF sin sus fuentes;
+- la presentación fue elaborada en un formato distinto de LaTeX Beamer;
+- una prueba se desactivó para lograr estado “aprobado”;
+- el equipo no puede reconstruir el entorno en el computador asignado.
+
+## Preguntas de cierre para el equipo
+
+1. ¿Qué puede eliminarse con seguridad porque es regenerable?
+2. ¿Qué archivo constituye la fuente original de cada resultado?
+3. ¿Qué decisión evita que una ejecución cambie la señal aleatoria?
+4. ¿Qué prueba detectaría un intercambio de ejes?
+5. ¿Qué parte del proceso no queda garantizada por `uv.lock`?
+6. ¿Cómo demostrarían que dos ejecuciones son equivalentes?
+
+# Sustentación y rúbrica
+
+## Formato de sustentación
+
+- **Equipo:** tres estudiantes.
+- **Expositor:** una sola persona.
+- **Selección:** el docente puede escoger al expositor al iniciar.
+- **Exposición:** 12 minutos.
+- **Verificación técnica:** hasta 5 minutos.
+- **Equipo de cómputo:** distinto al usado para desarrollar.
+- **Punto de partida:** copia transferible sin `.venv`.
+- **Apoyo visual:** PDF compilado desde `slides/presentacion.tex`, máximo cinco
+  diapositivas incluida la portada.
+
+Solo el expositor presenta y responde durante el periodo evaluado. Los demás
+integrantes no completan respuestas, operan el computador ni intervienen. Esta
+regla hace necesario que los tres preparen la totalidad del proyecto.
+
+::: {.callout-important title="La demostración es evidencia, no decoración"}
+La sustentación debe mostrar comandos, archivos producidos y criterios de
+validación. Una exposición fluida sin reconstrucción funcional no demuestra
+reproducibilidad.
+:::
+
+## Secuencia recomendada
+
+| Minuto | Contenido |
+|---:|---|
+| 0–1 | problema, alcance y advertencia de señal sintética |
+| 1–3 | arquitectura y función de archivos esenciales |
+| 3–7 | `uv sync --locked`, Ruff, pruebas y reproducción |
+| 7–9 | estadística, álgebra, derivación e integración |
+| 9–11 | figura, informe LaTeX y presentación Beamer |
+| 11–12 | limitaciones y cierre |
+| +5 | preguntas o diagnóstico solicitado por el docente |
+
+No invierta tiempo explicando qué es Python de manera general. Explique las
+decisiones del proyecto.
+
+## Preparación del computador externo
+
+El docente o laboratorio debe garantizar antes de iniciar:
+
+- conexión a internet para la sincronización inicial;
+- `uv` o permiso para instalarlo en el perfil del usuario;
+- `pdflatex`, `latexmk` y la clase `beamer` disponibles;
+- terminal funcional;
+- carpeta de evaluación vacía.
+
+El equipo puede transferir el proyecto por un medio autorizado. No puede
+transferir `.venv`, cachés o una imagen completa del sistema.
+
+### Comandos visibles
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+```
+
+LaTeX no ejecuta el análisis. Primero se generan los resultados con el Python de
+`.venv`; después `latexmk` compila los documentos que consumen esos productos.
+
+## Preguntas orientadoras
+
+Estas preguntas ilustran el nivel esperado. El docente puede cambiar valores,
+archivos o escenarios.
+
+### Entorno y `uv`
+
+1. ¿Qué problema resuelve `uv` en este proyecto?
+2. ¿Por qué instalar Python con `uv` no requiere permisos de administrador?
+3. ¿Qué diferencia hay entre `.python-version`, `pyproject.toml` y `uv.lock`?
+4. ¿Por qué `uv.lock` sí se entrega y `.venv` no?
+5. ¿Qué garantiza `uv sync --locked` y qué no garantiza?
+6. ¿Qué ocurriría si alguien modifica una dependencia en `pyproject.toml` pero
+   no actualiza el bloqueo?
+7. ¿Por qué usan `uv run python` en lugar de depender del comando global
+   `python`?
+8. ¿Por qué `latexmk` no se instala ni se bloquea mediante `uv.lock`?
+9. ¿Qué información de plataforma puede variar aunque el proyecto sea
+   reproducible?
+10. ¿Qué haría si la sincronización funciona en Linux y falla en Windows?
+
+### Arquitectura
+
+11. Señale qué archivos son fuente y cuáles son productos regenerables.
+12. ¿Por qué se usa una distribución `src/`?
+13. ¿Qué diferencia hay entre una función del paquete y un script?
+14. ¿Por qué `data/raw` no debe sobrescribirse?
+15. ¿Por qué una ruta absoluta impide la reproducción?
+16. ¿Cómo encuentra el script la raíz del proyecto?
+17. Si elimina `results/` y `figures/`, ¿qué comando los reconstruye?
+18. ¿Qué archivo ejecutaría una persona que no conoce el proyecto?
+
+### Fundamentos de Python
+
+19. ¿Por qué los canales observados son una lista y los requeridos un conjunto?
+20. ¿Qué perdería al convertir una señal completa en conjunto?
+21. ¿Dónde usó una tupla y qué comunica su inmutabilidad?
+22. ¿Por qué el resumen se representa mediante diccionario?
+23. Explique un límite en un condicional y la prueba que lo protege.
+24. ¿Dónde sería correcto un ciclo y dónde eligió vectorización?
+25. ¿Qué diferencia existe entre una vista de NumPy y una copia?
+26. ¿Qué entrada inválida detiene una de sus funciones y por qué?
+27. ¿Por qué una función retorna un valor en vez de imprimirlo?
+28. Explique una anotación de tipo y su limitación.
+
+### NumPy y estadística
+
+29. ¿Qué representa cada eje de su matriz de señales?
+30. ¿Qué cambiaría si calcula `mean(..., axis=1)` en vez de `axis=0`?
+31. ¿Qué diferencia existe entre `*` y `@`?
+32. ¿Por qué declararon `ddof=1`?
+33. ¿Por qué media y mediana responden distinto ante un valor extremo?
+34. ¿Cuándo RMS y desviación estándar coinciden?
+35. ¿Cómo se tratan valores no finitos y por qué?
+36. ¿Qué hace reproducible a la señal aleatoria además de la semilla?
+
+### Álgebra y cálculo numérico
+
+37. ¿Por qué `np.linalg.solve` es preferible a calcular una inversa?
+38. ¿Qué indica el número de condición?
+39. ¿Cómo verificó la recuperación de los canales mezclados?
+40. ¿Qué función analítica usó para validar la derivada?
+41. ¿Por qué evalúa por separado los extremos?
+42. ¿Qué efecto tiene el ruido sobre la derivada?
+43. ¿Cómo validó la integración trapezoidal?
+44. ¿Cuáles son las unidades de la derivada y de la integral?
+45. ¿Qué efecto tendría una línea base constante sobre la integral acumulada?
+
+### Visualización e interpretación
+
+46. ¿Por qué la función de dibujo retorna `Figure` y `Axes`?
+47. ¿Qué requisito de la figura verifica una prueba automática?
+48. ¿Qué parte de la calidad gráfica todavía requiere juicio humano?
+49. ¿Por qué no suavizó la señal solo para mejorar la apariencia?
+50. ¿Qué significa cada color o estilo de línea?
+51. ¿Qué transformación precede a cada panel?
+52. ¿Qué conclusión sería inválida por tratarse de una señal sintética?
+
+### Comunicación científica con LaTeX
+
+53. ¿Qué diferencia existe entre `reports/informe.tex` y
+    `build/reports/informe.pdf`?
+54. ¿Por qué se usa `latexmk` en vez de ejecutar `pdflatex` una sola vez?
+55. ¿Cómo demuestra que `results/summary_table.tex` proviene del cálculo y no
+    de transcripción manual?
+56. ¿Qué ruta relativa permite reutilizar `figures/summary.png` en ambos
+    documentos?
+57. ¿Por qué la presentación debe usar Beamer y conservar su fuente `.tex`?
+58. ¿Qué problema de reproducibilidad introduciría un recurso remoto?
+59. ¿Por qué se prohíben `-shell-escape` y `minted` en este laboratorio?
+60. ¿Qué diferencia debe existir entre la densidad del informe y la de las
+    diapositivas?
+
+### Pruebas y diagnóstico
+
+61. Muestre una prueba de caso límite y explique por qué es más informativa que
+    un caso central.
+62. ¿Por qué no se compara siempre un `float` con igualdad exacta?
+63. Si una prueba falla en el equipo externo, ¿cómo decide si el problema está
+    en datos, entorno o código?
+64. ¿Qué prueba detectaría una longitud temporal incompatible con la señal?
+65. ¿Cómo demostraría que dos ejecuciones con la misma semilla son equivalentes?
+66. ¿Qué evidencia conserva de un primer ensayo fallido?
+67. ¿Qué no puede demostrar el hecho de que todas las pruebas pasen?
+68. ¿Cuál es la principal limitación actual de su proyecto?
+
+## Situaciones de diagnóstico en vivo
+
+El docente puede solicitar una:
+
+- explicar un fallo de `--locked` sin retirarlo;
+- identificar por qué una ruta absoluta falla;
+- cambiar la semilla y predecir qué productos cambian;
+- cambiar una frecuencia de muestreo y señalar qué supuestos revisar;
+- mostrar qué prueba falla si tiempo y señal tienen longitudes distintas;
+- retirar temporalmente un canal requerido e interpretar el resumen;
+- explicar una matriz con número de condición elevado;
+- corregir una etiqueta de unidad;
+- ubicar el archivo que contiene una dependencia;
+- regenerar resultados después de eliminar una salida;
+- diagnosticar una referencia o figura faltante en LaTeX;
+- recompilar informe y presentación desde las fuentes `.tex`.
+
+La evaluación valora el razonamiento diagnóstico. Memorizar un comando no
+sustituye explicar su función.
+
+## Rúbrica
+
+La calificación total es de **100 puntos**. El 75 % proviene de evidencia en la
+sustentación y la demostración; el 25 % corresponde a artefactos inspeccionados.
+
+Para cada criterio, el docente asigna uno de estos niveles:
+
+- **4 — sólido:** 100 % del peso.
+- **3 — adecuado:** 80 % del peso.
+- **2 — básico:** 60 % del peso.
+- **1 — insuficiente:** 30 % del peso.
+- **0 — no demostrado:** 0 % del peso.
+
+### Descriptores por criterio
+
+| Criterio | Peso | 4 — sólido | 3 — adecuado | 2 — básico | 1/0 — insuficiente o no demostrado |
+|---|---:|---|---|---|---|
+| Reconstrucción externa en vivo | 25 | Sincroniza con `--locked`, ejecuta calidad, pruebas y script, y compila informe y presentación con `latexmk` sin editar rutas ni instalar durante la prueba; productos coherentes | Completa el flujo con una corrección menor, explicada y no estructural | Completa solo parte; requiere intervención o ajuste no previsto | Copia `.venv`, instala durante la prueba, edita rutas, no genera productos o no demuestra |
+| Defensa técnica del entorno y arquitectura | 15 | Explica con precisión Python, `uv`, bloqueo, `src`, scripts, datos y rutas; conecta componentes | Explica la mayoría; presenta una imprecisión menor | Enumera componentes, pero justifica débilmente decisiones | Confunde archivos esenciales o depende de respuestas memorizadas |
+| Razonamiento Python, NumPy y estructuras | 10 | Justifica tipos, colecciones, ejes, vectorización, validación y límites con ejemplos del proyecto | Justificación correcta con vacíos menores | Reconoce sintaxis, pero no propiedades o consecuencias | No puede relacionar código con modelo de datos |
+| Fundamento matemático e interpretación | 15 | Explica estadística, sistema lineal, condición, derivación, integración, error y unidades sin exceder evidencia | Cálculos e interpretación mayormente correctos | Presenta resultados con justificación parcial o una confusión relevante | Errores matemáticos, unidades ausentes o afirmaciones clínicas injustificadas |
+| Diagnóstico solicitado | 5 | Localiza causa, propone verificación mínima y corrige sin ocultar el error | Identifica la causa con una pista | Ensaya cambios sin método claro | Retira controles, improvisa instalaciones o no diagnostica |
+| Comunicación, tiempo y manejo de evidencia | 5 | Presentación Beamer clara, legible y dentro del tiempo; muestra evidencia verificable y distingue observación, inferencia y limitación | Clara con leves problemas de tiempo o densidad | Lectura de diapositivas, secuencia débil o evidencia difícil de seguir | Desorganizada, excede tiempo, incumple Beamer o no muestra resultados verificables |
+| Código y estructura entregados | 10 | Nombres, funciones, tipos, docstrings, rutas, separación y formato coherentes; sin antipatrones | Estructura funcional con inconsistencias menores | Código concentrado o documentación limitada, pero ejecutable | Rutas absolutas, datos sobrescritos, código ilegible o estructura incumplida |
+| Pruebas y trazabilidad | 10 | Pruebas cubren contratos y límites; README, JSON, manifiesto y bitácora concuerdan | Cobertura suficiente con un límite relevante ausente | Predominan casos felices o documentación incompleta | Pruebas triviales/desactivadas, outputs manuales o bloqueo inconsistente |
+| Informe, presentación, figura y contribuciones | 5 | Fuentes LaTeX compilan ambos PDF; informe y Beamer reutilizan resultados, conservan unidades y limitaciones; contribuciones verificables y equilibradas | Ambos documentos compilan con un detalle menor ausente | Documentos principalmente descriptivos, presentación densa o contribuciones vagas | Algún `.tex` no compila, solo se entrega PDF, figura engañosa o no hay trazabilidad |
+| **Total** | **100** |  |  |  |  |
+
+## Reglas de calificación
+
+### Tope por no reproducibilidad
+
+Si el proyecto no puede ejecutar `uv sync --locked` o requiere copiar `.venv`,
+el criterio de reconstrucción recibe 0. Además, la nota total no puede superar
+70/100 hasta demostrar una corrección en el plazo definido por el docente.
+
+### Fallo institucional
+
+Si la causa comprobada es externa al equipo —por ejemplo, caída de red o
+indisponibilidad del computador asignado—, el docente puede usar:
+
+- bitácora previa en un segundo computador;
+- captura íntegra de terminal;
+- hashes o manifiesto de productos;
+- repetición posterior controlada.
+
+Esta excepción no cubre dependencias faltantes, bloqueo desactualizado o rutas
+personales.
+
+### Un solo expositor
+
+La nota es grupal. La selección del expositor al inicio reduce la división
+artificial del conocimiento. El registro de contribuciones permite detectar
+participación marcadamente desigual, caso en el cual el docente puede solicitar
+una verificación individual posterior.
+
+## Hoja de observación rápida
+
+| Verificación | Sí | Parcial | No | Nota |
+|---|:---:|:---:|:---:|---|
+| Copia sin `.venv` |  |  |  |  |
+| `uv sync --locked` |  |  |  |  |
+| Ruff y formato |  |  |  |  |
+| Pruebas |  |  |  |  |
+| Script único |  |  |  |  |
+| CSV/JSON/PNG |  |  |  |  |
+| LaTeX: informe y Beamer |  |  |  |  |
+| Unidades y limitaciones |  |  |  |  |
+| Diagnóstico |  |  |  |  |
+| Tiempo |  |  |  |  |
