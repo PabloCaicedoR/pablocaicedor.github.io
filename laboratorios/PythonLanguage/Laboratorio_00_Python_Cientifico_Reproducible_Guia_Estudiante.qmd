@@ -553,6 +553,66 @@ No elimine `\usepackage` ni active `-shell-escape` para ocultar el problema.
 
 ### `latexmk` informa que no encuentra Perl
 
+Si el comando responde con una versión, no instale otra copia. Si no se
+reconoce, instale la edición portable de Strawberry Perl en el perfil del
+usuario:
+
+1. Descargue la opción **64-bit Portable ZIP** desde la
+   [página oficial de Strawberry Perl](https://strawberryperl.com/releases.html).
+   Use la edición de 32 bits únicamente si Windows es de 32 bits.
+2. Cree la carpeta
+   `%LOCALAPPDATA%\Programs\StrawberryPerl` y extraiga allí el contenido del
+   ZIP. Al terminar debe existir el archivo
+   `%LOCALAPPDATA%\Programs\StrawberryPerl\perl\bin\perl.exe`.
+3. Agregue `perl\bin` al `PATH` del usuario desde una ventana **no elevada** de
+   PowerShell:
+
+```powershell
+$perlRoot = Join-Path $env:LOCALAPPDATA "Programs\StrawberryPerl"
+$perlBin = Join-Path $perlRoot "perl\bin"
+$perlExe = Join-Path $perlBin "perl.exe"
+
+if (-not (Test-Path $perlExe)) {
+    throw "No se encontró perl.exe. Revise la carpeta donde extrajo el ZIP."
+}
+
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$userEntries = @($userPath -split ";" | Where-Object { $_ })
+
+if ($userEntries -notcontains $perlBin) {
+    $newUserPath = (($userEntries + $perlBin) -join ";")
+    [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+}
+
+$env:Path = "$perlBin;$env:Path"
+perl --version
+```
+
+La edición portable se descomprime y no usa un instalador MSI, una consola
+elevada ni una contraseña de administrador. Strawberry Perl publica
+explícitamente esta variante para descomprimirla en una ubicación elegida por
+el usuario. No mueva la carpeta después de registrarla en `PATH`.
+
+Después continúe con MiKTeX:
+
+4. En MiKTeX Console, configure la instalación de paquetes faltantes como
+   `Ask me first` durante el desarrollo.
+5. Compile una vez el informe y la presentación antes de la sustentación para
+   que todos los paquetes necesarios queden instalados.
+6. Cierre PowerShell y el editor de código. Ábralos nuevamente y verifique:
+
+```powershell
+Get-Command perl
+perl --version
+pdflatex --version
+latexmk --version
+kpsewhich beamer.cls
+```
+
+MiKTeX recomienda la instalación privada; la instalación compartida sí requiere
+privilegios administrativos
+([instrucciones oficiales para Windows](https://miktex.org/howto/install-miktex)).
+
 Compruebe primero qué ejecutable observa la misma terminal desde la cual
 compila:
 
