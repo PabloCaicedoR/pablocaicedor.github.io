@@ -1,0 +1,1734 @@
+---
+title: "Guía del Estudiante"
+subtitle: "Dashboard reproducible de ECG para explorar fibrilación auricular"
+description: "Guía teórico-práctica del estudiante: ECG ambulatorio, ritmo RR y episodios anotados de fibrilación auricular"
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
+date: last-modified
+lang: es
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    number-depth: 3
+    code-copy: true
+    code-line-numbers: true
+    code-overflow: wrap
+    code-tools:
+      source: false
+      toggle: true
+      caption: "Código"
+    anchor-sections: true
+    link-external-newwindow: true
+    smooth-scroll: true
+execute:
+  enabled: false
+---
+
+<style>
+.hero {
+  border-left: 0.35rem solid #8b1e3f;
+  background: #fbf2f5;
+  padding: 1rem 1.2rem;
+  margin: 1rem 0 1.5rem 0;
+}
+.evidence {
+  border: 1px solid #d9b6c2;
+  border-radius: 0.4rem;
+  background: #fffafb;
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+}
+.checkpoint {
+  border-left: 0.3rem solid #806000;
+  background: #fff9e6;
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+}
+.rubric-note {
+  border-left: 0.3rem solid #663399;
+  background: #f7f2fb;
+  padding: 0.9rem 1rem;
+}
+table {
+  font-size: 0.94rem;
+}
+</style>
+
+# Presentación de la guía
+
+::: {.hero}
+**Asignatura:** Señales Bioeléctricas y Visualización Interactiva  
+**Programa:** Ingeniería Biomédica  
+**Modalidad:** equipos de tres estudiantes  
+**Señal única:** electrocardiograma (ECG) ambulatorio  
+**Problema:** exploración de episodios anotados de fibrilación auricular (FA)  
+**Datos de referencia:** MIT-BIH Atrial Fibrillation Database (AFDB)  
+**Tecnología:** Python 3.13, `uv`, WFDB, Streamlit y Plotly  
+**Evaluación:** exposición, demostración y reconstrucción en otro computador
+:::
+
+## Planteamiento del problema
+
+Un registro ambulatorio de ECG puede contener varias horas de señal, cambios de
+ritmo, interferencias y episodios de duración variable. Una gráfica estática de
+unos pocos segundos no permite localizar los episodios, contrastar segmentos ni
+verificar cómo la calidad de la detección QRS afecta los intervalos RR. El reto
+consiste en construir un dashboard que permita explorar **segmentos anotados como
+FA y segmentos no anotados como FA**, manteniendo trazabilidad sobre datos,
+procesamiento, unidades y limitaciones.
+
+El flujo obligatorio es:
+
+```{mermaid}
+flowchart LR
+    A["ECG y anotaciones"] --> B["Validación y calidad"]
+    B --> C["Preprocesamiento"]
+    C --> D["QRS e intervalos RR"]
+    D --> E["Dashboard"]
+    E --> F["Interpretación limitada"]
+```
+
+No se evaluará únicamente la apariencia. El equipo debe demostrar qué registro
+entra, qué anotación de ritmo se utiliza, cómo se detectan los complejos QRS, qué
+intervalos se excluyen y cómo se reconstruyen los resultados sin copiar el
+entorno virtual.
+
+::: {.callout-important title="Alcance clínico obligatorio"}
+El dashboard es un prototipo académico de exploración de registros previamente
+anotados. **No diagnostica fibrilación auricular**, no estima riesgo individual,
+no recomienda tratamiento y no sustituye la revisión de un profesional de la
+salud. La etiqueta FA proviene de la anotación de referencia del conjunto de
+datos; no es una conclusión generada por la aplicación.
+:::
+
+## Pregunta rectora
+
+> ¿Cómo cambian la irregularidad de los intervalos RR y la presentación del ECG
+> entre segmentos anotados como fibrilación auricular y segmentos no anotados
+> como fibrilación auricular, y cómo afecta la calidad de señal a esa comparación?
+
+La pregunta no autoriza a concluir que un conjunto de métricas diagnostica FA.
+El producto permite **explorar evidencia y verificar calidad**, no validar un
+algoritmo clínico.
+
+## Usuario y tarea
+
+El usuario principal será un estudiante avanzado o investigador en Ingeniería
+Biomédica que necesita:
+
+1. seleccionar un registro y conocer sus metadatos;
+2. localizar episodios anotados de FA en una línea de tiempo;
+3. inspeccionar ECG crudo y procesado con marcas QRS;
+4. comparar segmentos FA y no-FA del mismo registro cuando sea posible;
+5. analizar intervalos RR sin confundir irregularidad con diagnóstico;
+6. reconocer cuándo la calidad impide una interpretación responsable.
+
+## Resultados de aprendizaje
+
+Al finalizar, el estudiante estará en capacidad de:
+
+1. relacionar despolarización cardíaca, ondas ECG, QRS e intervalos RR;
+2. explicar qué rasgos del ECG motivan la investigación de FA y por qué no son
+   suficientes por sí solos en este prototipo;
+3. leer señales y anotaciones en formato WFDB sin modificar los originales;
+4. validar frecuencia de muestreo, unidades, canales, duración y anotaciones;
+5. aplicar un preprocesamiento justificado y diferenciar filtrado de
+   visualización y filtrado para detección QRS;
+6. calcular descriptores de irregularidad RR y carga anotada de FA;
+7. construir vistas interactivas coherentes con tareas biomédicas;
+8. probar contratos numéricos, casos límite y errores esperados;
+9. interpretar resultados sin convertir asociación en diagnóstico;
+10. reconstruir y defender el proyecto en un computador diferente.
+
+## Evidencias finales
+
+| Evidencia | Contenido mínimo |
+|---|---|
+| Configuración | `.python-version`, `pyproject.toml`, `uv.lock`, `.gitignore` |
+| Datos | archivos WFDB originales intactos, licencia, inventario y hashes |
+| Código | paquete bajo `src/`, app y script de reproducción |
+| Dashboard | cinco funciones obligatorias y estados inválidos |
+| Análisis | ECG, QRS, RR, cronología de episodios y comparación FA/no-FA |
+| Calidad | pruebas con `pytest`, Ruff y revisión manual |
+| Resultados | JSON, figuras y manifiesto regenerables |
+| Comunicación | informe LaTeX y presentación Beamer |
+| Trazabilidad | README, parámetros, bitácora y contribuciones |
+| Reproducción | ejecución sin `.venv` en otro computador |
+
+## Reglas técnicas no negociables
+
+- El proyecto se enfoca únicamente en ECG y fibrilación auricular.
+- Se utilizan registros autorizados del AFDB; no se incorporan datos clínicos
+  personales del equipo ni de terceros.
+- La anotación manual de ritmo `.atr` es la referencia de FA; no se presenta
+  como predicción del dashboard.
+- Los archivos originales no se sobrescriben ni se corrigen manualmente.
+- No se entrega ni se copia `.venv`.
+- Toda dependencia se declara con `uv add` y queda fijada en `uv.lock`.
+- No se usa `pip install` para reparar el entorno durante la sustentación.
+- Las rutas se construyen con `pathlib`; no se aceptan rutas personales.
+- El cálculo científico se implementa bajo `src/`, no dentro de la interfaz.
+- La reducción de puntos para pantalla nunca se usa para calcular métricas.
+- Cada figura indica registro, canal, unidad, tiempo y transformación.
+- Una detección QRS inválida debe producir advertencia o exclusión documentada.
+- No se usan los términos “diagnóstico”, “paciente positivo” o “detección de FA”
+  para resultados que solo reproducen anotaciones de referencia.
+- Los derivados pueden eliminarse y regenerarse.
+- El README permite ejecutar el proyecto sin instrucciones orales.
+- Informe y presentación conservan las fuentes `.tex` y compilan con `latexmk`.
+
+# Fundamento teórico
+
+## Origen del ECG
+
+El ECG de superficie registra diferencias de potencial asociadas con la
+activación eléctrica cardíaca. En una representación simplificada:
+
+- la onda P se relaciona con despolarización auricular;
+- el complejo QRS se relaciona con despolarización ventricular;
+- la onda T se relaciona con repolarización ventricular;
+- el intervalo RR es el tiempo entre complejos ventriculares consecutivos.
+
+La amplitud y polaridad dependen de la derivación, la orientación del vector
+eléctrico, la colocación de electrodos y la cadena de adquisición. Por tanto,
+“ECG” no identifica por sí solo un canal intercambiable con cualquier otro.
+
+## Fibrilación auricular y evidencia observable
+
+La FA es una arritmia supraventricular. En el ECG se asocia con actividad
+auricular desorganizada, ausencia de ondas P consistentes e intervalos RR
+irregularmente irregulares cuando la conducción auriculoventricular no está
+modificada por otras condiciones. Estos rasgos orientan la inspección, pero un
+prototipo académico no debe tratarlos como una regla diagnóstica automática.
+
+La guía clínica de 2023 indica que la documentación de FA requiere confirmación
+visual de las señales intracardíacas o electrocardiográficas, aun cuando un
+dispositivo haya marcado el evento. Esta exigencia justifica dos decisiones del
+laboratorio:
+
+1. las marcas QRS deben superponerse sobre el ECG para ser revisables;
+2. la etiqueta de ritmo debe conservar su procedencia y no ocultarse detrás de
+   una métrica agregada.
+
+Consulte la
+[guía ACC/AHA/ACCP/HRS](https://www.ahajournals.org/doi/full/10.1161/CIR.0000000000001193)
+para el contexto clínico. El dashboard no implementa esa guía ni evalúa sus
+recomendaciones terapéuticas.
+
+## Conjunto de datos AFDB
+
+El [MIT-BIH Atrial Fibrillation Database](https://physionet.org/content/afdb/)
+contiene 25 registros ambulatorios de larga duración de sujetos con FA,
+principalmente paroxística. Cada registro dura aproximadamente 10 horas. En 23
+registros están disponibles dos señales ECG muestreadas a 250 Hz, con resolución
+de 12 bits sobre un intervalo de ±10 mV. Los registros `00735` y `03665` solo
+incluyen anotaciones y no deben seleccionarse para visualizar ECG.
+
+Los archivos `.atr` contienen anotaciones manuales de ritmo, incluyendo:
+
+- `(AFIB`: fibrilación auricular;
+- `(AFL`: flutter auricular;
+- `(J`: ritmo de la unión auriculoventricular;
+- `(N`: otros ritmos.
+
+Los archivos `.qrs` contienen anotaciones de latidos **no auditadas**. Por ello,
+no deben describirse como una verdad clínica. El registro `07859` tuvo un
+problema histórico de alineación en sus anotaciones QRS; si se utiliza, el equipo
+debe documentar la versión corregida o excluirlo justificadamente. La versión
+1.0.0 tiene DOI
+[10.13026/C2MW2D](https://doi.org/10.13026/C2MW2D) y licencia Open Data Commons
+Attribution 1.0.
+
+::: {.callout-note title="Selección mínima de datos"}
+Cada equipo analizará **tres registros con señal ECG**, escogidos mediante un
+criterio documentado. El conjunto debe permitir inspeccionar segmentos FA y
+no-FA. La comparación principal se hará dentro del mismo registro cuando las
+anotaciones lo permitan; mezclar sujetos sin controlar diferencias individuales
+produce una comparación metodológicamente débil.
+:::
+
+## Muestreo y eje temporal
+
+Para una señal muestreada,
+
+$$
+x[n] = x\!\left(\frac{n}{f_s}\right), \qquad
+t[n]=\frac{n}{f_s},
+$$
+
+donde $f_s$ se expresa en Hz. En AFDB, $f_s=250\ \text{Hz}$ según el metadato
+del registro. No debe codificarse ese valor como constante global sin verificar
+el encabezado WFDB: el contrato correcto consiste en leerlo y comprobarlo.
+
+Una marca de anotación en la muestra $a_k$ corresponde al tiempo
+
+$$
+t_k=\frac{a_k}{f_s}.
+$$
+
+Errores en $f_s$ desplazan los eventos, alteran RR y hacen inválida la
+superposición. El dashboard debe trabajar con índices de muestra como referencia
+interna y convertir a segundos u horas solo para presentar.
+
+## Detección QRS e intervalos RR
+
+Sean $r_1,r_2,\ldots,r_K$ los índices de muestra de detecciones QRS aceptadas.
+Los intervalos RR son
+
+$$
+RR_i=\frac{r_{i+1}-r_i}{f_s}, \qquad i=1,\ldots,K-1.
+$$
+
+Una estimación descriptiva de frecuencia ventricular instantánea es
+
+$$
+HR_i=\frac{60}{RR_i}\quad \text{latidos/min}.
+$$
+
+La ecuación no valida las detecciones. Un falso positivo divide un intervalo;
+una detección perdida combina dos intervalos. Ambos errores pueden imitar o
+exagerar irregularidad. Por ello, la secuencia correcta es:
+
+```{mermaid}
+flowchart TD
+    A["ECG validado"] --> B["Detector QRS"]
+    B --> C["Revisión de marcas"]
+    C --> D["Exclusión documentada"]
+    D --> E["Intervalos RR"]
+    E --> F["Descriptores"]
+```
+
+El equipo puede usar `wfdb.processing.xqrs_detect` como método de referencia o
+implementar un detector estudiado en clase. Si usa una biblioteca, debe explicar
+entradas, parámetros, supuestos y fallos; llamar una función no sustituye la
+comprensión. El algoritmo de Pan y Tompkins es una referencia clásica para
+detección QRS: [10.1109/TBME.1985.325532](https://doi.org/10.1109/TBME.1985.325532).
+
+## Descriptores de irregularidad RR
+
+Para una ventana con $M$ intervalos válidos se calcularán, como mínimo:
+
+- mediana e IQR de RR;
+- media y desviación estándar de RR;
+- coeficiente de variación $CV_{RR}$;
+- raíz media cuadrática de diferencias sucesivas, RMSSD;
+- número y proporción de intervalos excluidos.
+
+$$
+CV_{RR}=\frac{s_{RR}}{\overline{RR}},
+$$
+
+$$
+RMSSD=\sqrt{\frac{1}{M-1}
+\sum_{i=1}^{M-1}(RR_{i+1}-RR_i)^2}.
+$$
+
+En este proyecto, SDNN, RMSSD y medidas relacionadas se interpretan como
+**descriptores de irregularidad ventricular durante el segmento**, no como una
+estimación directa de modulación autonómica. La FA altera la generación de la
+serie RR y hace inapropiado trasladar automáticamente interpretaciones de HRV
+obtenidas en ritmo sinusal.
+
+El diagrama de Poincaré representa cada par $(RR_i,RR_{i+1})$. Una nube más
+dispersa muestra mayor variación entre intervalos sucesivos, pero no identifica
+por sí sola la causa. Los puntos que cruzan una transición de ritmo o contienen
+intervalos inválidos deben excluirse o marcarse.
+
+## Anotaciones de ritmo y carga anotada de FA
+
+Una anotación de cambio de ritmo define el inicio de un intervalo que termina en
+la siguiente anotación o al final del registro. La duración total anotada como FA
+es la suma de los intervalos `(AFIB` válidos. La carga anotada en una selección es
+
+$$
+B_{FA}=100\,\frac{T_{FA}}{T_{analizable}}\;\%,
+$$
+
+donde $T_{analizable}$ excluye solo periodos retirados mediante una política de
+calidad explícita. El dashboard debe rotular el resultado como **carga anotada
+de FA**. “FA detectada por el sistema” sería incorrecto porque la aplicación
+está leyendo anotaciones de referencia.
+
+Para asignar un intervalo RR a un ritmo se utilizará una regla explícita. La
+ruta recomendada acepta el RR únicamente cuando ambas detecciones QRS están
+dentro del mismo intervalo de ritmo. Asignar según un solo extremo puede incluir
+transiciones y contaminar la comparación.
+
+## Preprocesamiento orientado a la tarea
+
+El preprocesamiento no busca que el trazado “se vea bonito”. Cada operación debe
+responder a una interferencia o a una etapa analítica.
+
+| Propósito | Operación posible | Riesgo |
+|---|---|---|
+| inspección morfológica | corrección de línea base y pasabanda conservador | distorsionar P, ST, T o amplitudes |
+| detección QRS | realce de la banda y pendiente del QRS | perder complejos atípicos o detectar ruido |
+| presentación | ventana temporal o reducción mínimo-máximo | ocultar eventos si se diezma sin criterio |
+| calidad | saturación, faltantes, amplitud extrema o ruido | convertir un umbral técnico en criterio clínico |
+
+Los registros AFDB fueron adquiridos con un ancho de banda aproximado de
+0.1–40 Hz. Un filtro digital no recupera contenido que el sistema analógico no
+registró. Para análisis fuera de línea puede usarse filtrado de fase cero, pero
+no debe describirse como operación en tiempo real porque utiliza muestras
+futuras y pasadas.
+
+El equipo debe mantener al menos tres representaciones diferenciadas:
+
+1. señal física original leída de WFDB;
+2. señal procesada para inspección;
+3. señal o transformación interna usada por el detector QRS.
+
+No se permite usar el filtrado del detector como si fuera un ECG clínicamente
+equivalente al original.
+
+## Visualización honesta
+
+Cada vista debe permitir responder:
+
+- ¿qué registro, canal e intervalo se muestran?;
+- ¿qué unidad tiene la amplitud?;
+- ¿la señal es original, procesada o una transformación del detector?;
+- ¿qué marcas QRS y anotaciones de ritmo están visibles?;
+- ¿qué muestras o RR fueron excluidos y por qué?;
+- ¿qué selección produjo la vista?;
+- ¿la comparación corresponde al mismo registro y a ventanas equivalentes?
+
+Para registros de 10 horas se requiere reducción visual. La estrategia
+recomendada es seleccionar primero la ventana y después construir una envolvente
+mínimo-máximo por bloques si aún existen demasiados puntos. El cálculo QRS y RR
+se realiza sobre datos completos, no sobre la versión dibujada.
+
+## Modelo de ejecución de Streamlit
+
+Streamlit vuelve a ejecutar el script cuando cambia un control. En consecuencia:
+
+- la carga y los cálculos costosos se separan de la composición visual;
+- las funciones científicas deben ser puras siempre que sea posible;
+- los valores de los controles se pasan como argumentos;
+- `st.cache_data` puede almacenar resultados si la invalidación depende del
+  archivo, versión y parámetros;
+- no se guarda el estado científico crítico solo en variables globales.
+
+Consulte la
+[arquitectura de Streamlit](https://docs.streamlit.io/develop/concepts/architecture)
+y el contrato de
+[`st.cache_data`](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_data).
+
+# Diseño del producto
+
+## Ficha de formulación
+
+Complete `reports/project_brief.md` antes de programar:
+
+| Campo | Respuesta esperada |
+|---|---|
+| Problema | exploración de FA anotada en ECG ambulatorio |
+| Usuario | perfil específico dentro de docencia o investigación |
+| Registros | tres identificadores y criterio de selección |
+| Comparación | segmento FA frente a no-FA del mismo registro |
+| Ventana | duración inicial y justificación |
+| Detector QRS | método, parámetros y limitaciones |
+| Métrica principal | fórmula, unidad y mínimo de RR válidos |
+| Calidad | regla de exclusión y efecto esperado |
+| Criterio de éxito | tarea observable completada por el usuario |
+| Límite | afirmación clínica que el producto no permite |
+
+::: {.checkpoint}
+**Control D1.** El docente debe poder anticipar qué recorrido hará el usuario,
+qué segmentos comparará y qué resultado quedará invalidado por mala calidad. Una
+lista de gráficos no constituye una formulación.
+:::
+
+## Contrato de datos
+
+Cada registro WFDB se adapta a una representación interna sin modificar la
+fuente.
+
+| Campo | Tipo/unidad | Validación mínima |
+|---|---|---|
+| `record_id` | texto | identificador AFDB no vacío |
+| `sampling_frequency_hz` | Hz | finito, positivo y coherente con anotaciones |
+| `signal_names` | lista | dos canales esperados o diferencia documentada |
+| `units` | lista | unidad por canal, normalmente mV |
+| `signal` | matriz muestra × canal | finita o con faltantes cuantificados |
+| `rhythm_samples` | muestras | crecientes y dentro del registro |
+| `rhythm_labels` | categorías | normalizadas sin perder etiqueta original |
+| `qrs_samples` | muestras | crecientes, dentro del registro y revisables |
+| `quality_mask` | booleano por muestra/ventana | procedencia y regla documentadas |
+
+El inventario en JSON debe incluir procedencia, DOI, licencia, versión, hashes,
+fecha de descarga, tamaño, duración, canales y problemas conocidos. No transcriba
+estos valores desde la guía; léalos del archivo y verifíquelos.
+
+## Privacidad, licencia y uso responsable
+
+- AFDB es un conjunto abierto, pero exige atribución según su licencia.
+- Conserve el DOI y la versión en README, informe y presentación.
+- No combine AFDB con datos personales no autorizados.
+- No muestre rutas personales, nombres de usuario o archivos del computador.
+- No publique derivados que pretendan reidentificar participantes.
+- Si solo se entrega un subconjunto, documente cómo se obtuvo y verifique sus
+  hashes.
+
+## Arquitectura mínima
+
+```text
+ecg_af_dashboard/
+├── .python-version
+├── .gitignore
+├── README.md
+├── pyproject.toml
+├── uv.lock
+├── app.py
+├── build/
+│   ├── reports/
+│   └── slides/
+├── pages/
+│   ├── 1_context_quality.py
+│   ├── 2_ecg_explorer.py
+│   ├── 3_rr_analysis.py
+│   ├── 4_episode_comparison.py
+│   └── 5_methods_limits.py
+├── data/
+│   ├── raw/afdb/
+│   ├── interim/
+│   └── processed/
+├── figures/
+├── reports/
+│   └── informe.tex
+├── results/
+│   ├── contributions.md
+│   └── reproduction_log.md
+├── scripts/
+│   ├── environment_report.py
+│   └── reproduce.py
+├── slides/
+│   └── presentacion.tex
+├── src/
+│   └── ecg_af_dashboard/
+│       ├── __init__.py
+│       ├── config.py
+│       ├── io.py
+│       ├── validation.py
+│       ├── preprocessing.py
+│       ├── annotations.py
+│       ├── qrs.py
+│       ├── rr.py
+│       └── visualization.py
+└── tests/
+    ├── test_io.py
+    ├── test_validation.py
+    ├── test_annotations.py
+    ├── test_qrs.py
+    ├── test_rr.py
+    └── test_visualization.py
+```
+
+### Responsabilidad por capa
+
+| Capa | Responsabilidad | No debe contener |
+|---|---|---|
+| `data/raw/afdb` | archivos WFDB originales y licencia | archivos corregidos a mano |
+| `io.py` | lectura WFDB y adaptación | filtros o Streamlit |
+| `validation.py` | contratos, tiempo, unidades y calidad | reglas de interfaz |
+| `preprocessing.py` | transformaciones ECG | anotaciones de ritmo inventadas |
+| `annotations.py` | intervalos de ritmo y carga anotada | detector QRS |
+| `qrs.py` | detección y control de marcas | diagnóstico de FA |
+| `rr.py` | RR, exclusiones y descriptores | lectura de rutas personales |
+| `visualization.py` | objetos Plotly reutilizables | carga de archivos |
+| `app.py`, `pages/` | controles y composición | algoritmos extensos |
+| `scripts/reproduce.py` | orquestación reproducible | lógica duplicada |
+| `tests/` | contratos automáticos | registros completos sensibles |
+
+## Vistas funcionales obligatorias
+
+| Vista | Pregunta | Elementos mínimos |
+|---|---|---|
+| Contexto y calidad | ¿qué registro se analiza y es utilizable? | metadatos, duración, canal, faltantes, saturación, licencia |
+| Explorador ECG | ¿qué ocurre en la ventana? | cruda/procesada, QRS, ritmo de referencia, zoom, unidades |
+| Análisis RR | ¿qué irregularidad existe? | tacograma, histograma, Poincaré, descriptores y exclusiones |
+| Episodios y comparación | ¿cuándo aparece FA anotada y cómo contrasta con no-FA? | cronología, carga anotada y ventanas equivalentes |
+| Métodos y límites | ¿cómo se obtuvo y qué no permite concluir? | parámetros, versiones, procedencia y límites clínicos |
+
+Las cinco funciones pueden implementarse con páginas o pestañas. Un gráfico sin
+tarea no sustituye una función.
+
+## Usabilidad y accesibilidad
+
+- valores iniciales que muestren una ventana válida;
+- unidades visibles junto a métricas y ejes;
+- etiquetas “FA anotada” y “no-FA anotado”, no “positivo/negativo”;
+- color acompañado por texto, patrón o forma;
+- paleta legible ante deficiencias de visión cromática;
+- selección de intervalos en segundos, minutos u horas claramente indicada;
+- sincronización entre ECG, QRS, RR y anotación;
+- mensaje cuando existen pocos RR o mala calidad;
+- comparación con ventanas de duración equivalente;
+- limitaciones junto a la evidencia correspondiente;
+- tiempo de respuesta medido y cálculos costosos almacenados correctamente.
+
+# Preparación del proyecto
+
+## Crear el entorno reproducible
+
+::: {.panel-tabset}
+### Linux
+
+```bash
+mkdir -p ecg_af_dashboard
+cd ecg_af_dashboard
+
+uv init --package --name ecg-af-dashboard --python 3.13 --vcs none
+
+mkdir -p build/{reports,slides} data/{raw/afdb,interim,processed} \
+  figures pages reports results scripts slides tests
+touch .gitignore data/raw/afdb/README.md
+
+uv add "numpy>=2,<3" "pandas>=2.2,<4" "scipy>=1.14,<2" \
+  "matplotlib>=3.9,<4" "plotly>=6,<7" "streamlit>=1.40,<2" \
+  "wfdb>=4.2,<5"
+uv add --dev "pytest>=8.3,<10" "ruff>=0.12,<1"
+```
+
+### Windows PowerShell
+
+```powershell
+New-Item -ItemType Directory -Path "ecg_af_dashboard" -Force | Out-Null
+Set-Location "ecg_af_dashboard"
+
+uv init --package --name ecg-af-dashboard --python 3.13 --vcs none
+
+$folders = @(
+    "build/reports", "build/slides", "data/raw/afdb", "data/interim",
+    "data/processed", "figures", "pages", "reports", "results",
+    "scripts", "slides", "tests"
+)
+$folders | ForEach-Object {
+    New-Item -ItemType Directory -Path $_ -Force | Out-Null
+}
+New-Item -ItemType File -Path ".gitignore" -Force | Out-Null
+New-Item -ItemType File -Path "data/raw/afdb/README.md" -Force | Out-Null
+
+uv add "numpy>=2,<3" "pandas>=2.2,<4" "scipy>=1.14,<2" "matplotlib>=3.9,<4" "plotly>=6,<7" "streamlit>=1.40,<2" "wfdb>=4.2,<5"
+uv add --dev "pytest>=8.3,<10" "ruff>=0.12,<1"
+```
+:::
+
+## Sincronizar y verificar
+
+```bash
+uv sync --locked
+uv run python -c "import sys,numpy,pandas,scipy,plotly,streamlit,wfdb; print(sys.version); print(numpy.__version__); print(pandas.__version__); print(scipy.__version__); print(plotly.__version__); print(streamlit.__version__); print(wfdb.__version__)"
+uv tree
+```
+
+`uv sync --locked` debe fallar si `pyproject.toml` y `uv.lock` no concuerdan.
+No retire `--locked` para ocultar la inconsistencia. Consulte la
+[documentación de uv](https://docs.astral.sh/uv/concepts/projects/sync/).
+
+## Configurar calidad
+
+Agregue a `pyproject.toml` sin borrar las dependencias:
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+```
+
+## `.gitignore` mínimo
+
+```gitignore
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.streamlit/secrets.toml
+*.pyc
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+```
+
+No ignore `uv.lock`, fuentes `.tex`, código ni configuración. La inclusión del
+subconjunto AFDB dependerá del tamaño de entrega; si se excluye, el README debe
+explicar una descarga verificable y conservar los hashes esperados.
+
+# Desarrollo práctico por fases
+
+## Fase 1. Selección, inventario y carga
+
+### Actividad 1.1. Seleccionar tres registros
+
+Construya una tabla de candidatos con:
+
+- identificador;
+- disponibilidad de señal;
+- duración;
+- canales y unidades;
+- número y duración de intervalos FA y no-FA;
+- problemas conocidos;
+- razón de inclusión o exclusión.
+
+No seleccione solo los segmentos con mayor contraste visual. Defina primero el
+criterio y después aplíquelo.
+
+### Actividad 1.2. Inventario reproducible
+
+Genere `results/data_inventory.json` mediante código. Incluya rutas relativas,
+tamaños, hashes SHA-256, metadatos WFDB, DOI, versión y licencia. El hash detecta
+cambios; no anonimiza.
+
+### Actividad 1.3. Cargador WFDB
+
+```{python}
+#| eval: false
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import wfdb
+
+
+@dataclass(frozen=True)
+class ECGRecord:
+    record_id: str
+    sampling_frequency_hz: float
+    signal: np.ndarray
+    signal_names: tuple[str, ...]
+    units: tuple[str, ...]
+    rhythm_samples: np.ndarray
+    rhythm_notes: tuple[str, ...]
+
+
+def load_afdb_record(directory: Path, record_id: str) -> ECGRecord:
+    """Lee señal y anotaciones de ritmo sin modificar la fuente."""
+    record_path = directory / record_id
+    if not (directory / f"{record_id}.hea").is_file():
+        raise FileNotFoundError(f"Falta el encabezado WFDB: {record_id}.hea")
+
+    record = wfdb.rdrecord(str(record_path), physical=True)
+    rhythm = wfdb.rdann(str(record_path), extension="atr")
+    if record.p_signal is None:
+        raise ValueError(f"El registro {record_id} no contiene señal física.")
+
+    return ECGRecord(
+        record_id=record_id,
+        sampling_frequency_hz=float(record.fs),
+        signal=np.asarray(record.p_signal, dtype=float),
+        signal_names=tuple(record.sig_name),
+        units=tuple(record.units),
+        rhythm_samples=np.asarray(rhythm.sample, dtype=int),
+        rhythm_notes=tuple(rhythm.aux_note),
+    )
+```
+
+El cargador lee y adapta. La validación de dimensiones, unidades, valores
+finitos y anotaciones pertenece a `validation.py`.
+
+### Actividad 1.4. Validación temporal y estructural
+
+Verifique al menos:
+
+- $f_s$ finita y positiva;
+- matriz bidimensional muestra × canal;
+- número de nombres y unidades igual al número de canales;
+- anotaciones crecientes dentro del registro;
+- duración compatible con número de muestras y $f_s$;
+- proporción de valores no finitos por canal;
+- existencia de al menos una ventana FA y una no-FA en el conjunto elegido.
+
+::: {.evidence}
+**Evidencia F1.** Criterio de selección, inventario generado, cargador, contrato y
+pruebas para archivo ausente, registro sin señal, metadatos incompatibles y
+anotaciones fuera de rango.
+:::
+
+## Fase 2. Intervalos de ritmo y calidad
+
+### Actividad 2.1. Normalizar anotaciones
+
+No reemplace etiquetas originales. Conserve `aux_note` y cree una columna
+normalizada para análisis.
+
+```{python}
+#| eval: false
+from dataclasses import dataclass
+
+import numpy as np
+
+
+@dataclass(frozen=True)
+class RhythmInterval:
+    start_sample: int
+    end_sample: int
+    label: str
+    original_note: str
+
+
+def normalize_rhythm(note: str) -> str:
+    cleaned = note.strip().lstrip("(").upper()
+    mapping = {"AFIB": "AF", "AFL": "AFL", "J": "J", "N": "OTHER"}
+    return mapping.get(cleaned, "UNKNOWN")
+
+
+def build_rhythm_intervals(
+    samples: np.ndarray,
+    notes: tuple[str, ...],
+    signal_length: int,
+) -> list[RhythmInterval]:
+    samples = np.asarray(samples, dtype=int)
+    if samples.ndim != 1 or samples.size != len(notes):
+        raise ValueError("Muestras y notas de ritmo no concuerdan.")
+    if samples.size == 0 or samples[0] != 0:
+        raise ValueError("Se requiere una anotación de ritmo desde la muestra 0.")
+    if np.any(np.diff(samples) <= 0):
+        raise ValueError("Las anotaciones deben ser estrictamente crecientes.")
+    if samples[-1] >= signal_length:
+        raise ValueError("Una anotación está fuera del registro.")
+
+    ends = np.r_[samples[1:], signal_length]
+    return [
+        RhythmInterval(int(start), int(end), normalize_rhythm(note), note)
+        for start, end, note in zip(samples, ends, notes, strict=True)
+    ]
+```
+
+El supuesto `samples[0] == 0` debe verificarse en los datos. Si un archivo válido
+no lo cumple, no invente la etiqueta inicial: documente el intervalo sin etiqueta
+o ajuste el contrato justificadamente.
+
+### Actividad 2.2. Indicadores de calidad
+
+Implemente y justifique al menos tres indicadores:
+
+- proporción de valores no finitos;
+- amplitud fuera del intervalo físico documentado;
+- señal plana durante una duración definida;
+- deriva o diferencia excesiva entre percentiles;
+- desacuerdo marcado de detecciones QRS entre canales;
+- intervalo con demasiados RR descartados.
+
+Los umbrales son técnicos y dependen del registro. La interfaz mostrará “calidad
+insuficiente para comparar” o “requiere revisión”, nunca “FA” como resultado de
+un indicador de ruido.
+
+### Actividad 2.3. Carga anotada de FA
+
+Implemente una función que reciba intervalos de ritmo y una ventana y calcule:
+
+- tiempo seleccionable;
+- tiempo analizable;
+- tiempo anotado FA;
+- carga anotada FA;
+- tiempo de otras etiquetas y desconocido.
+
+Pruebe ventanas que comienzan o terminan dentro de un episodio, porque sumar
+intervalos completos sobreestima la duración.
+
+::: {.evidence}
+**Evidencia F2.** Intervalos reconstruidos, cronología de ritmo, indicadores de
+calidad, cálculo de intersecciones temporales y pruebas de límites.
+:::
+
+## Fase 3. Preprocesamiento y detección QRS
+
+### Actividad 3.1. Tabla de transformaciones
+
+| Operación | Entrada | Parámetros | Salida | Justificación | Riesgo |
+|---|---|---|---|---|---|
+| centrado o línea base | ECG físico | método y ventana | ECG corregido | ... | modificar componentes lentas |
+| filtro de inspección | ECG validado | cortes, orden y fase | ECG procesado | ... | distorsión morfológica |
+| transformación QRS | ECG validado | método y parámetros | señal interna | ... | falsos picos |
+| máscara de calidad | señal/ventana | regla | válido/no válido | ... | exclusión sesgada |
+
+### Actividad 3.2. Filtro validado
+
+```{python}
+#| eval: false
+import numpy as np
+from scipy.signal import butter, sosfiltfilt
+
+
+def bandpass_zero_phase(
+    values: np.ndarray,
+    sampling_frequency_hz: float,
+    low_hz: float,
+    high_hz: float,
+    order: int = 4,
+) -> np.ndarray:
+    """Filtra ECG fuera de línea; no representa procesamiento causal."""
+    values = np.asarray(values, dtype=float)
+    nyquist_hz = sampling_frequency_hz / 2.0
+    if values.ndim != 1 or values.size == 0:
+        raise ValueError("La señal debe ser un vector no vacío.")
+    if not np.all(np.isfinite(values)):
+        raise ValueError("La señal contiene valores no finitos.")
+    if not 0.0 < low_hz < high_hz < nyquist_hz:
+        raise ValueError("Debe cumplirse 0 < low < high < fs/2.")
+    if not isinstance(order, int) or order < 1:
+        raise ValueError("El orden debe ser un entero positivo.")
+
+    sections = butter(
+        order,
+        [low_hz, high_hz],
+        btype="bandpass",
+        fs=sampling_frequency_hz,
+        output="sos",
+    )
+    try:
+        return sosfiltfilt(sections, values)
+    except ValueError as error:
+        raise ValueError("La ventana es demasiado corta para el filtro.") from error
+```
+
+El equipo define los cortes a partir del objetivo y del ancho de banda original.
+Debe comparar señal física y procesada, estudiar bordes y explicar por qué el
+método no es causal.
+
+### Actividad 3.3. Detector QRS
+
+Ruta de referencia con WFDB:
+
+```{python}
+#| eval: false
+import numpy as np
+from wfdb import processing
+
+
+def detect_qrs_xqrs(
+    values: np.ndarray,
+    sampling_frequency_hz: float,
+) -> np.ndarray:
+    """Detecta QRS; la salida exige control de calidad y revisión visual."""
+    values = np.asarray(values, dtype=float)
+    if values.ndim != 1 or values.size < round(2 * sampling_frequency_hz):
+        raise ValueError("Se requieren al menos dos segundos de ECG.")
+    if not np.all(np.isfinite(values)):
+        raise ValueError("El ECG contiene valores no finitos.")
+    return processing.xqrs_detect(
+        sig=values,
+        fs=sampling_frequency_hz,
+        verbose=False,
+    )
+```
+
+La documentación oficial de
+[`wfdb.processing`](https://wfdb.readthedocs.io/en/latest/processing.html)
+describe la interfaz y también advierte limitaciones de algunos algoritmos. El
+equipo debe revisar al menos ventanas FA, no-FA, inicio, final y ruido.
+
+### Actividad 3.4. Control de detecciones
+
+Defina y pruebe:
+
+- índices enteros, únicos y crecientes;
+- marcas dentro de la señal;
+- regla para intervalos fisiológicamente o técnicamente improbables;
+- exclusión de QRS en ventanas de calidad insuficiente;
+- comparación entre canales o anotaciones `.qrs` solo como control auxiliar;
+- conteo de detecciones aceptadas y descartadas con causa.
+
+No elimine automáticamente un intervalo solo porque aumenta la irregularidad:
+esa irregularidad puede ser parte del fenómeno estudiado. La exclusión debe
+depender de evidencia de detección o calidad, no del resultado deseado.
+
+::: {.evidence}
+**Evidencia F3.** Señal física y procesada, respuesta del filtro, QRS
+superpuestos, parámetros del detector, errores documentados y pruebas de
+contratos.
+:::
+
+## Fase 4. Intervalos RR y comparación FA/no-FA
+
+### Actividad 4.1. Construir RR válidos
+
+Para cada par de QRS consecutivos:
+
+1. calcule RR en segundos;
+2. verifique calidad de ambos extremos y del intervalo;
+3. verifique que ambos QRS pertenezcan al mismo intervalo de ritmo;
+4. conserve la causa de exclusión;
+5. asigne etiqueta `AF`, `OTHER`, `AFL`, `J` o `UNKNOWN`;
+6. no agrupe `AFL` o `J` dentro de no-FA sin justificarlo.
+
+La comparación principal recomendada es `AF` frente a `OTHER`. Las categorías
+`AFL`, `J` y `UNKNOWN` se muestran separadas o se excluyen explícitamente.
+
+### Actividad 4.2. Resumen RR
+
+```{python}
+#| eval: false
+import numpy as np
+
+
+def summarize_rr(rr_s: np.ndarray) -> dict[str, float | int]:
+    """Resume irregularidad RR sin emitir una clasificación clínica."""
+    rr_s = np.asarray(rr_s, dtype=float)
+    if rr_s.ndim != 1 or rr_s.size < 3:
+        raise ValueError("Se requieren al menos tres intervalos RR válidos.")
+    if not np.all(np.isfinite(rr_s)) or np.any(rr_s <= 0.0):
+        raise ValueError("Los RR deben ser finitos y positivos.")
+
+    differences_s = np.diff(rr_s)
+    mean_rr_s = float(np.mean(rr_s))
+    standard_deviation_s = float(np.std(rr_s, ddof=1))
+    q25_s, median_s, q75_s = np.percentile(rr_s, [25, 50, 75])
+    return {
+        "count": int(rr_s.size),
+        "mean_rr_s": mean_rr_s,
+        "median_rr_s": float(median_s),
+        "iqr_rr_s": float(q75_s - q25_s),
+        "sdnn_s": standard_deviation_s,
+        "cv_rr": standard_deviation_s / mean_rr_s,
+        "rmssd_s": float(np.sqrt(np.mean(differences_s**2))),
+    }
+```
+
+No se fija un umbral de FA. La función devuelve descriptores. El mínimo de tres
+RR permite ejecutar la función, pero puede ser insuficiente para una comparación
+estable; el equipo debe definir un mínimo analítico más exigente y mostrarlo.
+
+### Actividad 4.3. Comparación equivalente
+
+Seleccione ventanas FA y no-FA:
+
+- del mismo registro, si es posible;
+- con igual duración objetivo;
+- con suficiente número de RR válidos;
+- sin transiciones de ritmo internas;
+- con calidad comparable;
+- manteniendo visibles las exclusiones.
+
+Compare ECG, tacograma RR, histograma y Poincaré. No interprete una diferencia
+como efecto causal de FA: es una comparación descriptiva dentro de registros
+seleccionados.
+
+::: {.evidence}
+**Evidencia F4.** Tabla RR trazable, causas de exclusión, descriptores,
+comparación equivalente y explicación de al menos un caso donde la calidad
+impide concluir.
+:::
+
+## Fase 5. Visualización e integración
+
+### Actividad 5.1. Figura temporal reutilizable
+
+```{python}
+#| eval: false
+import numpy as np
+import plotly.graph_objects as go
+
+
+def build_ecg_figure(
+    time_s: np.ndarray,
+    raw_mv: np.ndarray,
+    processed_mv: np.ndarray | None,
+    qrs_samples_local: np.ndarray,
+    channel: str,
+    rhythm_label: str,
+) -> go.Figure:
+    """Construye ECG con marcas QRS; no carga datos ni llama Streamlit."""
+    figure = go.Figure()
+    figure.add_trace(
+        go.Scatter(
+            x=time_s,
+            y=raw_mv,
+            mode="lines",
+            name="ECG físico",
+            line={"color": "#3b6fb6", "width": 1.1},
+        )
+    )
+    if processed_mv is not None:
+        figure.add_trace(
+            go.Scatter(
+                x=time_s,
+                y=processed_mv,
+                mode="lines",
+                name="ECG procesado",
+                line={"color": "#d97706", "width": 1.1},
+            )
+        )
+    if qrs_samples_local.size:
+        figure.add_trace(
+            go.Scatter(
+                x=time_s[qrs_samples_local],
+                y=raw_mv[qrs_samples_local],
+                mode="markers",
+                name="QRS aceptado",
+                marker={"color": "#7a1f5c", "symbol": "x", "size": 8},
+            )
+        )
+
+    figure.update_layout(
+        title=f"Canal {channel} — ritmo de referencia: {rhythm_label}",
+        xaxis_title="Tiempo [s]",
+        yaxis_title="Amplitud [mV]",
+        hovermode="x unified",
+        template="plotly_white",
+    )
+    return figure
+```
+
+El ejemplo supone que los índices QRS fueron convertidos a coordenadas locales
+de la ventana y que la unidad es mV. La función real debe validar esas
+condiciones o recibir la unidad como argumento.
+
+### Actividad 5.2. Prueba estructural
+
+```{python}
+#| eval: false
+import numpy as np
+
+from ecg_af_dashboard.visualization import build_ecg_figure
+
+
+def test_ecg_figure_has_units_qrs_and_reference_label() -> None:
+    time_s = np.array([0.0, 0.5, 1.0])
+    raw_mv = np.array([0.0, 1.0, 0.0])
+    processed_mv = np.array([0.1, 0.8, 0.1])
+    qrs_local = np.array([1])
+
+    figure = build_ecg_figure(
+        time_s,
+        raw_mv,
+        processed_mv,
+        qrs_local,
+        channel="ECG1",
+        rhythm_label="AF anotada",
+    )
+
+    assert len(figure.data) == 3
+    assert figure.layout.xaxis.title.text == "Tiempo [s]"
+    assert "mV" in figure.layout.yaxis.title.text
+    assert "AF anotada" in figure.layout.title.text
+```
+
+La prueba no demuestra legibilidad, honestidad de escala ni alineación clínica;
+se requiere revisión humana.
+
+### Actividad 5.3. Aplicación mínima
+
+```{python}
+#| eval: false
+from pathlib import Path
+
+import streamlit as st
+
+from ecg_af_dashboard.io import load_afdb_record
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+AFDB_DIRECTORY = PROJECT_ROOT / "data" / "raw" / "afdb"
+
+
+@st.cache_data(show_spinner=False)
+def load_cached(directory_text: str, record_id: str, header_modified_ns: int):
+    """Invalida la caché cuando cambia el encabezado del registro."""
+    del header_modified_ns
+    return load_afdb_record(Path(directory_text), record_id)
+
+
+st.set_page_config(
+    page_title="ECG y fibrilación auricular anotada",
+    page_icon="🫀",
+    layout="wide",
+)
+st.title("Explorador de ECG y fibrilación auricular anotada")
+st.caption("Prototipo académico; no destinado a diagnóstico clínico.")
+
+headers = sorted(AFDB_DIRECTORY.glob("*.hea"))
+record_ids = [path.stem for path in headers]
+if not record_ids:
+    st.error("No se encontraron registros WFDB en data/raw/afdb.")
+    st.stop()
+
+selected_id = st.selectbox("Registro", options=record_ids)
+header_path = AFDB_DIRECTORY / f"{selected_id}.hea"
+record = load_cached(
+    str(AFDB_DIRECTORY),
+    selected_id,
+    header_path.stat().st_mtime_ns,
+)
+st.write("Complete el resumen de calidad y el recorrido de análisis.")
+```
+
+### Flujo obligatorio
+
+1. seleccionar registro y canal;
+2. observar metadatos, licencia y calidad;
+3. ubicar un episodio en la cronología;
+4. delimitar una ventana sin perder el episodio seleccionado;
+5. alternar ECG físico/procesado y revisar QRS;
+6. actualizar RR, histograma y Poincaré con la misma selección;
+7. seleccionar una ventana comparable FA/no-FA;
+8. consultar carga anotada, métodos, parámetros y limitaciones;
+9. regresar a un estado inicial coherente.
+
+### Estados inválidos
+
+| Estado | Respuesta esperada |
+|---|---|
+| sin archivos | instrucción clara, no excepción técnica |
+| registro solo con anotaciones | explicar que no puede mostrarse ECG |
+| anotación fuera de rango | bloquear análisis e identificar archivo |
+| ventana sin suficientes RR | impedir resumen y pedir ventana mayor |
+| QRS no confiables | mostrar marcas y limitar comparación |
+| filtro incompatible | explicar condición de Nyquist |
+| transición de ritmo | separar o excluir RR que cruza la transición |
+| categoría `AFL/J/UNKNOWN` | no mezclar silenciosamente con no-FA |
+| selección válida | unidades, etiquetas y vistas sincronizadas |
+
+::: {.evidence}
+**Evidencia F5.** Dashboard funcional, cinco funciones, manejo de al menos cuatro
+estados inválidos, revisión de accesibilidad y medición de tiempos de carga,
+cambio de ventana y cálculo QRS.
+:::
+
+## Fase 6. Automatización
+
+El comando
+
+```bash
+uv run python scripts/reproduce.py
+```
+
+debe:
+
+1. localizar la raíz con `pathlib`;
+2. verificar los tres registros y sus hashes;
+3. validar señales y anotaciones;
+4. reconstruir intervalos de ritmo;
+5. ejecutar preprocesamiento y QRS configurados;
+6. construir RR y registrar exclusiones;
+7. calcular carga anotada y resúmenes por ritmo;
+8. escribir derivados en `data/processed/`;
+9. escribir `results/summary.json` y `results/parameters.json`;
+10. crear figuras resumen;
+11. crear `results/delivery_manifest.txt`;
+12. terminar con código cero solo si todo fue correcto.
+
+La aplicación se inicia por separado:
+
+```bash
+uv run streamlit run app.py
+```
+
+Ejecute dos veces la reproducción. Si no cambian datos ni parámetros, los
+resultados científicos deben ser equivalentes. Excluya marcas de tiempo de la
+comparación de contenido.
+
+::: {.evidence}
+**Evidencia F6.** Dos ejecuciones comparadas, productos regenerados desde una
+copia limpia y explicación de cualquier diferencia esperada.
+:::
+
+# Pruebas y calidad de software
+
+## Matriz mínima
+
+| Componente | Caso central | Caso límite o error |
+|---|---|---|
+| carga | señal y `.atr` presentes | encabezado ausente o registro sin señal |
+| estructura | canales y unidades coherentes | dimensiones incompatibles |
+| anotaciones | cambios crecientes | inicio ausente, duplicado o fuera de rango |
+| carga FA | intersección parcial correcta | ventana vacía o sin tiempo analizable |
+| filtro | conserva longitud | Nyquist o señal demasiado corta |
+| QRS | índices crecientes dentro del registro | duplicado, fuera de rango o pocos datos |
+| RR | secuencia controlada | no finito, negativo o menos de tres |
+| asignación de ritmo | ambos QRS en igual intervalo | RR cruza transición |
+| comparación | ventanas equivalentes | calidad o duración incompatibles |
+| figura | trazas, unidades y etiqueta | índices locales fuera de rango |
+| reproducción | productos esperados | directorio nuevo o derivado ausente |
+
+## Prueba controlada de descriptores RR
+
+```{python}
+#| eval: false
+import numpy as np
+import pytest
+
+from ecg_af_dashboard.rr import summarize_rr
+
+
+def test_constant_rr_has_zero_successive_irregularity() -> None:
+    result = summarize_rr(np.array([1.0, 1.0, 1.0, 1.0]))
+
+    assert result["count"] == 4
+    assert result["median_rr_s"] == pytest.approx(1.0)
+    assert result["cv_rr"] == pytest.approx(0.0)
+    assert result["rmssd_s"] == pytest.approx(0.0)
+```
+
+Esta prueba valida una propiedad matemática en un caso controlado. No valida el
+detector QRS, las anotaciones ni una interpretación de FA.
+
+## Comandos de calidad
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -v
+```
+
+Durante el desarrollo:
+
+```bash
+uv run ruff format .
+```
+
+Consulte [pytest](https://docs.pytest.org/en/stable/) y
+[Ruff](https://docs.astral.sh/ruff/). La definición de contratos, tolerancias y
+casos fisiológicamente relevantes sigue siendo responsabilidad del equipo.
+
+## Pruebas insuficientes
+
+- `assert result is not None`;
+- comprobar que una figura existe sin revisar ejes ni unidades;
+- probar solo segmentos limpios;
+- usar igualdad exacta para todos los flotantes;
+- tratar `.qrs` no auditado como verdad clínica;
+- ignorar transiciones de ritmo;
+- desactivar una prueba para obtener estado aprobado;
+- afirmar “funciona” por una ejecución manual sin evidencia.
+
+## Revisión manual obligatoria
+
+`results/manual_review.md` debe registrar fecha, revisor, registro, ventana,
+ritmo, hallazgo y acción. Revise al menos:
+
+- inicio, mitad y final de cada registro;
+- una ventana FA y una no-FA por registro;
+- una transición de ritmo;
+- una ventana de mala calidad;
+- superposición QRS;
+- coherencia entre ECG, RR, Poincaré y cronología;
+- legibilidad, contraste y límites clínicos.
+
+# Documentación y comunicación
+
+## README como protocolo
+
+El README debe responder:
+
+1. ¿qué problema y usuario atiende?;
+2. ¿por qué se usa AFDB y qué registros se eligieron?;
+3. ¿qué DOI, versión y licencia aplican?;
+4. ¿cómo se obtienen o verifican los datos?;
+5. ¿cómo se reconstruye el entorno?;
+6. ¿cómo se ejecutan Ruff y pruebas?;
+7. ¿cómo se regeneran resultados?;
+8. ¿cómo se inicia el dashboard?;
+9. ¿qué detector, filtros, ventanas y reglas de calidad se usan?;
+10. ¿cómo se asigna ritmo a RR?;
+11. ¿qué significa carga anotada de FA?;
+12. ¿qué no puede concluir el producto?;
+13. ¿cómo se compilan informe y presentación?;
+14. ¿cómo se distribuyeron y rotaron responsabilidades?
+
+## Informe técnico en LaTeX
+
+`reports/informe.tex` debe incluir:
+
+1. problema, usuario y pregunta;
+2. fisiología ECG y contexto de FA;
+3. AFDB, selección, licencia y contrato;
+4. calidad, preprocesamiento y QRS;
+5. intervalos de ritmo y RR;
+6. arquitectura del software;
+7. diseño de vistas e interacciones;
+8. comparación descriptiva FA/no-FA;
+9. pruebas y reproducción externa;
+10. limitaciones y trabajo futuro.
+
+Tablas y resultados calculados deben generarse desde Python. No transcriba
+números para hacerlos coincidir con capturas.
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/reports reports/informe.tex
+```
+
+## Presentación Beamer
+
+Máximo cinco diapositivas, incluida portada:
+
+1. problema, usuario, pregunta y límite clínico;
+2. ECG, AFDB y cadena de procesamiento;
+3. QRS, RR, anotaciones, calidad y pruebas;
+4. demostración y comparación principal;
+5. interpretación, limitaciones y reproducción.
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/slides slides/presentacion.tex
+```
+
+No use recursos remotos, `minted` ni `-shell-escape`.
+
+## Contribuciones
+
+En `results/contributions.md`, cada integrante registra decisiones, archivos,
+pruebas revisadas por otra persona, rol inicial y rotación. Cualquier integrante
+puede ser seleccionado como expositor.
+
+# Entrega y reproducción externa
+
+## Protocolo limpio
+
+En una copia sin `.venv`:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+uv run streamlit run app.py
+```
+
+## Criterio de éxito
+
+- sincronización bloqueada sin editar configuración;
+- Ruff y pruebas aprobados;
+- productos científicos regenerados;
+- informe y presentación compilados;
+- recorrido funcional completo;
+- datos originales intactos y hashes verificados;
+- ninguna instalación o ruta editada durante la prueba;
+- ausencia de credenciales e identificadores personales;
+- terminología “FA anotada” consistente;
+- límites clínicos visibles.
+
+## Lista de entrega
+
+Nombre sugerido:
+
+```text
+equipo_XX_dashboard_ecg_fa.zip
+```
+
+- [ ] proyecto limitado a ECG y FA;
+- [ ] tres registros justificados;
+- [ ] DOI, versión, licencia y hashes documentados;
+- [ ] `.python-version`, `pyproject.toml` y `uv.lock` coherentes;
+- [ ] `.venv` y cachés excluidos;
+- [ ] originales y derivados separados;
+- [ ] rutas relativas con `pathlib`;
+- [ ] paquete `src/` separado de Streamlit;
+- [ ] anotaciones de ritmo normalizadas y trazables;
+- [ ] QRS revisables sobre ECG;
+- [ ] RR que cruzan transiciones tratados explícitamente;
+- [ ] comparación FA/no-FA equivalente;
+- [ ] cinco funciones del dashboard;
+- [ ] estados inválidos informativos;
+- [ ] cálculos sobre datos completos;
+- [ ] Ruff, pruebas y reproducción aprobados;
+- [ ] README con comandos exactos;
+- [ ] informe y Beamer compilables;
+- [ ] presentación de máximo cinco diapositivas;
+- [ ] bitácora y contribuciones incluidas.
+
+## No conformidades
+
+El producto se considera no reproducible o metodológicamente no conforme si:
+
+- incorpora otras señales o problemas que dispersen el alcance;
+- afirma diagnosticar o predecir FA sin un estudio de validación;
+- presenta la anotación `.atr` como salida del algoritmo;
+- mezcla `AFL`, `J` o `UNKNOWN` con no-FA sin declararlo;
+- trata `.qrs` no auditado como verdad clínica;
+- sobrescribe originales o corrige anotaciones a mano;
+- calcula RR sobre una señal reducida para pantalla;
+- excluye irregularidad solo porque contradice el resultado esperado;
+- oculta baja calidad, faltantes o transiciones;
+- requiere copiar `.venv`, instalar paquetes o editar rutas;
+- carece de `uv.lock` coherente;
+- concentra toda la lógica en `app.py`;
+- desactiva pruebas para aprobar;
+- solo entrega PDF sin fuentes `.tex`;
+- no inicia en el computador de evaluación.
+
+# Exposición y demostración
+
+## Formato
+
+- **Equipo:** tres estudiantes.
+- **Expositor:** una persona seleccionada por el docente al iniciar.
+- **Exposición:** 12 minutos.
+- **Verificación y preguntas:** hasta 5 minutos.
+- **Apoyo:** PDF Beamer, máximo cinco diapositivas.
+- **Demostración:** dashboard y terminal en otro computador.
+- **Punto de partida:** copia sin `.venv`.
+
+Durante el periodo evaluado, el expositor presenta, opera y responde. Los otros
+integrantes deben dominar el proyecto.
+
+## Secuencia recomendada
+
+| Minuto | Contenido |
+|---:|---|
+| 0–1 | problema, usuario, pregunta y límite clínico |
+| 1–3 | ECG, AFDB, selección y calidad |
+| 3–5 | anotaciones, QRS y RR |
+| 5–8 | recorrido del dashboard |
+| 8–10 | comparación, pruebas y arquitectura |
+| 10–11 | reproducción externa |
+| 11–12 | interpretación, límites y cierre |
+| +5 | diagnóstico técnico y preguntas |
+
+No explique de forma general qué es Python. Defienda decisiones del proyecto
+con evidencia.
+
+## Preguntas orientadoras
+
+Las preguntas no constituyen un guion para memorizar.
+
+### Problema y alcance
+
+1. ¿Por qué una gráfica estática no resuelve la tarea seleccionada?
+2. ¿Quién es el usuario y qué tarea observable debe completar?
+3. ¿Qué significa “FA anotada” dentro del dashboard?
+4. ¿Qué afirmación clínica está explícitamente fuera de alcance?
+5. ¿Qué criterio permite decidir que el dashboard es útil?
+
+### Fisiología y datos
+
+6. ¿Qué representa el complejo QRS y por qué se usa para construir RR?
+7. ¿Qué rasgos del ECG se asocian con FA y por qué no bastan aquí para
+   diagnosticar?
+8. ¿Qué frecuencia de muestreo, unidades y canales tiene el registro mostrado?
+9. ¿Qué limita el ancho de banda original de AFDB?
+10. ¿Por qué se excluyeron `00735` y `03665`?
+11. ¿Cómo se eligieron los tres registros sin seleccionar solo casos favorables?
+12. ¿Qué DOI, versión y licencia se deben conservar?
+
+### Anotaciones y calidad
+
+13. ¿Qué diferencia existe entre `.atr` y `.qrs`?
+14. ¿Cómo se convierte una anotación de cambio en un intervalo de ritmo?
+15. ¿Qué ocurre si la primera anotación no empieza en la muestra cero?
+16. ¿Cómo se trata `AFL`, `J` o una etiqueta desconocida?
+17. ¿Cómo se calcula la intersección de un episodio con la ventana elegida?
+18. ¿Qué tres indicadores de calidad se implementaron?
+19. ¿Qué caso de mala calidad cambió la interpretación?
+20. ¿Cómo se verifica que un original no fue modificado?
+
+### Preprocesamiento y QRS
+
+21. Describa el orden de transformaciones y explique por qué no es
+    intercambiable.
+22. ¿Cómo se escogieron cortes y orden del filtro?
+23. ¿Qué comprueba $0<f_{bajo}<f_{alto}<f_s/2$?
+24. ¿Por qué el filtrado de fase cero no representa operación en tiempo real?
+25. ¿Qué diferencia hay entre ECG para inspección y señal interna del detector?
+26. ¿Qué parámetros y supuestos tiene el detector QRS?
+27. ¿Cómo se identifica un falso positivo o una detección perdida?
+28. ¿Por qué no se deben eliminar RR solo por ser irregulares?
+29. ¿Cómo se compararon detecciones entre canales o con `.qrs`?
+
+### RR y fibrilación auricular anotada
+
+30. Derive la ecuación de RR a partir de índices de muestra.
+31. ¿Cómo afecta un error de $f_s$ a RR y a la cronología?
+32. ¿Qué ocurre con RR cuando se pierde un QRS?
+33. ¿Cómo se asigna una etiqueta de ritmo a cada RR?
+34. ¿Por qué se excluyen RR que cruzan una transición?
+35. ¿Qué miden CV de RR y RMSSD en este proyecto?
+36. ¿Por qué no se interpretan automáticamente como modulación autonómica?
+37. ¿Qué muestra el Poincaré y qué no demuestra?
+38. ¿Cómo se calcula la carga anotada de FA?
+39. ¿Qué diferencia hay entre tiempo seleccionado y tiempo analizable?
+40. ¿Cómo se garantizó una comparación equivalente FA/no-FA?
+
+### Visualización y software
+
+41. ¿Qué tarea responde cada una de las cinco vistas?
+42. ¿Cómo se sincronizan ECG, QRS, RR y anotaciones?
+43. ¿Qué datos se reducen para pantalla y cuáles se usan para cálculos?
+44. ¿Cómo se informa una ventana con pocos RR válidos?
+45. ¿Qué decisión de accesibilidad no depende únicamente del color?
+46. ¿Por qué la lógica científica está bajo `src/`?
+47. ¿Qué diferencia existe entre `scripts/reproduce.py` y `app.py`?
+48. ¿Qué diferencia existe entre `.python-version`, `pyproject.toml` y
+    `uv.lock`?
+49. ¿Por qué se entrega `uv.lock` y no `.venv`?
+50. ¿Qué garantiza `uv sync --locked` y qué no garantiza?
+
+### Pruebas, resultados y límites
+
+51. Muestre una prueba de transición de ritmo y explique su contrato.
+52. ¿Qué demuestra la prueba con RR constantes y qué no demuestra?
+53. ¿Cómo se definieron tolerancias numéricas?
+54. Si la app inicia pero los RR son incorrectos, ¿cómo se aísla la causa?
+55. Si se eliminan derivados, ¿cómo se reconstruyen?
+56. ¿Qué evidencia se conserva de una reproducción externa fallida?
+57. Distinga un dato, un resultado calculado, una inferencia y una limitación.
+58. ¿Cuál es el hallazgo descriptivo principal y en qué archivo se verifica?
+59. ¿Qué conclusión se evitó por falta de evidencia?
+60. ¿Cuál sería la siguiente mejora y cómo se validaría sin ampliar
+    injustificadamente el alcance?
+
+## Situaciones de diagnóstico en vivo
+
+El docente puede solicitar:
+
+- explicar un fallo de `--locked` sin retirar la opción;
+- localizar y corregir una ruta absoluta;
+- cargar un registro sin señal;
+- retirar una anotación inicial y predecir la prueba que falla;
+- seleccionar un filtro incompatible con Nyquist;
+- mostrar un RR que cruza una transición y explicar su exclusión;
+- cambiar la duración de ventana y predecir el efecto sobre estabilidad;
+- eliminar un derivado y reconstruirlo;
+- corregir una unidad en la capa responsable;
+- demostrar que el gráfico reducido no alimenta las métricas;
+- identificar una etiqueta `AFL/J/UNKNOWN` mal agrupada;
+- iniciar el dashboard desde la copia limpia.
+
+Se valora localización de causa, verificación mínima y corrección razonada.
+
+# Rúbrica de evaluación
+
+## Escala y cálculo
+
+Total: **100 puntos**.
+
+- **75 puntos:** exposición, demostración y preguntas;
+- **25 puntos:** artefactos inspeccionados.
+
+Niveles:
+
+- **4 — sólido:** 100 % del peso;
+- **3 — adecuado:** 80 %;
+- **2 — básico:** 60 %;
+- **1 — insuficiente:** 30 %;
+- **0 — no demostrado:** 0 %.
+
+$$
+P=\sum_i w_i c_i,
+$$
+
+donde $c_i\in\{1,0.8,0.6,0.3,0\}$.
+
+## Descriptores
+
+| Criterio | Peso | 4 — sólido | 3 — adecuado | 2 — básico | 1/0 — insuficiente o no demostrado |
+|---|---:|---|---|---|---|
+| Problema, usuario y límite clínico — sustentación | 8 | Formula tarea y pregunta verificables; usa consistentemente FA anotada y delimita conclusiones | Alcance claro con una conexión menor por precisar | Tema correcto, pero tarea o límite vagos | Afirma diagnóstico o enumera gráficos sin pregunta |
+| Fisiología, AFDB y calidad — sustentación | 12 | Relaciona ECG, FA, $f_s$, canales, anotaciones, selección y calidad con decisiones del dashboard | Relación correcta con una omisión menor | Describe datos, pero justifica débilmente selección o calidad | Confunde fisiología, archivos, unidades o procedencia |
+| Anotaciones, QRS y RR — sustentación | 15 | Justifica intervalos de ritmo, procesamiento, QRS, exclusiones y descriptores RR con fórmulas y límites | Métodos correctos con un vacío menor | Ejecuta métodos, pero no explica consecuencias o transiciones | Mezcla etiquetas, usa QRS no auditado como verdad o calcula RR sin control |
+| Dashboard y comparación — demostración | 15 | Recorre cinco funciones; vistas sincronizadas, comparación equivalente y estados inválidos útiles | Funcional con una inconsistencia menor | Flujo parcial o comparación débil | No inicia, resultados incoherentes o interacción decorativa |
+| Reconstrucción y diagnóstico técnico — demostración | 15 | Sincroniza, ejecuta calidad, reproduce, inicia y diagnostica sin instalar ni editar rutas | Completa con corrección menor y explicada | Completa solo parte o necesita intervención | Copia `.venv`, instala, retira controles o no reconstruye |
+| Comunicación y defensa — sustentación | 10 | Beamer legible y puntual; distingue dato, resultado, inferencia y límite con evidencia | Clara con problema menor de tiempo o densidad | Lee diapositivas o responde en general | Excede tiempo, incumple formato o no defiende decisiones |
+| Arquitectura y código — artefactos | 10 | Capas separadas, rutas, nombres, tipos y documentación coherentes | Arquitectura funcional con inconsistencias menores | Código concentrado pero ejecutable | Lógica monolítica, rutas absolutas u originales sobrescritos |
+| Pruebas y trazabilidad — artefactos | 10 | Casos centrales y límites protegen contratos; JSON, README, hashes y bitácora concuerdan | Cobertura suficiente con un límite ausente | Predominan casos felices o documentación incompleta | Pruebas triviales/desactivadas o resultados manuales |
+| Informe, presentación y contribuciones — artefactos | 5 | Fuentes compilan, reutilizan resultados y documentan contribuciones verificables | Compilan con detalle menor ausente | Documentos densos o contribuciones vagas | Falta fuente, no compila o no hay contribuciones |
+| **Total** | **100** |  |  |  |  |
+
+## Reglas de calificación
+
+### Tope por no reproducibilidad
+
+Si no ejecuta `uv sync --locked`, requiere copiar `.venv` o depende de rutas
+personales, reconstrucción recibe 0 y el total no supera **70/100** hasta una
+corrección verificada en el plazo del docente.
+
+### Tope por conclusión clínica indebida
+
+Si el producto afirma diagnosticar, predecir o descartar FA sin protocolo de
+validación clínica, los criterios de problema y de anotaciones/QRS/RR no pueden
+superar nivel 1. El error no se corrige agregando un aviso aislado si el resto de
+la interfaz conserva lenguaje diagnóstico.
+
+### Datos y licencia
+
+La exposición se detendrá si aparecen datos no autorizados, credenciales o si se
+omite deliberadamente la procedencia. Se realizará verificación posterior con
+un conjunto permitido.
+
+### Fallo externo comprobado
+
+Si la causa es institucional, pueden considerarse bitácora previa, captura
+íntegra de terminal, hashes, manifiesto y repetición posterior. No cubre
+dependencias faltantes, bloqueo desactualizado o rutas personales.
+
+### Nota grupal y verificación individual
+
+La nota es grupal y el expositor se selecciona al inicio. Una participación
+marcadamente desigual puede requerir verificación individual.
+
+## Hoja de observación rápida
+
+| Verificación | Sí | Parcial | No | Observación |
+|---|:---:|:---:|:---:|---|
+| Problema, usuario y límite clínico |  |  |  |  |
+| ECG, $f_s$, canal y unidad |  |  |  |  |
+| Selección de tres registros |  |  |  |  |
+| DOI, licencia, versión y hashes |  |  |  |  |
+| Anotaciones `.atr` trazables |  |  |  |  |
+| Calidad visible |  |  |  |  |
+| ECG físico/procesado y QRS |  |  |  |  |
+| RR y transición de ritmo |  |  |  |  |
+| Cronología y carga anotada |  |  |  |  |
+| Comparación FA/no-FA equivalente |  |  |  |  |
+| Cinco funciones |  |  |  |  |
+| Estados inválidos útiles |  |  |  |  |
+| Cálculo sobre datos completos |  |  |  |  |
+| Copia sin `.venv` |  |  |  |  |
+| `uv sync --locked` |  |  |  |  |
+| Ruff, pruebas y reproducción |  |  |  |  |
+| App inicia en equipo externo |  |  |  |  |
+| Informe y Beamer compilan |  |  |  |  |
+| Terminología y límites correctos |  |  |  |  |
+
+# Referencias y recursos
+
+- Joglar, J. A., et al. (2024). 2023 ACC/AHA/ACCP/HRS Guideline for the
+  Diagnosis and Management of Atrial Fibrillation. *Circulation, 149*(1),
+  e1–e156. <https://doi.org/10.1161/CIR.0000000000001193>
+- Pan, J., & Tompkins, W. J. (1985). A real-time QRS detection algorithm.
+  *IEEE Transactions on Biomedical Engineering, BME-32*(3), 230–236.
+  <https://doi.org/10.1109/TBME.1985.325532>
+- Goldberger, A. L., et al. (2000). PhysioBank, PhysioToolkit, and PhysioNet.
+  *Circulation, 101*(23), e215–e220.
+  <https://doi.org/10.1161/01.CIR.101.23.e215>
+- [MIT-BIH Atrial Fibrillation Database, v1.0.0](https://physionet.org/content/afdb/),
+  DOI <https://doi.org/10.13026/C2MW2D>.
+- Sörnmo, L., & Laguna, P. (2005). *Bioelectrical Signal Processing in
+  Cardiac and Neurological Applications*. Elsevier Academic Press.
+- Clifford, G. D., Azuaje, F., & McSharry, P. E. (Eds.). (2006). *Advanced
+  Methods and Tools for ECG Data Analysis*. Artech House.
+- [WFDB para Python](https://wfdb.readthedocs.io/en/latest/).
+- [Streamlit](https://docs.streamlit.io/).
+- [Plotly para Python](https://plotly.com/python/).
+- [SciPy Signal](https://docs.scipy.org/doc/scipy/reference/signal.html).
+- [uv](https://docs.astral.sh/uv/guides/projects/).
+- [pytest](https://docs.pytest.org/en/stable/).
+- [Ruff](https://docs.astral.sh/ruff/).
+
+::: {.callout-note title="Uso de referencias"}
+La documentación de software define contratos de herramientas. Las decisiones
+fisiológicas, de calidad y de interpretación deben apoyarse además en fuentes
+biomédicas y en los metadatos reales del conjunto utilizado.
+:::
