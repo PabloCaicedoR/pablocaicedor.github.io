@@ -1,0 +1,1132 @@
+---
+title: "Laboratorio 001"
+subtitle: "Adquisición de imágenes, profundidad de bit y espacios de color como software reproducible"
+description: "Guía del estudiante para Procesado de Señales e Imágenes Médicas"
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
+date: last-modified
+lang: es
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    logo: ../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    number-depth: 2
+    code-copy: true
+    code-line-numbers: true
+    code-overflow: wrap
+    code-tools:
+      source: false
+      toggle: true
+      caption: "Código"
+    anchor-sections: true
+    link-external-newwindow: true
+    smooth-scroll: true
+execute:
+  enabled: false
+---
+
+::: {.text-center}
+![Logo institucional](../../recursos/imagenes/generales/Escuela_Rosario_logo.png){width=300}
+:::
+
+# Presentación del laboratorio
+
+::: {.hero}
+**Programa:** Ingeniería Biomédica  
+**Asignatura:** Procesado de Señales e Imágenes Médicas  
+**Modalidad:** equipos de tres estudiantes  
+**Prerrequisito:** proyecto reproducible construido en el Laboratorio Anterior (Python)  
+**Producto central:** extensión funcional del paquete Python del semestre para
+adquirir, validar, cuantizar y analizar imágenes de color.
+:::
+
+## Planteamiento
+
+En el Laboratorio anterior (Python) se estableció que una práctica computacional no consiste en
+acumular bloques de código dentro de un documento. El resultado debe organizarse
+como software reproducible: entradas originales separadas, lógica importable,
+pruebas automáticas, un punto de ejecución conocido y productos que puedan
+eliminarse y regenerarse.
+
+En este laboratorio se conservan los conceptos de adquisición de imágenes,
+profundidad de bit, error de cuantización, MSE, PSNR y espacios de color. La
+diferencia es que cada operación debe implementarse como parte del proyecto
+semestral, respetando los contratos, la arquitectura y las reglas técnicas
+establecidas previamente.
+
+::: {.callout-important title="Criterio rector"}
+No se evalúa solamente que el equipo produzca imágenes cuantizadas. Se evalúa
+que construya un **sistema pequeño, verificable y reproducible** que transforme
+una adquisición documentada en resultados numéricos y visuales trazables.
+:::
+
+## Pregunta de trabajo
+
+> ¿Puede el equipo reconstruir, en un computador diferente, el análisis de una
+> imagen adquirida y obtener las mismas métricas, tablas y figuras sin copiar
+> `.venv`, editar rutas personales ni ejecutar celdas manualmente?
+
+## Resultados de aprendizaje
+
+Al finalizar, el estudiante estará en capacidad de:
+
+1. explicar la relación entre la profundidad de bit $b$, los niveles
+   representables $L=2^b$ y el paso de cuantización $\Delta$;
+2. adquirir y documentar imágenes bajo condiciones controladas;
+3. validar forma, tipo de dato, rango y orden de canales antes de procesar una
+   imagen;
+4. implementar funciones pequeñas, tipadas y comprobables para cuantización,
+   métricas y transformaciones de color;
+5. convertir imágenes BGR a HSV, CIE $L^*a^*b^*$ y YCrCb mediante OpenCV e
+   interpretar la semántica de sus canales;
+6. cuantizar imágenes completas o canales individuales y medir la distorsión
+   mediante MSE y PSNR;
+7. separar datos originales, derivados, resultados y figuras;
+8. automatizar el flujo completo con un único script de reproducción;
+9. proteger contratos científicos y casos límite mediante `pytest`;
+10. reconstruir el entorno con `uv sync --locked` y ejecutar el análisis en un
+    computador diferente.
+
+## Evidencias finales
+
+| Evidencia | Contenido mínimo |
+|---|---|
+| Configuración | `pyproject.toml`, `.python-version`, `uv.lock`, `.gitignore` |
+| Datos originales | imagen de referencia, imágenes de exposición y metadatos de adquisición |
+| Código reusable | módulos nuevos bajo `src/python_scientific/` |
+| Automatización | `scripts/reproduce_lab001.py` |
+| Control de calidad | pruebas en `tests/`, Ruff y validación de entradas |
+| Resultados | JSON y CSV con métricas; tablas LaTeX regenerables |
+| Figuras | histogramas, cuantizaciones, mapas de error y comparaciones de espacios |
+| Informe | fuente `reports/laboratorio_001.tex` y PDF compilado |
+| Presentación | fuente `slides/laboratorio_001.tex` y PDF Beamer compilado |
+| Reproducción | evidencia de ejecución limpia en un segundo computador |
+
+# Reglas técnicas no negociables
+
+Las reglas del Laboratorio anterior (Python) continúan vigentes.
+
+- No se crea un proyecto nuevo ni un segundo entorno virtual para este
+  laboratorio.
+- No se entrega `.venv` ni se modifica su contenido manualmente.
+- No se usa `pip install`; cualquier dependencia se declara con `uv add`.
+- No se editan manualmente versiones dentro de `uv.lock`.
+- Las imágenes originales se almacenan bajo `data/raw/` y nunca se
+  sobrescriben.
+- Los archivos bajo `data/processed/`, `results/`, `figures/` y `build/` deben
+  ser regenerables.
+- Las rutas se construyen con `pathlib`; no se aceptan rutas absolutas.
+- La lógica científica vive bajo `src/python_scientific/` y no dentro del
+  script de reproducción.
+- El script orquesta; no debe convertirse en un archivo monolítico.
+- Las funciones deben validar forma, `dtype`, rango y parámetros antes de
+  calcular.
+- Los errores esperados deben producir excepciones informativas, no fallos
+  silenciosos.
+- Las métricas se calculan en un tipo flotante para evitar desbordamiento de
+  `uint8`.
+- OpenCV lee imágenes de color en orden **BGR**. El orden debe estar declarado
+  en nombres, documentación y figuras.
+- Las tablas y figuras usadas en el informe no se transcriben ni se editan a
+  mano.
+- El README debe contener comandos suficientes para ejecutar el laboratorio sin
+  instrucciones orales.
+- La reconstrucción externa se ejecuta con el archivo `uv.lock` entregado.
+
+::: {.callout-warning title="No se acepta como solución"}
+Un cuaderno, un archivo Quarto con toda la implementación, una secuencia de
+comandos copiada desde la terminal o un único script con todas las funciones no
+satisfacen el objetivo de ingeniería de software del laboratorio.
+:::
+
+# Fundamento conceptual
+
+## Cuantización uniforme
+
+Para una señal o canal $x\in[X_{\min},X_{\max}]$, una cuantización uniforme con
+$b$ bits dispone de
+
+$$
+L=2^b
+$$
+
+niveles. Si el intervalo se divide en $L$ regiones, el paso nominal es
+
+$$
+\Delta=\frac{X_{\max}-X_{\min}}{L}.
+$$
+
+Para imágenes `uint8`, el rango almacenado es $[0,255]$. La implementación debe
+declarar si reconstruye cada muestra en el borde inferior, en el centro o en
+otro representante del intervalo. Esa decisión cambia el error y debe
+protegerse mediante pruebas.
+
+## Rango dinámico y uso efectivo de niveles
+
+Una imagen almacenada con 8 bits por canal puede representar 256 valores, pero
+no necesariamente utiliza todos. Para cada canal deben calcularse:
+
+- valor mínimo y máximo;
+- número de valores distintos;
+- número de píxeles por nivel;
+- proporción de píxeles en 0 y 255;
+- profundidad efectiva aproximada
+  $b_{\mathrm{efectivo}}=\lceil\log_2(n_{\mathrm{niveles}})\rceil$.
+
+El número de valores observados no demuestra por sí solo la profundidad real del
+sensor o del archivo original. Es una descripción del arreglo cargado.
+
+## Error cuadrático medio
+
+Para una imagen de referencia $I$ y una reconstrucción $\hat I$, con $N$
+elementos totales,
+
+$$
+\operatorname{MSE}(I,\hat I)=\frac{1}{N}\sum_{i=1}^{N}
+\left(I_i-\hat I_i\right)^2.
+$$
+
+La MSE es cero únicamente cuando ambas matrices coinciden elemento por
+elemento. Su valor depende de la escala numérica y no debe interpretarse sin
+indicar el rango de intensidades.
+
+## Relación señal a ruido pico
+
+Para imágenes con valor máximo representable $I_{\max}=255$,
+
+$$
+\operatorname{PSNR}=10\log_{10}\left(
+\frac{I_{\max}^2}{\operatorname{MSE}}
+\right).
+$$
+
+Cuando la MSE es cero, la PSNR se representa como infinito. La función debe
+manejar ese caso explícitamente; no debe depender de una división por cero.
+
+## Espacios de color en OpenCV
+
+| Espacio | Conversión desde BGR | Canales `uint8` | Observación |
+|---|---|---|---|
+| BGR | lectura por defecto | B, G, R en $[0,255]$ | no confundir con RGB |
+| HSV | `cv2.COLOR_BGR2HSV` | H, S, V | H se almacena en $[0,179]$ |
+| Lab | `cv2.COLOR_BGR2LAB` | L, a, b | 128 es aproximadamente neutro en a y b |
+| YCrCb | `cv2.COLOR_BGR2YCrCb` | Y, Cr, Cb | el orden de cromas es Cr y luego Cb |
+
+::: {.callout-note title="Limitación de las conversiones"}
+Una conversión BGR → espacio de color → BGR con arreglos `uint8` puede introducir
+pequeñas diferencias por redondeo y por la representación discreta. Las pruebas
+deben usar tolerancias justificadas, no asumir siempre igualdad exacta.
+:::
+
+# Continuidad del proyecto del Laboratorio Anterior (Python)
+
+## No reiniciar el proyecto
+
+Cada equipo debe trabajar sobre la carpeta construida en el Laboratorio anterior (Python). La
+primera evidencia consiste en mostrar que el proyecto todavía supera:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+```
+
+Después se agrega OpenCV como dependencia del proyecto:
+
+```bash
+uv add "opencv-python>=4.10,<5"
+uv lock
+uv sync --locked
+```
+
+::: {.callout-important title="Dependencia declarada"}
+No basta con que `import cv2` funcione en el computador del desarrollador. La
+dependencia debe aparecer en `pyproject.toml` y quedar resuelta en `uv.lock`.
+:::
+
+## Estructura ampliada
+
+La extensión mínima esperada es:
+
+```text
+laboratorio_python/
+├── config/
+│   └── lab001.json
+├── data/
+│   ├── raw/
+│   │   └── lab001/
+│   │       ├── README.md
+│   │       ├── referencia.png
+│   │       ├── exposicion_m2ev.png
+│   │       ├── exposicion_m1ev.png
+│   │       ├── exposicion_p1ev.png
+│   │       └── exposicion_p2ev.png
+│   └── processed/
+│       └── lab001/
+├── figures/
+│   └── lab001/
+│       ├── histograms/
+│       ├── quantization/
+│       ├── error_maps/
+│       └── color_spaces/
+├── reports/
+│   └── laboratorio_001.tex
+├── results/
+│   └── lab001/
+│       ├── acquisition_metadata.json
+│       ├── image_summary.json
+│       ├── quantization_metrics.csv
+│       ├── color_space_metrics.csv
+│       ├── quantization_table.tex
+│       ├── color_space_table.tex
+│       └── manifest.json
+├── scripts/
+│   └── reproduce_lab001.py
+├── slides/
+│   └── laboratorio_001.tex
+├── src/
+│   └── python_scientific/
+│       ├── acquisition.py
+│       ├── color_spaces.py
+│       ├── image_metrics.py
+│       ├── image_quantization.py
+│       ├── image_reporting.py
+│       └── image_visualization.py
+└── tests/
+    ├── test_acquisition.py
+    ├── test_color_spaces.py
+    ├── test_image_metrics.py
+    ├── test_image_quantization.py
+    └── test_image_visualization.py
+```
+
+No es obligatorio conservar exactamente todos los nombres anteriores, pero la
+separación de responsabilidades sí es obligatoria.
+
+## Flujo de datos
+
+```{mermaid}
+flowchart LR
+    A["data/raw/lab001\nImágenes originales"] --> B["Carga y validación"]
+    B --> C["Resumen e histogramas"]
+    B --> D["Cuantización BGR"]
+    B --> E["Transformaciones de color"]
+    D --> F["MSE y PSNR"]
+    E --> G["Cuantización por canal"]
+    C --> H["results/lab001"]
+    F --> H
+    G --> H
+    C --> I["figures/lab001"]
+    D --> I
+    G --> I
+    H --> J["Informe y Beamer"]
+    I --> J
+```
+
+# Protocolo de adquisición
+
+## Escena y control de variables
+
+El equipo debe preparar una escena estática con:
+
+- colores saturados;
+- regiones neutras;
+- una rampa de grises o transición suave;
+- zonas oscuras y claras sin reflejos especulares dominantes;
+- iluminación difusa y estable.
+
+Fije, cuando el dispositivo lo permita:
+
+- ISO;
+- tiempo de exposición;
+- apertura;
+- balance de blancos;
+- distancia y posición de cámara;
+- enfoque;
+- resolución y formato.
+
+## Conjunto requerido
+
+1. **Referencia:** imagen correctamente expuesta, preferiblemente PNG o TIFF.
+2. **Bracketing:** imágenes a −2 EV, −1 EV, +1 EV y +2 EV respecto a la
+   referencia.
+3. **Evidencia de montaje:** fotografía o diagrama de la escena y la posición de
+   la cámara.
+4. **Metadatos:** archivo JSON o sección estructurada que registre dispositivo,
+   fecha, resolución, formato y parámetros disponibles.
+
+::: {.callout-warning title="Datos originales"}
+Los archivos capturados se copian una sola vez a `data/raw/lab001/`. El software
+puede leerlos, calcular hashes y producir derivados, pero no renombrarlos ni
+sobrescribirlos durante una ejecución.
+:::
+
+## Archivo de descripción de datos
+
+Cree `data/raw/lab001/README.md` con:
+
+- origen de cada archivo;
+- significado del nombre;
+- parámetros de adquisición conocidos;
+- limitaciones del dispositivo;
+- transformaciones realizadas antes de ingresar al proyecto;
+- licencia o autorización de uso, cuando corresponda.
+
+# Diseño del software
+
+## Contratos mínimos
+
+La implementación debe cubrir, como mínimo, los siguientes contratos. Las
+firmas pueden ampliarse, pero no reducir la claridad de las responsabilidades.
+
+### Carga y validación
+
+```{python}
+#| eval: false
+from pathlib import Path
+
+import numpy as np
+
+
+def load_bgr_image(path: Path) -> np.ndarray:
+    """Carga una imagen de color como BGR uint8 y valida el resultado."""
+    ...
+
+
+def validate_bgr_u8(image: np.ndarray) -> None:
+    """Rechaza arreglos que no representen una imagen BGR uint8 válida."""
+    ...
+
+
+def summarize_bgr_image(image: np.ndarray) -> dict[str, object]:
+    """Retorna forma, dtype, rango, niveles y clipping por canal."""
+    ...
+```
+
+La validación debe rechazar, al menos:
+
+- archivo inexistente;
+- archivo que OpenCV no pueda decodificar;
+- arreglo vacío;
+- imagen sin tres canales;
+- arreglo con `dtype` diferente de `uint8`;
+- valores o forma incompatibles con el contrato declarado.
+
+### Histogramas numéricos
+
+```{python}
+#| eval: false
+
+def channel_histograms(image: np.ndarray) -> dict[str, np.ndarray]:
+    """Retorna conteos de 256 niveles para los canales B, G y R."""
+    ...
+```
+
+Cada histograma debe cumplir:
+
+- longitud igual a 256;
+- conteos enteros no negativos;
+- suma igual al número de píxeles de la imagen;
+- orden de canales documentado.
+
+### Cuantización
+
+```{python}
+#| eval: false
+
+def quantization_step(bits: int) -> float:
+    """Calcula el paso nominal para una imagen uint8."""
+    ...
+
+
+def quantize_u8(image: np.ndarray, bits: int) -> np.ndarray:
+    """Cuantiza una imagen uint8 a la profundidad indicada."""
+    ...
+```
+
+El contrato debe exigir:
+
+- `bits` entero entre 1 y 8;
+- misma forma y `dtype` de salida que la entrada;
+- ausencia de modificación del arreglo original;
+- a lo sumo $2^b$ valores de reconstrucción por canal;
+- comportamiento identidad para 8 bits;
+- criterio de reconstrucción documentado.
+
+### Métricas
+
+```{python}
+#| eval: false
+
+def mean_squared_error(reference: np.ndarray, candidate: np.ndarray) -> float:
+    """Calcula MSE después de convertir a precisión flotante."""
+    ...
+
+
+def peak_signal_to_noise_ratio(
+    reference: np.ndarray,
+    candidate: np.ndarray,
+    data_range: float = 255.0,
+) -> float:
+    """Calcula PSNR y retorna infinito cuando MSE es cero."""
+    ...
+```
+
+Las funciones deben rechazar matrices con formas diferentes y un `data_range`
+no positivo.
+
+### Espacios de color
+
+```{python}
+#| eval: false
+from typing import Literal
+
+ColorSpace = Literal["HSV", "LAB", "YCrCb"]
+
+
+def bgr_to_color_space(image_bgr: np.ndarray, space: ColorSpace) -> np.ndarray:
+    """Convierte BGR al espacio solicitado."""
+    ...
+
+
+def color_space_to_bgr(image: np.ndarray, space: ColorSpace) -> np.ndarray:
+    """Convierte desde el espacio solicitado hacia BGR."""
+    ...
+
+
+def quantize_channel_in_color_space(
+    image_bgr: np.ndarray,
+    space: ColorSpace,
+    channel_index: int,
+    bits: int,
+) -> np.ndarray:
+    """Cuantiza un canal y reconstruye la imagen en BGR."""
+    ...
+```
+
+La función debe validar que el índice pertenezca a `{0, 1, 2}` y que el espacio
+sea uno de los soportados. No se aceptan cadenas silenciosamente normalizadas
+si pueden ocultar errores de escritura.
+
+### Persistencia de resultados
+
+```{python}
+#| eval: false
+from pathlib import Path
+from collections.abc import Sequence
+
+
+def write_json(path: Path, payload: dict[str, object]) -> None:
+    """Escribe JSON determinista y crea únicamente la carpeta de salida."""
+    ...
+
+
+def write_metrics_csv(path: Path, rows: Sequence[dict[str, object]]) -> None:
+    """Escribe una tabla con encabezados estables."""
+    ...
+```
+
+Los nombres de columnas deben ser estables y las escrituras deben usar UTF-8.
+Los números no deben transformarse en texto antes de almacenarse en JSON o CSV.
+
+## Configuración visible
+
+Cree `config/lab001.json`. Un ejemplo de estructura es:
+
+```json
+{
+  "reference_image": "data/raw/lab001/referencia.png",
+  "exposure_images": {
+    "-2": "data/raw/lab001/exposicion_m2ev.png",
+    "-1": "data/raw/lab001/exposicion_m1ev.png",
+    "+1": "data/raw/lab001/exposicion_p1ev.png",
+    "+2": "data/raw/lab001/exposicion_p2ev.png"
+  },
+  "quantization_bits": [1, 2, 3, 4, 5, 6, 7, 8],
+  "channel_experiments": [
+    {"space": "HSV", "channel": 2, "bits": 2},
+    {"space": "LAB", "channel": 1, "bits": 4},
+    {"space": "YCrCb", "channel": 2, "bits": 2}
+  ]
+}
+```
+
+El script puede aceptar otra ruta de configuración mediante un argumento de
+línea de comandos. No debe requerir editar código para cambiar una imagen.
+
+## Punto único de reproducción
+
+La orden principal será:
+
+```bash
+uv run python scripts/reproduce_lab001.py --config config/lab001.json
+```
+
+El script debe:
+
+1. localizar la raíz del proyecto a partir de `__file__`;
+2. cargar la configuración;
+3. resolver y validar las rutas dentro del proyecto;
+4. cargar las imágenes originales sin modificarlas;
+5. generar el resumen de adquisición;
+6. producir histogramas numéricos y visuales;
+7. ejecutar la cuantización BGR para todos los valores de `bits`;
+8. calcular MSE y PSNR;
+9. guardar imágenes cuantizadas y mapas de error;
+10. ejecutar los experimentos por espacio y canal;
+11. guardar métricas en JSON y CSV;
+12. generar tablas LaTeX consumidas por el informe;
+13. escribir un manifiesto de productos;
+14. terminar con código cero cuando todo sea correcto.
+
+La estructura mínima del punto de entrada es:
+
+```{python}
+#| eval: false
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Reproduce el análisis del Laboratorio 001."
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("config/lab001.json"),
+        help="Ruta relativa al archivo de configuración.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    project_root = Path(__file__).resolve().parents[1]
+    config_path = project_root / args.config
+    # La orquestación llama funciones importadas desde src/python_scientific/.
+    ...
+
+
+if __name__ == "__main__":
+    main()
+```
+
+::: {.callout-warning title="Responsabilidad del script"}
+No implemente cuantización, MSE, histogramas o conversiones dentro de
+`reproduce_lab001.py`. El script coordina funciones que deben poder importarse y
+probarse de manera independiente.
+:::
+
+# Desarrollo por actividades
+
+## Actividad 0. Auditar la base reproducible
+
+Antes de modificar código:
+
+1. ejecute la sincronización bloqueada;
+2. ejecute todas las pruebas del Laboratorio 00;
+3. verifique Ruff;
+4. registre el estado inicial en la bitácora;
+5. agregue OpenCV mediante `uv add`;
+6. confirme que las pruebas anteriores continúan pasando.
+
+**Evidencia:** captura íntegra de terminal y cambio verificable en
+`pyproject.toml` y `uv.lock`.
+
+## Actividad 1. Ingresar y validar la adquisición
+
+Implemente la carga de la imagen de referencia y de las exposiciones. El
+software debe producir `results/lab001/acquisition_metadata.json` y
+`results/lab001/image_summary.json`.
+
+Para cada imagen incluya:
+
+- nombre relativo;
+- dimensiones;
+- número de píxeles;
+- número de canales;
+- `dtype`;
+- mínimo y máximo por canal;
+- valores distintos por canal;
+- bits efectivos aproximados;
+- cantidad y proporción de píxeles en 0 y 255;
+- hash SHA-256 del archivo original.
+
+::: {.callout-note title="Hash y trazabilidad"}
+El hash identifica los bytes analizados. No demuestra calidad de adquisición,
+pero permite detectar que el archivo fue reemplazado entre ejecuciones.
+:::
+
+### Pruebas mínimas de la Actividad 1
+
+- carga correcta de una imagen BGR pequeña creada durante la prueba;
+- rechazo de ruta inexistente;
+- rechazo de archivo no decodificable;
+- resumen correcto para un arreglo conocido;
+- suma de cada histograma igual al número de píxeles;
+- cálculo correcto de clipping para un caso artificial.
+
+No coloque imágenes reales grandes dentro de `tests/`. Genere arreglos pequeños
+o archivos temporales mediante `tmp_path`.
+
+## Actividad 2. Histogramas y uso efectivo de niveles
+
+Para la referencia y las cuatro exposiciones:
+
+1. calcule histogramas de 256 niveles por canal;
+2. guarde los conteos en un formato estructurado;
+3. genere una figura por imagen o una comparación claramente rotulada;
+4. compare clipping y ocupación del rango;
+5. explique qué cambios provienen de exposición y cuáles no pueden atribuirse a
+   profundidad de bit.
+
+Las figuras se guardan bajo `figures/lab001/histograms/` y no se editan después.
+
+## Actividad 3. Cuantización BGR
+
+Cuantice la referencia para $b\in\{1,2,3,4,5,6,7,8\}$.
+
+Para cada profundidad:
+
+- genere la imagen reconstruida;
+- calcule el número real de niveles utilizados por canal;
+- calcule MSE;
+- calcule PSNR;
+- construya un mapa de magnitud de error;
+- registre el tamaño del archivo generado, sin confundirlo con la entropía o la
+  tasa de compresión;
+- guarde una fila en `results/lab001/quantization_metrics.csv`.
+
+Columnas mínimas:
+
+```text
+bits,levels_nominal,step,mse,psnr_db,unique_b,unique_g,unique_r,
+output_relative_path,error_map_relative_path
+```
+
+### Pruebas mínimas de cuantización
+
+```{python}
+#| eval: false
+import numpy as np
+import pytest
+
+from python_scientific.image_quantization import quantize_u8
+
+
+def test_quantize_u8_is_identity_at_eight_bits() -> None:
+    image = np.array([[[0, 127, 255], [12, 45, 98]]], dtype=np.uint8)
+
+    result = quantize_u8(image, bits=8)
+
+    np.testing.assert_array_equal(result, image)
+    assert result is not image
+
+
+@pytest.mark.parametrize("bits", [0, 9])
+def test_quantize_u8_rejects_invalid_bits(bits: int) -> None:
+    image = np.zeros((2, 2, 3), dtype=np.uint8)
+
+    with pytest.raises(ValueError, match="bits"):
+        quantize_u8(image, bits=bits)
+```
+
+El equipo debe agregar pruebas sobre niveles máximos, tipo de dato, forma y no
+modificación de la entrada.
+
+## Actividad 4. MSE y PSNR
+
+Implemente las métricas sin operar directamente en `uint8`.
+
+### Casos que deben probarse
+
+- matrices idénticas: MSE igual a 0 y PSNR infinita;
+- diferencia conocida de una unidad;
+- formas incompatibles;
+- rango máximo no positivo;
+- simetría de MSE;
+- resultado finito para imágenes diferentes.
+
+Ejemplo de contrato:
+
+```{python}
+#| eval: false
+import math
+
+import numpy as np
+
+from python_scientific.image_metrics import (
+    mean_squared_error,
+    peak_signal_to_noise_ratio,
+)
+
+
+def test_metrics_for_identical_images() -> None:
+    image = np.zeros((3, 4, 3), dtype=np.uint8)
+
+    assert mean_squared_error(image, image) == 0.0
+    assert math.isinf(peak_signal_to_noise_ratio(image, image))
+```
+
+## Actividad 5. Transformaciones de espacio de color
+
+Convierta la referencia a HSV, Lab y YCrCb. Para cada espacio:
+
+1. documente la semántica y rango almacenado de sus tres canales;
+2. guarde visualizaciones de canales individuales;
+3. reconstruya la imagen BGR sin cuantización;
+4. calcule MSE y PSNR del ciclo de ida y vuelta;
+5. cuantice cada canal por separado a 2 y 4 bits;
+6. reconstruya BGR y calcule MSE y PSNR;
+7. identifique artefactos dominantes y regiones sensibles.
+
+La tabla `results/lab001/color_space_metrics.csv` debe incluir:
+
+```text
+space,channel_index,channel_name,bits,mse,psnr_db,output_relative_path
+```
+
+### Pruebas mínimas de espacios de color
+
+- rechazo de espacio no soportado;
+- rechazo de índice de canal fuera de rango;
+- conservación de forma y `dtype`;
+- canal seleccionado efectivamente modificado en el espacio intermedio;
+- reconstrucción BGR dentro de una tolerancia justificada;
+- ausencia de modificación de la imagen original.
+
+::: {.callout-important title="Comparación válida"}
+No concluya que un espacio es universalmente mejor a partir de una sola imagen.
+La evidencia permite describir el comportamiento de esta escena, estas
+conversiones y estas métricas.
+:::
+
+## Actividad 6. Figuras reproducibles
+
+Genere, como mínimo:
+
+1. comparación de las cinco exposiciones;
+2. histogramas BGR de la referencia;
+3. cuadrícula de cuantizaciones de 1 a 8 bits;
+4. mapas de error para 1, 2, 4 y 6 bits;
+5. comparación de canales HSV, Lab y YCrCb;
+6. comparación entre cuantización de luminancia y crominancia;
+7. curva MSE frente a bits;
+8. curva PSNR frente a bits.
+
+Las figuras deben incluir títulos, etiquetas y una leyenda cuando corresponda.
+En imágenes sin ejes, la leyenda o el pie debe declarar espacio, canal y
+profundidad.
+
+La función de visualización no debe llamar `cv2.imshow`, porque la reproducción
+no puede depender de una interfaz gráfica. Debe escribir archivos mediante
+`cv2.imwrite` o devolver arreglos preparados para su persistencia.
+
+## Actividad 7. Reportes estructurados
+
+El software debe escribir:
+
+- `acquisition_metadata.json`;
+- `image_summary.json`;
+- `quantization_metrics.csv`;
+- `color_space_metrics.csv`;
+- `quantization_table.tex`;
+- `color_space_table.tex`;
+- `manifest.json`.
+
+El manifiesto debe registrar, al menos:
+
+- fecha y hora de ejecución en formato ISO 8601;
+- versión de Python;
+- versión de NumPy;
+- versión de OpenCV;
+- ruta relativa de configuración;
+- hashes de entradas;
+- lista de productos;
+- tamaño en bytes de cada producto.
+
+No incluya rutas absolutas del computador en el manifiesto entregado.
+
+## Actividad 8. Automatización e idempotencia
+
+Ejecute dos veces:
+
+```bash
+uv run python scripts/reproduce_lab001.py --config config/lab001.json
+```
+
+La segunda ejecución debe:
+
+- terminar sin intervención;
+- actualizar de manera controlada los productos regenerables;
+- no modificar las imágenes originales;
+- mantener el mismo contenido numérico si las entradas y configuración no
+  cambiaron;
+- evitar acumular archivos duplicados con nombres aleatorios o marcas de tiempo.
+
+Compare hashes de los productos deterministas. Si algún archivo cambia por
+metadatos internos, documente la causa y separe esa variación de los resultados
+científicos.
+
+## Actividad 9. Informe y presentación
+
+El informe `reports/laboratorio_001.tex` debe consumir las tablas y figuras
+generadas. No debe contener valores transcritos manualmente.
+
+Contenido mínimo:
+
+1. objetivo y alcance;
+2. protocolo de adquisición;
+3. arquitectura del software;
+4. definición de cuantización, MSE y PSNR;
+5. resultados de exposición e histogramas;
+6. resultados de cuantización BGR;
+7. resultados por espacio y canal;
+8. discusión perceptual y cuantitativa;
+9. pruebas implementadas;
+10. limitaciones;
+11. protocolo de reproducción.
+
+La presentación `slides/laboratorio_001.tex` debe usar Beamer y priorizar la
+demostración del flujo, no la lectura de código extenso.
+
+Compilación:
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/reports reports/laboratorio_001.tex
+
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/slides slides/laboratorio_001.tex
+```
+
+# Pruebas, calidad y diagnóstico
+
+## Conjunto mínimo de pruebas
+
+El proyecto debe incluir al menos **18 pruebas nuevas**, distribuidas así:
+
+| Módulo | Pruebas mínimas |
+|---|---:|
+| adquisición y validación | 4 |
+| histogramas y resumen | 3 |
+| cuantización | 4 |
+| MSE y PSNR | 3 |
+| espacios de color | 3 |
+| visualización o escritura | 1 |
+
+El número no sustituye la calidad. Variantes repetidas del mismo caso feliz no
+constituyen cobertura suficiente.
+
+## Comandos obligatorios
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -v
+uv run python scripts/reproduce_lab001.py --config config/lab001.json
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/reports reports/laboratorio_001.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error \
+  -outdir=build/slides slides/laboratorio_001.tex
+```
+
+## Antipatrones penalizados
+
+- cargar imágenes con una ruta personal escrita en el código;
+- usar `assert` como único mecanismo de validación de entradas de producción;
+- calcular diferencias de imágenes directamente como `uint8`;
+- confundir BGR con RGB;
+- cuantizar H como si su rango OpenCV fuera 0–255 sin documentar la decisión;
+- sobrescribir la referencia con una imagen procesada;
+- ocultar errores de `cv2.imread`;
+- implementar la misma cuantización en varios archivos;
+- copiar resultados numéricos al informe;
+- guardar figuras fuera de `figures/lab001/`;
+- depender de `cv2.imshow` o de clics;
+- desactivar pruebas para completar la sustentación;
+- retirar `--locked` cuando la sincronización falla;
+- entregar únicamente PDF o imágenes sin fuentes y código;
+- afirmar calidad perceptual general usando una única escena;
+- usar tamaño de PNG como sustituto de una medida formal de información.
+
+## Situaciones de diagnóstico en vivo
+
+El docente podrá solicitar una de las siguientes acciones:
+
+- cambiar la ruta de la referencia desde el archivo de configuración;
+- ejecutar el script desde un directorio diferente;
+- introducir un valor de bits inválido y mostrar el error;
+- explicar por qué la resta `uint8` puede desbordarse;
+- retirar temporalmente una imagen de exposición y diagnosticar el fallo;
+- demostrar que 8 bits produce identidad en la cuantización;
+- explicar por qué PSNR es infinita para imágenes iguales;
+- mostrar qué prueba protege el orden Y, Cr, Cb;
+- eliminar `figures/lab001/` y regenerarla;
+- localizar la dependencia OpenCV en `pyproject.toml` y `uv.lock`;
+- explicar una diferencia pequeña después de una conversión de ida y vuelta;
+- demostrar que `data/raw/lab001/` no cambió durante la ejecución.
+
+# Entrega
+
+## Archivos obligatorios
+
+La entrega debe contener:
+
+```text
+.python-version
+.gitignore
+README.md
+pyproject.toml
+uv.lock
+config/lab001.json
+data/raw/lab001/
+reports/laboratorio_001.tex
+slides/laboratorio_001.tex
+scripts/reproduce_lab001.py
+src/python_scientific/
+tests/
+results/lab001/
+figures/lab001/
+build/reports/laboratorio_001.pdf
+build/slides/laboratorio_001.pdf
+```
+
+No se incluye `.venv`, cachés, archivos temporales ni auxiliares innecesarios de
+LaTeX.
+
+## README
+
+Agregue una sección `Laboratorio 001` con:
+
+- propósito;
+- procedencia de las imágenes;
+- dependencia agregada;
+- estructura de entradas y salidas;
+- comando principal;
+- comandos de pruebas y calidad;
+- comandos de compilación;
+- significado del archivo de configuración;
+- procedimiento de reconstrucción externa;
+- limitaciones conocidas.
+
+## Ensayo limpio obligatorio
+
+En una copia temporal del proyecto:
+
+1. elimine `.venv`;
+2. elimine `data/processed/lab001/`;
+3. elimine `results/lab001/`;
+4. elimine `figures/lab001/`;
+5. elimine los PDF y auxiliares de `build/`;
+6. ejecute todos los comandos obligatorios;
+7. compruebe que los productos reaparecen;
+8. registre problemas y correcciones en la bitácora.
+
+No elimine la única copia del proyecto ni use comandos recursivos sobre rutas no
+verificadas.
+
+## Sustentación
+
+Duración: **12 minutos** de presentación y hasta **5 minutos** de verificación
+técnica.
+
+Secuencia recomendada:
+
+1. 1 minuto: problema y adquisición;
+2. 2 minutos: arquitectura y flujo reproducible;
+3. 3 minutos: cuantización, MSE y PSNR;
+4. 2 minutos: espacios de color;
+5. 2 minutos: pruebas y diagnóstico;
+6. 2 minutos: conclusiones y limitaciones;
+7. verificación técnica: reconstrucción o cambio solicitado.
+
+El expositor puede ser seleccionado al inicio. Los tres integrantes deben poder
+explicar cualquier módulo.
+
+# Rúbrica
+
+La calificación total es de **100 puntos**.
+
+| Criterio | Peso | 4 — sólido | 3 — adecuado | 2 — básico | 1/0 — insuficiente o no demostrado |
+|---|---:|---|---|---|---|
+| Reconstrucción externa | 20 | Sincroniza con `--locked`, ejecuta calidad, pruebas, análisis y compilación sin editar rutas ni instalar durante la prueba | Completa el flujo con una corrección menor no estructural | Requiere intervenciones o completa solo una parte | Copia `.venv`, instala durante la prueba o no reproduce |
+| Arquitectura del software | 15 | Responsabilidades claras, paquete `src`, configuración, script delgado y rutas portables | Separación funcional con inconsistencias menores | Código concentrado o contratos poco claros | Solución monolítica, rutas personales o lógica en el documento |
+| Adquisición y trazabilidad | 10 | Protocolo controlado, metadatos, hashes y originales intactos | Una omisión menor sin comprometer la interpretación | Control parcial o metadatos incompletos | Datos sin origen, parámetros variables o archivos sobrescritos |
+| Cuantización y métricas | 15 | Implementación y explicación correctas; MSE/PSNR validadas; casos límite protegidos | Resultados correctos con una justificación menor ausente | Implementación funcional con imprecisiones relevantes | Desbordamiento, fórmulas incorrectas o métricas no verificables |
+| Espacios de color | 10 | Orden, rangos y semántica correctos; comparación por canal sustentada | Comparación correcta con documentación parcial | Conversiones operan, pero hay confusión de canales o rangos | Confunde BGR/RGB o interpreta canales incorrectamente |
+| Pruebas y diagnóstico | 10 | Pruebas protegen contratos, errores y tolerancias; diagnostica con método | Cobertura suficiente con un límite ausente | Predominan casos felices | Pruebas triviales, desactivadas o incapacidad de diagnosticar |
+| Resultados y visualización | 8 | Figuras y tablas regenerables, claras y coherentes con métricas | Presentación adecuada con detalles menores | Productos incompletos o rotulación débil | Edición manual, resultados inconsistentes o figuras engañosas |
+| Informe y Beamer | 5 | Ambos `.tex` compilan y consumen productos generados | Compilan con una omisión menor | Documentos descriptivos o demasiado densos | Solo PDF, fuente no compila o valores manuales |
+| Defensa técnica y comunicación | 5 | Explica decisiones, evidencia, límites y responde dentro del tiempo | Explicación mayormente correcta | Respuestas memorísticas o tiempo deficiente | No relaciona código, conceptos y resultados |
+| Trazabilidad del equipo | 2 | Contribuciones verificables y conocimiento compartido | Registro suficiente | Registro vago | División artificial o contribuciones no verificables |
+| **Total** | **100** |  |  |  |  |
+
+## Tope por no reproducibilidad
+
+Si el proyecto no puede ejecutar `uv sync --locked`, requiere copiar `.venv` o
+necesita instalar paquetes manualmente durante la sustentación, el criterio de
+reconstrucción recibe 0 y la calificación total no puede superar 70/100 hasta
+que se demuestre la corrección.
+
+# Preguntas orientadoras
+
+## Conceptos
+
+1. ¿Qué representa $2^b$ en la cuantización?
+2. ¿Qué diferencia existe entre niveles posibles y niveles observados?
+3. ¿Por qué la MSE depende de la escala de intensidades?
+4. ¿Por qué la PSNR es infinita cuando las imágenes son iguales?
+5. ¿Qué limitación tiene una métrica global para describir artefactos locales?
+6. ¿Por qué una imagen de 8 bits puede usar menos de 256 valores?
+7. ¿Qué diferencia hay entre clipping y cuantización?
+
+## Python y NumPy
+
+8. ¿Por qué debe convertir a flotante antes de restar imágenes `uint8`?
+9. ¿Qué representa cada eje de una imagen con forma `(alto, ancho, 3)`?
+10. ¿Por qué una función retorna un diccionario en lugar de imprimir el resumen?
+11. ¿Dónde utiliza vectorización y dónde un ciclo es justificable?
+12. ¿Cómo demuestra que la función no modifica su entrada?
+13. ¿Por qué `assert` no sustituye la validación de una API?
+14. ¿Cuándo usa igualdad exacta y cuándo una tolerancia?
+
+## Arquitectura
+
+15. ¿Qué diferencia existe entre un módulo y el script de reproducción?
+16. ¿Por qué la configuración no debe estar dispersa en el código?
+17. ¿Cómo encuentra el script la raíz del proyecto?
+18. ¿Qué carpetas contienen fuentes y cuáles productos regenerables?
+19. ¿Qué archivo declara OpenCV y cuál fija su resolución?
+20. ¿Por qué se conserva `uv.lock` y no `.venv`?
+21. ¿Qué comando reconstruye todos los resultados del laboratorio?
+
+## Color
+
+22. ¿Por qué OpenCV lee BGR y qué consecuencias tiene?
+23. ¿Qué rango usa OpenCV para H en HSV `uint8`?
+24. ¿Qué diferencia conceptual existe entre Y y Cr/Cb?
+25. ¿Por qué cuantizar luminancia puede producir artefactos distintos a cuantizar
+    crominancia?
+26. ¿Por qué una conversión de ida y vuelta puede no ser exactamente idéntica?
+27. ¿Qué evidencia respalda su elección del canal más tolerante en esta escena?
+
+## Reproducibilidad y límites
+
+28. ¿Qué verifica el hash de una entrada y qué no verifica?
+29. ¿Cómo demuestra que los originales no se modificaron?
+30. ¿Qué productos deben reaparecer después de eliminarlos?
+31. ¿Qué cambiaría si se usa otra cámara o iluminación?
+32. ¿Qué afirmaciones no pueden generalizarse desde una única escena?
+33. ¿Qué prueba considera más importante y por qué?
+34. ¿Cuál es la principal limitación actual del software construido?
