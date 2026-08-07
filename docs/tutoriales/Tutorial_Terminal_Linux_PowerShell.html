@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Ph.D.&nbsp;Pablo Eduardo Caicedo Rodríguez">
+<meta name="description" content="Tutorial comparativo para aprender a trabajar de forma segura con archivos, directorios y configuraciones básicas desde Bash y PowerShell.">
+
+<title>Introducción práctica a la terminal – BioForja</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../recursos/imagenes/generales/bioforja_icon.svg" rel="icon" type="image/svg+xml">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-c9747afee4c4a762da52060c1cd1b168.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No se han encontrado resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+<link rel="stylesheet" href="../recursos/estilos/styles_site.css">
+</head>
+
+<body class="floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src=".././recursos/imagenes/generales/bioforja_icon.svg" alt="" class="navbar-logo light-content">
+    <img src=".././recursos/imagenes/generales/bioforja_icon.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Buscar"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Navegación de palanca" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contenido</h2>
+   
+  <ul>
+  <li><a href="#propósito-del-tutorial" id="toc-propósito-del-tutorial" class="nav-link active" data-scroll-target="#propósito-del-tutorial">Propósito del tutorial</a></li>
+  <li><a href="#antes-de-comenzar" id="toc-antes-de-comenzar" class="nav-link" data-scroll-target="#antes-de-comenzar">Antes de comenzar</a>
+  <ul class="collapse">
+  <li><a href="#abrir-la-terminal" id="toc-abrir-la-terminal" class="nav-link" data-scroll-target="#abrir-la-terminal">Abrir la terminal</a></li>
+  <li><a href="#regla-de-seguridad-para-toda-la-guía" id="toc-regla-de-seguridad-para-toda-la-guía" class="nav-link" data-scroll-target="#regla-de-seguridad-para-toda-la-guía">Regla de seguridad para toda la guía</a></li>
+  </ul></li>
+  <li><a href="#terminal-shell-y-comando" id="toc-terminal-shell-y-comando" class="nav-link" data-scroll-target="#terminal-shell-y-comando">Terminal, <em>shell</em> y comando</a></li>
+  <li><a href="#el-sistema-de-archivos" id="toc-el-sistema-de-archivos" class="nav-link" data-scroll-target="#el-sistema-de-archivos">El sistema de archivos</a>
+  <ul class="collapse">
+  <li><a href="#rutas-carpetas-y-separadores" id="toc-rutas-carpetas-y-separadores" class="nav-link" data-scroll-target="#rutas-carpetas-y-separadores">Rutas, carpetas y separadores</a></li>
+  <li><a href="#preparar-el-entorno-seguro-de-práctica" id="toc-preparar-el-entorno-seguro-de-práctica" class="nav-link" data-scroll-target="#preparar-el-entorno-seguro-de-práctica">Preparar el entorno seguro de práctica</a></li>
+  </ul></li>
+  <li><a href="#navegación-y-consulta" id="toc-navegación-y-consulta" class="nav-link" data-scroll-target="#navegación-y-consulta">Navegación y consulta</a>
+  <ul class="collapse">
+  <li><a href="#comandos-esenciales" id="toc-comandos-esenciales" class="nav-link" data-scroll-target="#comandos-esenciales">Comandos esenciales</a></li>
+  <li><a href="#autocompletado-e-historial" id="toc-autocompletado-e-historial" class="nav-link" data-scroll-target="#autocompletado-e-historial">Autocompletado e historial</a></li>
+  </ul></li>
+  <li><a href="#crear-archivos-y-consultar-su-contenido" id="toc-crear-archivos-y-consultar-su-contenido" class="nav-link" data-scroll-target="#crear-archivos-y-consultar-su-contenido">Crear archivos y consultar su contenido</a>
+  <ul class="collapse">
+  <li><a href="#crear-un-archivo-de-datos-pequeño" id="toc-crear-un-archivo-de-datos-pequeño" class="nav-link" data-scroll-target="#crear-un-archivo-de-datos-pequeño">Crear un archivo de datos pequeño</a></li>
+  <li><a href="#leer-e-inspeccionar" id="toc-leer-e-inspeccionar" class="nav-link" data-scroll-target="#leer-e-inspeccionar">Leer e inspeccionar</a></li>
+  <li><a href="#archivos-y-carpetas-con-espacios" id="toc-archivos-y-carpetas-con-espacios" class="nav-link" data-scroll-target="#archivos-y-carpetas-con-espacios">Archivos y carpetas con espacios</a></li>
+  </ul></li>
+  <li><a href="#copiar-renombrar-mover-y-eliminar" id="toc-copiar-renombrar-mover-y-eliminar" class="nav-link" data-scroll-target="#copiar-renombrar-mover-y-eliminar">Copiar, renombrar, mover y eliminar</a>
+  <ul class="collapse">
+  <li><a href="#copiar-y-crear-respaldo" id="toc-copiar-y-crear-respaldo" class="nav-link" data-scroll-target="#copiar-y-crear-respaldo">Copiar y crear respaldo</a></li>
+  <li><a href="#renombrar-y-mover" id="toc-renombrar-y-mover" class="nav-link" data-scroll-target="#renombrar-y-mover">Renombrar y mover</a></li>
+  <li><a href="#eliminar-de-forma-controlada" id="toc-eliminar-de-forma-controlada" class="nav-link" data-scroll-target="#eliminar-de-forma-controlada">Eliminar de forma controlada</a></li>
+  </ul></li>
+  <li><a href="#buscar-archivos-y-contenido" id="toc-buscar-archivos-y-contenido" class="nav-link" data-scroll-target="#buscar-archivos-y-contenido">Buscar archivos y contenido</a>
+  <ul class="collapse">
+  <li><a href="#comodines" id="toc-comodines" class="nav-link" data-scroll-target="#comodines">Comodines</a></li>
+  <li><a href="#buscar-texto-dentro-de-archivos" id="toc-buscar-texto-dentro-de-archivos" class="nav-link" data-scroll-target="#buscar-texto-dentro-de-archivos">Buscar texto dentro de archivos</a></li>
+  </ul></li>
+  <li><a href="#redirección-y-tuberías" id="toc-redirección-y-tuberías" class="nav-link" data-scroll-target="#redirección-y-tuberías">Redirección y tuberías</a>
+  <ul class="collapse">
+  <li><a href="#entrada-salida-y-errores" id="toc-entrada-salida-y-errores" class="nav-link" data-scroll-target="#entrada-salida-y-errores">Entrada, salida y errores</a></li>
+  <li><a href="#ejemplo-de-filtrado" id="toc-ejemplo-de-filtrado" class="nav-link" data-scroll-target="#ejemplo-de-filtrado">Ejemplo de filtrado</a></li>
+  </ul></li>
+  <li><a href="#integridad-compresión-y-respaldo" id="toc-integridad-compresión-y-respaldo" class="nav-link" data-scroll-target="#integridad-compresión-y-respaldo">Integridad, compresión y respaldo</a>
+  <ul class="collapse">
+  <li><a href="#verificar-que-una-copia-sea-idéntica" id="toc-verificar-que-una-copia-sea-idéntica" class="nav-link" data-scroll-target="#verificar-que-una-copia-sea-idéntica">Verificar que una copia sea idéntica</a></li>
+  <li><a href="#comprimir-la-práctica" id="toc-comprimir-la-práctica" class="nav-link" data-scroll-target="#comprimir-la-práctica">Comprimir la práctica</a></li>
+  </ul></li>
+  <li><a href="#configuración-básica-del-sistema" id="toc-configuración-básica-del-sistema" class="nav-link" data-scroll-target="#configuración-básica-del-sistema">Configuración básica del sistema</a>
+  <ul class="collapse">
+  <li><a href="#identificar-sistema-y-shell" id="toc-identificar-sistema-y-shell" class="nav-link" data-scroll-target="#identificar-sistema-y-shell">Identificar sistema y <em>shell</em></a></li>
+  <li><a href="#fecha-nombre-del-equipo-y-usuario" id="toc-fecha-nombre-del-equipo-y-usuario" class="nav-link" data-scroll-target="#fecha-nombre-del-equipo-y-usuario">Fecha, nombre del equipo y usuario</a></li>
+  <li><a href="#espacio-de-almacenamiento" id="toc-espacio-de-almacenamiento" class="nav-link" data-scroll-target="#espacio-de-almacenamiento">Espacio de almacenamiento</a></li>
+  <li><a href="#procesos-activos" id="toc-procesos-activos" class="nav-link" data-scroll-target="#procesos-activos">Procesos activos</a></li>
+  <li><a href="#configuración-y-diagnóstico-de-red" id="toc-configuración-y-diagnóstico-de-red" class="nav-link" data-scroll-target="#configuración-y-diagnóstico-de-red">Configuración y diagnóstico de red</a></li>
+  </ul></li>
+  <li><a href="#variables-de-entorno-y-path" id="toc-variables-de-entorno-y-path" class="nav-link" data-scroll-target="#variables-de-entorno-y-path">Variables de entorno y <code>PATH</code></a>
+  <ul class="collapse">
+  <li><a href="#consultar-variables" id="toc-consultar-variables" class="nav-link" data-scroll-target="#consultar-variables">Consultar variables</a></li>
+  <li><a href="#crear-una-variable-temporal" id="toc-crear-una-variable-temporal" class="nav-link" data-scroll-target="#crear-una-variable-temporal">Crear una variable temporal</a></li>
+  </ul></li>
+  <li><a href="#permisos-y-ejecución-de-scripts" id="toc-permisos-y-ejecución-de-scripts" class="nav-link" data-scroll-target="#permisos-y-ejecución-de-scripts">Permisos y ejecución de scripts</a>
+  <ul class="collapse">
+  <li><a href="#permisos-en-linux" id="toc-permisos-en-linux" class="nav-link" data-scroll-target="#permisos-en-linux">Permisos en Linux</a></li>
+  <li><a href="#seguridad-de-scripts-en-powershell" id="toc-seguridad-de-scripts-en-powershell" class="nav-link" data-scroll-target="#seguridad-de-scripts-en-powershell">Seguridad de scripts en PowerShell</a></li>
+  </ul></li>
+  <li><a href="#personalización-básica-y-reversible" id="toc-personalización-básica-y-reversible" class="nav-link" data-scroll-target="#personalización-básica-y-reversible">Personalización básica y reversible</a>
+  <ul class="collapse">
+  <li><a href="#alias-y-perfil-de-bash" id="toc-alias-y-perfil-de-bash" class="nav-link" data-scroll-target="#alias-y-perfil-de-bash">Alias y perfil de Bash</a></li>
+  <li><a href="#función-y-perfil-de-powershell" id="toc-función-y-perfil-de-powershell" class="nav-link" data-scroll-target="#función-y-perfil-de-powershell">Función y perfil de PowerShell</a></li>
+  </ul></li>
+  <li><a href="#obtener-ayuda" id="toc-obtener-ayuda" class="nav-link" data-scroll-target="#obtener-ayuda">Obtener ayuda</a></li>
+  <li><a href="#equivalencias-de-consulta-rápida" id="toc-equivalencias-de-consulta-rápida" class="nav-link" data-scroll-target="#equivalencias-de-consulta-rápida">Equivalencias de consulta rápida</a></li>
+  <li><a href="#práctica-integradora" id="toc-práctica-integradora" class="nav-link" data-scroll-target="#práctica-integradora">Práctica integradora</a>
+  <ul class="collapse">
+  <li><a href="#situación" id="toc-situación" class="nav-link" data-scroll-target="#situación">Situación</a></li>
+  <li><a href="#actividades" id="toc-actividades" class="nav-link" data-scroll-target="#actividades">Actividades</a></li>
+  <li><a href="#evidencias-mínimas" id="toc-evidencias-mínimas" class="nav-link" data-scroll-target="#evidencias-mínimas">Evidencias mínimas</a></li>
+  <li><a href="#criterios-de-verificación" id="toc-criterios-de-verificación" class="nav-link" data-scroll-target="#criterios-de-verificación">Criterios de verificación</a></li>
+  </ul></li>
+  <li><a href="#errores-frecuentes-y-diagnóstico" id="toc-errores-frecuentes-y-diagnóstico" class="nav-link" data-scroll-target="#errores-frecuentes-y-diagnóstico">Errores frecuentes y diagnóstico</a>
+  <ul class="collapse">
+  <li><a href="#no-se-reconoce-el-comando-o-command-not-found" id="toc-no-se-reconoce-el-comando-o-command-not-found" class="nav-link" data-scroll-target="#no-se-reconoce-el-comando-o-command-not-found">“No se reconoce el comando” o “command not found”</a></li>
+  <li><a href="#no-existe-el-archivo-o-directorio" id="toc-no-existe-el-archivo-o-directorio" class="nav-link" data-scroll-target="#no-existe-el-archivo-o-directorio">“No existe el archivo o directorio”</a></li>
+  <li><a href="#permiso-denegado" id="toc-permiso-denegado" class="nav-link" data-scroll-target="#permiso-denegado">“Permiso denegado”</a></li>
+  <li><a href="#el-comando-parece-no-terminar" id="toc-el-comando-parece-no-terminar" class="nav-link" data-scroll-target="#el-comando-parece-no-terminar">El comando parece no terminar</a></li>
+  </ul></li>
+  <li><a href="#preguntas-de-verificación" id="toc-preguntas-de-verificación" class="nav-link" data-scroll-target="#preguntas-de-verificación">Preguntas de verificación</a></li>
+  <li><a href="#cierre" id="toc-cierre" class="nav-link" data-scroll-target="#cierre">Cierre</a></li>
+  <li><a href="#referencias-oficiales" id="toc-referencias-oficiales" class="nav-link" data-scroll-target="#referencias-oficiales">Referencias oficiales</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Introducción práctica a la terminal</h1>
+<p class="subtitle lead">Gestión de archivos y configuración básica en Linux y Windows PowerShell</p>
+</div>
+
+<div>
+  <div class="description">
+    Tutorial comparativo para aprender a trabajar de forma segura con archivos, directorios y configuraciones básicas desde Bash y PowerShell.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Autor/a</div>
+    <div class="quarto-title-meta-contents">
+             <p>Ph.D.&nbsp;Pablo Eduardo Caicedo Rodríguez </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Fecha de publicación</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">7 de agosto de 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="propósito-del-tutorial" class="level1">
+<h1>Propósito del tutorial</h1>
+<p>La terminal permite controlar el sistema operativo mediante instrucciones escritas. No reemplaza por completo a la interfaz gráfica, pero resulta más precisa para organizar archivos, repetir tareas, diagnosticar problemas y documentar procedimientos reproducibles.</p>
+<p>Esta guía presenta dos entornos:</p>
+<ul>
+<li><strong>Linux con Bash</strong>, habitual en Ubuntu, Pop!_OS y otras distribuciones.</li>
+<li><strong>Windows con PowerShell</strong>, incluido en Windows y basado en comandos llamados <em>cmdlets</em>.</li>
+</ul>
+<p>No es necesario estudiar ambos simultáneamente. Cada estudiante puede seguir la ruta correspondiente a su sistema operativo y utilizar las tablas comparativas para reconocer equivalencias.</p>
+<div class="callout callout-style-default callout-note callout-titled" title="Resultados de aprendizaje">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Resultados de aprendizaje
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Al finalizar, el estudiante estará en capacidad de:</p>
+<ol type="1">
+<li>diferenciar terminal, consola, <em>shell</em> y símbolo del sistema;</li>
+<li>navegar por el sistema de archivos utilizando rutas absolutas y relativas;</li>
+<li>crear, consultar, copiar, mover, renombrar y eliminar archivos de forma controlada;</li>
+<li>buscar archivos y contenido sin depender de la interfaz gráfica;</li>
+<li>interpretar variables de entorno, permisos, procesos, almacenamiento y red;</li>
+<li>personalizar de forma básica una sesión de Bash o PowerShell;</li>
+<li>ejecutar una práctica reproducible sin modificar archivos importantes del equipo.</li>
+</ol>
+</div>
+</div>
+</section>
+<section id="antes-de-comenzar" class="level1">
+<h1>Antes de comenzar</h1>
+<section id="abrir-la-terminal" class="level2">
+<h2 class="anchored" data-anchor-id="abrir-la-terminal">Abrir la terminal</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<p>En Ubuntu o Pop!_OS se puede abrir la terminal con <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>. También se puede buscar <strong>Terminal</strong> en el menú de aplicaciones.</p>
+<p>Esta guía supone el uso de <strong>Bash</strong>. Para verificar el <em>shell</em> actual:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$SHELL</span><span class="st">"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<p>Abra el menú Inicio y busque <strong>PowerShell</strong> o <strong>Terminal</strong>. Windows Terminal es una aplicación que puede contener sesiones de PowerShell, Símbolo del sistema y otros <em>shells</em>.</p>
+<p>Para consultar la edición y versión de PowerShell:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">$PSVersionTable</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Los ejemplos usan PowerShell. No deben copiarse directamente en <code>cmd.exe</code>, porque ambos intérpretes tienen sintaxis diferente.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="regla-de-seguridad-para-toda-la-guía" class="level2">
+<h2 class="anchored" data-anchor-id="regla-de-seguridad-para-toda-la-guía">Regla de seguridad para toda la guía</h2>
+<p>La práctica se realizará únicamente dentro de una carpeta llamada <code>Terminal_Practica</code>, creada en la carpeta personal del usuario.</p>
+<div class="callout callout-style-default callout-warning callout-titled" title="Lea antes de ejecutar">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Advertencia</span>Lea antes de ejecutar
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Revise el comando completo antes de presionar <kbd>Enter</kbd>.</li>
+<li>Confirme la carpeta actual antes de copiar, mover o eliminar archivos.</li>
+<li>Use comillas cuando una ruta contenga espacios.</li>
+<li>No ejecute comandos que no comprenda.</li>
+<li>No use privilegios de administrador para completar este tutorial.</li>
+<li>Evite <code>rm -rf</code>, <code>Remove-Item -Recurse -Force</code> y órdenes similares. Un error en la ruta puede eliminar información importante sin confirmación.</li>
+</ul>
+</div>
+</div>
+</section>
+</section>
+<section id="terminal-shell-y-comando" class="level1">
+<h1>Terminal, <em>shell</em> y comando</h1>
+<p>Los términos se relacionan, pero no significan lo mismo:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concepto</th>
+<th>Función</th>
+<th>Ejemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Terminal</td>
+<td>Interfaz en la que se escriben y observan comandos</td>
+<td>GNOME Terminal, Windows Terminal</td>
+</tr>
+<tr class="even">
+<td><em>Shell</em></td>
+<td>Programa que interpreta los comandos</td>
+<td>Bash, PowerShell</td>
+</tr>
+<tr class="odd">
+<td>Línea de comandos</td>
+<td>Forma de interacción mediante texto</td>
+<td><code>ls -la</code>, <code>Get-ChildItem -Force</code></td>
+</tr>
+<tr class="even">
+<td>Prompt</td>
+<td>Texto que indica que el <em>shell</em> espera una instrucción</td>
+<td><code>$</code>, <code>usuario@equipo:~$</code>, <code>PS C:\&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<p>Un comando suele tener tres componentes:</p>
+<pre class="text"><code>comando  opciones  argumentos</code></pre>
+<p>Por ejemplo, en Linux:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> datos</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>ls</code>: programa o comando;</li>
+<li><code>-l</code>: opción que solicita una vista detallada;</li>
+<li><code>datos</code>: directorio sobre el cual se ejecuta la operación.</li>
+</ul>
+<p>En PowerShell es común la estructura <strong>Verbo-Sustantivo</strong>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>Path datos</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>Get-ChildItem</code>: <em>cmdlet</em>;</li>
+<li><code>-Path</code>: parámetro;</li>
+<li><code>datos</code>: valor del parámetro.</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled" title="Qué se debe escribir">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Qué se debe escribir
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Los bloques de código muestran únicamente el comando. Si en otra fuente aparece un <em>prompt</em> como <code>$</code>, <code>usuario@equipo:~$</code> o <code>PS C:\&gt;</code>, no lo copie: ese texto representa el estado de la terminal y no forma parte de la instrucción.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled" title="Diferencia fundamental">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Importante</span>Diferencia fundamental
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>En Bash, una tubería normalmente transporta <strong>texto</strong>. En PowerShell, una tubería normalmente transporta <strong>objetos</strong> con propiedades y métodos. Por esta razón, dos comandos visualmente equivalentes pueden requerir formas distintas de filtrado.</p>
+</div>
+</div>
+</section>
+<section id="el-sistema-de-archivos" class="level1">
+<h1>El sistema de archivos</h1>
+<section id="rutas-carpetas-y-separadores" class="level2">
+<h2 class="anchored" data-anchor-id="rutas-carpetas-y-separadores">Rutas, carpetas y separadores</h2>
+<p>Una <strong>ruta absoluta</strong> identifica una ubicación desde la raíz del sistema. Una <strong>ruta relativa</strong> se interpreta desde la carpeta de trabajo actual.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Elemento</th>
+<th>Linux</th>
+<th>Windows PowerShell</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Raíz principal</td>
+<td><code>/</code></td>
+<td><code>C:\</code></td>
+</tr>
+<tr class="even">
+<td>Carpeta personal</td>
+<td><code>/home/usuario</code></td>
+<td><code>C:\Users\usuario</code></td>
+</tr>
+<tr class="odd">
+<td>Abreviatura de la carpeta personal</td>
+<td><code>~</code> o <code>$HOME</code></td>
+<td><code>$HOME</code></td>
+</tr>
+<tr class="even">
+<td>Separador habitual</td>
+<td><code>/</code></td>
+<td><code>\</code></td>
+</tr>
+<tr class="odd">
+<td>Carpeta actual</td>
+<td><code>.</code></td>
+<td><code>.</code></td>
+</tr>
+<tr class="even">
+<td>Carpeta superior</td>
+<td><code>..</code></td>
+<td><code>..</code></td>
+</tr>
+</tbody>
+</table>
+<p>Ejemplos:</p>
+<pre class="text"><code># Ruta absoluta en Linux
+/home/ana/Terminal_Practica/datos/ecg_01.csv
+
+# Ruta relativa en Linux
+datos/ecg_01.csv
+
+# Ruta absoluta en Windows
+C:\Users\Ana\Terminal_Practica\datos\ecg_01.csv
+
+# Ruta relativa en Windows
+datos\ecg_01.csv</code></pre>
+<div class="callout callout-style-default callout-note callout-titled" title="Mayúsculas y minúsculas">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Mayúsculas y minúsculas
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Linux normalmente distingue <code>Datos</code>, <code>datos</code> y <code>DATOS</code> como nombres diferentes. Windows normalmente no los distingue al resolver una ruta, aunque conserva la forma escrita. Use nombres consistentes y evite depender de esta diferencia.</p>
+</div>
+</div>
+</section>
+<section id="preparar-el-entorno-seguro-de-práctica" class="level2">
+<h2 class="anchored" data-anchor-id="preparar-el-entorno-seguro-de-práctica">Preparar el entorno seguro de práctica</h2>
+<p>Ejecute solo el bloque correspondiente a su sistema.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">"</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> Terminal_Practica/<span class="dt">{datos</span><span class="op">,</span><span class="dt">reportes</span><span class="op">,</span><span class="dt">scripts</span><span class="op">,</span><span class="dt">respaldo}</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> Terminal_Practica</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="bu">pwd</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>mkdir -p</code> crea las carpetas requeridas y no produce un error si ya existen. La expansión entre llaves es una característica de Bash.</p>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="va">$base</span> <span class="op">=</span> <span class="fu">Join-Path</span> <span class="va">$HOME</span> <span class="st">"Terminal_Practica"</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">New-Item</span> <span class="op">-</span>ItemType Directory <span class="op">-</span>Path <span class="va">$base</span> <span class="op">-</span>Force <span class="op">|</span> <span class="fu">Out-Null</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Set-Location</span> <span class="va">$base</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="st">"datos"</span><span class="op">,</span> <span class="st">"reportes"</span><span class="op">,</span> <span class="st">"scripts"</span><span class="op">,</span> <span class="st">"respaldo"</span> <span class="op">|</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ForEach-Object</span> <span class="op">{</span> <span class="fu">New-Item</span> <span class="op">-</span>ItemType Directory <span class="op">-</span>Path <span class="va">$_</span> <span class="op">-</span>Force <span class="op">|</span> <span class="fu">Out-Null</span> <span class="op">}</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Location</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>Join-Path</code> construye una ruta sin escribir manualmente el separador. <code>Out-Null</code> oculta la salida informativa de creación.</p>
+</div>
+</div>
+</div>
+<p>La estructura esperada es:</p>
+<pre class="text"><code>Terminal_Practica/
+├── datos/
+├── reportes/
+├── respaldo/
+└── scripts/</code></pre>
+</section>
+</section>
+<section id="navegación-y-consulta" class="level1">
+<h1>Navegación y consulta</h1>
+<section id="comandos-esenciales" class="level2">
+<h2 class="anchored" data-anchor-id="comandos-esenciales">Comandos esenciales</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Tarea</th>
+<th>Linux con Bash</th>
+<th>Windows PowerShell</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mostrar la ubicación actual</td>
+<td><code>pwd</code></td>
+<td><code>Get-Location</code></td>
+</tr>
+<tr class="even">
+<td>Listar elementos</td>
+<td><code>ls</code></td>
+<td><code>Get-ChildItem</code></td>
+</tr>
+<tr class="odd">
+<td>Incluir elementos ocultos</td>
+<td><code>ls -la</code></td>
+<td><code>Get-ChildItem -Force</code></td>
+</tr>
+<tr class="even">
+<td>Entrar a una carpeta</td>
+<td><code>cd datos</code></td>
+<td><code>Set-Location datos</code></td>
+</tr>
+<tr class="odd">
+<td>Subir un nivel</td>
+<td><code>cd ..</code></td>
+<td><code>Set-Location ..</code></td>
+</tr>
+<tr class="even">
+<td>Volver a la carpeta personal</td>
+<td><code>cd "$HOME"</code></td>
+<td><code>Set-Location $HOME</code></td>
+</tr>
+<tr class="odd">
+<td>Limpiar la pantalla</td>
+<td><code>clear</code></td>
+<td><code>Clear-Host</code></td>
+</tr>
+</tbody>
+</table>
+<p>PowerShell también reconoce varios alias breves, como <code>cd</code>, <code>ls</code> y <code>pwd</code>. Para aprender procedimientos portables y legibles, es preferible usar el nombre completo de los <em>cmdlets</em> en scripts.</p>
+</section>
+<section id="autocompletado-e-historial" class="level2">
+<h2 class="anchored" data-anchor-id="autocompletado-e-historial">Autocompletado e historial</h2>
+<ul>
+<li><kbd>Tab</kbd>: completa comandos, parámetros o rutas.</li>
+<li>Flecha <kbd>↑</kbd> y flecha <kbd>↓</kbd>: recorren comandos anteriores.</li>
+<li><kbd>Ctrl</kbd> + <kbd>C</kbd>: interrumpe el comando activo; no significa “copiar” en la mayoría de terminales.</li>
+<li><kbd>Ctrl</kbd> + <kbd>L</kbd>: limpia visualmente una terminal Bash.</li>
+</ul>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">history</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">history</span> 10</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>En Bash, <code>history 10</code> muestra los diez comandos más recientes de la sesión.</p>
+</div>
+<div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-History</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-History</span> <span class="op">-</span>Count <span class="dv">10</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>Get-History</code> consulta el historial de la sesión actual. El historial interactivo persistente puede depender del módulo PSReadLine.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="crear-archivos-y-consultar-su-contenido" class="level1">
+<h1>Crear archivos y consultar su contenido</h1>
+<section id="crear-un-archivo-de-datos-pequeño" class="level2">
+<h2 class="anchored" data-anchor-id="crear-un-archivo-de-datos-pequeño">Crear un archivo de datos pequeño</h2>
+<p>Desde <code>Terminal_Practica</code>, cree un CSV de ejemplo:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">"muestra,ecg_mV\n0,0.02\n1,0.18\n2,0.73\n3,0.21\n"</span> <span class="dt">\</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;</span> datos/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="vs">@"</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="vs">muestra,ecg_mV</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="vs">0,0.02</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="vs">1,0.18</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="vs">2,0.73</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="vs">3,0.21</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="vs">"@</span> <span class="op">|</span> <span class="fu">Set-Content</span> <span class="op">-</span>Path datos\ecg_01<span class="op">.</span><span class="fu">csv</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled" title="Redirección">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Advertencia</span>Redirección
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El operador <code>&gt;</code> crea un archivo o <strong>reemplaza su contenido</strong>. El operador <code>&gt;&gt;</code> agrega contenido al final. Antes de usar <code>&gt;</code>, verifique que el archivo de destino no contenga información que deba conservarse.</p>
+</div>
+</div>
+<p>Agregue una línea al archivo:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">"4,-0.05\n"</span> <span class="op">&gt;&gt;</span> datos/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="st">"4,-0.05"</span> <span class="op">|</span> <span class="fu">Add-Content</span> <span class="op">-</span>Path datos\ecg_01<span class="op">.</span><span class="fu">csv</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="leer-e-inspeccionar" class="level2">
+<h2 class="anchored" data-anchor-id="leer-e-inspeccionar">Leer e inspeccionar</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-6-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-1" role="tab" aria-controls="tabset-6-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-2" role="tab" aria-controls="tabset-6-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> datos/ecg_01.csv</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> <span class="at">-n</span> 3 datos/ecg_01.csv</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-n</span> 2 datos/ecg_01.csv</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">wc</span> <span class="at">-l</span> datos/ecg_01.csv</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">file</span> datos/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>cat</code> muestra todo el contenido de un archivo pequeño.</li>
+<li><code>head</code> y <code>tail</code> muestran el inicio y el final.</li>
+<li><code>wc -l</code> cuenta líneas.</li>
+<li><code>file</code> intenta identificar el tipo de contenido.</li>
+</ul>
+<p>Para un archivo largo, use un visor paginado:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">less</span> datos/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Dentro de <code>less</code>, presione <kbd>q</kbd> para salir.</p>
+</div>
+<div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Content</span> datos\ecg_01<span class="op">.</span><span class="fu">csv</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Content</span> datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Head <span class="dv">3</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Get</span><span class="op">-</span>Content datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Tail <span class="dv">2</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="op">(</span><span class="fu">Get-Content</span> datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">|</span> <span class="fu">Measure-Object</span> <span class="op">-</span>Line<span class="op">).</span><span class="fu">Lines</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Item</span> datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">|</span> <span class="fu">Format-List</span> Name<span class="op">,</span> Length<span class="op">,</span> LastWriteTime</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para observar contenido página por página:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Content</span> datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">|</span> more</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="archivos-y-carpetas-con-espacios" class="level2">
+<h2 class="anchored" data-anchor-id="archivos-y-carpetas-con-espacios">Archivos y carpetas con espacios</h2>
+<p>Las comillas evitan que el <em>shell</em> interprete cada palabra como un argumento separado.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-7-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-1" role="tab" aria-controls="tabset-7-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-7-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-2" role="tab" aria-controls="tabset-7-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-7-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-7-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="st">"reportes/primer informe"</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"reportes/primer informe"</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ../..</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-7-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">New-Item</span> <span class="op">-</span>ItemType Directory <span class="op">-</span>Path <span class="st">"reportes\primer informe"</span> <span class="op">-</span>Force</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Set-Location</span> <span class="st">"reportes\primer informe"</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Set-Location</span> <span class="op">..</span>\<span class="op">..</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<p>Aunque los espacios son válidos, nombres como <code>primer_informe</code> o <code>primer-informe</code> facilitan la automatización y reducen errores.</p>
+</section>
+</section>
+<section id="copiar-renombrar-mover-y-eliminar" class="level1">
+<h1>Copiar, renombrar, mover y eliminar</h1>
+<section id="copiar-y-crear-respaldo" class="level2">
+<h2 class="anchored" data-anchor-id="copiar-y-crear-respaldo">Copiar y crear respaldo</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-8-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-1" role="tab" aria-controls="tabset-8-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-8-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-2" role="tab" aria-controls="tabset-8-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-8-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-8-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> datos/ecg_01.csv respaldo/ecg_01.csv</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="at">-i</span> datos/ecg_01.csv respaldo/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La opción <code>-i</code> solicita confirmación antes de sobrescribir un archivo existente.</p>
+</div>
+<div id="tabset-8-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Copy-Item</span> <span class="op">-</span>Path datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Destination respaldo\ecg_01<span class="op">.</span><span class="fu">csv</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Copy-Item</span> <span class="op">-</span>Path datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Destination respaldo\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Confirm</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>-Confirm</code> solicita autorización antes de realizar la operación.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="renombrar-y-mover" class="level2">
+<h2 class="anchored" data-anchor-id="renombrar-y-mover">Renombrar y mover</h2>
+<p>En Linux, <code>mv</code> sirve tanto para renombrar como para mover. PowerShell ofrece comandos separados para expresar mejor la intención.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-9-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-1" role="tab" aria-controls="tabset-9-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-9-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-2" role="tab" aria-controls="tabset-9-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-9-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-9-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> datos/ecg_01.csv datos/ecg_temporal.csv</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> datos/ecg_temporal.csv datos/ecg_copia.csv</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> datos/ecg_copia.csv respaldo/</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-9-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Copy-Item</span> datos\ecg_01<span class="op">.</span><span class="fu">csv</span> datos\ecg_temporal<span class="op">.</span><span class="fu">csv</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Rename-Item</span> datos\ecg_temporal<span class="op">.</span><span class="fu">csv</span> ecg_copia<span class="op">.</span><span class="fu">csv</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Move-Item</span> datos\ecg_copia<span class="op">.</span><span class="fu">csv</span> respaldo\</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<p>Después de cada operación, compruebe el resultado:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-10-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-1" role="tab" aria-controls="tabset-10-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-2" role="tab" aria-controls="tabset-10-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-10-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-10-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> . <span class="at">-maxdepth</span> 2 <span class="at">-type</span> f</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-10-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>File <span class="op">-</span>Recurse</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="eliminar-de-forma-controlada" class="level2">
+<h2 class="anchored" data-anchor-id="eliminar-de-forma-controlada">Eliminar de forma controlada</h2>
+<p>Primero cree un archivo prescindible y luego elimínelo con confirmación:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-11-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-11-1" role="tab" aria-controls="tabset-11-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-11-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-11-2" role="tab" aria-controls="tabset-11-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-11-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-11-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> datos/borrar_prueba.txt</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> datos/borrar_prueba.txt</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-i</span> datos/borrar_prueba.txt</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para eliminar una carpeta, use <code>rmdir</code> cuando esté vacía:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> carpeta_vacia</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rmdir</span> carpeta_vacia</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-11-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-11-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">New-Item</span> <span class="op">-</span>ItemType File <span class="op">-</span>Path datos\borrar_prueba<span class="op">.</span><span class="fu">txt</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Item</span> datos\borrar_prueba<span class="op">.</span><span class="fu">txt</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Remove-Item</span> datos\borrar_prueba<span class="op">.</span><span class="fu">txt</span> <span class="op">-</span>Confirm</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para una carpeta vacía:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">New-Item</span> <span class="op">-</span>ItemType Directory <span class="op">-</span>Path carpeta_vacia</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Remove-Item</span> carpeta_vacia <span class="op">-</span>Confirm</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout-danger" title="Eliminar no equivale a enviar a la papelera">
+<p>Los comandos de eliminación normalmente no trasladan el archivo a la papelera gráfica. Antes de ejecutarlos, confirme la ubicación con <code>pwd</code> o <code>Get-Location</code>, liste el objetivo y use una opción de confirmación.</p>
+</div>
+</section>
+</section>
+<section id="buscar-archivos-y-contenido" class="level1">
+<h1>Buscar archivos y contenido</h1>
+<section id="comodines" class="level2">
+<h2 class="anchored" data-anchor-id="comodines">Comodines</h2>
+<p>Los comodines representan patrones de nombres:</p>
+<ul>
+<li><code>*</code>: cero o más caracteres;</li>
+<li><code>?</code>: exactamente un carácter;</li>
+<li><code>[0-9]</code>: un carácter dentro del rango indicado, principalmente en Bash.</li>
+</ul>
+<p>Ejemplo: <code>*.csv</code> coincide con los archivos cuyo nombre termina en <code>.csv</code>.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-12-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-12-1" role="tab" aria-controls="tabset-12-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-12-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-12-2" role="tab" aria-controls="tabset-12-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-12-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-12-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> datos/<span class="pp">*</span>.csv</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> . <span class="at">-type</span> f <span class="at">-name</span> <span class="st">"*.csv"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>find</code> recorre carpetas de manera recursiva desde la ruta indicada.</p>
+</div>
+<div id="tabset-12-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-12-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>Path datos <span class="op">-</span>Filter <span class="op">*.</span><span class="fu">csv</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>Path <span class="op">.</span> <span class="op">-</span>File <span class="op">-</span>Recurse <span class="op">-</span>Filter <span class="op">*.</span><span class="fu">csv</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="buscar-texto-dentro-de-archivos" class="level2">
+<h2 class="anchored" data-anchor-id="buscar-texto-dentro-de-archivos">Buscar texto dentro de archivos</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-13-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-13-1" role="tab" aria-controls="tabset-13-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-13-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-13-2" role="tab" aria-controls="tabset-13-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-13-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-13-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-n</span> <span class="st">"0.73"</span> datos/ecg_01.csv</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-Rni</span> <span class="at">--include</span><span class="op">=</span><span class="st">"*.csv"</span> <span class="st">"ecg"</span> .</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si <code>ripgrep</code> está instalado, <code>rg</code> suele ser más rápido y cómodo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">rg</span> <span class="at">-n</span> <span class="st">"0.73"</span> datos</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="ex">rg</span> <span class="at">-n</span> <span class="at">-i</span> <span class="st">"ecg"</span> <span class="at">-g</span> <span class="st">"*.csv"</span> .</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-13-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-13-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Select-String</span> <span class="op">-</span>Path datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Pattern <span class="st">"0.73"</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>File <span class="op">-</span>Recurse <span class="op">-</span>Filter <span class="op">*.</span><span class="fu">csv</span> <span class="op">|</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Select-String</span> <span class="op">-</span>Pattern <span class="st">"ecg"</span> <span class="op">-</span>CaseSensitive<span class="op">:</span><span class="va">$false</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La tubería envía los archivos encontrados a <code>Select-String</code>.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="redirección-y-tuberías" class="level1">
+<h1>Redirección y tuberías</h1>
+<section id="entrada-salida-y-errores" class="level2">
+<h2 class="anchored" data-anchor-id="entrada-salida-y-errores">Entrada, salida y errores</h2>
+<p>Un programa puede recibir entrada y producir salida normal o mensajes de error. La terminal permite redirigir estos flujos.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Operación</th>
+<th style="text-align: right;">Símbolo</th>
+<th>Interpretación general</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Reemplazar la salida de un archivo</td>
+<td style="text-align: right;"><code>&gt;</code></td>
+<td>Escribe desde el comienzo</td>
+</tr>
+<tr class="even">
+<td>Agregar al final</td>
+<td style="text-align: right;"><code>&gt;&gt;</code></td>
+<td>Conserva el contenido anterior</td>
+</tr>
+<tr class="odd">
+<td>Tubería</td>
+<td style="text-align: right;"><code>|</code></td>
+<td>Entrega la salida de un comando al siguiente</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ejemplo-de-filtrado" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-de-filtrado">Ejemplo de filtrado</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-14-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-14-1" role="tab" aria-controls="tabset-14-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-14-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-14-2" role="tab" aria-controls="tabset-14-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-14-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-14-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">find</span> . <span class="at">-type</span> f <span class="kw">|</span> <span class="fu">sort</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> datos/ecg_01.csv <span class="kw">|</span> <span class="fu">grep</span> <span class="st">"0."</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>El segundo ejemplo es válido, pero puede escribirse de forma más simple:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="st">"0."</span> datos/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-14-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-14-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>File <span class="op">-</span>Recurse <span class="op">|</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Sort-Object</span> FullName</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="op">-</span>File <span class="op">-</span>Recurse <span class="op">|</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Where-Object</span> Extension <span class="op">-eq</span> <span class="st">".csv"</span> <span class="op">|</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Select-Object</span> Name<span class="op">,</span> Length<span class="op">,</span> LastWriteTime</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>PowerShell filtra propiedades de objetos: <code>Extension</code>, <code>Name</code>, <code>Length</code> y <code>LastWriteTime</code> no son columnas de texto improvisadas, sino propiedades de cada archivo.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="integridad-compresión-y-respaldo" class="level1">
+<h1>Integridad, compresión y respaldo</h1>
+<section id="verificar-que-una-copia-sea-idéntica" class="level2">
+<h2 class="anchored" data-anchor-id="verificar-que-una-copia-sea-idéntica">Verificar que una copia sea idéntica</h2>
+<p>Un <em>hash</em> resume matemáticamente el contenido de un archivo. Dos copias con el mismo SHA-256 son, con probabilidad práctica extremadamente alta, idénticas byte a byte.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-15-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-15-1" role="tab" aria-controls="tabset-15-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-15-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-15-2" role="tab" aria-controls="tabset-15-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-15-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-15-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sha256sum</span> datos/ecg_01.csv respaldo/ecg_01.csv</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-15-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-15-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>Get-FileHash datos\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Algorithm SHA256</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>Get-FileHash respaldo\ecg_01<span class="op">.</span><span class="fu">csv</span> <span class="op">-</span>Algorithm SHA256</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<p>El <em>hash</em> verifica integridad, pero no reemplaza una estrategia de respaldo: si el original y la copia están en el mismo disco, una falla física puede afectar ambos.</p>
+</section>
+<section id="comprimir-la-práctica" class="level2">
+<h2 class="anchored" data-anchor-id="comprimir-la-práctica">Comprimir la práctica</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-16-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-16-1" role="tab" aria-controls="tabset-16-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-16-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-16-2" role="tab" aria-controls="tabset-16-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-16-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-16-1-tab">
+<p>Desde la carpeta personal:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">"</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-czf</span> Terminal_Practica.tar.gz Terminal_Practica</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-tzf</span> Terminal_Practica.tar.gz <span class="kw">|</span> <span class="fu">head</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>El segundo comando lista parte del contenido sin extraerlo.</p>
+</div>
+<div id="tabset-16-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-16-2-tab">
+<p>Desde la carpeta personal:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Set-Location</span> <span class="va">$HOME</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>Compress-Archive <span class="op">-</span>Path Terminal_Practica <span class="op">-</span>DestinationPath Terminal_Practica<span class="op">.</span><span class="fu">zip</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Item</span> Terminal_Practica<span class="op">.</span><span class="fu">zip</span> <span class="op">|</span> <span class="fu">Select-Object</span> Name<span class="op">,</span> Length<span class="op">,</span> LastWriteTime</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si el ZIP ya existe, no use <code>-Force</code> sin decidir primero si desea reemplazarlo.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="configuración-básica-del-sistema" class="level1">
+<h1>Configuración básica del sistema</h1>
+<p>Esta sección utiliza consultas de solo lectura y cambios temporales. Su objetivo es aprender a describir el entorno donde se ejecuta un proyecto.</p>
+<section id="identificar-sistema-y-shell" class="level2">
+<h2 class="anchored" data-anchor-id="identificar-sistema-y-shell">Identificar sistema y <em>shell</em></h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-17-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-17-1" role="tab" aria-controls="tabset-17-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-17-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-17-2" role="tab" aria-controls="tabset-17-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-17-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-17-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">uname</span> <span class="at">-a</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /etc/os-release</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$SHELL</span><span class="st">"</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> <span class="at">--version</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-17-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-17-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="va">$PSVersionTable</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>Get-ComputerInfo <span class="op">|</span> <span class="fu">Select-Object</span> WindowsProductName<span class="op">,</span> WindowsVersion<span class="op">,</span> OsArchitecture</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>Get-ComputerInfo</code> puede tardar algunos segundos porque consulta varias fuentes del sistema.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="fecha-nombre-del-equipo-y-usuario" class="level2">
+<h2 class="anchored" data-anchor-id="fecha-nombre-del-equipo-y-usuario">Fecha, nombre del equipo y usuario</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-18-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-18-1" role="tab" aria-controls="tabset-18-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-18-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-18-2" role="tab" aria-controls="tabset-18-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-18-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-18-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hostname</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="fu">whoami</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-18-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-18-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Date</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">COMPUTERNAME</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">USERNAME</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="espacio-de-almacenamiento" class="level2">
+<h2 class="anchored" data-anchor-id="espacio-de-almacenamiento">Espacio de almacenamiento</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-19-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-19-1" role="tab" aria-controls="tabset-19-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-19-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-19-2" role="tab" aria-controls="tabset-19-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-19-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-19-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">du</span> <span class="at">-sh</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/Terminal_Practica"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>df -h</code> resume el espacio disponible en sistemas de archivos montados.</li>
+<li><code>du -sh</code> estima el espacio ocupado por la carpeta indicada.</li>
+</ul>
+</div>
+<div id="tabset-19-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-19-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-PSDrive</span> <span class="op">-</span>PSProvider FileSystem</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">\Terminal_Practica"</span> <span class="op">-</span>File <span class="op">-</span>Recurse <span class="op">|</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">Measure-Object</span> <span class="op">-</span>Property Length <span class="op">-</span>Sum</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La propiedad <code>Sum</code> se expresa en bytes.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="procesos-activos" class="level2">
+<h2 class="anchored" data-anchor-id="procesos-activos">Procesos activos</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-20-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-20-1" role="tab" aria-controls="tabset-20-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-20-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-20-2" role="tab" aria-controls="tabset-20-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-20-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-20-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ps</span> <span class="at">-u</span> <span class="st">"</span><span class="va">$USER</span><span class="st">"</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="ex">top</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>En <code>top</code>, presione <kbd>q</kbd> para salir. Para solicitar el cierre normal de un proceso propio se utiliza <code>kill PID</code>, donde <code>PID</code> es su identificador.</p>
+</div>
+<div id="tabset-20-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-20-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb51"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Process</span> <span class="op">|</span> <span class="fu">Sort-Object</span> CPU <span class="op">-</span>Descending <span class="op">|</span> <span class="fu">Select-Object</span> <span class="op">-</span>First <span class="dv">10</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para solicitar la detención de un proceso propio:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Stop-Process</span> <span class="op">-</span>Id PID <span class="op">-</span>Confirm</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Reemplace <code>PID</code> por un identificador real. No detenga procesos del sistema que no reconozca.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="configuración-y-diagnóstico-de-red" class="level2">
+<h2 class="anchored" data-anchor-id="configuración-y-diagnóstico-de-red">Configuración y diagnóstico de red</h2>
+<p>Las siguientes órdenes consultan la configuración o prueban conectividad; no modifican la red.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-21-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-21-1" role="tab" aria-controls="tabset-21-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-21-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-21-2" role="tab" aria-controls="tabset-21-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-21-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-21-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb53"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> address</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> route</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ping</span> <span class="at">-c</span> 4 example.com</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-21-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-21-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb54"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>Get-NetIPConfiguration</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Test-Connection</span> example<span class="op">.</span><span class="fu">com</span> <span class="op">-</span>Count <span class="dv">4</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Test</span><span class="op">-</span>NetConnection example<span class="op">.</span><span class="fu">com</span> <span class="op">-</span>Port <span class="dv">443</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled" title="Interpretación">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Interpretación
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Que <code>ping</code> falle no demuestra por sí solo que no exista conexión: una red o un servidor puede bloquear mensajes ICMP. Una prueba al puerto 443 evalúa una condición distinta, relacionada con conexiones HTTPS.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="variables-de-entorno-y-path" class="level1">
+<h1>Variables de entorno y <code>PATH</code></h1>
+<p>Una variable de entorno almacena configuración disponible para los programas de una sesión. <code>PATH</code> contiene una lista de carpetas donde el <em>shell</em> busca programas ejecutables.</p>
+<section id="consultar-variables" class="level2">
+<h2 class="anchored" data-anchor-id="consultar-variables">Consultar variables</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-22-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-22-1" role="tab" aria-controls="tabset-22-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-22-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-22-2" role="tab" aria-controls="tabset-22-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-22-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-22-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb55"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">printenv</span> <span class="kw">|</span> <span class="fu">sort</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">"</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'%s\n'</span> <span class="st">"</span><span class="va">$PATH</span><span class="st">"</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">':'</span> <span class="st">'\n'</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-22-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-22-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb56"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ChildItem</span> Env<span class="op">:</span> <span class="op">|</span> <span class="fu">Sort-Object</span> Name</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="va">$HOME</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">Path</span> <span class="op">-split</span> <span class="st">';'</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="crear-una-variable-temporal" class="level2">
+<h2 class="anchored" data-anchor-id="crear-una-variable-temporal">Crear una variable temporal</h2>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-23-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-23-1" role="tab" aria-controls="tabset-23-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-23-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-23-2" role="tab" aria-controls="tabset-23-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-23-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-23-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb57"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CURSO</span><span class="op">=</span><span class="st">"SYSB"</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"</span><span class="va">$CURSO</span><span class="st">"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-23-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-23-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb58"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">CURSO</span> <span class="op">=</span> <span class="st">"SYSB"</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">CURSO</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<p>La variable desaparece al cerrar la sesión. Esta temporalidad es útil para probar una configuración antes de hacerla persistente.</p>
+<div class="callout callout-style-default callout-warning callout-titled" title="No edite `PATH` a ciegas">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Advertencia</span>No edite <code>PATH</code> a ciegas
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Reemplazar <code>PATH</code> por un valor incompleto puede impedir que el <em>shell</em> encuentre programas. Para una prueba temporal, agregue una ruta y conserve el valor anterior. No copie un <code>PATH</code> de otro equipo.</p>
+</div>
+</div>
+<p>Ejemplo temporal:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-24-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-24-1" role="tab" aria-controls="tabset-24-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-24-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-24-2" role="tab" aria-controls="tabset-24-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-24-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-24-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb59"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">PATH</span><span class="op">=</span><span class="st">"</span><span class="va">$HOME</span><span class="st">/.local/bin:</span><span class="va">$PATH</span><span class="st">"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-24-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-24-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb60"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">Path</span> <span class="op">=</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">\bin;</span><span class="va">$env</span><span class="op">:</span><span class="va">Path</span><span class="st">"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="permisos-y-ejecución-de-scripts" class="level1">
+<h1>Permisos y ejecución de scripts</h1>
+<section id="permisos-en-linux" class="level2">
+<h2 class="anchored" data-anchor-id="permisos-en-linux">Permisos en Linux</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb61"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Una salida como <code>-rw-r--r--</code> se interpreta en grupos:</p>
+<ul>
+<li>primer carácter: tipo de elemento (<code>-</code> archivo, <code>d</code> directorio);</li>
+<li><code>rw-</code>: permisos del propietario;</li>
+<li><code>r--</code>: permisos del grupo;</li>
+<li><code>r--</code>: permisos de otros usuarios;</li>
+<li><code>r</code>, <code>w</code>, <code>x</code>: lectura, escritura y ejecución.</li>
+</ul>
+<p>Para dar permiso de ejecución al propietario de un script:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb62"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> u+x scripts/resumen.sh</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled" title="Evite `chmod 777`">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Advertencia</span>Evite <code>chmod 777</code>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Otorgar lectura, escritura y ejecución a todos los usuarios suele ser innecesario y reduce la seguridad. Asigne únicamente el permiso requerido.</p>
+</div>
+</div>
+</section>
+<section id="seguridad-de-scripts-en-powershell" class="level2">
+<h2 class="anchored" data-anchor-id="seguridad-de-scripts-en-powershell">Seguridad de scripts en PowerShell</h2>
+<p>Consulte las políticas efectivas sin modificarlas:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb63"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-ExecutionPolicy</span> <span class="op">-</span>List</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La política de ejecución ayuda a controlar las condiciones bajo las cuales PowerShell carga perfiles y ejecuta scripts. No es una frontera de seguridad completa y tampoco debe desactivarse para ejecutar código desconocido.</p>
+<div class="callout callout-style-default callout-important callout-titled" title="Criterio institucional">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Importante</span>Criterio institucional
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Si un script legítimo del curso está bloqueado, revise primero su contenido y consulte la política del laboratorio o de la institución. No use <code>Bypass</code>, no cambie políticas del equipo y no abra PowerShell como administrador solo para omitir la restricción.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="personalización-básica-y-reversible" class="level1">
+<h1>Personalización básica y reversible</h1>
+<section id="alias-y-perfil-de-bash" class="level2">
+<h2 class="anchored" data-anchor-id="alias-y-perfil-de-bash">Alias y perfil de Bash</h2>
+<p>Un alias abrevia un comando durante la sesión:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb64"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> ll=<span class="st">'ls -alF'</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ll</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para eliminarlo de la sesión:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb65"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="bu">unalias</span> ll</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Antes de editar un archivo de configuración, cree un respaldo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb66"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="at">-i</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/.bashrc"</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/.bashrc.backup"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Una línea como la siguiente dentro de <code>~/.bashrc</code> hace persistente el alias para sesiones interactivas de Bash:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb67"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="bu">alias</span> ll=<span class="st">'ls -alF'</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Después de revisar y guardar el archivo:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb68"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/.bashrc"</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="función-y-perfil-de-powershell" class="level2">
+<h2 class="anchored" data-anchor-id="función-y-perfil-de-powershell">Función y perfil de PowerShell</h2>
+<p>Una función temporal equivalente puede definirse así:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb69"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> ll <span class="op">{</span> <span class="fu">Get-ChildItem</span> <span class="op">-</span>Force <span class="op">}</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>ll</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Consulte la ruta del perfil y determine si existe:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb70"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="va">$PROFILE</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Test-Path</span> <span class="va">$PROFILE</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Si la política institucional permite usar perfiles, puede crear el archivo sin sobrescribir su contenido existente:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb71"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(-not</span> <span class="op">(</span><span class="fu">Test-Path</span> <span class="va">$PROFILE</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">New-Item</span> <span class="op">-</span>ItemType File <span class="op">-</span>Path <span class="va">$PROFILE</span> <span class="op">-</span>Force</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Abra el archivo con un editor y agregue únicamente:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb72"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> ll <span class="op">{</span> <span class="fu">Get-ChildItem</span> <span class="op">-</span>Force <span class="op">}</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La carga del perfil depende de la política de ejecución vigente. No cambie esa política únicamente para activar una abreviatura.</p>
+</section>
+</section>
+<section id="obtener-ayuda" class="level1">
+<h1>Obtener ayuda</h1>
+<p>Memorizar todos los parámetros no es el objetivo. Un usuario competente sabe consultar la ayuda y comprobar ejemplos.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-25-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-25-1" role="tab" aria-controls="tabset-25-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-25-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-25-2" role="tab" aria-controls="tabset-25-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-25-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-25-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb73"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">man</span> cp</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> <span class="at">--help</span></span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a><span class="bu">help</span> cd</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span> cd</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>man</code> abre el manual de un programa instalado;</li>
+<li><code>--help</code> muestra una referencia breve;</li>
+<li><code>help</code> documenta órdenes internas de Bash;</li>
+<li><code>type</code> indica cómo se resolverá un nombre.</li>
+</ul>
+</div>
+<div id="tabset-25-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-25-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb74"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Help</span> <span class="fu">Copy-Item</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Help</span> <span class="fu">Copy-Item</span> <span class="op">-</span>Examples</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Command</span> <span class="fu">Copy-Item</span></span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Command</span> <span class="op">*-</span>Item</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Para consultar documentación ampliada se puede usar:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb75"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Help</span> <span class="fu">Copy-Item</span> <span class="op">-</span>Online</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Este último comando requiere acceso a Internet.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="equivalencias-de-consulta-rápida" class="level1">
+<h1>Equivalencias de consulta rápida</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Propósito</th>
+<th>Linux con Bash</th>
+<th>Windows PowerShell</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ubicación actual</td>
+<td><code>pwd</code></td>
+<td><code>Get-Location</code></td>
+</tr>
+<tr class="even">
+<td>Listar</td>
+<td><code>ls -la</code></td>
+<td><code>Get-ChildItem -Force</code></td>
+</tr>
+<tr class="odd">
+<td>Cambiar ubicación</td>
+<td><code>cd ruta</code></td>
+<td><code>Set-Location ruta</code></td>
+</tr>
+<tr class="even">
+<td>Crear carpeta</td>
+<td><code>mkdir carpeta</code></td>
+<td><code>New-Item -ItemType Directory carpeta</code></td>
+</tr>
+<tr class="odd">
+<td>Crear archivo vacío</td>
+<td><code>touch archivo.txt</code></td>
+<td><code>New-Item -ItemType File archivo.txt</code></td>
+</tr>
+<tr class="even">
+<td>Leer archivo</td>
+<td><code>cat archivo.txt</code></td>
+<td><code>Get-Content archivo.txt</code></td>
+</tr>
+<tr class="odd">
+<td>Copiar</td>
+<td><code>cp origen destino</code></td>
+<td><code>Copy-Item origen destino</code></td>
+</tr>
+<tr class="even">
+<td>Renombrar o mover</td>
+<td><code>mv origen destino</code></td>
+<td><code>Rename-Item</code> o <code>Move-Item</code></td>
+</tr>
+<tr class="odd">
+<td>Eliminar con confirmación</td>
+<td><code>rm -i archivo</code></td>
+<td><code>Remove-Item archivo -Confirm</code></td>
+</tr>
+<tr class="even">
+<td>Buscar archivos</td>
+<td><code>find . -name "*.csv"</code></td>
+<td><code>Get-ChildItem -Recurse -Filter *.csv</code></td>
+</tr>
+<tr class="odd">
+<td>Buscar texto</td>
+<td><code>grep -n patrón archivo</code></td>
+<td><code>Select-String -Pattern patrón -Path archivo</code></td>
+</tr>
+<tr class="even">
+<td>Hash SHA-256</td>
+<td><code>sha256sum archivo</code></td>
+<td><code>Get-FileHash archivo -Algorithm SHA256</code></td>
+</tr>
+<tr class="odd">
+<td>Procesos</td>
+<td><code>ps</code>, <code>top</code></td>
+<td><code>Get-Process</code></td>
+</tr>
+<tr class="even">
+<td>Espacio en disco</td>
+<td><code>df -h</code>, <code>du -sh</code></td>
+<td><code>Get-PSDrive</code>, <code>Measure-Object</code></td>
+</tr>
+<tr class="odd">
+<td>Variables de entorno</td>
+<td><code>printenv</code></td>
+<td><code>Get-ChildItem Env:</code></td>
+</tr>
+<tr class="even">
+<td>Ayuda</td>
+<td><code>man</code>, <code>--help</code></td>
+<td><code>Get-Help</code></td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-important callout-titled" title="Una tabla de equivalencias no implica identidad">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Importante</span>Una tabla de equivalencias no implica identidad
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>PowerShell incluye alias como <code>ls</code>, <code>cp</code> y <code>rm</code>, pero esos nombres pueden invocar <em>cmdlets</em> con reglas diferentes a las utilidades GNU. En materiales reproducibles, utilice el nombre nativo de cada entorno.</p>
+</div>
+</div>
+</section>
+<section id="práctica-integradora" class="level1">
+<h1>Práctica integradora</h1>
+<section id="situación" class="level2">
+<h2 class="anchored" data-anchor-id="situación">Situación</h2>
+<p>Un equipo de estudiantes recibió pequeños archivos de señales biomédicas y debe preparar una estructura reproducible para analizarlos. La práctica evalúa organización, trazabilidad e integridad; no evalúa procesamiento digital de señales.</p>
+</section>
+<section id="actividades" class="level2">
+<h2 class="anchored" data-anchor-id="actividades">Actividades</h2>
+<p>Realice las siguientes operaciones dentro de <code>Terminal_Practica</code>:</p>
+<ol type="1">
+<li>Confirme la ubicación actual.</li>
+<li>Liste la estructura completa de carpetas.</li>
+<li>Cree dos copias de <code>ecg_01.csv</code> llamadas <code>ecg_02.csv</code> y <code>ecg_03.csv</code> dentro de <code>datos</code>.</li>
+<li>Busque recursivamente todos los archivos <code>.csv</code>.</li>
+<li>Muestre las tres primeras líneas de cada archivo.</li>
+<li>Busque el texto <code>0.73</code> en los CSV.</li>
+<li>Copie la carpeta <code>datos</code> dentro de <code>respaldo</code> sin eliminar el original.</li>
+<li>Calcule el SHA-256 del archivo original y de su copia.</li>
+<li>Genere un archivo <code>reportes/inventario.txt</code> con la lista de archivos.</li>
+<li>Comprima la carpeta completa y verifique que el archivo comprimido exista.</li>
+</ol>
+</section>
+<section id="evidencias-mínimas" class="level2">
+<h2 class="anchored" data-anchor-id="evidencias-mínimas">Evidencias mínimas</h2>
+<p>El estudiante debe conservar:</p>
+<ul>
+<li>el archivo comprimido;</li>
+<li><code>reportes/inventario.txt</code>;</li>
+<li>una captura o transcripción de los <em>hashes</em> comparados;</li>
+<li>una explicación breve de la diferencia entre ruta absoluta y relativa;</li>
+<li>una identificación explícita del comando que podría sobrescribir un archivo.</li>
+</ul>
+</section>
+<section id="criterios-de-verificación" class="level2">
+<h2 class="anchored" data-anchor-id="criterios-de-verificación">Criterios de verificación</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterio</th>
+<th>Evidencia observable</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Navegación correcta</td>
+<td>Las operaciones se ejecutan dentro de <code>Terminal_Practica</code></td>
+</tr>
+<tr class="even">
+<td>Organización</td>
+<td>La estructura solicitada se conserva</td>
+</tr>
+<tr class="odd">
+<td>Seguridad</td>
+<td>No se usan privilegios de administrador ni eliminación forzada</td>
+</tr>
+<tr class="even">
+<td>Reproducibilidad</td>
+<td>Los comandos se registran en orden y pueden repetirse</td>
+</tr>
+<tr class="odd">
+<td>Integridad</td>
+<td>Los archivos comparados presentan el mismo SHA-256</td>
+</tr>
+<tr class="even">
+<td>Interpretación</td>
+<td>El estudiante explica qué hizo cada comando, no solo muestra la salida</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="errores-frecuentes-y-diagnóstico" class="level1">
+<h1>Errores frecuentes y diagnóstico</h1>
+<section id="no-se-reconoce-el-comando-o-command-not-found" class="level2">
+<h2 class="anchored" data-anchor-id="no-se-reconoce-el-comando-o-command-not-found">“No se reconoce el comando” o “command not found”</h2>
+<p>Posibles causas:</p>
+<ul>
+<li>el comando está mal escrito;</li>
+<li>el programa no está instalado;</li>
+<li>la carpeta del programa no está en <code>PATH</code>;</li>
+<li>se copió un comando de Bash en PowerShell, o viceversa.</li>
+</ul>
+<p>Diagnóstico:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-26-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-26-1" role="tab" aria-controls="tabset-26-1" aria-selected="true" href="">Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-26-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-26-2" role="tab" aria-controls="tabset-26-2" aria-selected="false" href="">Windows PowerShell</a></li></ul>
+<div class="tab-content">
+<div id="tabset-26-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-26-1-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb76"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="bu">type</span> nombre_del_comando</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a><span class="bu">command</span> <span class="at">-v</span> nombre_del_comando</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-26-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-26-2-tab">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb77"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Command</span> nombre_del_comando <span class="op">-</span>ErrorAction SilentlyContinue</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</section>
+<section id="no-existe-el-archivo-o-directorio" class="level2">
+<h2 class="anchored" data-anchor-id="no-existe-el-archivo-o-directorio">“No existe el archivo o directorio”</h2>
+<ol type="1">
+<li>Consulte la carpeta actual.</li>
+<li>Liste sus elementos.</li>
+<li>Revise mayúsculas, extensión y comillas.</li>
+<li>Pruebe primero con una ruta absoluta.</li>
+</ol>
+</section>
+<section id="permiso-denegado" class="level2">
+<h2 class="anchored" data-anchor-id="permiso-denegado">“Permiso denegado”</h2>
+<p>No asuma que la solución es ejecutar como administrador. Verifique:</p>
+<ul>
+<li>quién es el propietario;</li>
+<li>qué permisos tiene el elemento;</li>
+<li>si otro programa mantiene el archivo abierto;</li>
+<li>si se intenta escribir en una ubicación protegida;</li>
+<li>si la política institucional restringe scripts.</li>
+</ul>
+</section>
+<section id="el-comando-parece-no-terminar" class="level2">
+<h2 class="anchored" data-anchor-id="el-comando-parece-no-terminar">El comando parece no terminar</h2>
+<ul>
+<li>Espere si la tarea procesa muchos archivos.</li>
+<li>Revise si el programa solicita una entrada o confirmación.</li>
+<li>Use <kbd>Ctrl</kbd> + <kbd>C</kbd> para interrumpir una tarea propia cuando sea necesario.</li>
+<li>No cierre abruptamente la terminal mientras un programa escribe un archivo importante.</li>
+</ul>
+</section>
+</section>
+<section id="preguntas-de-verificación" class="level1">
+<h1>Preguntas de verificación</h1>
+<ol type="1">
+<li>¿Por qué una ruta relativa puede funcionar en una carpeta y fallar en otra?</li>
+<li>¿Qué diferencia existe entre <code>&gt;</code> y <code>&gt;&gt;</code>?</li>
+<li>¿Por qué <code>rm</code> y <code>Remove-Item</code> requieren más precaución que la papelera gráfica?</li>
+<li>¿Qué información aporta un <em>hash</em> y qué información no aporta?</li>
+<li>¿Por qué una tubería de PowerShell no debe entenderse simplemente como una tubería de texto?</li>
+<li>¿Cuál es el riesgo de reemplazar <code>PATH</code> en lugar de agregar una ruta conservando su valor?</li>
+<li>¿Por qué <code>chmod 777</code> no es una solución apropiada ante cualquier error de permisos?</li>
+<li>¿Qué comandos permiten comprobar la ubicación actual antes de modificar archivos?</li>
+<li>¿Qué diferencia existe entre un cambio temporal de sesión y una configuración persistente?</li>
+<li>¿Qué evidencia demuestra que una práctica de terminal es reproducible?</li>
+</ol>
+</section>
+<section id="cierre" class="level1">
+<h1>Cierre</h1>
+<p>El dominio de la terminal no consiste en memorizar largas listas de comandos. Consiste en comprender el sistema de archivos, construir rutas correctas, anticipar el efecto de cada operación, verificar resultados y registrar procedimientos. En trabajos de Ingeniería Biomédica, estas capacidades reducen errores de organización y facilitan la reproducción de análisis, la gestión de conjuntos de datos y la automatización posterior con Python, R, Git o Quarto.</p>
+</section>
+<section id="referencias-oficiales" class="level1">
+<h1>Referencias oficiales</h1>
+<ul>
+<li><a href="https://www.gnu.org/software/bash/manual/bash.html">GNU Bash Reference Manual</a></li>
+<li><a href="https://www.gnu.org/software/coreutils/manual/coreutils.html">GNU Coreutils</a></li>
+<li><a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.management/copy-item">Copy-Item — Microsoft Learn</a></li>
+<li><a href="https://learn.microsoft.com/powershell/scripting/samples/manipulating-items-directly">Manipulación de elementos en PowerShell — Microsoft Learn</a></li>
+<li><a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_profiles">Perfiles de PowerShell — Microsoft Learn</a></li>
+<li><a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies">Políticas de ejecución de PowerShell — Microsoft Learn</a></li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
