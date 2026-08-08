@@ -1,0 +1,649 @@
+---
+title: "Laboratorio 01 — Señal, medición y contexto"
+subtitle: "ECG, EMG o EEG: cómo el propósito del análisis modifica la visión de una señal biomédica"
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+lang: es
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    number-depth: 3
+    code-copy: true
+    code-line-numbers: true
+    code-overflow: wrap
+    code-tools:
+      source: false
+      toggle: true
+      caption: "Código"
+    anchor-sections: true
+    link-external-newwindow: true
+    smooth-scroll: true
+execute:
+  enabled: false
+---
+
+::: {.callout-important title="Idea central del laboratorio"}
+Una señal biomédica no tiene un significado único fuera de su contexto. La fisiología determina qué fenómenos pueden originarla; la anatomía y la conducción de volumen modifican cómo llega a los electrodos; el sistema de adquisición limita lo que se registra; y la pregunta biomédica determina qué características resultan relevantes.
+
+El propósito de este laboratorio no es aplicar un filtro por costumbre. El propósito es justificar qué representa la señal, qué información conserva, qué factores la alteran y qué conclusiones son válidas en un contexto de análisis específico.
+:::
+
+# Información general
+
+| Elemento | Lineamiento |
+|---|---|
+| Asignatura | Sistemas y Señales Biomédicos — SYSB |
+| Modalidad | Trabajo colaborativo, análisis reproducible y sustentación oral |
+| Integrantes | Equipos de tres estudiantes |
+| Señal | Elegir **una**: ECG, EMG o EEG |
+| Comparación obligatoria | Dos contextos de análisis para la misma modalidad de señal |
+| Evidencia | Fuentes académicas, metadatos del registro, figuras propias y análisis computacional |
+| Producto | Informe reproducible en Quarto + HTML y exposición oral |
+| Alcance | Interpretación fisiológica, anatómica, instrumental y analítica; no diagnóstico clínico |
+
+## Pregunta orientadora central
+
+> ¿Cómo cambian la representación, las características relevantes, las interferencias críticas y las conclusiones permitidas sobre una señal ECG, EMG o EEG cuando cambia el contexto en el que se adquiere y analiza?
+
+## Resultados de aprendizaje
+
+Al finalizar el laboratorio, el estudiante estará en capacidad de:
+
+1. Explicar el origen fisiológico y anatómico de una señal ECG, EMG o EEG sin confundir el fenómeno biológico con su medición eléctrica.
+2. Caracterizar la señal en términos de amplitud, tiempo, frecuencia, espacialidad, variabilidad y condiciones de adquisición.
+3. Diferenciar actividad fisiológica de interés, actividad fisiológica interferente, artefactos, interferencia ambiental, ruido electrónico y distorsión introducida por el procesamiento.
+4. Demostrar que la pregunta de análisis condiciona la selección de sensores, canales, escalas, transformaciones, características y criterios de calidad.
+5. Sustentar decisiones de procesamiento mediante evidencia fisiológica, matemática y computacional reproducible.
+6. Reconocer qué conclusiones no pueden obtenerse a partir de los datos disponibles.
+
+# Planteamiento conceptual
+
+## La señal registrada no es el fenómeno fisiológico aislado
+
+Una representación simplificada de la medición puede escribirse como:
+
+$$
+v_m(t)=\left(h_{\mathrm{vol}} * s_{\mathrm{bio}}\right)(t)
++a_{\mathrm{fis}}(t)+a_{\mathrm{mov}}(t)+a_{\mathrm{amb}}(t),
+$$
+
+donde:
+
+- $s_{\mathrm{bio}}(t)$ representa la actividad bioeléctrica generada por las fuentes fisiológicas de interés;
+- $h_{\mathrm{vol}}(t)$ resume el efecto de la anatomía, la orientación de las fuentes, la conducción de volumen y la geometría de medición;
+- $a_{\mathrm{fis}}(t)$ representa actividad fisiológica distinta de la señal objetivo;
+- $a_{\mathrm{mov}}(t)$ representa perturbaciones asociadas al movimiento y a la interfaz electrodo–tejido;
+- $a_{\mathrm{amb}}(t)$ representa interferencias electromagnéticas y otras perturbaciones externas.
+
+El sistema de adquisición transforma esta mezcla en una secuencia digital:
+
+$$
+x[n]=Q\left\{\left(h_{\mathrm{AFE}} * v_m\right)(t)\bigg|_{t=nT_s}\right\}+e_q[n],
+$$
+
+donde $h_{\mathrm{AFE}}$ representa la respuesta del frente analógico, $T_s=1/f_s$ es el periodo de muestreo, $Q\{\cdot\}$ representa la cuantización y $e_q[n]$ su error asociado.
+
+Finalmente, la vista analítica es producida por un procedimiento $\mathcal{A}_{\theta}$:
+
+$$
+z=\mathcal{A}_{\theta}\{x[n];\mathcal{C}\},
+$$
+
+en el cual $\theta$ contiene las decisiones de procesamiento y $\mathcal{C}$ representa el contexto. Por tanto, $z$ no depende únicamente de la fisiología: también depende del propósito, el protocolo, la instrumentación y las decisiones analíticas.
+```{mermaid}
+flowchart TD
+    A["Generador fisiológico"] --> B["Anatomía y conducción"]
+    B --> C["Electrodos y adquisición"]
+    C --> D["Procesamiento digital"]
+    D --> E["Interpretación según contexto"]
+```
+
+
+## Qué se entenderá por contexto
+
+En este laboratorio, un contexto no es una etiqueta general como “clínico” o “deportivo”. Debe definirse mediante variables observables:
+
+| Dimensión | Pregunta que debe responderse |
+|---|---|
+| Propósito | ¿Qué fenómeno, evento o cambio se desea describir, detectar o comparar? |
+| Población o condición | ¿En quién y bajo qué condición se registró la señal? |
+| Protocolo | ¿Qué tarea, postura, estímulo, estado o duración se utilizó? |
+| Configuración espacial | ¿Dónde se ubicaron los electrodos? ¿Qué canal, derivación, referencia o montaje se analizó? |
+| Instrumentación | ¿Qué ganancia, rango, resolución, filtros de hardware y frecuencia de muestreo se usaron? |
+| Unidad de análisis | ¿Se estudian eventos, ciclos, épocas, contracciones, canales, sujetos o registros completos? |
+| Procesamiento | ¿Qué segmentación, filtrado, normalización, referencia o representación se aplicó? |
+| Decisión final | ¿Qué afirmación se pretende sustentar y con qué incertidumbre? |
+
+# Selección de la señal y de los contextos
+
+Cada equipo debe escoger **una sola señal**. La comparación principal se realizará entre dos contextos de análisis coherentes para esa modalidad.
+
+## Ejemplos de contrastes admisibles
+
+Los siguientes ejemplos orientan la elección, pero no reemplazan la formulación propia del equipo.
+
+| Señal | Contexto A | Contexto B | Cambio conceptual que debe investigarse |
+|---|---|---|---|
+| ECG | Análisis de ritmo en registro ambulatorio | Análisis morfológico en ECG de 12 derivaciones en reposo | Duración, número de derivaciones, artefactos, preservación de morfología y conclusiones permitidas |
+| ECG | Estimación de frecuencia cardiaca durante ejercicio | Medición en reposo | Movimiento, variabilidad temporal, contacto del sensor y utilidad de intervalos o segmentos |
+| EMG | Determinación del inicio y final de activación | Estudio de fatiga muscular | Escala temporal, envolvente, amplitud, contenido espectral, normalización y estacionariedad |
+| EMG | Reconocimiento de gestos | Estimación de nivel de fuerza | Geometría de electrodos, características, etiquetas, variabilidad entre sesiones y significado de la salida |
+| EEG | Estudio de etapas de sueño | Análisis de respuesta relacionada con eventos | Duración de época, referencia, sincronización, frecuencia, promediado y control de artefactos |
+| EEG | Imaginación motora para BCI | Vigilancia o actividad espontánea | Localización de canales, bandas de interés, unidad de análisis y variabilidad entre ensayos |
+
+::: {.callout-warning title="Comparaciones no admisibles"}
+No es suficiente comparar “ECG contra EEG”, “señal limpia contra señal ruidosa” o “antes contra después del filtro”. La comparación debe explicar cómo dos propósitos o protocolos diferentes modifican la forma válida de observar **la misma modalidad de señal**.
+:::
+
+## Ficha de definición del problema
+
+El equipo debe completar esta ficha antes de analizar los datos.
+
+| Elemento | Definición del equipo |
+|---|---|
+| Señal seleccionada |  |
+| Pregunta principal |  |
+| Contexto A |  |
+| Contexto B |  |
+| Variable o fenómeno de interés |  |
+| Unidad de análisis |  |
+| Diferencia principal esperada entre contextos |  |
+| Evidencia necesaria para sostener la comparación |  |
+| Conclusión que los datos **no** permitirán formular |  |
+
+# Desarrollo del laboratorio
+
+## Fase 1 — Explicación fisiológica y anatómica
+
+El equipo debe construir una explicación causal completa desde el generador fisiológico hasta el potencial medido. No se aceptará una enumeración de ondas o bandas sin explicar su origen.
+
+### Contenido obligatorio
+
+1. **Estructuras anatómicas involucradas.** Identificar tejidos, órganos, regiones, células excitables y trayectorias relevantes.
+2. **Mecanismo electrofisiológico.** Explicar qué eventos celulares y tisulares producen diferencias de potencial medibles.
+3. **Organización espacial y temporal.** Describir cómo la sincronía, orientación, propagación y superposición de fuentes afectan el registro.
+4. **Conducción hacia el sensor.** Explicar el efecto del tejido interpuesto y de la geometría fuente–electrodo.
+5. **Relación entre evento fisiológico y forma de onda.** Indicar qué componentes observables pueden relacionarse con procesos fisiológicos y bajo qué supuestos.
+6. **Límites de inferencia.** Separar con claridad lo medido directamente de lo inferido.
+
+### Cadena explicativa requerida
+
+La exposición debe incluir una figura propia que conecte:
+
+$$
+\text{evento celular}  \rightarrow\text{actividad tisular}\rightarrow \text{propagación o sincronización}  \rightarrow \text{conducción de volumen}  \rightarrow \text{diferencia de potencial medida}
+$$
+
+::: {.callout-note title="Criterio de profundidad"}
+Expresiones como “la onda P representa las aurículas”, “la EMG mide la contracción” o “la banda alfa representa relajación” son incompletas. Deben explicarse el mecanismo, las condiciones de observación y las limitaciones de esa asociación.
+:::
+
+## Fase 2 — Caracterización de la señal adquirida
+
+El equipo debe documentar valores y rangos sustentados para su contexto. Los rangos típicos no son universales: cambian con el tipo de registro, los electrodos, la población, la tarea y la cadena instrumental.
+
+| Dimensión | Información que debe reportarse | Evidencia requerida |
+|---|---|---|
+| Variable independiente | Tiempo continuo, tiempo discreto, ensayo, ciclo o evento | Definición y unidades |
+| Amplitud | Unidad física, rango observado y rango esperado para el contexto | Metadatos + referencia |
+| Temporalidad | Duración del registro, eventos, intervalos o escalas relevantes | Figura propia |
+| Frecuencia | Contenido espectral útil y significado de las bandas reportadas | PSD/espectro + referencia |
+| Espacialidad | Canal, derivación, referencia, montaje o ubicación muscular | Esquema + metadatos |
+| Variabilidad | Entre ciclos, ensayos, canales, sujetos o sesiones | Evidencia cuantitativa |
+| Muestreo | $f_s$, resolución temporal y relación con el contenido de interés | Metadatos + justificación |
+| Cuantización | Resolución, rango de entrada o información disponible | Metadatos; declarar si se desconoce |
+| Condición de adquisición | Reposo, movimiento, tarea, postura, estímulo y entorno | Descripción del protocolo |
+
+### Clasificación matemática mínima
+
+Justificar, no solo marcar, si el registro analizado puede tratarse como:
+
+- continuo o discreto según la etapa de la cadena;
+- determinista, aleatorio o una realización de un proceso estocástico;
+- periódico, cuasiperiódico, transitorio o aperiódico;
+- estacionario o no estacionario en la ventana elegida;
+- univariado o multicanal;
+- señal de energía o de potencia, especificando el alcance práctico de la clasificación.
+
+## Fase 3 — Sistema de adquisición
+
+Construir un diagrama de bloques específico para el registro seleccionado. Como mínimo debe contener:
+
+1. fuente fisiológica;
+2. interfaz tejido–electrodo;
+3. configuración diferencial, referencia o montaje;
+4. protección y aislamiento cuando corresponda;
+5. amplificación;
+6. filtrado analógico y prevención de aliasing;
+7. conversión analógica–digital;
+8. almacenamiento y metadatos;
+9. procesamiento digital;
+10. salida o decisión asociada al contexto.
+
+Para cada bloque, responder:
+
+- ¿Qué transformación realiza?
+- ¿Qué supuesto introduce?
+- ¿Qué información puede perder?
+- ¿Qué tipo de distorsión o interferencia puede introducir?
+- ¿Su configuración es igual en los contextos A y B? ¿Por qué?
+
+## Fase 4 — Interferencias, artefactos y ruido
+
+No se debe usar la palabra “ruido” como categoría única. Clasifique cada perturbación según su origen.
+
+| Categoría | Definición operacional | Ejemplos que deben investigarse según la señal |
+|---|---|---|
+| Actividad fisiológica interferente | Señal biológica real que no corresponde al fenómeno objetivo | ECG, EOG, EMG, respiración u otra actividad concurrente |
+| Artefacto de interfaz o movimiento | Cambio producido por movimiento, impedancia o contacto electrodo–tejido | Deriva, desplazamiento, variación de contacto, cableado |
+| Interferencia ambiental | Acoplamiento externo al sistema de medición | Red eléctrica, equipos cercanos, campos electromagnéticos |
+| Ruido electrónico | Perturbación originada en componentes o instrumentación | Ruido térmico, saturación, rango dinámico insuficiente |
+| Error de digitalización | Alteración asociada al muestreo o la cuantización | Aliasing, cuantización, pérdida de resolución |
+| Artefacto de procesamiento | Estructura creada o modificada por el método analítico | Transitorios de borde, distorsión de fase, fuga espectral, sobrealisado |
+
+### Matriz obligatoria de interferencias
+
+Analizar al menos **cinco** interferencias relevantes. Debe incluirse como mínimo una fisiológica, una instrumental o de interfaz, una ambiental y una producida por una decisión de procesamiento.
+
+| Interferencia | Origen físico/fisiológico | Apariencia temporal | Apariencia frecuencial | Contexto más afectado | Método de detección | Posible mitigación | Información útil que podría eliminarse |
+|---|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |
+
+::: {.callout-important title="Decisión crítica"}
+Una componente de 50 o 60 Hz no debe eliminarse automáticamente. El equipo debe demostrar que corresponde a interferencia dominante en su registro y discutir qué información fisiológica podría alterarse al aplicar un filtro de rechazo.
+:::
+
+## Fase 5 — Evidencia computacional
+
+El análisis se realizará sobre un registro real, anonimizado y con metadatos suficientes. Puede emplearse un conjunto público o uno suministrado por el profesor. No se permite sustituir la evidencia principal con una señal sintética.
+
+### Evidencia mínima
+
+1. **Inspección del registro crudo.** Graficar sin filtrado previo y conservar las unidades físicas.
+2. **Tres escalas temporales.** Presentar una vista global, una vista intermedia y una vista local que responda a la pregunta del contexto.
+3. **Contenido frecuencial.** Estimar una densidad espectral de potencia o representación equivalente; justificar ventana, duración de segmento, solapamiento y resolución frecuencial.
+4. **Marcación de interferencias.** Identificar visualmente segmentos o componentes compatibles con las perturbaciones estudiadas.
+5. **Comparación A–B.** Mostrar cómo cambian al menos dos decisiones de observación o procesamiento entre los contextos.
+6. **Experimento controlado.** Modificar una sola decisión —por ejemplo, duración de ventana, referencia, montaje, banda, rectificación, normalización o resolución temporal— y explicar qué cambia y qué permanece constante.
+7. **Trazabilidad.** Cada figura debe indicar registro, canal, intervalo, $f_s$, unidad, transformación y parámetros utilizados.
+
+### Vistas mínimas por contexto
+
+| Vista | Contexto A | Contexto B | Interpretación comparativa |
+|---|---|---|---|
+| Señal temporal |  |  |  |
+| Contenido frecuencial |  |  |  |
+| Característica principal |  |  |  |
+| Interferencia crítica |  |  |  |
+| Decisión de procesamiento |  |  |  |
+| Conclusión permitida |  |  |  |
+| Conclusión no permitida |  |  |  |
+
+# Organización reproducible
+
+## Estructura mínima del proyecto
+
+```text
+laboratorio_senal_contexto/
+├── README.md
+├── pyproject.toml
+├── reporte.qmd
+├── referencias.bib
+├── data/
+│   └── README.md
+├── src/
+│   └── analisis.py
+└── resultados/
+    └── figuras/
+```
+
+- `README.md`: pregunta, señal, contextos, fuente de datos y pasos de reproducción.
+- `pyproject.toml`: dependencias y versión mínima de Python.
+- `reporte.qmd`: explicación, código, resultados y discusión.
+- `referencias.bib`: fuentes citadas en el texto.
+- `data/README.md`: procedencia, licencia, registro, canal, unidades y forma de obtener los datos. No duplicar conjuntos grandes en el repositorio.
+- `src/analisis.py`: funciones reutilizables; evitar copiar el mismo bloque en varias celdas.
+- `resultados/figuras/`: figuras exportadas cuando sea necesario.
+
+## Entorno sugerido con `uv`
+
+```{bash}
+# Crear el proyecto y fijar una versión de Python disponible
+uv init --python 3.12
+
+# Dependencias mínimas
+uv add numpy pandas scipy matplotlib
+
+# Dependencias opcionales según el formato del conjunto
+uv add wfdb       # Registros PhysioNet/WFDB
+uv add mne        # EEG y formatos neurofisiológicos
+```
+
+El equipo debe registrar las versiones efectivamente utilizadas. No debe instalar bibliotecas que no aparezcan en el código.
+
+## Plantilla de metadatos
+
+```{python}
+from pathlib import Path
+
+METADATOS = {
+    "senal": "TODO: ECG, EMG o EEG",
+    "fuente": "TODO: repositorio y DOI/URL persistente",
+    "registro": "TODO: identificador del registro",
+    "canal": "TODO: canal, derivación o montaje",
+    "unidad": "TODO: unidad física",
+    "fs_hz": None,  # TODO: frecuencia de muestreo verificada
+    "condicion": "TODO: tarea, estado o protocolo",
+}
+
+assert METADATOS["fs_hz"] is not None, "Debe documentarse la frecuencia de muestreo."
+```
+
+## Plantilla de carga para un archivo tabular
+
+Esta plantilla debe adaptarse al formato real. No suponga que la primera columna representa tiempo ni que la señal está expresada en voltios.
+
+```{python}
+import numpy as np
+import pandas as pd
+
+RUTA = Path("data/TODO.csv")
+COLUMNA_TIEMPO = "TODO"
+COLUMNA_SENAL = "TODO"
+
+datos = pd.read_csv(RUTA)
+t = pd.to_numeric(datos[COLUMNA_TIEMPO], errors="raise").to_numpy()
+x = pd.to_numeric(datos[COLUMNA_SENAL], errors="raise").to_numpy()
+
+if not np.isfinite(x).all():
+    raise ValueError("La señal contiene valores no finitos; documente cómo serán tratados.")
+
+dt = np.diff(t)
+if np.any(dt <= 0):
+    raise ValueError("El vector de tiempo no es estrictamente creciente.")
+
+fs_estimada = 1.0 / np.median(dt)
+print(f"Frecuencia estimada: {fs_estimada:.3f} Hz")
+```
+
+## Inspección en varias escalas
+
+Las ventanas deben seleccionarse por su relación con el fenómeno, no porque “se vean bien”.
+
+```{python}
+import matplotlib.pyplot as plt
+
+VENTANAS_S = [
+    (None, None),  # TODO: vista global
+    (None, None),  # TODO: vista intermedia
+    (None, None),  # TODO: vista local
+]
+
+fig, axes = plt.subplots(3, 1, figsize=(11, 8))
+
+for ax, (inicio, fin) in zip(axes, VENTANAS_S):
+    assert inicio is not None and fin is not None and fin > inicio
+    mascara = (t >= inicio) & (t <= fin)
+    ax.plot(t[mascara], x[mascara], linewidth=0.9)
+    ax.set_xlim(inicio, fin)
+    ax.set_ylabel(METADATOS["unidad"])
+    ax.grid(alpha=0.25)
+
+axes[-1].set_xlabel("Tiempo [s]")
+fig.suptitle(
+    f'{METADATOS["senal"]} — registro {METADATOS["registro"]} — '
+    f'canal {METADATOS["canal"]}'
+)
+plt.tight_layout()
+plt.show()
+```
+
+## Estimación del contenido frecuencial
+
+La duración de segmento define la resolución aproximada $\Delta f\approx f_s/N$. Una mayor resolución frecuencial implica una ventana temporal más larga y puede ocultar cambios no estacionarios.
+
+```{python}
+from scipy.signal import welch
+
+fs = float(METADATOS["fs_hz"])
+DURACION_SEGMENTO_S = None  # TODO: justificar según el contexto
+SOLAPAMIENTO = None         # TODO: fracción entre 0 y 1
+
+assert DURACION_SEGMENTO_S is not None and DURACION_SEGMENTO_S > 0
+assert SOLAPAMIENTO is not None and 0 <= SOLAPAMIENTO < 1
+
+nperseg = int(round(DURACION_SEGMENTO_S * fs))
+noverlap = int(round(SOLAPAMIENTO * nperseg))
+
+f, pxx = welch(
+    x,
+    fs=fs,
+    window="hann",
+    nperseg=nperseg,
+    noverlap=noverlap,
+    detrend="constant",
+    scaling="density",
+)
+
+delta_f = fs / nperseg
+print(f"Resolución frecuencial aproximada: {delta_f:.3f} Hz")
+
+plt.figure(figsize=(10, 4))
+plt.semilogy(f, pxx)
+plt.xlabel("Frecuencia [Hz]")
+plt.ylabel(f'PSD [{METADATOS["unidad"]}²/Hz]')
+plt.title("Densidad espectral de potencia — parámetros documentados")
+plt.grid(alpha=0.25)
+plt.tight_layout()
+plt.show()
+```
+
+## Experimento controlado sobre una decisión
+
+El equipo debe formular antes de ejecutar:
+
+| Elemento | Definición |
+|---|---|
+| Decisión que se modificará |  |
+| Valor o configuración A |  |
+| Valor o configuración B |  |
+| Variables mantenidas constantes |  |
+| Cambio esperado |  |
+| Riesgo de interpretación |  |
+| Evidencia que confirmaría o refutaría la expectativa |  |
+
+La comparación debe contener figuras con ejes y unidades equivalentes. No se permite comparar gráficas con escalas diferentes sin advertirlo explícitamente.
+
+# Análisis del efecto del contexto
+
+## Matriz de comparación obligatoria
+
+| Dimensión | Contexto A | Contexto B | Consecuencia sobre la interpretación |
+|---|---|---|---|
+| Pregunta biomédica |  |  |  |
+| Fenómeno fisiológico de interés |  |  |  |
+| Protocolo |  |  |  |
+| Electrodos/canales/montaje |  |  |  |
+| Frecuencia de muestreo y duración |  |  |  |
+| Escala temporal relevante |  |  |  |
+| Representación principal |  |  |  |
+| Preprocesamiento |  |  |  |
+| Características extraídas |  |  |  |
+| Interferencia dominante |  |  |  |
+| Criterio de calidad |  |  |  |
+| Conclusión válida |  |  |  |
+| Conclusión inválida o no sustentada |  |  |  |
+
+## Estructura del argumento final
+
+La conclusión debe construirse como una cadena de afirmaciones verificables:
+
+1. **Afirmación:** qué cambia entre los contextos.
+2. **Mecanismo:** por qué cambia desde el punto de vista fisiológico, instrumental o matemático.
+3. **Evidencia:** qué figura, métrica, metadato o referencia sustenta la afirmación.
+4. **Límite:** qué explicación alternativa permanece abierta.
+5. **Consecuencia:** qué decisión de adquisición o análisis se deriva.
+
+| Afirmación | Tipo: hecho/inferencia | Evidencia | Supuesto | Limitación |
+|---|---|---|---|---|
+|  |  |  |  |  |
+|  |  |  |  |  |
+|  |  |  |  |  |
+
+# Lineamientos de la exposición
+
+## Organización
+
+- Duración: **12 minutos de exposición y 8 minutos de preguntas**.
+- El profesor seleccionará al expositor al iniciar la presentación. Todos los integrantes deben dominar el trabajo completo.
+- Los demás integrantes responderán cuando el profesor lo solicite.
+- La exposición debe apoyarse en un máximo de **10 diapositivas de contenido**, sin contar portada y referencias.
+- Las figuras deben ser producidas por el equipo o estar claramente citadas. No se aceptan capturas ilegibles de artículos, software o páginas web.
+- Toda cifra debe indicar unidades, fuente y contexto. Toda decisión de procesamiento debe indicar parámetros.
+- No se permite leer párrafos completos. La evaluación se centra en la explicación y la defensa de decisiones.
+
+## Secuencia recomendada
+
+1. Pregunta y definición de los dos contextos.
+2. Origen fisiológico y anatómico.
+3. Cadena de medición y metadatos del registro.
+4. Caracterización temporal, frecuencial y espacial.
+5. Interferencias críticas.
+6. Comparación computacional A–B.
+7. Experimento controlado.
+8. Conclusiones válidas, límites y decisiones recomendadas.
+
+# Preguntas orientadoras para la sustentación
+
+Las preguntas no constituyen un cuestionario para responder de forma aislada. Deben orientar la argumentación y anticipar la defensa oral.
+
+## Fisiología y anatomía
+
+1. ¿Cuál es el generador bioeléctrico primario de la señal seleccionada?
+2. ¿Qué evento celular produce el cambio eléctrico y cómo se organiza a escala tisular?
+3. ¿Cómo influyen la orientación, sincronía y distancia de las fuentes en la amplitud y morfología registradas?
+4. ¿Qué papel cumple la conducción de volumen entre la fuente y el electrodo?
+5. ¿Qué parte de la explicación corresponde a una medición directa y qué parte es una inferencia?
+
+## Adquisición y representación
+
+6. ¿Por qué la ubicación de los electrodos, la derivación o la referencia es apropiada para cada contexto?
+7. ¿Qué información se perdería si se utilizara una frecuencia de muestreo menor?
+8. ¿Qué limitaciones introducen la ganancia, el rango dinámico, la cuantización y los filtros de hardware?
+9. ¿La señal puede considerarse estacionaria dentro de la ventana analizada? ¿Qué evidencia respalda la respuesta?
+10. ¿Por qué las tres escalas temporales seleccionadas son pertinentes para la pregunta?
+
+## Interferencias y procesamiento
+
+11. ¿Cómo se distingue una variación fisiológica real de un artefacto?
+12. ¿Qué interferencia se superpone más con la información útil y por qué es difícil eliminarla?
+13. ¿Qué componente útil podría perderse con el filtrado propuesto?
+14. ¿El procesamiento altera amplitud, fase, latencia o contenido espectral? ¿Cómo se verificó?
+15. ¿Qué evidencia existe para afirmar que una componente de 50/60 Hz es interferencia y no contenido relevante?
+
+## Efecto del contexto
+
+16. ¿Qué característica sería informativa en el contexto A, pero insuficiente o engañosa en el contexto B?
+17. ¿Qué decisión de adquisición cambia necesariamente entre contextos?
+18. ¿Qué resultado cambia al modificar una sola decisión de procesamiento y cuál es el mecanismo?
+19. ¿Qué conclusión parece plausible visualmente, pero no está sustentada por los datos?
+20. ¿Qué datos adicionales serían necesarios para reducir la incertidumbre de la interpretación?
+
+# Rúbrica de evaluación
+
+La calificación total es de 100 puntos. Los primeros seis criterios corresponden al producto y a la exposición del equipo. La defensa oral se califica individualmente.
+
+::: {.table-responsive}
+| Criterio | Peso | Superior | Competente | Básico | Insuficiente |
+|---|---:|---|---|---|---|
+| Fundamento fisiológico y anatómico | 20 | Explica de forma causal y precisa desde el evento celular hasta la medición; relaciona fuentes, tejidos, orientación, sincronía y conducción; diferencia medición e inferencia. | Explicación correcta y conectada, con omisiones menores en propagación, espacialidad o límites. | Enumera estructuras y componentes, pero la relación causal es parcial o presenta simplificaciones importantes. | Confunde el fenómeno fisiológico con la señal medida, contiene errores sustanciales o carece de sustento. |
+| Caracterización y adquisición | 15 | Reporta unidades, rangos, escalas, $f_s$, cuantización, canales, referencia, protocolo y metadatos; justifica cada decisión para ambos contextos. | Documenta la mayoría de elementos y justifica las decisiones principales. | Presenta valores sin suficiente fuente o conexión con el contexto; faltan metadatos relevantes. | Usa valores genéricos, omite unidades o desconoce la configuración del registro. |
+| Comparación de contextos | 20 | Define dos contextos verificables y demuestra cómo modifican representación, características, criterios de calidad y conclusiones permitidas. | La comparación es coherente y está sustentada, aunque alguna consecuencia queda poco desarrollada. | Describe dos contextos, pero la comparación es principalmente narrativa y no demuestra el efecto analítico. | Los contextos son vagos, no comparables o se reemplazan por una comparación entre señales diferentes. |
+| Interferencias y riesgos de procesamiento | 15 | Clasifica orígenes, muestra evidencia temporal/frecuencial, propone detección y mitigación, y analiza la pérdida potencial de información útil. | Identifica y analiza interferencias relevantes, con discusión parcial de los riesgos del procesamiento. | Enumera perturbaciones y filtros, pero no demuestra su presencia ni discute sus efectos adversos. | Llama “ruido” a toda variación, aplica mitigaciones automáticas o confunde señal útil con artefacto. |
+| Evidencia computacional y reproducibilidad | 10 | Presenta señal cruda, tres escalas, análisis frecuencial, comparación A–B y experimento controlado; código, parámetros, datos y figuras son trazables y reproducibles. | Cumple la mayor parte de la evidencia y permite reconstruir el análisis con ajustes menores. | El análisis funciona parcialmente, pero faltan parámetros, trazabilidad o control de variables. | No hay evidencia computacional verificable, se usan datos sintéticos como evidencia principal o se presentan resultados no reproducibles. |
+| Comunicación científica de la exposición | 10 | Presenta un argumento claro, jerarquiza evidencia, usa figuras legibles, respeta el tiempo y separa hechos, inferencias y límites. | Comunicación clara con problemas menores de tiempo, legibilidad o articulación del argumento. | Predomina la lectura o descripción de diapositivas; la evidencia está débilmente conectada con las conclusiones. | Exposición desorganizada, figuras ilegibles, afirmaciones sin evidencia o incumplimiento sustancial del tiempo. |
+| Defensa individual | 10 | Responde con razonamiento fisiológico, matemático y metodológico; identifica supuestos, límites y alternativas sin depender de otros integrantes. | Responde correctamente la mayoría de preguntas y justifica las decisiones principales. | Responde aspectos descriptivos, pero no logra defender decisiones o límites. | Desconoce el trabajo presentado, contradice la evidencia o no puede explicar las decisiones centrales. |
+:::
+
+## Asignación del nivel dentro de cada criterio
+
+- **Superior:** 100 % del peso del criterio.
+- **Competente:** 85 % del peso del criterio.
+- **Básico:** 65 % del peso del criterio.
+- **Insuficiente:** 35 % del peso del criterio.
+- **Sin evidencia:** 0 % del peso del criterio.
+
+La nota en escala de 0,0 a 5,0 puede obtenerse mediante:
+
+$$
+\text{Nota}=\frac{\text{Puntaje total}}{20}.
+$$
+
+## Condiciones que limitan la calificación
+
+- Sin comparación explícita entre dos contextos, el criterio “Comparación de contextos” se califica como **sin evidencia**.
+- Sin inspección de la señal cruda y sin metadatos, no puede asignarse nivel superior o competente en “Evidencia computacional y reproducibilidad”.
+- Un filtro aplicado sin especificaciones, respuesta en frecuencia o análisis de pérdida de información no se considera una justificación técnica.
+- Las afirmaciones clínicas no respaldadas se consideran fuera del alcance y afectan el criterio correspondiente.
+- Las referencias inexistentes, resultados inventados o figuras presentadas como propias sin serlo se tratarán según las normas institucionales de integridad académica.
+
+# Lista de verificación antes de entregar
+
+## Contenido científico
+
+- [ ] Se seleccionó una sola modalidad: ECG, EMG o EEG.
+- [ ] Se formularon una pregunta principal y dos contextos verificables.
+- [ ] La explicación conecta evento celular, tejido, propagación, conducción y medición.
+- [ ] Se documentaron unidades, amplitudes, escalas, $f_s$, canales y protocolo.
+- [ ] Se distinguieron señal objetivo, actividad fisiológica interferente, artefactos y ruido.
+- [ ] Se analizaron al menos cinco interferencias de categorías distintas.
+- [ ] Se incluyeron señal cruda, tres escalas temporales y contenido frecuencial.
+- [ ] Se realizó una comparación controlada modificando una sola decisión.
+- [ ] Cada conclusión está conectada con evidencia y presenta sus límites.
+
+## Reproducibilidad y presentación
+
+- [ ] El proyecto puede ejecutarse en un entorno nuevo siguiendo el `README.md`.
+- [ ] Las dependencias aparecen en `pyproject.toml`.
+- [ ] La fuente, licencia e identificador de los datos están documentados.
+- [ ] Todas las figuras tienen ejes, unidades, canal, intervalo y parámetros.
+- [ ] El HTML se renderiza sin errores.
+- [ ] Las referencias poseen DOI o URL persistente cuando existe.
+- [ ] La presentación respeta el tiempo y el máximo de diapositivas.
+- [ ] Todos los integrantes pueden defender el trabajo completo.
+
+# Fuentes de datos sugeridas
+
+La elección del conjunto debe responder a la pregunta. No se debe escoger un conjunto únicamente porque sea fácil de descargar.
+
+- **ECG:** MIT-BIH Arrhythmia Database, PhysioNet. Registros ambulatorios de dos canales con anotaciones. DOI: [10.13026/C2F305](https://doi.org/10.13026/C2F305).
+- **EMG:** Open Access Dataset and Toolbox of High-Density Surface Electromyogram Recordings, PhysioNet. DOI del conjunto: [10.13026/hxan-pe94](https://doi.org/10.13026/hxan-pe94); artículo asociado: [10.1109/TNSRE.2021.3082551](https://doi.org/10.1109/TNSRE.2021.3082551).
+- **EEG:** Sleep-EDF Database Expanded, PhysioNet. Incluye EEG, EOG, EMG y anotaciones de sueño. Página persistente: <https://physionet.org/content/sleep-edfx/1.0.0/>.
+
+::: {.callout-warning title="Uso responsable de datos"}
+Utilice únicamente datos anonimizados y autorizados para docencia. No realice adquisición sobre compañeros ni voluntarios como parte de este laboratorio, salvo que exista un protocolo institucional aprobado, supervisión competente, consentimiento informado y equipos biomédicos adecuados.
+:::
+
+# Referencias mínimas verificadas
+
+Estas fuentes constituyen un punto de partida. Cada equipo debe añadir bibliografía específica para la señal, el contexto y las decisiones analíticas seleccionadas.
+
+- Kligfield, P., et al. (2007). *Recommendations for the Standardization and Interpretation of the Electrocardiogram: Part I*. **Circulation, 115**(10), 1306–1324. [https://doi.org/10.1161/CIRCULATIONAHA.106.180200](https://doi.org/10.1161/CIRCULATIONAHA.106.180200).
+- Hermens, H. J., Freriks, B., Disselhorst-Klug, C., & Rau, G. (2000). *Development of recommendations for SEMG sensors and sensor placement procedures*. **Journal of Electromyography and Kinesiology, 10**(5), 361–374. [https://doi.org/10.1016/S1050-6411(00)00027-4](https://doi.org/10.1016/S1050-6411(00)00027-4).
+- Pernet, C. R., et al. (2019). *EEG-BIDS, an extension to the brain imaging data structure for electroencephalography*. **Scientific Data, 6**, 103. [https://doi.org/10.1038/s41597-019-0104-8](https://doi.org/10.1038/s41597-019-0104-8).
+- Niso, G., et al. (2022). *Good scientific practice in EEG and MEG research: Progress and perspectives*. **NeuroImage, 257**, 119056. [https://doi.org/10.1016/j.neuroimage.2022.119056](https://doi.org/10.1016/j.neuroimage.2022.119056).
+- Welch, P. D. (1967). *The use of fast Fourier transform for the estimation of power spectra*. **IEEE Transactions on Audio and Electroacoustics, 15**(2), 70–73. [https://doi.org/10.1109/TAU.1967.1161901](https://doi.org/10.1109/TAU.1967.1161901).
+
+::: {.callout-tip title="Cierre esperado"}
+La mejor sustentación no es la que acumula más técnicas. Es la que demuestra, con una cadena de razonamiento verificable, por qué una representación resulta adecuada para un contexto, qué información deja por fuera y qué riesgo existe al trasladar sus conclusiones a otro contexto.
+:::
