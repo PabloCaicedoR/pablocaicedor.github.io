@@ -1,0 +1,79 @@
+---
+title: "Taller Práctico: Clasificación Binaria de Expresiones Faciales"
+subtitle: "Detección de Sonrisas empleando Teachable Machine (Entorno No-Code)"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    number-sections: true
+    embed-resources: true
+---
+
+## Introducción
+
+Este taller aborda la construcción de un modelo de clasificación binaria para imágenes faciales, discriminando entre la presencia y ausencia de sonrisas. La práctica se desarrolla íntegramente en un entorno de cero código (no-code), utilizando la plataforma [Teachable Machine](https://teachablemachine.withgoogle.com/). Esta herramienta permite abstraer la complejidad matemática del entrenamiento inicial operando bajo el paradigma de Transfer Learning sobre una arquitectura MobileNet preentrenada, enfocando el esfuerzo del estudiante en el diseño experimental y la curaduría de datos.
+
+## Objetivos
+
+1. Comprender el flujo de trabajo de aprendizaje automático centrado en los datos (Data-Centric AI) mediante la recolección, balanceo y estructuración de un conjunto de datos primario.
+2. Analizar el impacto de la varianza ambiental y el sesgo de selección en la capacidad de generalización de un modelo de visión artificial.
+3. Evaluar empíricamente el rendimiento del modelo utilizando métricas de clasificación en un entorno de validación visual.
+
+## Metodología
+
+### Fase 1: Estructuración del Espacio de Trabajo
+
+1. Ingrese a la plataforma [Teachable Machine](https://teachablemachine.withgoogle.com/).
+2. Seleccione **Get Started** y posteriormente elija **Image Project**.
+3. Seleccione la opción **Standard image model** (resolución de 224x224 píxeles).
+4. Defina estrictamente las fronteras de decisión renombrando las clases por defecto a:
+   *   `Clase 1: Sonrisa_Activa`
+   *   `Clase 2: Rostro_Neutro`
+
+### Fase 2: Diseño del Conjunto de Datos (Dataset)
+
+La robustez topológica del espacio de características depende de la variabilidad del conjunto de datos. La adquisición se realizará directamente en el navegador utilizando la cámara web. Para cada clase, capture un mínimo de 400 muestras, introduciendo varianza sistemática en las siguientes dimensiones:
+
+*   **Variabilidad Postural:** Variaciones angulares de la cabeza ($\pm 30^\circ$ en los ejes yaw, pitch, roll).
+*   **Condiciones Lumínicas:** Capturas con luz frontal cálida/fría, luz lateral y contraluz.
+*   **Factores de Confusión (Oclusión):** Uso de anteojos, posición de las manos cerca del mentón o cabello cubriendo parcialmente el rostro.
+*   **Escala:** Modificación de la distancia relativa entre el sujeto y el plano focal de la cámara.
+
+**Advertencia Metodológica:** Mantenga una proporción equilibrada de muestras entre clases para evitar sesgos de clase mayoritaria durante el entrenamiento.
+
+### Fase 3: Parametrización y Entrenamiento
+
+En el panel central (Training), despliegue la sección **Advanced** para manipular los hiperparámetros del optimizador.
+
+1.  **Epochs (Épocas):** Establezca el valor en $50$. Representa el número de veces que el algoritmo procesará el conjunto de datos completo.
+2.  **Batch Size (Tamaño de lote):** Configure en $16$ o $32$. Define la cantidad de imágenes procesadas simultáneamente antes de actualizar los pesos sinápticos. Lotes más pequeños introducen ruido estocástico útil para escapar de mínimos locales.
+3.  **Learning Rate (Tasa de aprendizaje):** Mantenga el valor en $0.001$. Modela el tamaño del paso durante el descenso del gradiente.
+
+Haga clic en **Train Model**. 
+*Nota técnica: No cambie de pestaña durante este procedimiento. El entrenamiento se ejecuta del lado del cliente mediante WebGL/TensorFlow.js y suspenderá su ejecución si el navegador pierde el foco.*
+
+### Fase 4: Validación Heurística y Despliegue
+
+Utilice el panel **Preview** para someter el modelo a datos no vistos durante el entrenamiento (datos fuera de distribución). 
+
+1.  **Pruebas de Estrés:** Fuerce expresiones faciales ambiguas (muecas, ceño fruncido sin sonrisa). Observe la oscilación de la distribución de probabilidad en las barras de salida.
+2.  **Validación Cruzada Visual:** Solicite a un compañero con características fenotípicas distintas a las suyas que interactúe con la cámara.
+3.  **Exportación del Modelo:** Haga clic en **Export Model**. Seleccione la pestaña **Shareable link**. Haga clic en **Upload my model**. Esto generará un enlace en la nube de Google que permite compartir el modelo funcional y probarlo en cualquier navegador sin requerir transferencia de código fuente.
+
+## Preguntas Orientadoras para Análisis Epistémico
+
+Al finalizar la práctica, desarrolle un reporte técnico sustentando las siguientes cuestiones:
+
+1. **Análisis de Sesgo:** Si el conjunto de datos de la clase `Sonrisa_Activa` incluye mayoritariamente muestras con alta iluminación, y la clase `Rostro_Neutro` se adquirió en penumbra, explique teóricamente qué característica visual está aprendiendo a discriminar la red neuronal.
+2. **Transfer Learning:** Justifique por qué es posible entrenar un modelo de clasificación de imágenes en menos de un minuto dentro de un navegador web estándar, considerando que el entrenamiento de una Red Neuronal Convolucional desde cero requiere hardware dedicado e iteraciones prolongadas.
+3. **Métricas en Contexto Clínico:** Suponga que este modelo es la base para detectar parálisis facial periférica temprana. Argumente matemática y lógicamente por qué maximizar la Especificidad es insuficiente, y por qué el sistema debe priorizar el $Recall$ o Sensibilidad, definido como:
+   $$Recall = \frac{VP}{VP + FN}$$
+   Donde $VP$ representa los Verdaderos Positivos y $FN$ los Falsos Negativos.
+
+## Rúbrica de Evaluación
+
+| Criterio | Competencia Básica (3.0 - 3.9) | Competencia Avanzada (4.0 - 5.0) |
+| :--- | :--- | :--- |
+| **Rigor en la Adquisición de Datos** | Datos homogéneos; ausencia de varianza controlada. Diferencia significativa en el número de muestras por clase. | Varianza sistemática documentada (iluminación, postura, oclusión). Clases balanceadas. |
+| **Validación y Pruebas de Estrés** | Comprobación limitada al sujeto original en condiciones idénticas al entrenamiento. | Evaluación rigurosa con sujetos ajenos al dataset y condiciones de contorno documentadas. |
+| **Análisis Crítico (Reporte)** | Descripciones operativas de la plataforma sin justificación teórica. | Análisis fundamentado en la teoría del aprendizaje automático, identificando fallas de generalización. |
