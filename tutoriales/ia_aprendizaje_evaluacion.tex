@@ -84,6 +84,7 @@
 
 
 \usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
 \usepackage{calc} % for calculating minipage widths
 \usepackage{caption}
 % Make caption package work with longtable
@@ -109,13 +110,13 @@
 
 
 \ifLuaTeX
-\usepackage[bidi=basic]{babel}
+\usepackage[bidi=basic,shorthands=off]{babel}
 \else
-\usepackage[bidi=default]{babel}
+\usepackage[bidi=default,shorthands=off]{babel}
 \fi
-% get rid of language-specific shorthands (see #6817):
-\let\LanguageShortHands\languageshorthands
-\def\languageshorthands#1{}
+\ifLuaTeX
+  \usepackage{selnolig} % disable illegal ligatures
+\fi
 
 
 \setlength{\emergencystretch}{3em} % prevent overfull lines
@@ -201,10 +202,12 @@
   pdfcreator={LaTeX via pandoc}}
 
 
-\title{Aprendizaje y evaluación en la era de la IA}
-\subtitle{Herramientas, ejemplos y prompts para rediseño evaluativo}
+\title{\texorpdfstring{Aprendizaje y evaluación en la era de la
+IA}{Aprendizaje y evaluación en la era de la IA}}
+\subtitle{\texorpdfstring{Herramientas, ejemplos y prompts para rediseño
+evaluativo}{Herramientas, ejemplos y prompts para rediseño evaluativo}}
 \author{Ph.D.~Pablo Eduardo Caicedo Rodríguez}
-\date{2026-07-02}
+\date{2026-07-09}
 
 \begin{document}
 \frame{\titlepage}
@@ -213,7 +216,7 @@
 \section{Tesis central}\label{tesis-central}
 
 \begin{frame}{Tesis central}
-\begin{tcolorbox}[enhanced jigsaw, left=2mm, breakable, colback=white, colframe=quarto-callout-color-frame, toprule=.15mm, arc=.35mm, opacityback=0, rightrule=.15mm, bottomrule=.15mm, leftrule=.75mm]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, breakable, colback=white, colframe=quarto-callout-color-frame, left=2mm, leftrule=.75mm, opacityback=0, rightrule=.15mm, toprule=.15mm]
 
 La IA no elimina la evaluación: elimina la validez de las evaluaciones
 que solo verifican productos fácilmente automatizables.
@@ -247,20 +250,20 @@ certificar \textbf{autonomía}, \textbf{juicio disciplinar},
 IA}\label{aprendizaje-en-la-era-de-la-ia}
 
 \begin{frame}{Cambio 1: aprender ya no es solo acceder a información}
-\phantomsection\label{cambio-1-aprender-ya-no-es-solo-acceder-a-informaciuxf3n}
-\begin{tcolorbox}[enhanced jigsaw, left=2mm, colback=white, colframe=quarto-callout-warning-color-frame, toprule=.15mm, coltitle=black, bottomtitle=1mm, breakable, rightrule=.15mm, opacitybacktitle=0.6, arc=.35mm, toptitle=1mm, titlerule=0mm, opacityback=0, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Antes\ldots{}}, bottomrule=.15mm, colbacktitle=quarto-callout-warning-color!10!white, leftrule=.75mm]
+\protect\phantomsection\label{cambio-1-aprender-ya-no-es-solo-acceder-a-informaciuxf3n}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Antes\ldots{}}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Memorizar, recuperar, explicar y entregar.
 
 \end{tcolorbox}
 
-\begin{tcolorbox}[enhanced jigsaw, left=2mm, colback=white, colframe=quarto-callout-caution-color-frame, toprule=.15mm, coltitle=black, bottomtitle=1mm, breakable, rightrule=.15mm, opacitybacktitle=0.6, arc=.35mm, toptitle=1mm, titlerule=0mm, opacityback=0, title=\textcolor{quarto-callout-caution-color}{\faFire}\hspace{0.5em}{Ahora\ldots{}}, bottomrule=.15mm, colbacktitle=quarto-callout-caution-color!10!white, leftrule=.75mm]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-caution-color!10!white, colframe=quarto-callout-caution-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-caution-color}{\faFire}\hspace{0.5em}{Ahora\ldots{}}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Interrogar, verificar, contextualizar, decidir y defender.
 
 \end{tcolorbox}
 
-\begin{tcolorbox}[enhanced jigsaw, left=2mm, colback=white, colframe=quarto-callout-important-color-frame, toprule=.15mm, coltitle=black, bottomtitle=1mm, breakable, rightrule=.15mm, opacitybacktitle=0.6, arc=.35mm, toptitle=1mm, titlerule=0mm, opacityback=0, title=\textcolor{quarto-callout-important-color}{\faExclamation}\hspace{0.5em}{Riesgo}, bottomrule=.15mm, colbacktitle=quarto-callout-important-color!10!white, leftrule=.75mm]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-important-color}{\faExclamation}\hspace{0.5em}{Riesgo}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Confundir fluidez generativa con comprensión real.
 
@@ -270,7 +273,8 @@ La IA puede apoyar la tutoría, la explicación y la retroalimentación.
 \end{frame}
 
 \begin{frame}{Tres niveles de impacto sobre el aprendizaje}
-\phantomsection\label{tres-niveles-de-impacto-sobre-el-aprendizaje}
+\protect\phantomsection\label{tres-niveles-de-impacto-sobre-el-aprendizaje}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
@@ -293,11 +297,12 @@ Epistémico & Qué cuenta como saber, crear o demostrar & ¿La evaluación
 mide juicio humano transferible? \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Rendimiento aparente}
-\phantomsection\label{rendimiento-aparente}
-\begin{tcolorbox}[enhanced jigsaw, left=2mm, colback=white, colframe=quarto-callout-note-color-frame, toprule=.15mm, coltitle=black, bottomtitle=1mm, breakable, rightrule=.15mm, opacitybacktitle=0.6, arc=.35mm, toptitle=1mm, titlerule=0mm, opacityback=0, title=\textcolor{quarto-callout-note-color}{\faInfo}\hspace{0.5em}{Nota}, bottomrule=.15mm, colbacktitle=quarto-callout-note-color!10!white, leftrule=.75mm]
+\protect\phantomsection\label{rendimiento-aparente}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-note-color}{\faInfo}\hspace{0.5em}{Nota}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una mejora durante el uso de IA no prueba aprendizaje autónomo. Puede
 ser solo ejecución asistida.
@@ -311,7 +316,7 @@ pedagógico.
 \end{frame}
 
 \begin{frame}{Y el estudiante que \ldots?}
-\phantomsection\label{y-el-estudiante-que}
+\protect\phantomsection\label{y-el-estudiante-que}
 La \textbf{capacidad del estudiante para asumir un papel activo,
 intencional y responsable en su propio aprendizaje} no se preserva
 prohibiendo IA de forma genérica. Se preserva diseñando tareas donde el
@@ -336,7 +341,7 @@ solo por eficiencia.
 \end{frame}
 
 \begin{frame}{Principio de diseño del aprendizaje}
-\phantomsection\label{principio-de-diseuxf1o-del-aprendizaje}
+\protect\phantomsection\label{principio-de-diseuxf1o-del-aprendizaje}
 Una actividad bien diseñada alterna:
 
 \begin{enumerate}
@@ -358,7 +363,7 @@ Una actividad bien diseñada alterna:
 IA}\label{evaluaciuxf3n-del-aprendizaje-en-la-era-de-la-ia}
 
 \begin{frame}{La pregunta ya no es ``¿usó IA?''}
-\phantomsection\label{la-pregunta-ya-no-es-usuxf3-ia}
+\protect\phantomsection\label{la-pregunta-ya-no-es-usuxf3-ia}
 La pregunta evaluativa fuerte es:
 
 \begin{quote}
@@ -371,7 +376,8 @@ estrategia principal de integridad.
 \end{frame}
 
 \begin{frame}{Evaluación vulnerable vs.~evaluación resiliente}
-\phantomsection\label{evaluaciuxf3n-vulnerable-vs.-evaluaciuxf3n-resiliente}
+\protect\phantomsection\label{evaluaciuxf3n-vulnerable-vs.-evaluaciuxf3n-resiliente}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
@@ -394,10 +400,11 @@ Verificación & Detector o sospecha & Desempeño situado y oralidad \\
 Riesgo & Delegación cognitiva & Juicio disciplinar verificable \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Problema matemático inicial}
-\phantomsection\label{problema-matemuxe1tico-inicial}
+\protect\phantomsection\label{problema-matemuxe1tico-inicial}
 Un estudiante debe resolver:
 
 \begin{quote}
@@ -408,7 +415,7 @@ es el precio final?
 \end{frame}
 
 \begin{frame}{Momento 1: respuesta correcta}
-\phantomsection\label{momento-1-respuesta-correcta}
+\protect\phantomsection\label{momento-1-respuesta-correcta}
 Una IA responde:
 
 \begin{quote}
@@ -417,13 +424,13 @@ El descuento es \$16.000. El precio con descuento es \$64.000. El IVA es
 \end{quote}
 
 \begin{block}{Pregunta}
-\phantomsection\label{pregunta}
+\protect\phantomsection\label{pregunta}
 ¿Esta respuesta demuestra que el estudiante aprendió?
 \end{block}
 \end{frame}
 
 \begin{frame}{Discusión individual}
-\phantomsection\label{discusiuxf3n-individual}
+\protect\phantomsection\label{discusiuxf3n-individual}
 Responda en 3 minutos:
 
 \begin{enumerate}
@@ -438,7 +445,7 @@ Responda en 3 minutos:
 \end{frame}
 
 \begin{frame}{Momento 2: rendimiento aparente}
-\phantomsection\label{momento-2-rendimiento-aparente}
+\protect\phantomsection\label{momento-2-rendimiento-aparente}
 La respuesta es correcta, pero el estudiante no puede explicar:
 
 \begin{itemize}
@@ -454,7 +461,7 @@ La respuesta es correcta, pero el estudiante no puede explicar:
 \end{itemize}
 
 \begin{block}{Pregunta clave}
-\phantomsection\label{pregunta-clave}
+\protect\phantomsection\label{pregunta-clave}
 \begin{quote}
 ¿Tenemos aprendizaje o solo rendimiento aparente?
 \end{quote}
@@ -462,9 +469,10 @@ La respuesta es correcta, pero el estudiante no puede explicar:
 \end{frame}
 
 \begin{frame}{Mini diagnóstico de vulnerabilidad}
-\phantomsection\label{mini-diagnuxf3stico-de-vulnerabilidad}
+\protect\phantomsection\label{mini-diagnuxf3stico-de-vulnerabilidad}
 Clasifique las tareas:
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Tarea & Vulnerabilidad frente a IA \\
@@ -477,10 +485,11 @@ Detectar un error en una solución dada & Alta / Media / Baja \\
 Defender oralmente el procedimiento & Alta / Media / Baja \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Trabajo en parejas}
-\phantomsection\label{trabajo-en-parejas}
+\protect\phantomsection\label{trabajo-en-parejas}
 Analicen esta solución alternativa:
 
 \begin{quote}
@@ -489,7 +498,7 @@ Descuento del 20\%: \$19.040 Precio final: \$76.160
 \end{quote}
 
 \begin{block}{Preguntas}
-\phantomsection\label{preguntas}
+\protect\phantomsection\label{preguntas}
 \begin{enumerate}
 \tightlist
 \item
@@ -505,7 +514,7 @@ Descuento del 20\%: \$19.040 Precio final: \$76.160
 \end{frame}
 
 \begin{frame}{Variación del problema}
-\phantomsection\label{variaciuxf3n-del-problema}
+\protect\phantomsection\label{variaciuxf3n-del-problema}
 Ahora resuelva sin IA:
 
 \begin{quote}
@@ -514,7 +523,7 @@ Luego se cobra IVA del 19\%. ¿Cuál es el precio final?
 \end{quote}
 
 \begin{block}{Evidencia requerida}
-\phantomsection\label{evidencia-requerida}
+\protect\phantomsection\label{evidencia-requerida}
 No basta con entregar el número. Debe mostrar:
 
 \begin{itemize}
@@ -532,9 +541,10 @@ No basta con entregar el número. Debe mostrar:
 \end{frame}
 
 \begin{frame}{Bitácora mínima de trazabilidad}
-\phantomsection\label{bituxe1cora-muxednima-de-trazabilidad}
+\protect\phantomsection\label{bituxe1cora-muxednima-de-trazabilidad}
 Si se permite IA, el estudiante debe declarar:
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Elemento & Evidencia \\
@@ -547,10 +557,11 @@ Corrección & ¿Detectó errores o ambigüedades? \\
 Aprendizaje & ¿Qué entendió después del proceso? \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Defensa breve}
-\phantomsection\label{defensa-breve}
+\protect\phantomsection\label{defensa-breve}
 Cada estudiante responde oralmente:
 
 \begin{enumerate}
@@ -567,7 +578,7 @@ Cada estudiante responde oralmente:
 \end{frame}
 
 \begin{frame}{Cierre conceptual}
-\phantomsection\label{cierre-conceptual}
+\protect\phantomsection\label{cierre-conceptual}
 Una evaluación es vulnerable cuando solo exige:
 
 \begin{quote}
@@ -582,9 +593,10 @@ Procedimiento, explicación, verificación, transferencia y defensa.
 \end{frame}
 
 \begin{frame}{Transición hacia AIAS}
-\phantomsection\label{transiciuxf3n-hacia-aias}
+\protect\phantomsection\label{transiciuxf3n-hacia-aias}
 Este ejercicio permite introducir una escala de uso de IA:
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Nivel & Uso de IA \\
@@ -598,10 +610,11 @@ Nivel & Uso de IA \\
 5 & IA como objeto de auditoría crítica \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Pregunta final}
-\phantomsection\label{pregunta-final}
+\protect\phantomsection\label{pregunta-final}
 \begin{quote}
 En este problema matemático, ¿en qué nivel permitiría usted el uso de
 IA?
@@ -609,7 +622,7 @@ IA?
 \end{frame}
 
 \begin{frame}{Para tener en cuenta al rediseñar la evaluación}
-\phantomsection\label{para-tener-en-cuenta-al-rediseuxf1ar-la-evaluaciuxf3n}
+\protect\phantomsection\label{para-tener-en-cuenta-al-rediseuxf1ar-la-evaluaciuxf3n}
 \begin{itemize}
 \tightlist
 \item
@@ -626,7 +639,7 @@ IA?
 \end{frame}
 
 \begin{frame}{La evaluación formativa gana centralidad}
-\phantomsection\label{la-evaluaciuxf3n-formativa-gana-centralidad}
+\protect\phantomsection\label{la-evaluaciuxf3n-formativa-gana-centralidad}
 La literatura clásica ya indicaba que la retroalimentación eficaz reduce
 la brecha entre desempeño actual y desempeño esperado.
 
@@ -647,10 +660,11 @@ condiciones:
 \end{frame}
 
 \begin{frame}{AIAS: declarar niveles de uso de IA}
-\phantomsection\label{aias-declarar-niveles-de-uso-de-ia}
+\protect\phantomsection\label{aias-declarar-niveles-de-uso-de-ia}
 La Artificial Intelligence Assessment Scale permite comunicar con
 precisión qué nivel de IA es aceptable en una evaluación.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}rll@{}}
 \toprule\noalign{}
 Nivel & Uso de IA & Evidencia requerida \\
@@ -664,11 +678,12 @@ Nivel & Uso de IA & Evidencia requerida \\
 5 & Exploración abierta & Reflexión ética, técnica y creativa \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Regla de oro para rediseñar}
-\phantomsection\label{regla-de-oro-para-rediseuxf1ar}
-\begin{tcolorbox}[enhanced jigsaw, left=2mm, breakable, colback=white, colframe=quarto-callout-color-frame, toprule=.15mm, arc=.35mm, opacityback=0, rightrule=.15mm, bottomrule=.15mm, leftrule=.75mm]
+\protect\phantomsection\label{regla-de-oro-para-rediseuxf1ar}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, breakable, colback=white, colframe=quarto-callout-color-frame, left=2mm, leftrule=.75mm, opacityback=0, rightrule=.15mm, toprule=.15mm]
 
 Si una IA puede resolver la tarea con calificación alta sin interacción
 significativa del estudiante, la tarea no está evaluando bien.
@@ -680,7 +695,8 @@ aprendizaje.
 \end{frame}
 
 \begin{frame}{Criterios mínimos de validez}
-\phantomsection\label{criterios-muxednimos-de-validez}
+\protect\phantomsection\label{criterios-muxednimos-de-validez}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Criterio & Evidencia observable \\
@@ -693,13 +709,14 @@ Transferencia & Aplica el conocimiento en contexto nuevo \\
 Ética & Declara uso, límites, datos y responsabilidad \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \section{3. Herramientas de evaluación
 útiles}\label{herramientas-de-evaluaciuxf3n-uxfatiles}
 
 \begin{frame}{Herramienta 1: portafolio con trazabilidad}
-\phantomsection\label{herramienta-1-portafolio-con-trazabilidad}
+\protect\phantomsection\label{herramienta-1-portafolio-con-trazabilidad}
 El portafolio deja de ser un repositorio de productos. Debe contener:
 
 \begin{itemize}
@@ -723,9 +740,10 @@ de datos, diseño o escritura académica.
 \end{frame}
 
 \begin{frame}{Herramienta 2: defensa oral breve}
-\phantomsection\label{herramienta-2-defensa-oral-breve}
+\protect\phantomsection\label{herramienta-2-defensa-oral-breve}
 La defensa oral permite verificar comprensión y autoría cognitiva.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Tipo de pregunta & Qué verifica \\
@@ -737,10 +755,11 @@ Tipo de pregunta & Qué verifica \\
 ``Identifique un error de la IA'' & Alfabetización crítica \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Herramienta 3: simulaciones y desempeño en vivo}
-\phantomsection\label{herramienta-3-simulaciones-y-desempeuxf1o-en-vivo}
+\protect\phantomsection\label{herramienta-3-simulaciones-y-desempeuxf1o-en-vivo}
 Las simulaciones desplazan la evaluación del texto a la acción.
 
 Ejemplos:
@@ -762,9 +781,10 @@ Ejemplos:
 \end{frame}
 
 \begin{frame}{Herramienta 4: rúbricas analíticas asistidas por IA}
-\phantomsection\label{herramienta-4-ruxfabricas-analuxedticas-asistidas-por-ia}
+\protect\phantomsection\label{herramienta-4-ruxfabricas-analuxedticas-asistidas-por-ia}
 La IA puede apoyar el diseño, pero no debe sustituir el juicio docente.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lll@{}}
 \toprule\noalign{}
 Fase & Rol de IA & Rol docente \\
@@ -776,10 +796,11 @@ Prueba & Simula respuestas & Calibra con ejemplos reales \\
 Uso & Ayuda a retroalimentar & Decide calificación final \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Herramienta 5: banco de preguntas generadas y auditadas}
-\phantomsection\label{herramienta-5-banco-de-preguntas-generadas-y-auditadas}
+\protect\phantomsection\label{herramienta-5-banco-de-preguntas-generadas-y-auditadas}
 La IA puede generar variantes, casos y distractores. El proceso válido
 exige:
 
@@ -802,7 +823,7 @@ exige:
 
 \begin{frame}{Herramienta 6: revisión por pares con criterios
 explícitos}
-\phantomsection\label{herramienta-6-revisiuxf3n-por-pares-con-criterios-expluxedcitos}
+\protect\phantomsection\label{herramienta-6-revisiuxf3n-por-pares-con-criterios-expluxedcitos}
 La revisión por pares es más sólida cuando la IA se usa para:
 
 \begin{itemize}
@@ -821,9 +842,10 @@ El estudiante debe aceptar, rechazar o corregir cada sugerencia.
 \end{frame}
 
 \begin{frame}{Herramienta 7: auditoría de salidas de IA}
-\phantomsection\label{herramienta-7-auditoruxeda-de-salidas-de-ia}
+\protect\phantomsection\label{herramienta-7-auditoruxeda-de-salidas-de-ia}
 Evaluar al estudiante como auditor:
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Producto de IA & Tarea del estudiante \\
@@ -836,13 +858,15 @@ Rúbrica & Detectar sesgos y criterios vagos \\
 Bibliografía & Confirmar DOI, pertinencia y existencia \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Herramienta 8: matriz de alineación}
-\phantomsection\label{herramienta-8-matriz-de-alineaciuxf3n}
+\protect\phantomsection\label{herramienta-8-matriz-de-alineaciuxf3n}
 La matriz evita tareas tecnológicamente vistosas pero pedagógicamente
 débiles.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1875}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1875}}
@@ -869,12 +893,14 @@ Evaluar & Auditoría & 4 & Revisión crítica & Variante sin IA \\
 Aplicar & Procedimiento & 0/2 & Simulación & Observación \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \section{4. Ejemplos de uso}\label{ejemplos-de-uso}
 
 \begin{frame}{Ejemplo 1: ensayo académico rediseñado}
-\phantomsection\label{ejemplo-1-ensayo-acaduxe9mico-rediseuxf1ado}
+\protect\phantomsection\label{ejemplo-1-ensayo-acaduxe9mico-rediseuxf1ado}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
@@ -892,13 +918,14 @@ Calificación por texto & Calificación por proceso, evidencia y juicio \\
 Prohibición genérica de IA & AIAS 3: IA permitida con trazabilidad \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
 \textbf{Evidencia clave:} el estudiante debe defender por qué una fuente
 fue incluida, excluida o corregida.
 \end{frame}
 
 \begin{frame}{Ejemplo 2: proyecto de ciencia de datos}
-\phantomsection\label{ejemplo-2-proyecto-de-ciencia-de-datos}
+\protect\phantomsection\label{ejemplo-2-proyecto-de-ciencia-de-datos}
 Secuencia evaluativa:
 
 \begin{enumerate}
@@ -922,7 +949,8 @@ defensa.
 \end{frame}
 
 \begin{frame}{Ejemplo 3: programación}
-\phantomsection\label{ejemplo-3-programaciuxf3n}
+\protect\phantomsection\label{ejemplo-3-programaciuxf3n}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Evidencia & Criterio \\
@@ -935,13 +963,14 @@ Explicación de errores & Comprensión del código \\
 Refactorización en vivo & Autonomía técnica \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
 La evaluación no premia solo que el código corra; premia que el
 estudiante pueda explicarlo, corregirlo y transferirlo.
 \end{frame}
 
 \begin{frame}{Ejemplo 4: evaluación clínica o biomédica}
-\phantomsection\label{ejemplo-4-evaluaciuxf3n-cluxednica-o-biomuxe9dica}
+\protect\phantomsection\label{ejemplo-4-evaluaciuxf3n-cluxednica-o-biomuxe9dica}
 Instrumento: simulación tipo OSCE/OSKI.
 
 \begin{itemize}
@@ -961,7 +990,7 @@ verifica en ejecución.
 \end{frame}
 
 \begin{frame}{Ejemplo 5: evaluación de fuentes con DOI}
-\phantomsection\label{ejemplo-5-evaluaciuxf3n-de-fuentes-con-doi}
+\protect\phantomsection\label{ejemplo-5-evaluaciuxf3n-de-fuentes-con-doi}
 Tarea:
 
 \begin{enumerate}
@@ -983,7 +1012,8 @@ Tarea:
 \end{frame}
 
 \begin{frame}{Ejemplo 6: debate técnico con dossier}
-\phantomsection\label{ejemplo-6-debate-tuxe9cnico-con-dossier}
+\protect\phantomsection\label{ejemplo-6-debate-tuxe9cnico-con-dossier}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lll@{}}
 \toprule\noalign{}
 Fase & Uso de IA & Evaluación \\
@@ -995,6 +1025,7 @@ Dictamen & Sí, para revisión & Fundamentación final \\
 Defensa & No & Dominio conceptual \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \section{5. Prompts útiles para generar herramientas de
@@ -1002,7 +1033,7 @@ evaluación}\label{prompts-uxfatiles-para-generar-herramientas-de-evaluaciuxf3n}
 
 \begin{frame}{Prompt 1: alinear evaluación con resultados de
 aprendizaje}
-\phantomsection\label{prompt-1-alinear-evaluaciuxf3n-con-resultados-de-aprendizaje}
+\protect\phantomsection\label{prompt-1-alinear-evaluaciuxf3n-con-resultados-de-aprendizaje}
 \begin{quote}
 Actúa como diseñador curricular universitario. A partir del siguiente
 resultado de aprendizaje: {[}pegar resultado{]}, diseña una evaluación
@@ -1014,7 +1045,7 @@ resolverse solo con producción textual automatizada.
 \end{frame}
 
 \begin{frame}{Prompt 2: crear rúbrica analítica}
-\phantomsection\label{prompt-2-crear-ruxfabrica-analuxedtica}
+\protect\phantomsection\label{prompt-2-crear-ruxfabrica-analuxedtica}
 \begin{quote}
 Diseña una rúbrica analítica para evaluar {[}actividad{]}. Debe tener 4
 criterios, 4 niveles de desempeño y descriptores observables. Incluye un
@@ -1025,7 +1056,7 @@ indicar evidencia observable.
 \end{frame}
 
 \begin{frame}{Prompt 3: convertir una tarea vulnerable en resiliente}
-\phantomsection\label{prompt-3-convertir-una-tarea-vulnerable-en-resiliente}
+\protect\phantomsection\label{prompt-3-convertir-una-tarea-vulnerable-en-resiliente}
 \begin{quote}
 Evalúa la vulnerabilidad a IA de esta tarea: {[}pegar tarea{]}.
 Identifica qué partes puede resolver una IA sin aprendizaje real.
@@ -1036,7 +1067,7 @@ la razón pedagógica.
 \end{frame}
 
 \begin{frame}{Prompt 4: diseñar defensa oral}
-\phantomsection\label{prompt-4-diseuxf1ar-defensa-oral}
+\protect\phantomsection\label{prompt-4-diseuxf1ar-defensa-oral}
 \begin{quote}
 Genera 12 preguntas de defensa oral para verificar si el estudiante
 comprende realmente este trabajo: {[}pegar resumen del trabajo{]}.
@@ -1047,7 +1078,7 @@ Incluye una respuesta esperada breve para cada pregunta.
 \end{frame}
 
 \begin{frame}{Prompt 5: generar banco de preguntas con validación}
-\phantomsection\label{prompt-5-generar-banco-de-preguntas-con-validaciuxf3n}
+\protect\phantomsection\label{prompt-5-generar-banco-de-preguntas-con-validaciuxf3n}
 \begin{quote}
 Crea un banco de 15 preguntas para evaluar {[}tema{]}. Incluye 5
 preguntas de aplicación, 5 de análisis y 5 de evaluación. Para cada
@@ -1058,7 +1089,7 @@ dificultad y advertencia sobre posible respuesta generada por IA.
 \end{frame}
 
 \begin{frame}{Prompt 6: construir una bitácora de IA}
-\phantomsection\label{prompt-6-construir-una-bituxe1cora-de-ia}
+\protect\phantomsection\label{prompt-6-construir-una-bituxe1cora-de-ia}
 \begin{quote}
 Diseña una plantilla de bitácora para documentar el uso de IA en una
 evaluación. Debe incluir: propósito de cada consulta, prompt usado,
@@ -1069,7 +1100,7 @@ aprendió.
 \end{frame}
 
 \begin{frame}{Prompt 7: auditar una respuesta de IA}
-\phantomsection\label{prompt-7-auditar-una-respuesta-de-ia}
+\protect\phantomsection\label{prompt-7-auditar-una-respuesta-de-ia}
 \begin{quote}
 Actúa como evaluador crítico. Revisa la siguiente respuesta generada por
 IA: {[}pegar respuesta{]}. Identifica errores conceptuales, afirmaciones
@@ -1080,7 +1111,7 @@ demostrar aprendizaje.
 \end{frame}
 
 \begin{frame}{Prompt 8: diseñar evaluación por simulación}
-\phantomsection\label{prompt-8-diseuxf1ar-evaluaciuxf3n-por-simulaciuxf3n}
+\protect\phantomsection\label{prompt-8-diseuxf1ar-evaluaciuxf3n-por-simulaciuxf3n}
 \begin{quote}
 Diseña una simulación evaluativa para verificar la competencia
 {[}competencia{]}. Define escenario, información inicial, restricciones,
@@ -1091,7 +1122,7 @@ de IA se permite antes, durante y después.
 \end{frame}
 
 \begin{frame}{Prompt 9: crear matriz de alineación}
-\phantomsection\label{prompt-9-crear-matriz-de-alineaciuxf3n}
+\protect\phantomsection\label{prompt-9-crear-matriz-de-alineaciuxf3n}
 \begin{quote}
 A partir de este programa de curso: {[}pegar programa{]}, construye una
 matriz con columnas: resultado de aprendizaje, actividad, evidencia,
@@ -1102,7 +1133,7 @@ resultados, tareas y evaluación.
 \end{frame}
 
 \begin{frame}{Prompt 10: generar retroalimentación formativa}
-\phantomsection\label{prompt-10-generar-retroalimentaciuxf3n-formativa}
+\protect\phantomsection\label{prompt-10-generar-retroalimentaciuxf3n-formativa}
 \begin{quote}
 Genera retroalimentación formativa para este trabajo: {[}pegar
 trabajo{]}. No asignes calificación. Organiza el feedback en:
@@ -1136,6 +1167,7 @@ Para evaluar en la era de la IA:
 recomendados}\label{lista-ruxe1pida-de-instrumentos-recomendados}
 
 \begin{frame}{Lista rápida de instrumentos recomendados}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lll@{}}
 \toprule\noalign{}
 Objetivo & Instrumento principal & Complemento \\
@@ -1149,6 +1181,7 @@ Escritura académica & Dossier + versiones & Verificación DOI \\
 Programación & Repositorio + pruebas & Refactorización en vivo \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \section{Cierre}\label{cierre}
