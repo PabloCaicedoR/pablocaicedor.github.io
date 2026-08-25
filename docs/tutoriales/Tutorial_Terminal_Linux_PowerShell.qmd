@@ -1,0 +1,1150 @@
+---
+title: "Introducción práctica a la terminal"
+subtitle: "Gestión de archivos y configuración básica en Linux y Windows PowerShell"
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+description: "Tutorial comparativo para aprender a trabajar de forma segura con archivos, directorios y configuraciones básicas desde Bash y PowerShell."
+date: last-modified
+lang: es
+image: "../recursos/imagenes/tutoriales/powershell_terminal/portada.png"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-title: "Contenido"
+    toc-location: left
+    toc-depth: 3
+    number-sections: false
+    smooth-scroll: true
+    code-copy: true
+    code-overflow: wrap
+    anchor-sections: true
+    link-external-newwindow: true
+    fig-align: center
+    fig-responsive: true
+execute:
+  echo: true
+  warning: false
+  error: false
+---
+
+# Propósito del tutorial
+
+La terminal permite controlar el sistema operativo mediante instrucciones escritas. No reemplaza por completo a la interfaz gráfica, pero resulta más precisa para organizar archivos, repetir tareas, diagnosticar problemas y documentar procedimientos reproducibles.
+
+Esta guía presenta dos entornos:
+
+- **Linux con Bash**, habitual en Ubuntu, Pop!_OS y otras distribuciones.
+- **Windows con PowerShell**, incluido en Windows y basado en comandos llamados *cmdlets*.
+
+No es necesario estudiar ambos simultáneamente. Cada estudiante puede seguir la ruta correspondiente a su sistema operativo y utilizar las tablas comparativas para reconocer equivalencias.
+
+::: {.callout-note title="Resultados de aprendizaje"}
+Al finalizar, el estudiante estará en capacidad de:
+
+1. diferenciar terminal, consola, *shell* y símbolo del sistema;
+2. navegar por el sistema de archivos utilizando rutas absolutas y relativas;
+3. crear, consultar, copiar, mover, renombrar y eliminar archivos de forma controlada;
+4. buscar archivos y contenido sin depender de la interfaz gráfica;
+5. interpretar variables de entorno, permisos, procesos, almacenamiento y red;
+6. personalizar de forma básica una sesión de Bash o PowerShell;
+7. ejecutar una práctica reproducible sin modificar archivos importantes del equipo.
+:::
+
+# Antes de comenzar
+
+## Abrir la terminal
+
+::: {.panel-tabset}
+
+## Linux
+
+En Ubuntu o Pop!_OS se puede abrir la terminal con <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>. También se puede buscar **Terminal** en el menú de aplicaciones.
+
+Esta guía supone el uso de **Bash**. Para verificar el *shell* actual:
+
+```bash
+echo "$SHELL"
+```
+
+## Windows PowerShell
+
+Abra el menú Inicio y busque **PowerShell** o **Terminal**. Windows Terminal es una aplicación que puede contener sesiones de PowerShell, Símbolo del sistema y otros *shells*.
+
+Para consultar la edición y versión de PowerShell:
+
+```powershell
+$PSVersionTable
+```
+
+Los ejemplos usan PowerShell. No deben copiarse directamente en `cmd.exe`, porque ambos intérpretes tienen sintaxis diferente.
+
+:::
+
+## Regla de seguridad para toda la guía
+
+La práctica se realizará únicamente dentro de una carpeta llamada `Terminal_Practica`, creada en la carpeta personal del usuario.
+
+::: {.callout-warning title="Lea antes de ejecutar"}
+- Revise el comando completo antes de presionar <kbd>Enter</kbd>.
+- Confirme la carpeta actual antes de copiar, mover o eliminar archivos.
+- Use comillas cuando una ruta contenga espacios.
+- No ejecute comandos que no comprenda.
+- No use privilegios de administrador para completar este tutorial.
+- Evite `rm -rf`, `Remove-Item -Recurse -Force` y órdenes similares. Un error en la ruta puede eliminar información importante sin confirmación.
+:::
+
+# Terminal, *shell* y comando
+
+Los términos se relacionan, pero no significan lo mismo:
+
+| Concepto | Función | Ejemplo |
+|---|---|---|
+| Terminal | Interfaz en la que se escriben y observan comandos | GNOME Terminal, Windows Terminal |
+| *Shell* | Programa que interpreta los comandos | Bash, PowerShell |
+| Línea de comandos | Forma de interacción mediante texto | `ls -la`, `Get-ChildItem -Force` |
+| Prompt | Texto que indica que el *shell* espera una instrucción | `$`, `usuario@equipo:~$`, `PS C:\>` |
+
+Un comando suele tener tres componentes:
+
+```text
+comando  opciones  argumentos
+```
+
+Por ejemplo, en Linux:
+
+```bash
+ls -l datos
+```
+
+- `ls`: programa o comando;
+- `-l`: opción que solicita una vista detallada;
+- `datos`: directorio sobre el cual se ejecuta la operación.
+
+En PowerShell es común la estructura **Verbo-Sustantivo**:
+
+```powershell
+Get-ChildItem -Path datos
+```
+
+- `Get-ChildItem`: *cmdlet*;
+- `-Path`: parámetro;
+- `datos`: valor del parámetro.
+
+::: {.callout-tip title="Qué se debe escribir"}
+Los bloques de código muestran únicamente el comando. Si en otra fuente aparece un *prompt* como `$`, `usuario@equipo:~$` o `PS C:\>`, no lo copie: ese texto representa el estado de la terminal y no forma parte de la instrucción.
+:::
+
+::: {.callout-important title="Diferencia fundamental"}
+En Bash, una tubería normalmente transporta **texto**. En PowerShell, una tubería normalmente transporta **objetos** con propiedades y métodos. Por esta razón, dos comandos visualmente equivalentes pueden requerir formas distintas de filtrado.
+:::
+
+# El sistema de archivos
+
+## Rutas, carpetas y separadores
+
+Una **ruta absoluta** identifica una ubicación desde la raíz del sistema. Una **ruta relativa** se interpreta desde la carpeta de trabajo actual.
+
+| Elemento | Linux | Windows PowerShell |
+|---|---|---|
+| Raíz principal | `/` | `C:\` |
+| Carpeta personal | `/home/usuario` | `C:\Users\usuario` |
+| Abreviatura de la carpeta personal | `~` o `$HOME` | `$HOME` |
+| Separador habitual | `/` | `\` |
+| Carpeta actual | `.` | `.` |
+| Carpeta superior | `..` | `..` |
+
+Ejemplos:
+
+```text
+# Ruta absoluta en Linux
+/home/ana/Terminal_Practica/datos/ecg_01.csv
+
+# Ruta relativa en Linux
+datos/ecg_01.csv
+
+# Ruta absoluta en Windows
+C:\Users\Ana\Terminal_Practica\datos\ecg_01.csv
+
+# Ruta relativa en Windows
+datos\ecg_01.csv
+```
+
+::: {.callout-note title="Mayúsculas y minúsculas"}
+Linux normalmente distingue `Datos`, `datos` y `DATOS` como nombres diferentes. Windows normalmente no los distingue al resolver una ruta, aunque conserva la forma escrita. Use nombres consistentes y evite depender de esta diferencia.
+:::
+
+## Preparar el entorno seguro de práctica
+
+Ejecute solo el bloque correspondiente a su sistema.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+cd "$HOME"
+mkdir -p Terminal_Practica/{datos,reportes,scripts,respaldo}
+cd Terminal_Practica
+pwd
+```
+
+`mkdir -p` crea las carpetas requeridas y no produce un error si ya existen. La expansión entre llaves es una característica de Bash.
+
+## Windows PowerShell
+
+```powershell
+$base = Join-Path $HOME "Terminal_Practica"
+New-Item -ItemType Directory -Path $base -Force | Out-Null
+Set-Location $base
+"datos", "reportes", "scripts", "respaldo" |
+    ForEach-Object { New-Item -ItemType Directory -Path $_ -Force | Out-Null }
+Get-Location
+```
+
+`Join-Path` construye una ruta sin escribir manualmente el separador. `Out-Null` oculta la salida informativa de creación.
+
+:::
+
+La estructura esperada es:
+
+```text
+Terminal_Practica/
+├── datos/
+├── reportes/
+├── respaldo/
+└── scripts/
+```
+
+# Navegación y consulta
+
+## Comandos esenciales
+
+| Tarea | Linux con Bash | Windows PowerShell |
+|---|---|---|
+| Mostrar la ubicación actual | `pwd` | `Get-Location` |
+| Listar elementos | `ls` | `Get-ChildItem` |
+| Incluir elementos ocultos | `ls -la` | `Get-ChildItem -Force` |
+| Entrar a una carpeta | `cd datos` | `Set-Location datos` |
+| Subir un nivel | `cd ..` | `Set-Location ..` |
+| Volver a la carpeta personal | `cd "$HOME"` | `Set-Location $HOME` |
+| Limpiar la pantalla | `clear` | `Clear-Host` |
+
+PowerShell también reconoce varios alias breves, como `cd`, `ls` y `pwd`. Para aprender procedimientos portables y legibles, es preferible usar el nombre completo de los *cmdlets* en scripts.
+
+## Autocompletado e historial
+
+- <kbd>Tab</kbd>: completa comandos, parámetros o rutas.
+- Flecha <kbd>↑</kbd> y flecha <kbd>↓</kbd>: recorren comandos anteriores.
+- <kbd>Ctrl</kbd> + <kbd>C</kbd>: interrumpe el comando activo; no significa “copiar” en la mayoría de terminales.
+- <kbd>Ctrl</kbd> + <kbd>L</kbd>: limpia visualmente una terminal Bash.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+history
+history 10
+```
+
+En Bash, `history 10` muestra los diez comandos más recientes de la sesión.
+
+## Windows PowerShell
+
+```powershell
+Get-History
+Get-History -Count 10
+```
+
+`Get-History` consulta el historial de la sesión actual. El historial interactivo persistente puede depender del módulo PSReadLine.
+
+:::
+
+# Crear archivos y consultar su contenido
+
+## Crear un archivo de datos pequeño
+
+Desde `Terminal_Practica`, cree un CSV de ejemplo:
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+printf "muestra,ecg_mV\n0,0.02\n1,0.18\n2,0.73\n3,0.21\n" \
+  > datos/ecg_01.csv
+```
+
+## Windows PowerShell
+
+```powershell
+@"
+muestra,ecg_mV
+0,0.02
+1,0.18
+2,0.73
+3,0.21
+"@ | Set-Content -Path datos\ecg_01.csv
+```
+
+:::
+
+::: {.callout-warning title="Redirección"}
+El operador `>` crea un archivo o **reemplaza su contenido**. El operador `>>` agrega contenido al final. Antes de usar `>`, verifique que el archivo de destino no contenga información que deba conservarse.
+:::
+
+Agregue una línea al archivo:
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+printf "4,-0.05\n" >> datos/ecg_01.csv
+```
+
+## Windows PowerShell
+
+```powershell
+"4,-0.05" | Add-Content -Path datos\ecg_01.csv
+```
+
+:::
+
+## Leer e inspeccionar
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+cat datos/ecg_01.csv
+head -n 3 datos/ecg_01.csv
+tail -n 2 datos/ecg_01.csv
+wc -l datos/ecg_01.csv
+file datos/ecg_01.csv
+```
+
+- `cat` muestra todo el contenido de un archivo pequeño.
+- `head` y `tail` muestran el inicio y el final.
+- `wc -l` cuenta líneas.
+- `file` intenta identificar el tipo de contenido.
+
+Para un archivo largo, use un visor paginado:
+
+```bash
+less datos/ecg_01.csv
+```
+
+Dentro de `less`, presione <kbd>q</kbd> para salir.
+
+## Windows PowerShell
+
+```powershell
+Get-Content datos\ecg_01.csv
+Get-Content datos\ecg_01.csv -Head 3
+Get-Content datos\ecg_01.csv -Tail 2
+(Get-Content datos\ecg_01.csv | Measure-Object -Line).Lines
+Get-Item datos\ecg_01.csv | Format-List Name, Length, LastWriteTime
+```
+
+Para observar contenido página por página:
+
+```powershell
+Get-Content datos\ecg_01.csv | more
+```
+
+:::
+
+## Archivos y carpetas con espacios
+
+Las comillas evitan que el *shell* interprete cada palabra como un argumento separado.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+mkdir -p "reportes/primer informe"
+cd "reportes/primer informe"
+cd ../..
+```
+
+## Windows PowerShell
+
+```powershell
+New-Item -ItemType Directory -Path "reportes\primer informe" -Force
+Set-Location "reportes\primer informe"
+Set-Location ..\..
+```
+
+:::
+
+Aunque los espacios son válidos, nombres como `primer_informe` o `primer-informe` facilitan la automatización y reducen errores.
+
+# Copiar, renombrar, mover y eliminar
+
+## Copiar y crear respaldo
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+cp datos/ecg_01.csv respaldo/ecg_01.csv
+cp -i datos/ecg_01.csv respaldo/ecg_01.csv
+```
+
+La opción `-i` solicita confirmación antes de sobrescribir un archivo existente.
+
+## Windows PowerShell
+
+```powershell
+Copy-Item -Path datos\ecg_01.csv -Destination respaldo\ecg_01.csv
+Copy-Item -Path datos\ecg_01.csv -Destination respaldo\ecg_01.csv -Confirm
+```
+
+`-Confirm` solicita autorización antes de realizar la operación.
+
+:::
+
+## Renombrar y mover
+
+En Linux, `mv` sirve tanto para renombrar como para mover. PowerShell ofrece comandos separados para expresar mejor la intención.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+cp datos/ecg_01.csv datos/ecg_temporal.csv
+mv datos/ecg_temporal.csv datos/ecg_copia.csv
+mv datos/ecg_copia.csv respaldo/
+```
+
+## Windows PowerShell
+
+```powershell
+Copy-Item datos\ecg_01.csv datos\ecg_temporal.csv
+Rename-Item datos\ecg_temporal.csv ecg_copia.csv
+Move-Item datos\ecg_copia.csv respaldo\
+```
+
+:::
+
+Después de cada operación, compruebe el resultado:
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+find . -maxdepth 2 -type f
+```
+
+## Windows PowerShell
+
+```powershell
+Get-ChildItem -File -Recurse
+```
+
+:::
+
+## Eliminar de forma controlada
+
+Primero cree un archivo prescindible y luego elimínelo con confirmación:
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+touch datos/borrar_prueba.txt
+ls -l datos/borrar_prueba.txt
+rm -i datos/borrar_prueba.txt
+```
+
+Para eliminar una carpeta, use `rmdir` cuando esté vacía:
+
+```bash
+mkdir carpeta_vacia
+rmdir carpeta_vacia
+```
+
+## Windows PowerShell
+
+```powershell
+New-Item -ItemType File -Path datos\borrar_prueba.txt
+Get-Item datos\borrar_prueba.txt
+Remove-Item datos\borrar_prueba.txt -Confirm
+```
+
+Para una carpeta vacía:
+
+```powershell
+New-Item -ItemType Directory -Path carpeta_vacia
+Remove-Item carpeta_vacia -Confirm
+```
+
+:::
+
+::: {.callout-danger title="Eliminar no equivale a enviar a la papelera"}
+Los comandos de eliminación normalmente no trasladan el archivo a la papelera gráfica. Antes de ejecutarlos, confirme la ubicación con `pwd` o `Get-Location`, liste el objetivo y use una opción de confirmación.
+:::
+
+# Buscar archivos y contenido
+
+## Comodines
+
+Los comodines representan patrones de nombres:
+
+- `*`: cero o más caracteres;
+- `?`: exactamente un carácter;
+- `[0-9]`: un carácter dentro del rango indicado, principalmente en Bash.
+
+Ejemplo: `*.csv` coincide con los archivos cuyo nombre termina en `.csv`.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+ls datos/*.csv
+find . -type f -name "*.csv"
+```
+
+`find` recorre carpetas de manera recursiva desde la ruta indicada.
+
+## Windows PowerShell
+
+```powershell
+Get-ChildItem -Path datos -Filter *.csv
+Get-ChildItem -Path . -File -Recurse -Filter *.csv
+```
+
+:::
+
+## Buscar texto dentro de archivos
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+grep -n "0.73" datos/ecg_01.csv
+grep -Rni --include="*.csv" "ecg" .
+```
+
+Si `ripgrep` está instalado, `rg` suele ser más rápido y cómodo:
+
+```bash
+rg -n "0.73" datos
+rg -n -i "ecg" -g "*.csv" .
+```
+
+## Windows PowerShell
+
+```powershell
+Select-String -Path datos\ecg_01.csv -Pattern "0.73"
+Get-ChildItem -File -Recurse -Filter *.csv |
+    Select-String -Pattern "ecg" -CaseSensitive:$false
+```
+
+La tubería envía los archivos encontrados a `Select-String`.
+
+:::
+
+# Redirección y tuberías
+
+## Entrada, salida y errores
+
+Un programa puede recibir entrada y producir salida normal o mensajes de error. La terminal permite redirigir estos flujos.
+
+| Operación | Símbolo | Interpretación general |
+|---|---:|---|
+| Reemplazar la salida de un archivo | `>` | Escribe desde el comienzo |
+| Agregar al final | `>>` | Conserva el contenido anterior |
+| Tubería | `|` | Entrega la salida de un comando al siguiente |
+
+## Ejemplo de filtrado
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+find . -type f | sort
+cat datos/ecg_01.csv | grep "0."
+```
+
+El segundo ejemplo es válido, pero puede escribirse de forma más simple:
+
+```bash
+grep "0." datos/ecg_01.csv
+```
+
+## Windows PowerShell
+
+```powershell
+Get-ChildItem -File -Recurse |
+    Sort-Object FullName
+
+Get-ChildItem -File -Recurse |
+    Where-Object Extension -eq ".csv" |
+    Select-Object Name, Length, LastWriteTime
+```
+
+PowerShell filtra propiedades de objetos: `Extension`, `Name`, `Length` y `LastWriteTime` no son columnas de texto improvisadas, sino propiedades de cada archivo.
+
+:::
+
+# Integridad, compresión y respaldo
+
+## Verificar que una copia sea idéntica
+
+Un *hash* resume matemáticamente el contenido de un archivo. Dos copias con el mismo SHA-256 son, con probabilidad práctica extremadamente alta, idénticas byte a byte.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+sha256sum datos/ecg_01.csv respaldo/ecg_01.csv
+```
+
+## Windows PowerShell
+
+```powershell
+Get-FileHash datos\ecg_01.csv -Algorithm SHA256
+Get-FileHash respaldo\ecg_01.csv -Algorithm SHA256
+```
+
+:::
+
+El *hash* verifica integridad, pero no reemplaza una estrategia de respaldo: si el original y la copia están en el mismo disco, una falla física puede afectar ambos.
+
+## Comprimir la práctica
+
+::: {.panel-tabset}
+
+## Linux
+
+Desde la carpeta personal:
+
+```bash
+cd "$HOME"
+tar -czf Terminal_Practica.tar.gz Terminal_Practica
+tar -tzf Terminal_Practica.tar.gz | head
+```
+
+El segundo comando lista parte del contenido sin extraerlo.
+
+## Windows PowerShell
+
+Desde la carpeta personal:
+
+```powershell
+Set-Location $HOME
+Compress-Archive -Path Terminal_Practica -DestinationPath Terminal_Practica.zip
+Get-Item Terminal_Practica.zip | Select-Object Name, Length, LastWriteTime
+```
+
+Si el ZIP ya existe, no use `-Force` sin decidir primero si desea reemplazarlo.
+
+:::
+
+# Configuración básica del sistema
+
+Esta sección utiliza consultas de solo lectura y cambios temporales. Su objetivo es aprender a describir el entorno donde se ejecuta un proyecto.
+
+## Identificar sistema y *shell*
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+uname -a
+cat /etc/os-release
+echo "$SHELL"
+bash --version
+```
+
+## Windows PowerShell
+
+```powershell
+$PSVersionTable
+Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsArchitecture
+```
+
+`Get-ComputerInfo` puede tardar algunos segundos porque consulta varias fuentes del sistema.
+
+:::
+
+## Fecha, nombre del equipo y usuario
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+date
+hostname
+whoami
+```
+
+## Windows PowerShell
+
+```powershell
+Get-Date
+$env:COMPUTERNAME
+$env:USERNAME
+```
+
+:::
+
+## Espacio de almacenamiento
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+df -h
+du -sh "$HOME/Terminal_Practica"
+```
+
+- `df -h` resume el espacio disponible en sistemas de archivos montados.
+- `du -sh` estima el espacio ocupado por la carpeta indicada.
+
+## Windows PowerShell
+
+```powershell
+Get-PSDrive -PSProvider FileSystem
+Get-ChildItem "$HOME\Terminal_Practica" -File -Recurse |
+    Measure-Object -Property Length -Sum
+```
+
+La propiedad `Sum` se expresa en bytes.
+
+:::
+
+## Procesos activos
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+ps -u "$USER"
+top
+```
+
+En `top`, presione <kbd>q</kbd> para salir. Para solicitar el cierre normal de un proceso propio se utiliza `kill PID`, donde `PID` es su identificador.
+
+## Windows PowerShell
+
+```powershell
+Get-Process | Sort-Object CPU -Descending | Select-Object -First 10
+```
+
+Para solicitar la detención de un proceso propio:
+
+```powershell
+Stop-Process -Id PID -Confirm
+```
+
+Reemplace `PID` por un identificador real. No detenga procesos del sistema que no reconozca.
+
+:::
+
+## Configuración y diagnóstico de red
+
+Las siguientes órdenes consultan la configuración o prueban conectividad; no modifican la red.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+ip address
+ip route
+ping -c 4 example.com
+```
+
+## Windows PowerShell
+
+```powershell
+Get-NetIPConfiguration
+Test-Connection example.com -Count 4
+Test-NetConnection example.com -Port 443
+```
+
+:::
+
+::: {.callout-note title="Interpretación"}
+Que `ping` falle no demuestra por sí solo que no exista conexión: una red o un servidor puede bloquear mensajes ICMP. Una prueba al puerto 443 evalúa una condición distinta, relacionada con conexiones HTTPS.
+:::
+
+# Variables de entorno y `PATH`
+
+Una variable de entorno almacena configuración disponible para los programas de una sesión. `PATH` contiene una lista de carpetas donde el *shell* busca programas ejecutables.
+
+## Consultar variables
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+printenv | sort
+echo "$HOME"
+printf '%s\n' "$PATH" | tr ':' '\n'
+```
+
+## Windows PowerShell
+
+```powershell
+Get-ChildItem Env: | Sort-Object Name
+$HOME
+$env:Path -split ';'
+```
+
+:::
+
+## Crear una variable temporal
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+export CURSO="SYSB"
+echo "$CURSO"
+```
+
+## Windows PowerShell
+
+```powershell
+$env:CURSO = "SYSB"
+$env:CURSO
+```
+
+:::
+
+La variable desaparece al cerrar la sesión. Esta temporalidad es útil para probar una configuración antes de hacerla persistente.
+
+::: {.callout-warning title="No edite `PATH` a ciegas"}
+Reemplazar `PATH` por un valor incompleto puede impedir que el *shell* encuentre programas. Para una prueba temporal, agregue una ruta y conserve el valor anterior. No copie un `PATH` de otro equipo.
+:::
+
+Ejemplo temporal:
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+## Windows PowerShell
+
+```powershell
+$env:Path = "$HOME\bin;$env:Path"
+```
+
+:::
+
+# Permisos y ejecución de scripts
+
+## Permisos en Linux
+
+```bash
+ls -l
+```
+
+Una salida como `-rw-r--r--` se interpreta en grupos:
+
+- primer carácter: tipo de elemento (`-` archivo, `d` directorio);
+- `rw-`: permisos del propietario;
+- `r--`: permisos del grupo;
+- `r--`: permisos de otros usuarios;
+- `r`, `w`, `x`: lectura, escritura y ejecución.
+
+Para dar permiso de ejecución al propietario de un script:
+
+```bash
+chmod u+x scripts/resumen.sh
+```
+
+::: {.callout-warning title="Evite `chmod 777`"}
+Otorgar lectura, escritura y ejecución a todos los usuarios suele ser innecesario y reduce la seguridad. Asigne únicamente el permiso requerido.
+:::
+
+## Seguridad de scripts en PowerShell
+
+Consulte las políticas efectivas sin modificarlas:
+
+```powershell
+Get-ExecutionPolicy -List
+```
+
+La política de ejecución ayuda a controlar las condiciones bajo las cuales PowerShell carga perfiles y ejecuta scripts. No es una frontera de seguridad completa y tampoco debe desactivarse para ejecutar código desconocido.
+
+::: {.callout-important title="Criterio institucional"}
+Si un script legítimo del curso está bloqueado, revise primero su contenido y consulte la política del laboratorio o de la institución. No use `Bypass`, no cambie políticas del equipo y no abra PowerShell como administrador solo para omitir la restricción.
+:::
+
+# Personalización básica y reversible
+
+## Alias y perfil de Bash
+
+Un alias abrevia un comando durante la sesión:
+
+```bash
+alias ll='ls -alF'
+ll
+```
+
+Para eliminarlo de la sesión:
+
+```bash
+unalias ll
+```
+
+Antes de editar un archivo de configuración, cree un respaldo:
+
+```bash
+cp -i "$HOME/.bashrc" "$HOME/.bashrc.backup"
+```
+
+Una línea como la siguiente dentro de `~/.bashrc` hace persistente el alias para sesiones interactivas de Bash:
+
+```bash
+alias ll='ls -alF'
+```
+
+Después de revisar y guardar el archivo:
+
+```bash
+source "$HOME/.bashrc"
+```
+
+## Función y perfil de PowerShell
+
+Una función temporal equivalente puede definirse así:
+
+```powershell
+function ll { Get-ChildItem -Force }
+ll
+```
+
+Consulte la ruta del perfil y determine si existe:
+
+```powershell
+$PROFILE
+Test-Path $PROFILE
+```
+
+Si la política institucional permite usar perfiles, puede crear el archivo sin sobrescribir su contenido existente:
+
+```powershell
+if (-not (Test-Path $PROFILE)) {
+    New-Item -ItemType File -Path $PROFILE -Force
+}
+```
+
+Abra el archivo con un editor y agregue únicamente:
+
+```powershell
+function ll { Get-ChildItem -Force }
+```
+
+La carga del perfil depende de la política de ejecución vigente. No cambie esa política únicamente para activar una abreviatura.
+
+# Obtener ayuda
+
+Memorizar todos los parámetros no es el objetivo. Un usuario competente sabe consultar la ayuda y comprobar ejemplos.
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+man cp
+cp --help
+help cd
+type cd
+```
+
+- `man` abre el manual de un programa instalado;
+- `--help` muestra una referencia breve;
+- `help` documenta órdenes internas de Bash;
+- `type` indica cómo se resolverá un nombre.
+
+## Windows PowerShell
+
+```powershell
+Get-Help Copy-Item
+Get-Help Copy-Item -Examples
+Get-Command Copy-Item
+Get-Command *-Item
+```
+
+Para consultar documentación ampliada se puede usar:
+
+```powershell
+Get-Help Copy-Item -Online
+```
+
+Este último comando requiere acceso a Internet.
+
+:::
+
+# Equivalencias de consulta rápida
+
+| Propósito | Linux con Bash | Windows PowerShell |
+|---|---|---|
+| Ubicación actual | `pwd` | `Get-Location` |
+| Listar | `ls -la` | `Get-ChildItem -Force` |
+| Cambiar ubicación | `cd ruta` | `Set-Location ruta` |
+| Crear carpeta | `mkdir carpeta` | `New-Item -ItemType Directory carpeta` |
+| Crear archivo vacío | `touch archivo.txt` | `New-Item -ItemType File archivo.txt` |
+| Leer archivo | `cat archivo.txt` | `Get-Content archivo.txt` |
+| Copiar | `cp origen destino` | `Copy-Item origen destino` |
+| Renombrar o mover | `mv origen destino` | `Rename-Item` o `Move-Item` |
+| Eliminar con confirmación | `rm -i archivo` | `Remove-Item archivo -Confirm` |
+| Buscar archivos | `find . -name "*.csv"` | `Get-ChildItem -Recurse -Filter *.csv` |
+| Buscar texto | `grep -n patrón archivo` | `Select-String -Pattern patrón -Path archivo` |
+| Hash SHA-256 | `sha256sum archivo` | `Get-FileHash archivo -Algorithm SHA256` |
+| Procesos | `ps`, `top` | `Get-Process` |
+| Espacio en disco | `df -h`, `du -sh` | `Get-PSDrive`, `Measure-Object` |
+| Variables de entorno | `printenv` | `Get-ChildItem Env:` |
+| Ayuda | `man`, `--help` | `Get-Help` |
+
+::: {.callout-important title="Una tabla de equivalencias no implica identidad"}
+PowerShell incluye alias como `ls`, `cp` y `rm`, pero esos nombres pueden invocar *cmdlets* con reglas diferentes a las utilidades GNU. En materiales reproducibles, utilice el nombre nativo de cada entorno.
+:::
+
+# Práctica integradora
+
+## Situación
+
+Un equipo de estudiantes recibió pequeños archivos de señales biomédicas y debe preparar una estructura reproducible para analizarlos. La práctica evalúa organización, trazabilidad e integridad; no evalúa procesamiento digital de señales.
+
+## Actividades
+
+Realice las siguientes operaciones dentro de `Terminal_Practica`:
+
+1. Confirme la ubicación actual.
+2. Liste la estructura completa de carpetas.
+3. Cree dos copias de `ecg_01.csv` llamadas `ecg_02.csv` y `ecg_03.csv` dentro de `datos`.
+4. Busque recursivamente todos los archivos `.csv`.
+5. Muestre las tres primeras líneas de cada archivo.
+6. Busque el texto `0.73` en los CSV.
+7. Copie la carpeta `datos` dentro de `respaldo` sin eliminar el original.
+8. Calcule el SHA-256 del archivo original y de su copia.
+9. Genere un archivo `reportes/inventario.txt` con la lista de archivos.
+10. Comprima la carpeta completa y verifique que el archivo comprimido exista.
+
+## Evidencias mínimas
+
+El estudiante debe conservar:
+
+- el archivo comprimido;
+- `reportes/inventario.txt`;
+- una captura o transcripción de los *hashes* comparados;
+- una explicación breve de la diferencia entre ruta absoluta y relativa;
+- una identificación explícita del comando que podría sobrescribir un archivo.
+
+## Criterios de verificación
+
+| Criterio | Evidencia observable |
+|---|---|
+| Navegación correcta | Las operaciones se ejecutan dentro de `Terminal_Practica` |
+| Organización | La estructura solicitada se conserva |
+| Seguridad | No se usan privilegios de administrador ni eliminación forzada |
+| Reproducibilidad | Los comandos se registran en orden y pueden repetirse |
+| Integridad | Los archivos comparados presentan el mismo SHA-256 |
+| Interpretación | El estudiante explica qué hizo cada comando, no solo muestra la salida |
+
+# Errores frecuentes y diagnóstico
+
+## “No se reconoce el comando” o “command not found”
+
+Posibles causas:
+
+- el comando está mal escrito;
+- el programa no está instalado;
+- la carpeta del programa no está en `PATH`;
+- se copió un comando de Bash en PowerShell, o viceversa.
+
+Diagnóstico:
+
+::: {.panel-tabset}
+
+## Linux
+
+```bash
+type nombre_del_comando
+command -v nombre_del_comando
+```
+
+## Windows PowerShell
+
+```powershell
+Get-Command nombre_del_comando -ErrorAction SilentlyContinue
+```
+
+:::
+
+## “No existe el archivo o directorio”
+
+1. Consulte la carpeta actual.
+2. Liste sus elementos.
+3. Revise mayúsculas, extensión y comillas.
+4. Pruebe primero con una ruta absoluta.
+
+## “Permiso denegado”
+
+No asuma que la solución es ejecutar como administrador. Verifique:
+
+- quién es el propietario;
+- qué permisos tiene el elemento;
+- si otro programa mantiene el archivo abierto;
+- si se intenta escribir en una ubicación protegida;
+- si la política institucional restringe scripts.
+
+## El comando parece no terminar
+
+- Espere si la tarea procesa muchos archivos.
+- Revise si el programa solicita una entrada o confirmación.
+- Use <kbd>Ctrl</kbd> + <kbd>C</kbd> para interrumpir una tarea propia cuando sea necesario.
+- No cierre abruptamente la terminal mientras un programa escribe un archivo importante.
+
+# Preguntas de verificación
+
+1. ¿Por qué una ruta relativa puede funcionar en una carpeta y fallar en otra?
+2. ¿Qué diferencia existe entre `>` y `>>`?
+3. ¿Por qué `rm` y `Remove-Item` requieren más precaución que la papelera gráfica?
+4. ¿Qué información aporta un *hash* y qué información no aporta?
+5. ¿Por qué una tubería de PowerShell no debe entenderse simplemente como una tubería de texto?
+6. ¿Cuál es el riesgo de reemplazar `PATH` en lugar de agregar una ruta conservando su valor?
+7. ¿Por qué `chmod 777` no es una solución apropiada ante cualquier error de permisos?
+8. ¿Qué comandos permiten comprobar la ubicación actual antes de modificar archivos?
+9. ¿Qué diferencia existe entre un cambio temporal de sesión y una configuración persistente?
+10. ¿Qué evidencia demuestra que una práctica de terminal es reproducible?
+
+# Cierre
+
+El dominio de la terminal no consiste en memorizar largas listas de comandos. Consiste en comprender el sistema de archivos, construir rutas correctas, anticipar el efecto de cada operación, verificar resultados y registrar procedimientos. En trabajos de Ingeniería Biomédica, estas capacidades reducen errores de organización y facilitan la reproducción de análisis, la gestión de conjuntos de datos y la automatización posterior con Python, R, Git o Quarto.
+
+# Referencias oficiales
+
+- [GNU Bash Reference Manual](https://www.gnu.org/software/bash/manual/bash.html)
+- [GNU Coreutils](https://www.gnu.org/software/coreutils/manual/coreutils.html)
+- [Copy-Item — Microsoft Learn](https://learn.microsoft.com/powershell/module/microsoft.powershell.management/copy-item)
+- [Manipulación de elementos en PowerShell — Microsoft Learn](https://learn.microsoft.com/powershell/scripting/samples/manipulating-items-directly)
+- [Perfiles de PowerShell — Microsoft Learn](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_profiles)
+- [Políticas de ejecución de PowerShell — Microsoft Learn](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies)
