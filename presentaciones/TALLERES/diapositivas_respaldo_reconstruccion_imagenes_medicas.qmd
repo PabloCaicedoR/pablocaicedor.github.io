@@ -1,0 +1,492 @@
+---
+title: "Apéndice: reconstrucción de imágenes médicas"
+subtitle: "Diapositivas de respaldo para preguntas frecuentes"
+lang: es
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    transition: fade
+    width: 1600
+    height: 900
+    margin: 0.07
+    smaller: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## ¿Qué significa “reconstruir” una imagen?
+
+**Reconstruir** no es “tomar una foto”.
+
+Es convertir mediciones físicas en una imagen interpretable.
+
+::: {.fragment}
+En imágenes médicas, el equipo mide señales como:
+
+- rayos X que atravesaron el cuerpo;
+- ecos de ultrasonido que regresaron al transductor;
+- señales de radiofrecuencia de protones en MRI.
+:::
+
+::: {.fragment}
+Luego el computador responde:
+
+> ¿Qué distribución interna del cuerpo explica esas mediciones?
+:::
+
+::: notes
+Usar esta diapositiva si alguien pregunta si el equipo “fotografía” el interior.
+La idea clave es que la imagen médica es una construcción computacional basada en señales físicas.
+:::
+
+---
+
+## Pregunta común 1: ¿toda imagen médica necesita reconstrucción?
+
+No en el mismo sentido.
+
+| Modalidad | ¿Qué ocurre? | Imagen final |
+|---|---|---|
+| Radiografía | Se forma una sombra 2D | Proyección |
+| CT | Muchas sombras desde ángulos distintos | Corte reconstruido |
+| Ultrasonido | Muchos ecos se ordenan por tiempo y dirección | Imagen por barrido/beamforming |
+| MRI | Señales codificadas espacialmente | Imagen por Fourier |
+
+::: {.fragment}
+**La reconstrucción depende de cómo se adquirió la señal.**
+:::
+
+---
+
+## Rayos X: una radiografía es una sombra informativa
+
+En radiografía convencional, los rayos X atraviesan el cuerpo y llegan al detector.
+
+Los tejidos más densos atenúan más.
+
+::: columns
+::: {.column width="50%"}
+```{dot}
+#| fig-width: 6
+#| fig-height: 4
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent"]
+  node [shape=box, style="rounded,filled", fillcolor="#eef5f9", color="#355c7d", fontname="Arial"]
+  edge [color="#355c7d", penwidth=2]
+
+  X [label="Fuente\nde rayos X"]
+  B [label="Cuerpo\n3D"]
+  D [label="Detector\n2D"]
+  I [label="Imagen:\nsombra anatómica"]
+
+  X -> B [label="rayos X"]
+  B -> D [label="intensidad\natenuada"]
+  D -> I
+}
+```
+:::
+
+::: {.column width="50%"}
+**Pregunta frecuente**
+
+> ¿Por qué se ven superpuestas las costillas, corazón y pulmones?
+
+Porque todo el volumen 3D queda comprimido en una imagen 2D.
+:::
+:::
+
+---
+
+## Rayos X: ¿qué se pierde en una radiografía?
+
+Una radiografía mezcla estructuras que están a diferentes profundidades.
+
+```text
+Objeto 3D       Proyección 2D
+
+hueso delante
+pulmón detrás       todo aparece
+corazón detrás  →   sobre la misma imagen
+```
+
+::: {.fragment}
+Por eso una radiografía es muy útil, pero no separa completamente profundidad.
+:::
+
+::: {.fragment}
+**La CT nació para resolver esa limitación:** construir cortes.
+:::
+
+---
+
+## CT: muchas sombras para construir un corte
+
+En CT, el sistema toma proyecciones desde muchos ángulos.
+
+```{dot}
+#| fig-width: 8
+#| fig-height: 5
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent"]
+  node [shape=box, style="rounded,filled", fillcolor="#f4f7fb", color="#1f4e79", fontname="Arial"]
+  edge [color="#1f4e79", penwidth=2]
+
+  P1 [label="Proyección 0°"]
+  P2 [label="Proyección 45°"]
+  P3 [label="Proyección 90°"]
+  P4 [label="Muchas más\nproyecciones"]
+  S [label="Sinograma:\nmediciones ordenadas"]
+  R [label="Reconstrucción\ncomputacional"]
+  C [label="Corte CT"]
+
+  P1 -> S
+  P2 -> S
+  P3 -> S
+  P4 -> S
+  S -> R
+  R -> C
+}
+```
+
+::: {.fragment}
+Una sola proyección no basta. Muchas proyecciones permiten ubicar dónde estaba la atenuación.
+:::
+
+---
+
+## Pregunta común 2: ¿qué es un sinograma?
+
+Un **sinograma** es una forma de organizar las mediciones de CT.
+
+No es una imagen anatómica.
+
+::: columns
+::: {.column width="50%"}
+**Imagen final**
+
+Se organiza por posición:
+
+```text
+fila, columna
+x, y
+```
+:::
+
+::: {.column width="50%"}
+**Sinograma**
+
+Se organiza por:
+
+```text
+posición del detector
+ángulo de adquisición
+```
+:::
+:::
+
+::: {.fragment}
+El sinograma es como una libreta de todas las “sombras” medidas antes de reconstruir el corte.
+:::
+
+---
+
+## Pregunta común 3: ¿por qué CT usa filtros?
+
+Si solo “devolvemos” cada proyección al espacio, la imagen queda borrosa.
+
+```text
+Retroproyección simple
+        ↓
+la información se reparte demasiado
+        ↓
+imagen con estelas y borrosidad
+```
+
+::: {.fragment}
+La **retroproyección filtrada** corrige parcialmente ese efecto:
+
+```text
+proyecciones
+    ↓
+filtro
+    ↓
+retroproyección
+    ↓
+corte más nítido
+```
+:::
+
+::: {.fragment}
+El filtro no inventa anatomía: ajusta cómo se reparte la información medida.
+:::
+
+---
+
+## Pregunta común 4: ¿qué pasa si hay pocas proyecciones?
+
+Con pocas proyecciones, la reconstrucción tiene menos evidencia.
+
+| Situación | Efecto probable |
+|---|---|
+| Pocas proyecciones | artefactos en forma de rayas |
+| Más ruido | imagen granular |
+| Movimiento del paciente | estructuras dobles o borrosas |
+| Metal | rayas intensas |
+
+::: {.fragment}
+La calidad de la imagen depende de la adquisición y del algoritmo.
+:::
+
+::: {.fragment}
+No todo problema se arregla “con software”.
+:::
+
+---
+
+## MRI: reconstruye señales, no sombras
+
+En MRI no se miden rayos X.
+
+Se miden señales de radiofrecuencia emitidas por protones después de ser excitados.
+
+```{dot}
+#| fig-width: 8
+#| fig-height: 5
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent"]
+  node [shape=box, style="rounded,filled", fillcolor="#f3f1fb", color="#4b3f72", fontname="Arial"]
+  edge [color="#4b3f72", penwidth=2]
+
+  H [label="Protones\nde hidrógeno"]
+  RF [label="Pulso de\nradiofrecuencia"]
+  G [label="Gradientes:\nmarcan posición"]
+  K [label="Espacio-k:\nfrecuencias espaciales"]
+  F [label="Transformada\ninversa de Fourier"]
+  I [label="Imagen MRI"]
+
+  H -> RF
+  RF -> G
+  G -> K
+  K -> F
+  F -> I
+}
+```
+
+::: {.fragment}
+MRI pregunta: **¿de dónde viene cada parte de la señal?**
+:::
+
+---
+
+## Pregunta común 5: ¿qué es el espacio-k?
+
+El **espacio-k** no es una foto del órgano.
+
+Es una representación de la imagen por frecuencias espaciales.
+
+::: columns
+::: {.column width="50%"}
+**Centro del espacio-k**
+
+- contraste general;
+- estructuras grandes;
+- forma global.
+:::
+
+::: {.column width="50%"}
+**Periferia del espacio-k**
+
+- bordes;
+- detalles finos;
+- nitidez.
+:::
+:::
+
+::: {.fragment}
+Una frase útil:
+
+> El espacio-k es la receta matemática; la imagen es el plato servido.
+:::
+
+---
+
+## Ultrasonido: la imagen nace de ecos
+
+En ultrasonido, el transductor envía pulsos acústicos y escucha ecos.
+
+El tiempo de retorno indica profundidad aproximada.
+
+La intensidad del eco aporta brillo.
+
+```{dot}
+#| fig-width: 8
+#| fig-height: 5
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent"]
+  node [shape=box, style="rounded,filled", fillcolor="#fff7ed", color="#b45309", fontname="Arial"]
+  edge [color="#b45309", penwidth=2]
+
+  T [label="Transductor"]
+  P [label="Pulso\nacústico"]
+  E [label="Ecos desde\ninterfaces"]
+  B [label="Beamforming:\nordenar y sumar ecos"]
+  I [label="Imagen B-mode"]
+
+  T -> P
+  P -> E
+  E -> B
+  B -> I
+}
+```
+
+::: {.fragment}
+A diferencia de CT, no se combinan sombras desde todo el cuerpo; se ordenan ecos por dirección y tiempo.
+:::
+
+---
+
+## Pregunta común 6: ¿cómo sabe el ultrasonido la profundidad?
+
+Usa el tiempo de ida y vuelta del eco.
+
+```text
+pulso sale
+    ↓
+rebota en una interfaz
+    ↓
+eco regresa
+    ↓
+más tiempo = mayor profundidad
+```
+
+::: {.fragment}
+La máquina asume una velocidad promedio del sonido en tejido blando.
+:::
+
+::: {.fragment}
+Si esa suposición falla, pueden aparecer errores de posición o distorsión.
+:::
+
+---
+
+## Pregunta común 7: ¿qué es beamforming?
+
+**Beamforming** significa combinar señales de muchos elementos del transductor para formar una línea de imagen.
+
+::: columns
+::: {.column width="50%"}
+Sin coordinación:
+
+```text
+ecos mezclados
+imagen más confusa
+```
+:::
+
+::: {.column width="50%"}
+Con beamforming:
+
+```text
+ecos alineados
+mayor señal útil
+mejor dirección
+```
+:::
+:::
+
+::: {.fragment}
+Una analogía: varios micrófonos escuchan el mismo sonido; el sistema ajusta retrasos para enfocarse en una dirección.
+:::
+
+---
+
+## Pregunta común 8: ¿por qué el ultrasonido tiene textura granular?
+
+Esa textura se llama **speckle**.
+
+No es simplemente “mala calidad”.
+
+Aparece por la interferencia de muchos ecos pequeños dentro del tejido.
+
+::: {.fragment}
+Puede dificultar la visualización, pero también contiene información sobre la textura del tejido.
+:::
+
+::: {.fragment}
+Por eso el ultrasonido se ve muy diferente a una radiografía o una MRI.
+:::
+
+---
+
+## Pregunta común 9: ¿Doppler también es reconstrucción?
+
+Doppler no solo muestra forma.
+
+Aprovecha cambios de frecuencia causados por movimiento.
+
+```text
+glóbulos rojos en movimiento
+        ↓
+cambian la frecuencia del eco
+        ↓
+el equipo estima dirección y velocidad
+        ↓
+color sobre la imagen
+```
+
+::: {.fragment}
+En divulgación:
+
+> Doppler convierte cambios en el eco en una pista visual del movimiento.
+:::
+
+---
+
+## Comparación didáctica final
+
+| Modalidad | Señal medida | Pregunta computacional |
+|---|---|---|
+| Radiografía | Rayos X transmitidos | ¿qué sombra produce el cuerpo? |
+| CT | Muchas proyecciones de rayos X | ¿qué corte explica todas las sombras? |
+| MRI | Señales RF codificadas | ¿cómo ubico señales en el espacio? |
+| Ultrasonido | Ecos acústicos | ¿de dónde vino cada eco? |
+
+::: {.fragment}
+Todas producen imágenes, pero **no todas construyen la imagen de la misma manera**.
+:::
+
+---
+
+## Preguntas rápidas para responder en clase
+
+**¿Una CT es muchas radiografías?**  
+No exactamente. Usa muchas proyecciones de rayos X, pero reconstruye cortes.
+
+**¿Una MRI usa radiación ionizante?**  
+No. Usa campo magnético, radiofrecuencia y gradientes.
+
+**¿El ultrasonido ve directamente el tejido?**  
+No. Interpreta ecos acústicos.
+
+**¿Más procesamiento siempre mejora la imagen?**  
+No. Puede mejorar visualización y también introducir sesgos o artefactos.
+
+---
+
+## Cierre del apéndice
+
+Idea central para el público general:
+
+> Una imagen médica no aparece mágicamente.  
+> Es el resultado de medir una señal física, ubicarla en el espacio y transformarla en una imagen útil.
+
+::: {.fragment}
+Por eso entender la reconstrucción ayuda a preguntar mejor:
+
+- ¿qué mide esta imagen?
+- ¿qué pudo distorsionarla?
+- ¿qué información clínica realmente aporta?
+:::
