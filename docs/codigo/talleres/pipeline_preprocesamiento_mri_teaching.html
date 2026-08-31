@@ -204,7 +204,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 │   ├── masks/
 │   └── overlays/
 └── ...</code></pre>
-<div id="1cbe1b93" class="cell" data-execution_count="4">
+<div id="cell-3" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -221,16 +221,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="localizar-el-dataset">1. Localizar el dataset</h2>
 <p>El código busca automáticamente <code>teaching_dataset</code> en el directorio actual y en algunos niveles superiores.</p>
 <p>Esto evita codificar una ruta absoluta y facilita mover el proyecto entre computadores.</p>
-<div id="85bc091c" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DATASET_ROOT <span class="op">=</span> Path(<span class="st">"teaching_dataset/"</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>MRI_IMAGES <span class="op">=</span> DATASET_ROOT <span class="op">/</span> <span class="st">"mri"</span> <span class="op">/</span> <span class="st">"images"</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>MRI_MASKS <span class="op">=</span> DATASET_ROOT <span class="op">/</span> <span class="st">"mri"</span> <span class="op">/</span> <span class="st">"masks"</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Dataset:"</span>, DATASET_ROOT)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MRI images:"</span>, MRI_IMAGES)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="cell-5" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_teaching_dataset(start: Path <span class="op">=</span> Path.cwd()) <span class="op">-&gt;</span> Path:</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    candidates <span class="op">=</span> [</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        start <span class="op">/</span> <span class="st">"teaching_dataset"</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        start.parent <span class="op">/</span> <span class="st">"teaching_dataset"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        start.parent.parent <span class="op">/</span> <span class="st">"teaching_dataset"</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        start <span class="op">/</span> <span class="st">"data"</span> <span class="op">/</span> <span class="st">"teaching"</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        start.parent <span class="op">/</span> <span class="st">"data"</span> <span class="op">/</span> <span class="st">"teaching"</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> candidate <span class="kw">in</span> candidates:</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (candidate <span class="op">/</span> <span class="st">"mri"</span> <span class="op">/</span> <span class="st">"images"</span>).exists():</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> candidate.resolve()</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">FileNotFoundError</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"No se encontró teaching_dataset. "</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ubique el cuaderno junto a la carpeta teaching_dataset "</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"o ajuste manualmente DATASET_ROOT."</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>DATASET_ROOT <span class="op">=</span> Path(</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"/home/sylph/bioforja/bioforja-projects/pablocaicedor.github.io/presentaciones/TALLERES/teaching_dataset/"</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>MRI_IMAGES <span class="op">=</span> DATASET_ROOT <span class="op">/</span> <span class="st">"mri"</span> <span class="op">/</span> <span class="st">"images"</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>MRI_MASKS <span class="op">=</span> DATASET_ROOT <span class="op">/</span> <span class="st">"mri"</span> <span class="op">/</span> <span class="st">"masks"</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Dataset:"</span>, DATASET_ROOT)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MRI images:"</span>, MRI_IMAGES)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Dataset: teaching_dataset
-MRI images: teaching_dataset/mri/images</code></pre>
+<pre><code>Dataset: /home/sylph/bioforja/bioforja-projects/pablocaicedor.github.io/presentaciones/TALLERES/teaching_dataset
+MRI images: /home/sylph/bioforja/bioforja-projects/pablocaicedor.github.io/presentaciones/TALLERES/teaching_dataset/mri/images</code></pre>
 </div>
 </div>
 </section>
@@ -244,7 +266,7 @@ MRI images: teaching_dataset/mri/images</code></pre>
 <li>se selecciona la imagen central de la lista.</li>
 </ul>
 <p>Puede cambiar <code>image_path</code> manualmente para trabajar con otra imagen.</p>
-<div id="28f70c02" class="cell" data-execution_count="6">
+<div id="cell-7" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>image_files <span class="op">=</span> <span class="bu">sorted</span>(p <span class="cf">for</span> p <span class="kw">in</span> MRI_IMAGES.glob(<span class="st">"*.png"</span>) <span class="cf">if</span> p.is_file())</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> image_files:</span>
@@ -271,7 +293,7 @@ Imagen seleccionada: mask_small.png</code></pre>
 <h2 class="anchored" data-anchor-id="cargar-la-imagen">3. Cargar la imagen</h2>
 <p>Se convierte explícitamente a escala de grises y posteriormente a <code>float32</code>.</p>
 <p>Trabajar en punto flotante evita errores por saturación o truncamiento durante operaciones matemáticas.</p>
-<div id="c604049a" class="cell" data-execution_count="7">
+<div id="cell-9" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>img_u8 <span class="op">=</span> np.array(Image.<span class="bu">open</span>(image_path).convert(<span class="st">"L"</span>))</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> img_u8.astype(np.float32)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -305,7 +327,7 @@ máximo: 255.0</code></pre>
 <h2 class="anchored" data-anchor-id="inspeccionar-la-distribución-de-intensidades">4. Inspeccionar la distribución de intensidades</h2>
 <p>Antes de modificar una imagen conviene observar su histograma.</p>
 <p>En MRI, la intensidad <strong>no tiene una escala física universal equivalente a las unidades Hounsfield de CT</strong>. Por ello, operaciones de normalización suelen ser dependientes del estudio, secuencia y objetivo analítico.</p>
-<div id="c513b419" class="cell" data-execution_count="8">
+<div id="cell-11" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ax.hist(img.ravel(), bins<span class="op">=</span><span class="dv">64</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Histograma de intensidades — imagen original"</span>)</span>
@@ -331,7 +353,7 @@ máximo: 255.0</code></pre>
 </ul>
 <p>Los valores fuera de ese intervalo se recortan.</p>
 <p>Esto <strong>no elimina anatomía</strong> de forma explícita, pero sí modifica la representación de intensidades, por lo que los percentiles deben documentarse.</p>
-<div id="677a5e55" class="cell" data-execution_count="9">
+<div id="cell-13" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>P_LOW <span class="op">=</span> <span class="fl">1.0</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>P_HIGH <span class="op">=</span> <span class="fl">99.0</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -378,7 +400,7 @@ Percentil 99.0: 255.000</code></pre>
 <p>[
 I*n =
 ]</p>
-<div id="fef9e228" class="cell" data-execution_count="10">
+<div id="cell-15" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>den <span class="op">=</span> img_clipped.<span class="bu">max</span>() <span class="op">-</span> img_clipped.<span class="bu">min</span>()</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> den <span class="op">==</span> <span class="dv">0</span>:</span>
@@ -415,7 +437,7 @@ máximo normalizado: 1.0</code></pre>
 <p><strong>Reducir ruido casi siempre implica perder parte del detalle espacial.</strong></p>
 </blockquote>
 <p>Por eso se usa un <code>sigma</code> bajo.</p>
-<div id="2bd79b25" class="cell" data-execution_count="11">
+<div id="cell-17" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>GAUSSIAN_SIGMA <span class="op">=</span> <span class="fl">0.8</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>img_denoised <span class="op">=</span> filters.gaussian(</span>
@@ -452,7 +474,7 @@ máximo normalizado: 1.0</code></pre>
 <li>una transformación puede facilitar la visualización y, al mismo tiempo, modificar la distribución original de intensidades.</li>
 </ul>
 <p>Por eso siempre se conserva la imagen sin procesar.</p>
-<div id="f7e80d9c" class="cell" data-execution_count="12">
+<div id="cell-19" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>CLAHE_CLIP_LIMIT <span class="op">=</span> <span class="fl">0.02</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>img_clahe <span class="op">=</span> exposure.equalize_adapthist(</span>
@@ -485,7 +507,7 @@ máximo normalizado: 1.0</code></pre>
 <p>Muchos modelos de aprendizaje automático necesitan imágenes con dimensiones uniformes.</p>
 <p>Aquí se usa <code>256 × 256</code> únicamente como tamaño didáctico.</p>
 <p>Para imágenes se utiliza interpolación continua y <strong>anti-aliasing</strong>.</p>
-<div id="44605f9c" class="cell" data-execution_count="13">
+<div id="cell-21" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>TARGET_SHAPE <span class="op">=</span> (<span class="dv">256</span>, <span class="dv">256</span>)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>img_resized <span class="op">=</span> transform.resize(</span>
@@ -515,7 +537,7 @@ Shape final: (256, 256)</code></pre>
 <section id="ver-el-pipeline-completo" class="level2">
 <h2 class="anchored" data-anchor-id="ver-el-pipeline-completo">10. Ver el pipeline completo</h2>
 <p>La comparación secuencial permite discutir qué aporta y qué sacrifica cada transformación.</p>
-<div id="fc5cc9c4" class="cell" data-execution_count="14">
+<div id="cell-23" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>stages <span class="op">=</span> [</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Original"</span>, img),</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Recorte P1–P99"</span>, img_clipped),</span>
@@ -546,7 +568,7 @@ Shape final: (256, 256)</code></pre>
 <section id="comparación-de-histogramas" class="level2">
 <h2 class="anchored" data-anchor-id="comparación-de-histogramas">11. Comparación de histogramas</h2>
 <p>El histograma permite comprobar que el preprocesamiento no es una operación neutra: cambia explícitamente la representación numérica.</p>
-<div id="fa2d823d" class="cell" data-execution_count="15">
+<div id="cell-25" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="dv">4</span>))</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].hist(img.ravel(), bins<span class="op">=</span><span class="dv">64</span>)</span>
@@ -583,7 +605,7 @@ Shape final: (256, 256)</code></pre>
 <li>al redimensionar se usa <strong>vecino más cercano</strong> (<code>order=0</code>).</li>
 </ul>
 <p>Esto evita crear etiquetas intermedias inexistentes.</p>
-<div id="7aa3fb75" class="cell" data-execution_count="16">
+<div id="cell-27" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_matching_mask(image_path: Path, mask_dir: Path):</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Primero intenta coincidencias por nombre base.</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    candidates <span class="op">=</span> [</span>
@@ -663,7 +685,7 @@ Valores después de resize: [False  True]</code></pre>
 <h2 class="anchored" data-anchor-id="exportar-el-resultado">13. Exportar el resultado</h2>
 <p>El resultado derivado se guarda en una carpeta separada.</p>
 <p>La imagen original del <code>teaching_dataset</code> no se modifica.</p>
-<div id="ae00a028" class="cell" data-execution_count="17">
+<div id="cell-29" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>OUTPUT_DIR <span class="op">=</span> Path.cwd() <span class="op">/</span> <span class="st">"outputs"</span></span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>OUTPUT_DIR.mkdir(parents<span class="op">=</span><span class="va">True</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -676,7 +698,7 @@ Valores después de resize: [False  True]</code></pre>
 <span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(output_image.resolve())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Imagen guardada en:
-/home/sylph/bioforja/bioforja-projects/pablocaicedor.github.io/presentaciones/TALLERES/outputs/mri_preprocessed.png</code></pre>
+/home/sylph/bioforja/bioforja-projects/pablocaicedor.github.io/codigo/talleres/outputs/mri_preprocessed.png</code></pre>
 </div>
 </div>
 </section>
@@ -721,9 +743,14 @@ imagen preparada para análisis</code></pre>
 <blockquote class="blockquote">
 <p><strong>Preprocesar no significa “mejorar” una imagen de manera universal. Significa transformarla de forma controlada y documentada para una tarea específica.</strong></p>
 </blockquote>
-
-
 </section>
+</section>
+<section id="referencia-conceptual-de-la-clase" class="level2">
+<h2 class="anchored" data-anchor-id="referencia-conceptual-de-la-clase">Referencia conceptual de la clase</h2>
+<p>El enfoque sigue la idea de estudiar imágenes médicas como señales digitales producidas por sistemas de adquisición: una imagen representa una propiedad física medida y su procesamiento debe interpretarse dentro de la modalidad y del objetivo de análisis.</p>
+<p>Para la clase, esta distinción es más importante que memorizar una secuencia fija de filtros.</p>
+
+
 </section>
 
 </main> <!-- /main -->
