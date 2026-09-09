@@ -1,0 +1,1328 @@
+---
+title: "Sistemas y Señales Biomédicos"
+subtitle: "De la Convolución al Análisis Multiresolución"
+author: "Ph. D. Pablo Eduardo Caicedo-Rodríguez"
+lang: es
+bibliography: referencias.bib
+link-citations: true
+slide-level: 2
+logo: ../../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+format:
+  revealjs:
+    theme: 
+        - default
+        - ../../../recursos/estilos/reveal.scss
+    width: 1600
+    height: 900
+    margin: 0.06
+    center: false
+    transition: fade
+    background-transition: fade
+    slide-number: c/t
+    hash: true
+    history: true
+    controls: true
+    progress: true
+    navigation-mode: linear
+    code-copy: true
+    code-line-numbers: false
+    chalkboard: false
+    footer: "[BioForja](https://pablocaicedor.github.io/)"
+    html-math-method: mathjax
+    embed-resources: true
+  beamer:
+    aspectratio: 169
+    theme: Madrid
+    colortheme: dolphin
+    fonttheme: professionalfonts
+    navigation: empty
+    pdf-engine: pdflatex
+    keep-tex: true
+    include-in-header: ../../../recursos/estilos/beamer-header.tex
+    toc: false
+execute:
+  enabled: false
+---
+
+# Cómo estudiar las semanas 11–15 {.week-divider background-color="#0B3954"}
+
+## Del modelo LTI a representaciones para clasificación
+
+Al terminar la semana 15, el estudiante debe poder:
+
+1. calcular y explicar convoluciones continuas y discretas;
+2. analizar sistemas mediante respuesta frecuencial, Laplace y transformada Z;
+3. diseñar y comparar filtros FIR e IIR;
+4. interpretar wavelets y análisis multirresolución;
+5. construir características con validación sin fuga de información.
+
+::: {.callout-important}
+## Idea conductora
+Una transformación solo resulta útil cuando conserva la información fisiológica pertinente y hace explícitas sus hipótesis.
+:::
+
+## Mapa de las diez sesiones
+
+| Semana | Sesión 1 | Sesión 2 |
+|---|---|---|
+| 11 | Convolución: definición y cálculo | Suavizadores, diferenciadores y promedio móvil |
+| 12 | Convolución en frecuencia | Laplace, ROC, polos y ceros |
+| 13 | Condiciones iniciales e identificación | Transformada Z y diseño FIR |
+| 14 | Diseño IIR y aplicaciones | Fundamentos de wavelets |
+| 15 | Análisis multirresolución | Sistemas lineales para clasificación |
+
+## Continuidad con las semanas 6–10
+
+La respuesta al impulso $h$ caracteriza un sistema LTI. Este bloque desarrolla cuatro preguntas:
+
+- ¿cómo se calcula $y=x*h$?
+- ¿qué revelan $H(j\omega)$, $H(s)$ y $H(z)$?
+- ¿cómo se implementa un filtro estable?
+- ¿cómo se convierten sus salidas en evidencia para clasificación?
+
+::: {.callout-note}
+## Convención
+Las frecuencias se expresan en Hz cuando aparece $f$ y en radianes por muestra cuando aparece $\omega$. Toda implementación debe declarar $f_s$.
+:::
+
+## Ruta de comprobación
+
+| Nivel | Pregunta |
+|---|---|
+| Matemático | ¿La ecuación y sus condiciones son correctas? |
+| Numérico | ¿La implementación reproduce un caso conocido? |
+| Fisiológico | ¿La transformación conserva el fenómeno de interés? |
+| Inferencial | ¿La validación evita contaminación entre conjuntos? |
+
+
+# Semana 11 · Convolución en tiempo y sistemas aplicados {.week-divider background-color="#0B3954"}
+
+
+## Sesión 21 · Definición, interpretación y cálculo de la convolución
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Calcular la salida de un sistema LTI y explicar cada etapa del procedimiento gráfico y algebraico.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Convolución** | Superposición ponderada de copias desplazadas de la respuesta al impulso. |
+| **Variable muda** | $k$ o $\tau$ desaparece después de sumar o integrar. |
+| **Memoria** | La salida depende de valores de entrada distintos al instante actual. |
+| **Soporte** | Determina dónde existe solapamiento y, por tanto, salida no nula. |
+
+## Relaciones matemáticas centrales
+
+$$y(t)=x(t)*h(t)=\int_{-\infty}^{\infty}x(\tau)h(t-\tau)\,d\tau$$
+
+$$y[n]=x[n]*h[n]=\sum_{k=-\infty}^{\infty}x[k]h[n-k]$$
+
+$$\delta[n]*x[n]=x[n]$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+Cada muestra de entrada excita una copia desplazada de $h$. La amplitud de la muestra escala esa copia y la suma reúne todas las contribuciones.
+:::
+
+
+## Procedimiento de análisis
+
+1. Identificar los soportes de $x$ y $h$.
+2. Invertir una de las señales respecto a su variable.
+3. Desplazarla hasta el instante de salida.
+4. Multiplicar donde existe solapamiento y sumar.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Un bolo idealizado $x(t)$ atraviesa un compartimento cuya respuesta $h(t)$ decae exponencialmente. La concentración medida combina aportes pasados y el decaimiento del sistema.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import numpy as np
+x = np.array([1., 2., 1.])
+h = np.array([0.5, 0.3, 0.2])
+y = np.convolve(x, h, mode="full")
+print(y)  # [0.5, 1.3, 1.3, 0.7, 0.2]
+```
+
+## Verificaciones antes de interpretar
+
+- La longitud completa es $N_x+N_h-1$.
+- La convolución con un impulso reproduce la señal.
+- La suma de la salida cumple $\sum y=(\sum x)(\sum h)$ cuando las sumas existen.
+
+## Errores frecuentes
+
+- Confundir convolución con multiplicación muestra a muestra.
+- Olvidar la inversión de $h[k]$ antes del desplazamiento.
+- Comparar resultados `same` y `full` sin declarar el modo.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Calcule $[1,2,1]*[1,-1]$.
+2. Marque qué muestras dependen de condiciones de borde.
+3. Interprete el segundo núcleo como diferenciador simple.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- La convolución construye la respuesta de cualquier sistema LTI.
+- El soporte anticipa la duración de la salida.
+- Los bordes forman parte del modelo computacional.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+## Sesión 22 · Convolución aplicada: suavizado, diferenciación y promedio móvil
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Relacionar la forma del núcleo con el efecto del sistema sobre una bioseñal.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Promedio móvil** | Núcleo FIR que reduce fluctuaciones rápidas. |
+| **Diferenciador** | Resalta cambios entre muestras vecinas. |
+| **Ganancia DC** | $H(0)=\sum h[n]$ mide la respuesta a una constante. |
+| **Retardo** | Un filtro causal usa muestras presentes y pasadas. |
+
+## Relaciones matemáticas centrales
+
+$$h_M[n]=\frac{1}{M},\quad 0\le n<M$$
+
+$$y[n]=\frac{1}{M}\sum_{k=0}^{M-1}x[n-k]$$
+
+$$h_d[n]=[1,-1]\quad\Rightarrow\quad y[n]=x[n]-x[n-1]$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+Un núcleo ancho suaviza más, pero ensancha transiciones y desplaza eventos. Un diferenciador aumenta la sensibilidad al ruido de alta frecuencia.
+:::
+
+
+## Procedimiento de análisis
+
+1. Definir el objetivo fisiológico.
+2. Convertir la escala temporal a número de muestras.
+3. Revisar ganancia, retardo y bordes.
+4. Comparar la salida con eventos anotados.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Para una envolvente EMG muestreada a 1000 Hz, una ventana de 100 ms contiene 100 muestras. El promedio reduce variabilidad rápida, aunque puede desplazar el inicio aparente de activación.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import numpy as np
+fs = 1000
+M = round(0.100 * fs)
+h = np.ones(M) / M
+y = np.convolve(x, h, mode="same")
+```
+
+## Verificaciones antes de interpretar
+
+- La suma del promedio móvil debe valer uno.
+- Una entrada constante debe conservar su nivel.
+- El retardo lineal aproximado es $(M-1)/2$ muestras.
+
+## Errores frecuentes
+
+- Elegir $M$ sin convertir milisegundos a muestras.
+- Interpretar el suavizado como eliminación completa del ruido.
+- Usar diferencias sin revisar la amplificación de ruido.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Compare ventanas de 20, 100 y 250 ms.
+2. Mida cuánto cambia el tiempo del máximo.
+3. Explique cuál ventana conserva mejor una activación breve.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- El núcleo codifica el comportamiento del filtro.
+- Suavizado y resolución temporal compiten.
+- La validación debe conservar variables fisiológicas relevantes.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+# Semana 12 · Respuesta frecuencial y transformada de Laplace {.week-divider background-color="#0B3954"}
+
+
+## Sesión 23 · Convolución en frecuencia y respuesta del sistema
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Usar la función de transferencia frecuencial para predecir amplitud y fase de la salida.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Respuesta frecuencial** | $H(e^{j\omega})$ describe la acción sobre cada frecuencia. |
+| **Magnitud** | Indica cuánto amplifica o atenúa. |
+| **Fase** | Determina el desplazamiento relativo de componentes. |
+| **Convolución** | En tiempo equivale a multiplicación en frecuencia. |
+
+## Relaciones matemáticas centrales
+
+$$y[n]=x[n]*h[n]\Longleftrightarrow Y(e^{j\omega})=X(e^{j\omega})H(e^{j\omega})$$
+
+$$|Y|=|X||H|$$
+
+$$\angle Y=\angle X+\angle H$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+La salida conserva solamente componentes presentes en la entrada y permitidas por el sistema. Los ceros de $H$ anulan frecuencias específicas.
+:::
+
+
+## Procedimiento de análisis
+
+1. Estimar o calcular $H$.
+2. Examinar magnitud en la banda fisiológica.
+3. Revisar fase o retardo de grupo.
+4. Predecir distorsión antes de filtrar.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Un suavizador aplicado a ECG puede atenuar interferencia rápida, pero también reducir la pendiente del QRS si su banda de paso es insuficiente.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import numpy as np
+from scipy.signal import freqz
+h = np.ones(11) / 11
+w, H = freqz(h, worN=2048, fs=500)
+mag_db = 20*np.log10(np.maximum(np.abs(H), 1e-12))
+```
+
+## Verificaciones antes de interpretar
+
+- $H(0)$ coincide con la suma de coeficientes.
+- Una convolución temporal y una multiplicación FFT deben concordar si se usa relleno suficiente.
+- La fase debe desenvolverse antes de calcular su pendiente.
+
+## Errores frecuentes
+
+- Usar FFT circular cuando se necesita convolución lineal.
+- Ignorar la fase porque la magnitud luce adecuada.
+- Expresar frecuencia normalizada sin indicar su referencia.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Prediga la salida para una suma de 5 y 60 Hz.
+2. Localice la primera anulación del promedio móvil.
+3. Explique por qué el relleno evita aliasing circular.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- La función de transferencia resume la acción LTI.
+- Magnitud y fase forman una descripción conjunta.
+- La banda útil depende de la variable biomédica.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+## Sesión 24 · Transformada de Laplace, región de convergencia y función de transferencia
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Representar sistemas continuos mediante polos y ceros, incorporando causalidad y estabilidad.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Variable compleja** | $s=\sigma+j\omega$ combina crecimiento y oscilación. |
+| **ROC** | Valores de $s$ para los que converge la integral. |
+| **Polo** | Valor donde la transformada diverge. |
+| **Cero** | Valor donde la transformada se anula. |
+
+## Relaciones matemáticas centrales
+
+$$X(s)=\int_{-\infty}^{\infty}x(t)e^{-st}\,dt$$
+
+$$H(s)=\frac{Y(s)}{X(s)}\Big|_{\text{condiciones iniciales nulas}}$$
+
+$$H(s)=K\frac{\prod_m(s-z_m)}{\prod_r(s-p_r)}$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+Polos y ceros no bastan sin la región de convergencia. Una misma expresión algebraica puede corresponder a señales causales o anticausales distintas.
+:::
+
+
+## Procedimiento de análisis
+
+1. Obtener la ecuación diferencial.
+2. Aplicar Laplace con condiciones iniciales nulas para $H(s)$.
+3. Factorizar numerador y denominador.
+4. Relacionar polos con modos temporales.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+El modelo RC de una membrana idealizada tiene $H(s)=1/(1+s\tau)$. Su polo en $-1/\tau$ fija la rapidez del transitorio.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import numpy as np
+from scipy.signal import TransferFunction, step
+tau = 0.2
+sys = TransferFunction([1], [tau, 1])
+t, y = step(sys)
+print(sys.poles)
+```
+
+## Verificaciones antes de interpretar
+
+- Un sistema causal racional es BIBO estable si todos sus polos quedan en el semiplano izquierdo.
+- Las unidades de un polo continuo son rad/s.
+- La respuesta DC resulta de $H(0)$ cuando existe.
+
+## Errores frecuentes
+
+- Confundir ROC con el plano completo salvo polos.
+- Definir $H(s)$ usando condiciones iniciales no nulas.
+- Interpretar un polo cercano al eje imaginario como respuesta rápida.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Determine polo, constante de tiempo y ganancia DC de $5/(s+10)$.
+2. Prediga qué ocurre al acercar el polo al origen.
+3. Compruebe la respuesta al escalón en Python.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- Laplace conecta ecuaciones diferenciales y comportamiento dinámico.
+- La ROC aporta causalidad y estabilidad.
+- Los polos dominantes controlan el transitorio.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+# Semana 13 · Dinámica, transformada Z y diseño FIR {.week-divider background-color="#0B3954"}
+
+
+## Sesión 25 · Condiciones iniciales, valores límite e identificación de sistemas
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Distinguir respuesta libre y forzada, y estimar parámetros dinámicos a partir de datos.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Respuesta de estado cero** | Proviene de la entrada con estado inicial nulo. |
+| **Respuesta de entrada cero** | Proviene de la energía almacenada inicialmente. |
+| **Valor inicial** | Relaciona el límite temporal con el comportamiento de $sX(s)$. |
+| **Identificación** | Estima un modelo y cuantifica su incertidumbre. |
+
+## Relaciones matemáticas centrales
+
+$$y(t)=y_{zi}(t)+y_{zs}(t)$$
+
+$$x(0^+)=\lim_{s\to\infty}sX(s)$$
+
+$$x(\infty)=\lim_{s\to0}sX(s)$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+Los teoremas de valor inicial y final requieren condiciones de existencia. El valor final falla si $sX(s)$ conserva polos en el semiplano derecho o sobre el eje imaginario.
+:::
+
+
+## Procedimiento de análisis
+
+1. Definir entrada y salida observables.
+2. Seleccionar una estructura de modelo parsimoniosa.
+3. Estimar parámetros con datos de entrenamiento.
+4. Validar residuos y capacidad predictiva en otro segmento.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+En una señal fotopletismográfica, una respuesta lenta del sensor puede aproximarse con un sistema de primer orden. La constante de tiempo se estima usando una transición controlada.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import numpy as np
+from scipy.optimize import curve_fit
+def step1(t, K, tau):
+    return K*(1-np.exp(-t/tau))
+(K_hat, tau_hat), cov = curve_fit(step1, t, y, p0=(1, .2))
+```
+
+## Verificaciones antes de interpretar
+
+- Los residuos deben carecer de estructura temporal dominante.
+- Los parámetros deben conservar unidades y valores físicamente plausibles.
+- La validación usa datos no empleados en el ajuste.
+
+## Errores frecuentes
+
+- Aceptar buen ajuste sin revisar residuos.
+- Usar el teorema del valor final fuera de sus condiciones.
+- Confundir correlación entrada-salida con identificación causal.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Separe respuesta libre y forzada en un sistema de primer orden.
+2. Verifique los teoremas para $1/(s+2)$.
+3. Proponga una señal de excitación que revele la dinámica.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- Las condiciones iniciales también generan salida.
+- Los límites en $s$ requieren estabilidad adecuada.
+- Un modelo útil debe validarse fuera del ajuste.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+## Sesión 26 · Transformada Z, ecuaciones en diferencias y filtros FIR
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Analizar sistemas discretos y diseñar un FIR simple con especificaciones explícitas.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Transformada Z** | Representación compleja de secuencias discretas. |
+| **Círculo unitario** | Conecta la transformada Z con la respuesta frecuencial. |
+| **Ecuación en diferencias** | Describe la relación recursiva o no recursiva. |
+| **FIR** | Tiene respuesta al impulso finita y puede lograr fase lineal. |
+
+## Relaciones matemáticas centrales
+
+$$X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n}$$
+
+$$H(z)=\frac{\sum_{k=0}^{M}b_kz^{-k}}{1+\sum_{k=1}^{N}a_kz^{-k}}$$
+
+$$H(e^{j\omega})=H(z)|_{z=e^{j\omega}}$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+La ROC de un sistema causal se extiende hacia afuera del polo de mayor magnitud. La estabilidad exige que el círculo unitario pertenezca a la ROC.
+:::
+
+
+## Procedimiento de análisis
+
+1. Traducir la necesidad biomédica a bandas y tolerancias.
+2. Normalizar frecuencias respecto a Nyquist.
+3. Elegir longitud y ventana.
+4. Revisar magnitud, fase, retardo y respuesta transitoria.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Un FIR pasa banda para EMG puede conservar 20–450 Hz. La frecuencia de muestreo debe superar 900 Hz y dejar margen para la transición del filtro.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+from scipy.signal import firwin, freqz
+fs = 2000
+b = firwin(numtaps=201, cutoff=[20, 450],
+           pass_zero=False, fs=fs, window="hamming")
+w, H = freqz(b, worN=4096, fs=fs)
+```
+
+## Verificaciones antes de interpretar
+
+- Un FIR causal tiene polos triviales en el origen según la representación elegida.
+- Coeficientes simétricos producen fase lineal en los tipos compatibles.
+- El retardo nominal es $(L-1)/2$ muestras.
+
+## Errores frecuentes
+
+- Usar frecuencias en Hz donde la función espera frecuencia normalizada.
+- Elegir muy pocos coeficientes para una transición estrecha.
+- Eliminar el retardo sin documentar el alineamiento.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Diseñe un pasa bajas de 40 Hz para ECG a 500 Hz.
+2. Compare 51 y 201 coeficientes.
+3. Mida transición, rizado y retardo.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- La transformada Z organiza el análisis discreto.
+- FIR ofrece estabilidad estructural y fase lineal posible.
+- La longitud controla costo y selectividad.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+# Semana 14 · Filtros IIR y fundamentos de wavelets {.week-divider background-color="#0B3954"}
+
+
+## Sesión 27 · Filtros IIR: diseño, estabilidad, fase y aplicaciones
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Seleccionar entre FIR e IIR según estabilidad, costo, fase y requisitos biomédicos.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **IIR** | Usa realimentación y una respuesta al impulso potencialmente infinita. |
+| **Estabilidad** | En un sistema causal exige polos dentro del círculo unitario. |
+| **Orden** | Controla selectividad y costo computacional. |
+| **Secciones de segundo orden** | Reducen sensibilidad numérica frente a una forma polinómica larga. |
+
+## Relaciones matemáticas centrales
+
+$$y[n]=\sum_{k=0}^{M}b_kx[n-k]-\sum_{k=1}^{N}a_ky[n-k]$$
+
+$$H(z)=\frac{B(z)}{A(z)}$$
+
+$$|p_i|<1\quad\text{para estabilidad causal BIBO}$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+Un IIR logra transiciones pronunciadas con orden bajo, aunque suele introducir fase no lineal. El filtrado hacia adelante y atrás elimina fase neta, pero pierde causalidad.
+:::
+
+
+## Procedimiento de análisis
+
+1. Fijar bandas, rizado y atenuación.
+2. Comparar familias Butterworth, Chebyshev y elíptica.
+3. Diseñar en secciones de segundo orden.
+4. Validar respuesta, transitorios y precisión numérica.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Para retirar deriva de ECG, un pasa altas causal altera el segmento inicial. En análisis fuera de línea puede usarse filtrado de fase cero, siempre documentando el tratamiento de bordes.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+from scipy.signal import butter, sosfiltfilt, sosfreqz
+sos = butter(4, 0.5, btype="highpass", fs=500, output="sos")
+y = sosfiltfilt(sos, x)
+w, H = sosfreqz(sos, worN=4096, fs=500)
+```
+
+## Verificaciones antes de interpretar
+
+- Todos los polos deben quedar dentro del círculo unitario.
+- La señal filtrada debe conservar amplitudes y tiempos clínicamente relevantes.
+- Las condiciones de borde requieren inspección específica.
+
+## Errores frecuentes
+
+- Aplicar `filtfilt` y describir el sistema como causal.
+- Implementar un orden alto en forma directa.
+- Evaluar solo la atenuación de la interferencia.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Compare un FIR y un IIR para el mismo pasa bajas.
+2. Calcule orden, retardo y tiempo de ejecución.
+3. Justifique la opción para tiempo real y para análisis retrospectivo.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- IIR reduce el orden necesario.
+- La fase y el transitorio pueden afectar biomarcadores.
+- La implementación SOS mejora robustez numérica.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+## Sesión 28 · Fundamentos de wavelets
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Explicar escala, traslación y localización de una wavelet en relación con eventos transitorios.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Wavelet madre** | Función localizada que genera una familia por escala y traslación. |
+| **Escala** | Controla duración y frecuencia característica. |
+| **Traslación** | Ubica el análisis sobre el tiempo. |
+| **Admisibilidad** | Implica media nula y permite reconstrucción bajo condiciones apropiadas. |
+
+## Relaciones matemáticas centrales
+
+$$\psi_{a,b}(t)=\frac{1}{\sqrt{|a|}}\psi\left(\frac{t-b}{a}\right)$$
+
+$$W_x(a,b)=\int x(t)\psi_{a,b}^{*}(t)\,dt$$
+
+$$a\uparrow\Rightarrow\text{evento más ancho y frecuencia menor}$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+La CWT compara la señal con versiones escaladas de una forma prototipo. Sus coeficientes altos indican semejanza local, no energía fisiológica directa sin normalización.
+:::
+
+
+## Procedimiento de análisis
+
+1. Definir el tipo y duración de los eventos.
+2. Elegir una wavelet compatible con su morfología.
+3. Convertir escalas a pseudofrecuencias.
+4. Comprobar resultados con señales sintéticas y anotaciones.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Una wavelet tipo Morlet permite explorar ráfagas oscilatorias en EEG. Una wavelet compacta puede localizar cambios abruptos en ECG o señales de movimiento.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import pywt
+scales = range(1, 129)
+coef, freq = pywt.cwt(x, scales, "cmor1.5-1.0",
+                      sampling_period=1/fs)
+power = abs(coef)**2
+```
+
+## Verificaciones antes de interpretar
+
+- El eje de frecuencia debe corresponder a $f_s$ y a la wavelet elegida.
+- Los bordes deben señalarse mediante el cono de influencia o una región descartada.
+- La reconstrucción requiere la normalización correcta.
+
+## Errores frecuentes
+
+- Leer escala como frecuencia sin conversión.
+- Comparar coeficientes de distintas escalas sin revisar normalización.
+- Interpretar artefactos de borde como eventos.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Genere una ráfaga de 10 Hz de duración conocida.
+2. Compare Morlet y Mexican hat.
+3. Explique cuál representa mejor la morfología del evento.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- Wavelets ofrecen resolución dependiente de escala.
+- La forma de la wavelet expresa una hipótesis sobre el evento.
+- Los bordes limitan la interpretación.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+# Semana 15 · Multirresolución y clasificación {.week-divider background-color="#0B3954"}
+
+
+## Sesión 29 · Análisis multirresolución y por bandas
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Descomponer una señal en aproximaciones y detalles, y vincular niveles con bandas físicas.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Banco de filtros** | Pasa bajas y pasa altas seguidos de submuestreo. |
+| **Aproximación** | Resume el contenido de menor frecuencia. |
+| **Detalle** | Contiene cambios más rápidos en cada nivel. |
+| **Nivel** | Duplica la escala temporal respecto al nivel anterior. |
+
+## Relaciones matemáticas centrales
+
+$$a_{j+1}[k]=\sum_n h[n-2k]a_j[n]$$
+
+$$d_{j+1}[k]=\sum_n g[n-2k]a_j[n]$$
+
+$$\text{banda}(d_j)\approx[ f_s/2^{j+1},f_s/2^j ]$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+La DWT representa la señal con menos coeficientes que una CWT. El submuestreo evita redundancia, pero hace que la alineación temporal dependa del filtro y del manejo de bordes.
+:::
+
+
+## Procedimiento de análisis
+
+1. Elegir wavelet y máximo nivel válido.
+2. Calcular bandas nominales de cada detalle.
+3. Inspeccionar energía y morfología por nivel.
+4. Reconstruir bandas y medir el error.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+A 256 Hz, los detalles nominales $d_4$ y $d_5$ cubren aproximadamente 8–16 Hz y 4–8 Hz. Estas bandas se relacionan con ritmos EEG, aunque los filtros reales presentan transición.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+import pywt, numpy as np
+wavelet = "db4"
+coeffs = pywt.wavedec(x, wavelet, level=5, mode="symmetric")
+energy = [np.sum(c*c) for c in coeffs]
+x_rec = pywt.waverec(coeffs, wavelet, mode="symmetric")
+```
+
+## Verificaciones antes de interpretar
+
+- La longitud reconstruida puede requerir recorte al tamaño original.
+- La suma de energías depende de ortogonalidad y tratamiento de bordes.
+- Las bandas nominales no sustituyen la respuesta real de filtros.
+
+## Errores frecuentes
+
+- Asignar nombres fisiológicos a niveles sin calcular sus bandas.
+- Elegir más niveles de los admitidos por longitud y filtro.
+- Eliminar coeficientes sin medir distorsión temporal.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Descomponga una señal a 256 Hz en cinco niveles.
+2. Reconstruya solo $d_4$ y $d_5$.
+3. Compare energía por banda antes y después de un evento.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- La DWT implementa un banco de filtros jerárquico.
+- Cada nivel debe traducirse a Hz.
+- La reconstrucción valida la coherencia de la descomposición.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+## Sesión 30 · Sistemas lineales para clasificación
+
+::: {.callout-important}
+## Propósito de aprendizaje
+Construir características reproducibles a partir de salidas lineales sin confundir filtrado con decisión clínica.
+:::
+
+
+## Preguntas que orientan la sesión
+
+- ¿Qué representación matemática permite resolver el problema?
+- ¿Qué supuesto determina que la interpretación sea válida?
+- ¿Cómo se comprueba el resultado con una señal biomédica?
+
+## Vocabulario mínimo
+
+| Concepto | Significado operativo |
+|---|---|
+| **Operador lineal** | Transforma señales mediante filtros o proyecciones. |
+| **Característica** | Resumen numérico calculado con una definición fija. |
+| **Clasificador lineal** | Decide mediante $w^Tx+b$. |
+| **Validación por sujeto** | Evita compartir información de una persona entre entrenamiento y prueba. |
+
+## Relaciones matemáticas centrales
+
+$$z_m[n]=x[n]*h_m[n]$$
+
+$$\phi_m=\log(\varepsilon+\sum_n|z_m[n]|^2)$$
+
+$$\hat y=\operatorname{sign}(w^T\phi+b)$$
+
+::: {.callout-note}
+## Lectura de las ecuaciones
+Un banco de filtros lineales puede separar bandas o morfologías. La extracción de energía y la decisión posterior suelen ser no lineales, por lo que el sistema completo no es LTI.
+:::
+
+
+## Procedimiento de análisis
+
+1. Definir la unidad de análisis y la etiqueta.
+2. Ajustar preprocesamiento solo con entrenamiento.
+3. Extraer características con unidades claras.
+4. Validar por sujeto y reportar incertidumbre.
+
+::: {.callout-important}
+## Criterio de calidad
+Cada decisión debe declarar unidades, supuestos, parámetros y una comprobación independiente.
+:::
+
+
+## Ejemplo biomédico
+
+Para distinguir dos estados motores con EEG, un banco de filtros produce energía por banda. El clasificador aprende una frontera, pero el desempeño puede caer al evaluar sujetos no observados.
+
+::: {.callout-warning}
+## Alcance
+El ejemplo ilustra procesamiento de señales. No establece por sí mismo una interpretación diagnóstica.
+:::
+
+
+## Implementación mínima en Python
+
+```python
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+model = make_pipeline(StandardScaler(),
+                      LogisticRegression(class_weight="balanced"))
+model.fit(X_train, y_train)
+```
+
+## Verificaciones antes de interpretar
+
+- Toda transformación aprendida se ajusta dentro de cada partición de entrenamiento.
+- La partición mantiene sujetos independientes.
+- Se reportan sensibilidad, especificidad y matriz de confusión, no solo exactitud.
+
+## Errores frecuentes
+
+- Segmentar primero y repartir ventanas del mismo sujeto entre conjuntos.
+- Seleccionar bandas usando todo el conjunto.
+- Interpretar una asociación predictiva como mecanismo fisiológico.
+
+::: {.callout-warning}
+## Advertencia metodológica
+Un resultado numérico plausible también puede provenir de unidades incorrectas, bordes, fuga de información o supuestos incumplidos.
+:::
+
+
+## Actividad guiada
+
+1. Diseñe cinco características de un banco de filtros.
+2. Proponga una validación por grupos.
+3. Identifique dos fuentes de fuga de información.
+
+**Producto:** cálculo, figura rotulada y explicación de máximo 120 palabras.
+
+## Pregunta de comprobación
+
+Explique qué cambiaría en la salida si se modifica el parámetro principal del método. La respuesta debe conectar una ecuación con una consecuencia observable.
+
+## Síntesis de la sesión
+
+- Los sistemas lineales producen representaciones útiles.
+- La clasificación añade etapas no lineales y decisiones estadísticas.
+- La independencia por sujeto define una evaluación creíble.
+
+::: {.callout-important}
+## Criterio de dominio
+El estudiante puede justificar el método, anticipar sus limitaciones y verificar el resultado con evidencia.
+:::
+
+
+
+# Síntesis y estudio autónomo {.week-divider background-color="#0B3954"}
+
+## Un mismo sistema, cuatro representaciones
+
+| Dominio | Objeto | Pregunta principal |
+|---|---|---|
+| Tiempo | $h(t)$ o $h[n]$ | ¿Cómo responde a cada entrada elemental? |
+| Fourier | $H(j\omega)$ o $H(e^{j\omega})$ | ¿Cómo modifica amplitud y fase? |
+| Laplace | $H(s)$ y ROC | ¿Qué dinámica, causalidad y estabilidad posee? |
+| Z | $H(z)$ y ROC | ¿Cómo se comporta la implementación discreta? |
+
+::: {.callout-important}
+## Conexión central
+Las representaciones describen el mismo sistema desde preguntas distintas. Una conclusión sólida coincide entre dominios.
+:::
+
+## Matriz de selección
+
+| Necesidad | Herramienta inicial | Verificación mínima |
+|---|---|---|
+| Salida temporal | Convolución | caso impulso y longitud |
+| Dinámica continua | Laplace | polos, ROC y unidades |
+| Filtro discreto | Transformada Z | polos y respuesta frecuencial |
+| Evento transitorio | Wavelet | escala, borde y reconstrucción |
+| Clasificación | banco de filtros | partición por sujeto |
+
+## Lista de control para filtros
+
+- Especificaciones expresadas en Hz y dB.
+- Frecuencia de muestreo y bandas compatibles.
+- Magnitud, fase y retardo revisados.
+- Transitorios y bordes delimitados.
+- Biomarcadores comparados antes y después.
+- Código, parámetros y versiones documentados.
+
+## Lista de control para wavelets
+
+- Wavelet elegida por morfología y objetivo.
+- Escalas convertidas a frecuencia física.
+- Nivel máximo compatible con longitud y filtro.
+- Bordes tratados y señalados.
+- Reconstrucción y error cuantificados.
+
+## Lista de control para clasificación
+
+- Etiqueta y unidad de análisis definidas antes de modelar.
+- Separación por sujeto o grupo independiente.
+- Preprocesamiento ajustado solo con entrenamiento.
+- Métricas acordes con balance y costo del error.
+- Incertidumbre y límites de generalización reportados.
+
+## Problema integrador
+
+Una señal biomédica contiene deriva, interferencia de red y eventos transitorios. Diseñe una ruta que incluya:
+
+1. especificaciones del sistema;
+2. filtro FIR o IIR justificado;
+3. representación wavelet del evento;
+4. características reproducibles;
+5. validación que mantenga sujetos independientes.
+
+::: {.callout-warning}
+## Restricción
+No se acepta una cadena de funciones sin explicación. Cada etapa debe indicar qué información conserva, qué puede distorsionar y cómo se verificó.
+:::
+
+## Referencias y alcance
+
+El contenido sigue la programación oficial de **Sistemas y Señales Biomédicos**, semanas 11–15. El desarrollo de sistemas y convolución se apoya en @semmlow2018 y @oppenheim1997. La implementación de transformadas, filtros y wavelets sigue prácticas descritas en @esakkirajan2024. Las aplicaciones biomédicas se contextualizan con @rangayyan2015 y @naik2024.
+
+::: {.callout-note}
+## Uso académico
+Las diapositivas funcionan como guía de clase y material de estudio. Los ejemplos computacionales requieren validación específica antes de cualquier uso clínico o experimental.
+:::
+
+## Cierre: criterio de dominio
+
+El estudiante debe sostener esta afirmación con evidencia:
+
+> Una señal procesada es el resultado conjunto del fenómeno, el sistema de adquisición y las decisiones matemáticas del análisis.
+
+::: {.callout-important}
+## Evidencia esperada
+Una conclusión debe poder rastrearse hasta los datos, las unidades, los parámetros, los supuestos y la estrategia de validación.
+:::

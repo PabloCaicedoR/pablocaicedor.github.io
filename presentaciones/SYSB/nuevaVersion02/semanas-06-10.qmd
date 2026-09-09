@@ -1,0 +1,2037 @@
+---
+title: "Sistemas y Señales Biomédicos"
+subtitle: "Del Espectro Finito hasta los Sistemas LTI"
+author: "Ph. D. Pablo Eduardo Caicedo-Rodríguez"
+lang: es
+bibliography: referencias.bib
+link-citations: true
+slide-level: 2
+logo: ../../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+format:
+  revealjs:
+    theme: 
+        - default
+        - ../../../recursos/estilos/reveal.scss
+    width: 1600
+    height: 900
+    margin: 0.06
+    center: false
+    transition: fade
+    background-transition: fade
+    slide-number: c/t
+    hash: true
+    history: true
+    controls: true
+    progress: true
+    navigation-mode: linear
+    code-copy: true
+    code-line-numbers: false
+    chalkboard: false
+    footer: "[BioForja](https://pablocaicedor.github.io/)"
+    html-math-method: mathjax
+    embed-resources: true
+  beamer:
+    aspectratio: 169
+    theme: Madrid
+    colortheme: dolphin
+    fonttheme: professionalfonts
+    navigation: empty
+    pdf-engine: pdflatex
+    keep-tex: true
+    include-in-header: ../../../recursos/estilos/beamer-header.tex
+    toc: false
+execute:
+  enabled: false
+---
+
+# Cómo estudiar las semanas 6–10 {.week-divider background-color="#0B3954"}
+
+## Del espectro ideal a decisiones reproducibles
+
+Al terminar la semana 10, el estudiante debe poder:
+
+1. predecir el efecto de operaciones temporales sobre la transformada de Fourier;
+2. calcular e interpretar DFT y FFT con escalamiento explícito;
+3. explicar resolución frecuencial, fuga y efecto de las ventanas;
+4. relacionar adquisición, muestreo y almacenamiento con el espectro observado;
+5. estimar PSD mediante periodograma y Welch;
+6. analizar señales no estacionarias con STFT;
+7. verificar linealidad, invariancia temporal y respuesta al impulso.
+
+::: {.callout-important}
+## Idea conductora
+El espectro calculado depende tanto de la señal fisiológica como de la adquisición, la duración observada y el estimador seleccionado.
+:::
+
+## Mapa de las diez sesiones
+
+| Semana | Sesión 1 | Sesión 2 |
+|---|---|---|
+| 6 | Propiedades de Fourier | DFT y FFT |
+| 7 | Resolución, fuga y ventanas | Cadena de adquisición |
+| 8 | Muestreo, Nyquist y aliasing | Potencia, PSD y periodograma |
+| 9 | Promediado y Welch | No estacionariedad y STFT |
+| 10 | Ventanas tiempo-frecuencia | Sistemas LTI y respuesta al impulso |
+
+Cada sesión integra fundamento matemático, interpretación biomédica, ejemplo computacional y verificación conceptual.
+
+## Convenciones del bloque
+
+Transformada continua en frecuencia ordinaria:
+
+$$X(f)=\int_{-\infty}^{\infty}x(t)e^{-j2\pi ft}\,dt$$
+
+DFT de $N$ muestras:
+
+$$X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N}$$
+
+::: {.callout-warning}
+Las constantes de normalización cambian entre textos y bibliotecas. Toda interpretación cuantitativa debe declarar la convención utilizada.
+:::
+
+# Semana 6 · Propiedades de Fourier y DFT {.week-divider background-color="#0B3954"}
+
+## Sesión 11 · Las propiedades permiten razonar sin reintegrar
+
+Si conocemos el par
+
+$$x(t)\longleftrightarrow X(f),$$
+
+podemos anticipar la transformada de una señal modificada mediante propiedades algebraicas.
+
+::: {.callout-important}
+## Propósito
+Las propiedades no reemplazan la interpretación. Permiten conectar una operación en tiempo con su consecuencia en magnitud y fase.
+:::
+
+## Linealidad conserva la combinación
+
+Si
+
+$$x_1(t)\longleftrightarrow X_1(f),\qquad x_2(t)\longleftrightarrow X_2(f),$$
+
+entonces
+
+$$a x_1(t)+b x_2(t)\longleftrightarrow aX_1(f)+bX_2(f).$$
+
+::: {.callout-note}
+En un ECG con deriva e interferencia de red, el espectro observado combina las transformadas de cada componente solo si el modelo aditivo resulta razonable.
+:::
+
+## Linealidad no separa fuentes automáticamente
+
+Modelo aditivo:
+
+$$x_{obs}(t)=s(t)+i(t)+a(t).$$
+
+- $s(t)$: señal de interés.
+- $i(t)$: interferencia estructurada.
+- $a(t)$: artefacto.
+
+Entonces $X_{obs}(f)=S(f)+I(f)+A(f)$.
+
+::: {.callout-warning}
+La suma espectral puede producir cancelación por fase. La magnitud de la suma no equivale a sumar magnitudes.
+:::
+
+## Un retraso añade fase lineal
+
+$$x(t-t_0)\longleftrightarrow X(f)e^{-j2\pi ft_0}$$
+
+Por tanto:
+
+$$|X_{ret}(f)|=|X(f)|,$$
+
+$$\angle X_{ret}(f)=\angle X(f)-2\pi ft_0.$$
+
+::: {.callout-important}
+Un retraso puro conserva la magnitud. La información temporal aparece en la pendiente de fase.
+:::
+
+## La fase lineal representa un retardo constante
+
+El retardo de grupo se define como
+
+$$\tau_g(f)=-\frac{1}{2\pi}\frac{d\phi(f)}{df}.$$
+
+Si $\phi(f)=-2\pi ft_0$, entonces $\tau_g(f)=t_0$.
+
+::: {.callout-note}
+Cuando todas las frecuencias sufren el mismo retardo, la forma temporal puede conservarse. Una fase no lineal puede deformar morfologías como el complejo QRS.
+:::
+
+## Desplazar en frecuencia equivale a modular
+
+$$x(t)e^{j2\pi f_0t}\longleftrightarrow X(f-f_0).$$
+
+Para modulación real:
+
+$$x(t)\cos(2\pi f_0t)
+\longleftrightarrow \frac{1}{2}X(f-f_0)+\frac{1}{2}X(f+f_0).$$
+
+::: {.callout-tip}
+La multiplicación por una portadora crea copias desplazadas del espectro. Este principio aparece en instrumentación y comunicaciones biomédicas.
+:::
+
+## El escalamiento temporal modifica ancho y amplitud
+
+$$x(at)\longleftrightarrow \frac{1}{|a|}X\left(\frac{f}{a}\right).$$
+
+- $|a|>1$: la señal se comprime en tiempo y su espectro se expande.
+- $0<|a|<1$: la señal se expande en tiempo y su espectro se comprime.
+- $a<0$: también ocurre inversión temporal.
+
+::: {.callout-warning}
+El factor $1/|a|$ forma parte de la propiedad. Omitirlo cambia la escala de la transformada.
+:::
+
+## Derivar resalta componentes rápidas
+
+$$\frac{dx(t)}{dt}\longleftrightarrow j2\pi fX(f).$$
+
+Consecuencias:
+
+- frecuencia cero queda anulada;
+- las componentes altas reciben mayor ponderación;
+- el ruido de alta frecuencia puede amplificarse.
+
+::: {.callout-warning}
+Un diferenciador ayuda a localizar cambios rápidos, pero puede deteriorar una bioseñal si no se controla el ruido.
+:::
+
+## Integrar favorece variaciones lentas
+
+De forma conceptual, para condiciones adecuadas:
+
+$$\int_{-\infty}^{t}x(\tau)d\tau
+\longleftrightarrow \frac{X(f)}{j2\pi f}+\text{término en }\delta(f).$$
+
+::: {.callout-note}
+La singularidad en $f=0$ obliga a considerar media, condiciones iniciales y convergencia. La integración no debe aplicarse como una división numérica directa por cero.
+:::
+
+## La convolución se convierte en multiplicación
+
+$$y(t)=x(t)*h(t)$$
+
+$$Y(f)=X(f)H(f).$$
+
+Interpretación:
+
+- $X(f)$ describe el contenido de la entrada;
+- $H(f)$ describe la acción frecuencial del sistema;
+- $Y(f)$ conserva, atenúa o cambia la fase de cada componente.
+
+::: {.callout-important}
+El teorema de convolución conecta el análisis de señales con el análisis de sistemas LTI.
+:::
+
+## Multiplicar en tiempo produce convolución espectral
+
+$$y(t)=x(t)w(t)$$
+
+$$Y(f)=X(f)*W(f).$$
+
+::: {.callout-warning}
+Seleccionar un segmento mediante una ventana mezcla el espectro de la señal con el de la ventana. Esta es la base matemática de la fuga espectral.
+:::
+
+## Dualidad: tiempo y frecuencia intercambian estructuras
+
+Bajo la convención empleada:
+
+$$x(t)\longleftrightarrow X(f)$$
+
+implica
+
+$$X(t)\longleftrightarrow x(-f).$$
+
+::: {.callout-note}
+La dualidad ayuda a generar pares de transformada, pero requiere atención a signos y factores según la convención.
+:::
+
+## Tabla de predicción rápida
+
+| Operación temporal | Efecto principal en frecuencia |
+|---|---|
+| suma ponderada | suma compleja de espectros |
+| retraso | fase lineal |
+| compresión temporal | expansión espectral |
+| derivada | ponderación por $j2\pi f$ |
+| convolución | producto de espectros |
+| ventaneo | convolución con $W(f)$ |
+
+::: {.callout-tip}
+Antes de calcular, prediga qué aspectos deberían cambiar y cuáles deberían conservarse.
+:::
+
+## Caso biomédico: tres modificaciones del ECG
+
+Considere un latido ideal $x(t)$.
+
+1. $x(t-0.2)$ conserva magnitud y añade fase lineal.
+2. $x(2t)$ dura la mitad y extiende el contenido frecuencial.
+3. $dx/dt$ enfatiza las pendientes rápidas del QRS.
+
+::: {.callout-warning}
+Ninguna operación garantiza mejorar detección o diagnóstico. La utilidad depende del objetivo y de la contaminación presente.
+:::
+
+## Verificación de la sesión 11
+
+Para $y(t)=3x(2t-4)$:
+
+1. reescriba el argumento para identificar escalamiento y retraso;
+2. obtenga $Y(f)$ a partir de $X(f)$;
+3. indique qué ocurre con el ancho espectral;
+4. determine si la fase cambia por el desplazamiento.
+
+::: {.callout-tip}
+## Criterio de logro
+La solución debe incluir el factor de amplitud, el escalamiento frecuencial y la fase asociada al retardo efectivo.
+:::
+
+## Sesión 12 · La DFT analiza un bloque finito
+
+La DFT opera sobre $N$ muestras:
+
+$$X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N},\qquad k=0,\ldots,N-1.$$
+
+::: {.callout-important}
+La DFT produce coeficientes de una representación discreta y periódica. No entrega un continuo de frecuencias.
+:::
+
+## La transformada inversa reconstruye el bloque
+
+$$x[n]=\frac{1}{N}\sum_{k=0}^{N-1}X[k]e^{j2\pi kn/N}.$$
+
+La DFT y la IDFT forman un par exacto salvo error numérico.
+
+::: {.callout-warning}
+Esta convención asigna el factor $1/N$ a la inversa. Otras convenciones reparten la normalización entre ambas transformadas.
+:::
+
+## Cada índice corresponde a una frecuencia
+
+Para muestreo uniforme a $f_s$:
+
+$$f_k=\frac{k}{N}f_s,\qquad \Delta f=\frac{f_s}{N}=\frac{1}{T}.$$
+
+donde $T=N/f_s$ es la duración.
+
+::: {.callout-important}
+La separación entre bins depende de la duración observada. Aumentar $f_s$ sin aumentar $N$ no mejora la resolución frecuencial.
+:::
+
+## Los índices superiores representan frecuencias negativas
+
+Para una DFT bilateral:
+
+$$f_k=\begin{cases}
+kf_s/N, & 0\leq k\leq N/2,\\
+(k-N)f_s/N, & N/2<k<N.
+\end{cases}$$
+
+::: {.callout-note}
+`np.fft.fftfreq` construye este eje y evita asignaciones manuales incorrectas.
+:::
+
+## Señales reales poseen simetría conjugada
+
+Si $x[n]\in\mathbb{R}$:
+
+$$X[N-k]=X^*[k].$$
+
+Por tanto, la mitad no negativa contiene información suficiente, con cuidado especial en DC y Nyquist.
+
+::: {.callout-tip}
+`rfft` calcula solo las frecuencias no negativas de una entrada real y reduce costo y almacenamiento.
+:::
+
+## La FFT es un algoritmo
+
+- DFT: transformación matemática.
+- FFT: familia de algoritmos que calcula la DFT eficientemente.
+- La FFT no cambia bins, resolución, fuga ni significado físico.
+
+Complejidad aproximada:
+
+$$\mathcal{O}(N^2)\quad\text{frente a}\quad\mathcal{O}(N\log N).$$
+
+::: {.callout-warning}
+Una FFT más rápida no corrige un segmento mal elegido ni una frecuencia de muestreo inadecuada.
+:::
+
+## La DFT supone extensión periódica del bloque
+
+El bloque $x[0],\ldots,x[N-1]$ se interpreta como un periodo de una secuencia periódica.
+
+Si los extremos no enlazan suavemente, la repetición introduce discontinuidades.
+
+::: {.callout-important}
+La fuga espectral surge porque el bloque finito y su extensión periódica rara vez contienen un número entero de ciclos.
+:::
+
+## Magnitud bilateral y unilateral
+
+Con $X[k]=\mathrm{DFT}\{x[n]\}$:
+
+$$A_{2}[k]=\frac{|X[k]|}{N}.$$
+
+Para espectro unilateral de una señal real, se duplican los bins interiores:
+
+$$A_{1}[k]=2A_{2}[k],$$
+
+excepto DC y, si existe, Nyquist.
+
+::: {.callout-warning}
+Duplicar todos los bins produce una amplitud incorrecta en los extremos del espectro.
+:::
+
+## La fase necesita una referencia de amplitud
+
+$$\phi[k]=\operatorname{angle}(X[k]).$$
+
+En bins donde $|X[k]|$ es casi cero, la fase resulta numéricamente inestable.
+
+::: {.callout-note}
+La fase debe interpretarse solo donde la magnitud o coherencia aporten evidencia suficiente.
+:::
+
+## Convolución circular y periodicidad
+
+La multiplicación de DFT corresponde a convolución circular:
+
+$$\mathrm{IDFT}\{X[k]H[k]\}=x[n]\circledast h[n].$$
+
+Para obtener convolución lineal sin solapamiento circular, se usa relleno con ceros hasta al menos $N_x+N_h-1$.
+
+::: {.callout-important}
+El relleno evita plegamiento circular en convolución, pero no añade información espectral al registro.
+:::
+
+## Código: eje y espectro unilateral
+
+```python
+import numpy as np
+
+x0 = x - np.mean(x)
+N = len(x0)
+X = np.fft.rfft(x0)
+f = np.fft.rfftfreq(N, d=1/fs)
+A = np.abs(X) / N
+if N > 2:
+    A[1:-1] *= 2
+fase = np.angle(X)
+```
+
+::: {.callout-warning}
+Para $N$ impar, el último bin no corresponde exactamente a Nyquist y también requiere duplicación. El código debe tratar paridad de forma explícita.
+:::
+
+## Código robusto para $N$ par o impar
+
+```python
+X = np.fft.rfft(x0)
+A = np.abs(X) / N
+
+if N % 2 == 0:      # existe bin de Nyquist
+    A[1:-1] *= 2
+else:
+    A[1:] *= 2
+```
+
+::: {.callout-tip}
+Una prueba útil consiste en aplicar el código a una cosenoide de amplitud conocida alineada con un bin.
+:::
+
+## Verificación de la sesión 12
+
+Un registro tiene $f_s=500$ Hz y $N=2000$.
+
+1. calcule su duración;
+2. calcule $\Delta f$;
+3. identifique el rango de `rfft`;
+4. explique qué mejora y qué no mejora al usar 4096 puntos mediante zero padding;
+5. indique por qué la fase de bins pequeños puede ser inestable.
+
+::: {.callout-tip}
+## Criterio de logro
+Debe distinguir duración, resolución, densidad gráfica y costo computacional.
+:::
+
+## Cierre de la semana 6
+
+- Las propiedades conectan operaciones temporales con cambios espectrales.
+- El retraso actúa sobre fase; el escalamiento temporal modifica el ancho.
+- La convolución temporal equivale a multiplicación frecuencial.
+- La DFT representa un bloque finito sobre bins discretos.
+- La FFT acelera el cálculo sin alterar la interpretación.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Por qué dos registros con la misma frecuencia de muestreo pueden tener resoluciones frecuenciales distintas?
+:::
+
+# Semana 7 · Resolución, fuga y adquisición {.week-divider background-color="#0B3954"}
+
+## Sesión 13 · La resolución proviene de la duración
+
+$$\Delta f=\frac{f_s}{N}=\frac{1}{T}.$$
+
+Ejemplo: $T=10$ s produce bins separados 0.1 Hz, con independencia de la forma usada para calcular $N=f_sT$.
+
+::: {.callout-important}
+Observar durante más tiempo permite separar componentes más próximas, siempre que la señal mantenga propiedades suficientemente estables.
+:::
+
+## Resolución nominal no garantiza separación efectiva
+
+Dos tonos separados por $\Delta f$ pueden seguir sin distinguirse si:
+
+- la ventana ensancha el lóbulo principal;
+- una componente es mucho mayor que la otra;
+- el ruido oculta la componente débil;
+- la frecuencia cambia durante el registro.
+
+::: {.callout-warning}
+El ancho del lóbulo principal y el nivel de lóbulos laterales importan tanto como el espaciado entre bins.
+:::
+
+## Una frecuencia alineada con un bin produce un caso especial
+
+Si una cosenoide completa un número entero de ciclos en $T$:
+
+$$f_0=m\Delta f,$$
+
+su energía coincide con bins de la DFT bajo una ventana rectangular.
+
+::: {.callout-note}
+Este caso facilita pruebas de escalamiento, pero rara vez describe exactamente una bioseñal real.
+:::
+
+## La fuga distribuye energía entre bins
+
+Una componente no alineada con los bins produce valores en múltiples frecuencias.
+
+La causa matemática es el producto temporal:
+
+$$x_w[n]=x[n]w[n],$$
+
+que corresponde a convolución espectral.
+
+::: {.callout-important}
+La fuga no implica que la señal contenga todas esas frecuencias como oscilaciones independientes.
+:::
+
+## La ventana rectangular conserva amplitud y genera lóbulos altos
+
+La ventana rectangular equivale a recortar el registro sin suavizar extremos.
+
+- lóbulo principal estrecho;
+- lóbulos laterales relativamente altos;
+- buena separación para tonos comparables y alineados;
+- mayor contaminación alrededor de componentes intensas.
+
+::: {.callout-warning}
+Usar “sin ventana” significa usar una ventana rectangular.
+:::
+
+## Hann reduce lóbulos laterales y ensancha el principal
+
+$$w[n]=\frac{1}{2}\left(1-\cos\frac{2\pi n}{N-1}\right).$$
+
+La ventana lleva los extremos hacia cero y reduce discontinuidades en la extensión periódica.
+
+::: {.callout-important}
+La reducción de fuga se paga con menor capacidad para separar componentes cercanas.
+:::
+
+## Hamming y Blackman ofrecen otros compromisos
+
+| Ventana | Uso orientativo | Compromiso |
+|---|---|---|
+| Rectangular | tonos alineados y cercanos | lóbulos laterales altos |
+| Hann | análisis general y Welch | balance habitual |
+| Hamming | atenuación del primer lateral | extremos no nulos |
+| Blackman | componente débil junto a fuerte | lóbulo principal más ancho |
+
+::: {.callout-warning}
+La selección no debe basarse en una lista memorizada. Debe responder a separación, rango dinámico y objetivo de amplitud.
+:::
+
+## La ganancia coherente corrige amplitud
+
+Una ventana reduce la amplitud de un tono. Su ganancia coherente es
+
+$$G_c=\frac{1}{N}\sum_{n=0}^{N-1}w[n].$$
+
+Para estimar amplitud se corrige por $G_c$ cuando el modelo de tono y alineación lo justifican.
+
+::: {.callout-note}
+La corrección de amplitud no elimina fuga ni convierte una señal no estacionaria en estacionaria.
+:::
+
+## El ancho de banda equivalente afecta el ruido
+
+Una forma discreta normalizada en bins es
+
+$$\mathrm{ENBW}=N\frac{\sum_n w^2[n]}{\left(\sum_n w[n]\right)^2}.$$
+
+Una ENBW mayor integra más potencia de ruido por bin espectral.
+
+::: {.callout-important}
+La ventana afecta tanto la forma de una componente tonal como el piso de ruido estimado.
+:::
+
+## Zero padding densifica el eje
+
+Agregar ceros hasta $N_{FFT}>N$ produce separación gráfica
+
+$$\Delta f_{grid}=\frac{f_s}{N_{FFT}},$$
+
+pero la resolución física sigue determinada principalmente por $T=N/f_s$ y la ventana.
+
+::: {.callout-warning}
+Una curva más suave no contiene más observación ni permite separar componentes que el registro original no resolvía.
+:::
+
+## Duraciones largas también tienen costos
+
+- pueden mezclar estados fisiológicos;
+- reducen localización temporal;
+- aumentan probabilidad de artefactos;
+- exigen mayor estabilidad del reloj y del protocolo.
+
+::: {.callout-important}
+La duración óptima surge del equilibrio entre resolución frecuencial y estacionariedad local.
+:::
+
+## Ejemplo biomédico: ritmo respiratorio
+
+Para distinguir 0.20 Hz de 0.25 Hz se necesita una observación suficientemente larga.
+
+- con $T=10$ s, $\Delta f=0.1$ Hz;
+- con $T=40$ s, $\Delta f=0.025$ Hz.
+
+::: {.callout-warning}
+La mejor separación nominal de 40 s solo es útil si el ritmo no cambia de manera importante durante esos 40 s.
+:::
+
+## Código: comparar ventanas
+
+```python
+import numpy as np
+from scipy.signal import get_window
+
+N = len(x)
+for nombre in ["boxcar", "hann", "hamming", "blackman"]:
+    w = get_window(nombre, N, fftbins=False)
+    Xw = np.fft.rfft((x - np.mean(x)) * w)
+    Gc = np.mean(w)
+    A = np.abs(Xw) / (N * Gc)
+```
+
+::: {.callout-note}
+La comparación debe mantener el mismo segmento y declarar la corrección aplicada.
+:::
+
+## Verificación de la sesión 13
+
+Un EEG se analiza con $f_s=256$ Hz y ventanas de 2 s.
+
+1. determine $N$ y $\Delta f$;
+2. explique si zero padding a 2048 puntos cambia la resolución real;
+3. compare el efecto esperado de rectangular y Hann;
+4. proponga una duración para separar 9.8 Hz de 10.2 Hz;
+5. discuta el supuesto fisiológico de esa duración.
+
+::: {.callout-tip}
+## Criterio de logro
+La respuesta debe separar espaciado de bins, ancho del lóbulo y estabilidad temporal.
+:::
+
+## Sesión 14 · La cadena de adquisición condiciona el dato
+
+1. El fenómeno fisiológico origina una magnitud observable.
+2. El sensor y el acoplamiento convierten esa magnitud.
+3. El acondicionamiento limita banda y adapta nivel.
+4. El ADC discretiza tiempo y amplitud.
+5. El registro conserva valores, unidades y metadatos.
+
+::: {.callout-important}
+Cada etapa limita la información disponible para el procesamiento posterior.
+:::
+
+## El sensor define sensibilidad y ancho de banda
+
+Modelo local:
+
+$$v_s(t)=Sx(t)+b+n_s(t).$$
+
+- $S$: sensibilidad con unidades físicas.
+- $b$: offset.
+- $n_s(t)$: perturbación propia del sensor.
+
+::: {.callout-warning}
+La relación lineal suele ser válida solo dentro de un rango. Saturación, histéresis y acoplamiento alteran el modelo.
+:::
+
+## El acoplamiento forma parte de la medición
+
+Ejemplos:
+
+- impedancia electrodo-piel en ECG y EEG;
+- presión de contacto en PPG;
+- orientación y fijación en acelerometría;
+- posición de banda en respiración.
+
+::: {.callout-important}
+Un sensor correcto con acoplamiento deficiente puede producir un registro inválido.
+:::
+
+## El acondicionamiento protege y adapta la señal
+
+Funciones frecuentes:
+
+- amplificación;
+- rechazo de modo común;
+- limitación de banda;
+- ajuste de nivel y protección;
+- aislamiento cuando corresponde.
+
+::: {.callout-note}
+La ganancia debe usar el rango del convertidor sin recortar transitorios fisiológicos ni artefactos plausibles.
+:::
+
+## El filtro antialias actúa antes del ADC
+
+La etapa analógica atenúa componentes por encima de la banda que el sistema digital puede representar.
+
+::: {.callout-warning}
+Un filtro digital posterior no puede distinguir una frecuencia real de su alias cuando ambas ya producen las mismas muestras.
+:::
+
+## El ADC discretiza tiempo y amplitud
+
+Dos decisiones distintas:
+
+- muestreo: intervalos temporales $T_s=1/f_s$;
+- cuantización: niveles de amplitud.
+
+Para un rango $V_{FS}$ y $B$ bits:
+
+$$\Delta_q\approx\frac{V_{FS}}{2^B}.$$
+
+::: {.callout-important}
+Más bits reducen el escalón ideal de cuantización, pero no evitan ruido analógico, mala calibración ni clipping.
+:::
+
+## El rango dinámico exige margen
+
+Si la señal supera el rango del ADC, aparece saturación. Si ocupa una fracción muy pequeña, se desaprovecha resolución.
+
+::: {.callout-warning}
+El clipping es una distorsión no lineal. El filtrado no reconstruye de manera confiable las amplitudes recortadas.
+:::
+
+## El reloj determina el eje temporal
+
+Un registro requiere:
+
+- frecuencia nominal de muestreo;
+- sellos temporales o instante inicial;
+- información sobre muestras perdidas;
+- tolerancia o deriva del reloj;
+- sincronización con otros equipos.
+
+::: {.callout-note}
+Pequeños errores de reloj pueden alterar fase, coherencia y alineación de eventos en registros prolongados.
+:::
+
+## La sincronización sostiene análisis multicanal
+
+Para comparar ECG, presión y respiración se necesita una referencia temporal común.
+
+Fuentes de desalineación:
+
+- retardos distintos de sensores y filtros;
+- buffers de software;
+- marcas manuales;
+- relojes independientes.
+
+::: {.callout-important}
+Un desfase instrumental puede confundirse con un retardo fisiológico.
+:::
+
+## Almacenar valores exige conservar contexto
+
+Metadatos mínimos:
+
+- unidades y escala;
+- frecuencia de muestreo;
+- nombres y ubicación de canales;
+- configuración de ganancia y filtros;
+- eventos del protocolo;
+- identificador seudonimizado del participante.
+
+::: {.callout-warning}
+Un archivo numérico sin metadatos puede ser ilegible desde el punto de vista científico aunque abra correctamente.
+:::
+
+## Formato tabular no siempre basta
+
+| Necesidad | Riesgo de un CSV aislado |
+|---|---|
+| tiempo irregular | se pierde si solo hay índice |
+| múltiples unidades | columnas ambiguas |
+| eventos | quedan en archivos separados |
+| calibración | no se documenta |
+| datos faltantes | pueden confundirse con cero |
+
+::: {.callout-tip}
+El contrato de datos debe describir estructura, tipos, unidades, valores faltantes y relación entre archivos.
+:::
+
+## Control de calidad antes del análisis
+
+1. verificar longitud y tasa efectiva;
+2. comprobar monotonicidad del tiempo;
+3. identificar faltantes y saturación;
+4. revisar unidades y calibración;
+5. contrastar eventos con el protocolo;
+6. inspeccionar canales auxiliares.
+
+::: {.callout-important}
+La inspección debe preceder al filtrado para evitar que el procesamiento oculte problemas de adquisición.
+:::
+
+## Verificación de la sesión 14
+
+Un ECG de 12 bits usa un rango de $\pm 5$ mV y $f_s=500$ Hz.
+
+1. estime el escalón ideal de cuantización;
+2. identifique el máximo tiempo entre muestras;
+3. explique por qué necesita filtro antialias analógico;
+4. enumere metadatos para interpretar derivaciones;
+5. proponga una prueba de saturación y pérdida de muestras.
+
+::: {.callout-tip}
+## Criterio de logro
+La solución debe conectar especificaciones del sensor, acondicionamiento, ADC y archivo final.
+:::
+
+## Cierre de la semana 7
+
+- La duración determina el espaciado básico de frecuencias.
+- La ventana modifica resolución, fuga y potencia de ruido.
+- Zero padding interpola el eje sin mejorar la información.
+- La adquisición define qué contenido llega al computador.
+- Metadatos y sincronización forman parte de la validez.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Qué problema espectral puede parecer un fenómeno fisiológico cuando dos equipos no comparten el mismo reloj?
+:::
+# Semana 8 · Muestreo y estimación de potencia {.week-divider background-color="#0B3954"}
+
+## Sesión 15 · Muestrear observa la señal en instantes discretos
+
+Un modelo ideal usa un tren de impulsos:
+
+$$p(t)=\sum_{n=-\infty}^{\infty}\delta(t-nT_s).$$
+
+La señal muestreada es
+
+$$x_s(t)=x(t)p(t)=\sum_n x(nT_s)\delta(t-nT_s).$$
+
+::: {.callout-important}
+El muestreo conserva valores en instantes separados por $T_s$. Entre muestras no existe observación directa.
+:::
+
+## Muestrear replica el espectro
+
+El espectro del tren de impulsos también es periódico:
+
+$$P(f)=f_s\sum_{k=-\infty}^{\infty}\delta(f-kf_s).$$
+
+Por tanto:
+
+$$X_s(f)=f_s\sum_{k=-\infty}^{\infty}X(f-kf_s).$$
+
+::: {.callout-important}
+El muestreo crea réplicas del espectro separadas por $f_s$. El aliasing aparece cuando esas réplicas se superponen.
+:::
+
+## Nyquist establece una condición ideal
+
+Si $X(f)=0$ para $|f|>B$, la reconstrucción ideal requiere
+
+$$f_s>2B.$$
+
+La frecuencia $f_s/2$ se denomina frecuencia de Nyquist.
+
+::: {.callout-warning}
+La condición supone banda estrictamente limitada y un filtro ideal. Las señales y filtros físicos requieren margen de transición.
+:::
+
+## La frecuencia de Nyquist no es la tasa de Nyquist
+
+- frecuencia de Nyquist: $f_s/2$ para una tasa dada;
+- tasa de Nyquist: al menos $2B$ para una señal limitada a $B$.
+
+::: {.callout-important}
+Intercambiar estos términos produce especificaciones ambiguas. Debe indicarse si se habla de la señal o del sistema de adquisición.
+:::
+
+## El alias de una frecuencia depende de $f_s$
+
+Una frecuencia $f_0$ se pliega dentro de $[0,f_s/2]$. Una forma operativa es
+
+$$f_a=\left|\left((f_0+f_s/2)\bmod f_s\right)-f_s/2\right|.$$
+
+Ejemplo: con $f_s=100$ Hz, una componente de 70 Hz aparece a 30 Hz.
+
+::: {.callout-warning}
+El alias conserva una apariencia sinusoidal válida. El registro aislado no permite saber si provino de 30 Hz o de 70 Hz.
+:::
+
+## El filtro antialias necesita una banda de transición
+
+Especificación conceptual:
+
+- banda útil hasta $f_p$;
+- banda de rechazo desde $f_a$;
+- borde digital máximo $f_s/2$;
+- atenuación suficiente antes de Nyquist.
+
+::: {.callout-important}
+Elegir $f_s$ implica reservar espacio para que el filtro analógico pase de la banda útil a la banda de rechazo.
+:::
+
+## Sobremuestrear simplifica parte del diseño
+
+Una tasa mayor puede:
+
+- ampliar la transición del filtro antialias;
+- mejorar la localización temporal;
+- reducir sensibilidad a ciertos errores analógicos.
+
+También aumenta datos, consumo y costo de transmisión.
+
+::: {.callout-note}
+Sobremuestrear no aumenta por sí mismo la duración ni la resolución frecuencial de un registro fijo en segundos.
+:::
+
+## La resolución temporal básica es $T_s$
+
+$$T_s=\frac{1}{f_s}.$$
+
+Si $f_s=500$ Hz, la separación nominal entre muestras es 2 ms.
+
+::: {.callout-warning}
+La precisión de un evento no queda determinada solo por $T_s$. Interpolación, ruido, ancho de banda y algoritmo también influyen.
+:::
+
+## Duración y muestreo controlan aspectos distintos
+
+| Parámetro | Relación principal |
+|---|---|
+| $f_s$ | rango frecuencial representable y paso temporal |
+| $T$ | resolución frecuencial básica y contexto observado |
+| $N=f_sT$ | tamaño del registro y costo computacional |
+
+::: {.callout-important}
+Una mayor cantidad de muestras puede provenir de mayor duración o mayor tasa. Esas decisiones no son equivalentes.
+:::
+
+## Muestreo irregular exige otro modelo
+
+Si los instantes son $t_n$ y no cumplen $t_n=nT_s$, la DFT estándar no representa exactamente el eje temporal real.
+
+Opciones:
+
+- corregir o interpolar con justificación;
+- usar métodos para muestreo no uniforme;
+- modelar explícitamente los sellos temporales.
+
+::: {.callout-warning}
+Asignar una frecuencia nominal a datos irregulares puede introducir errores de fase y frecuencia.
+:::
+
+## Código: observar aliasing
+
+```python
+import numpy as np
+
+fs = 100.0
+t = np.arange(0, 1, 1/fs)
+x30 = np.cos(2*np.pi*30*t)
+x70 = np.cos(2*np.pi*70*t)
+
+error = np.max(np.abs(x30 - x70))
+```
+
+::: {.callout-note}
+Con esos instantes, ambas secuencias coinciden salvo error numérico. El ejemplo demuestra indistinguibilidad discreta, no igualdad de las señales continuas.
+:::
+
+## Selección de $f_s$ para una bioseñal
+
+Procedimiento:
+
+1. definir la banda fisiológica necesaria para la tarea;
+2. incluir transitorios que deban conservarse;
+3. establecer margen para el filtro antialias;
+4. revisar precisión temporal y sincronización;
+5. evaluar almacenamiento y transmisión;
+6. documentar la tasa efectiva.
+
+::: {.callout-tip}
+La tasa se justifica desde la pregunta y la cadena completa, no desde una regla fija por modalidad.
+:::
+
+## Verificación de la sesión 15
+
+Una señal contiene información hasta 120 Hz y se muestrea a 250 Hz.
+
+1. calcule la frecuencia de Nyquist;
+2. explique por qué el margen de 5 Hz resulta insuficiente para un filtro real;
+3. determine el alias de una interferencia de 180 Hz;
+4. calcule $T_s$;
+5. proponga una tasa razonada, sin asumir un valor universal.
+
+::: {.callout-tip}
+## Criterio de logro
+La propuesta debe incluir banda de transición, atenuación y precisión temporal.
+:::
+
+## Sesión 16 · Potencia espectral describe distribución cuadrática
+
+Para una señal de potencia, la PSD $S_{xx}(f)$ distribuye potencia por unidad de frecuencia.
+
+$$P=\int_{-\infty}^{\infty}S_{xx}(f)\,df.$$
+
+::: {.callout-important}
+La PSD permite integrar potencia en bandas, comparar ritmos y cuantificar cómo se distribuye la variabilidad.
+:::
+
+## Energía y potencia no son intercambiables
+
+Energía discreta:
+
+$$E_x=\sum_{n=-\infty}^{\infty}|x[n]|^2.$$
+
+Potencia media:
+
+$$P_x=\lim_{N\to\infty}\frac{1}{2N+1}\sum_{n=-N}^{N}|x[n]|^2.$$
+
+::: {.callout-warning}
+Un registro finito siempre tiene suma cuadrática finita, pero su modelo fisiológico puede tratarse como realización de un proceso de potencia.
+:::
+
+## Espectro de energía y PSD responden a modelos distintos
+
+- $|X(f)|^2$ describe densidad de energía para señales de energía.
+- $S_{xx}(f)$ describe densidad de potencia para procesos o señales persistentes.
+- Un registro finito permite estimar estas cantidades, no observarlas sin incertidumbre.
+
+::: {.callout-important}
+El periodograma es un estimador de PSD. No es la PSD verdadera del proceso.
+:::
+
+## El periodograma parte de la DFT
+
+Una forma bilateral para $N$ muestras y tasa $f_s$ es
+
+$$\widehat S_{xx}[k]=\frac{1}{Nf_s}|X[k]|^2.$$
+
+La constante cambia si se usa ventana, espectro unilateral o una convención diferente.
+
+::: {.callout-warning}
+No se puede comparar PSD entre programas si no se verifican escalamiento, ventana, detrend y lados del espectro.
+:::
+
+## Las unidades distinguen espectro y densidad
+
+Si $x$ se mide en mV:
+
+- amplitud espectral: mV;
+- potencia por bin: mV$^2$;
+- PSD: mV$^2$/Hz.
+
+::: {.callout-important}
+La integración de PSD sobre Hz debe recuperar una potencia en unidades cuadráticas de la señal.
+:::
+
+## La PSD unilateral conserva potencia
+
+Para señales reales se combinan contribuciones positivas y negativas.
+
+- DC no se duplica.
+- Nyquist no se duplica cuando existe.
+- Los bins interiores se duplican.
+
+::: {.callout-warning}
+La regla de duplicación depende de si se trabaja con amplitud, potencia o densidad. Debe aplicarse en la escala correspondiente.
+:::
+
+## Parseval ofrece una prueba de consistencia
+
+Para la DFT adoptada:
+
+$$\sum_{n=0}^{N-1}|x[n]|^2=\frac{1}{N}\sum_{k=0}^{N-1}|X[k]|^2.$$
+
+::: {.callout-tip}
+Comparar potencia temporal con la integral numérica de PSD permite detectar errores de escalamiento.
+:::
+
+## Retirar la media cambia la PSD cerca de 0 Hz
+
+La componente DC representa el promedio del segmento.
+
+$$x_0[n]=x[n]-\bar{x}.$$
+
+::: {.callout-warning}
+Retirar media o tendencia debe declararse. Puede ser conveniente para estudiar oscilaciones, pero elimina información de nivel.
+:::
+
+## El periodograma tiene alta variabilidad
+
+Aumentar $N$ mejora el espaciado frecuencial, pero el periodograma simple no se vuelve necesariamente estable como estimador puntual.
+
+::: {.callout-important}
+La varianza del estimador motiva el promediado de segmentos y el método de Welch.
+:::
+
+## Potencia en una banda
+
+Para una banda $[f_1,f_2]$:
+
+$$P_{banda}=\int_{f_1}^{f_2}S_{xx}(f)\,df.$$
+
+En un eje discreto uniforme se aproxima mediante suma o integración trapezoidal.
+
+::: {.callout-warning}
+Las bandas deben justificarse para la modalidad, población, estado y método de adquisición.
+:::
+
+## Potencia absoluta y relativa
+
+$$P_{rel}=\frac{P_{banda}}{P_{referencia}}.$$
+
+La potencia relativa reduce algunas diferencias de escala, pero acopla el numerador al denominador.
+
+::: {.callout-note}
+Un aumento de potencia relativa puede deberse a aumento de la banda o disminución de la potencia de referencia.
+:::
+
+## Código: periodograma con unidades explícitas
+
+```python
+from scipy.signal import periodogram
+
+f, Pxx = periodogram(
+    x,
+    fs=fs,
+    window="hann",
+    detrend="constant",
+    scaling="density",
+    return_onesided=True,
+)
+potencia = np.trapz(Pxx, f)
+```
+
+::: {.callout-note}
+Con `scaling="density"`, `Pxx` tiene unidades de la señal al cuadrado por Hz.
+:::
+
+## Lectura biomédica prudente
+
+Antes de interpretar un pico o una banda:
+
+- verificar estado fisiológico y protocolo;
+- revisar artefactos y canales auxiliares;
+- confirmar duración y resolución;
+- comprobar preprocesamiento;
+- estimar incertidumbre o variabilidad.
+
+::: {.callout-important}
+Una asociación entre banda y fenómeno requiere evidencia adicional. La frecuencia por sí sola no identifica la fuente.
+:::
+
+## Verificación de la sesión 16
+
+Una PSD de aceleración se expresa en $(m/s^2)^2/Hz$.
+
+1. indique las unidades de su integral entre 0 y 20 Hz;
+2. explique qué hace `detrend="constant"`;
+3. compare periodograma unilateral y bilateral;
+4. proponga una prueba de Parseval;
+5. explique por qué un pico no identifica automáticamente un mecanismo.
+
+::: {.callout-tip}
+## Criterio de logro
+La respuesta debe conservar unidades y diferenciar estimador, parámetro y explicación fisiológica.
+:::
+
+## Cierre de la semana 8
+
+- El muestreo replica el espectro y puede producir aliasing.
+- Nyquist ofrece una condición ideal, no un margen de diseño suficiente.
+- $f_s$ y $T$ controlan propiedades distintas.
+- El periodograma estima densidad de potencia a partir de un bloque finito.
+- Las unidades y Parseval permiten verificar el escalamiento.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Por qué duplicar la frecuencia de muestreo sin cambiar la duración no divide a la mitad la incertidumbre del periodograma?
+:::
+
+# Semana 9 · Welch y análisis tiempo-frecuencia {.week-divider background-color="#0B3954"}
+
+## Sesión 17 · Welch reduce variabilidad mediante promediado
+
+El método divide el registro en segmentos, aplica una ventana y promedia periodogramas modificados.
+
+$$\widehat S_{Welch}(f)=\frac{1}{K}\sum_{r=1}^{K}\widehat S_r(f).$$
+
+::: {.callout-important}
+El promediado reduce variabilidad del estimador a cambio de resolución frecuencial y dependencia entre segmentos solapados.
+:::
+
+## El procedimiento contiene cuatro decisiones
+
+1. longitud de segmento $L$;
+2. solapamiento $O$;
+3. ventana $w[n]$;
+4. número de FFT $N_{FFT}$.
+
+::: {.callout-warning}
+Dos PSD calculadas con parámetros distintos pueden diferir aunque provengan del mismo registro.
+:::
+
+## Segmentos cortos producen más promedios
+
+Al reducir $L$:
+
+- aumenta el número de segmentos;
+- suele disminuir la variabilidad;
+- empeora la resolución frecuencial;
+- mejora la aproximación de estacionariedad local.
+
+::: {.callout-important}
+La longitud debe relacionarse con la separación frecuencial necesaria y la escala temporal del fenómeno.
+:::
+
+## El solapamiento reutiliza muestras
+
+Con avance $H=L-O$:
+
+$$\text{solapamiento relativo}=\frac{O}{L}=1-\frac{H}{L}.$$
+
+::: {.callout-warning}
+Más solapamiento no crea observaciones independientes. Su beneficio depende de la ventana y del costo computacional.
+:::
+
+## Hann y 50 % forman una elección frecuente
+
+La combinación suele ofrecer cobertura uniforme razonable y eficiencia computacional.
+
+::: {.callout-note}
+“Frecuente” no significa universal. Eventos transitorios, registros breves o necesidades de amplitud pueden exigir otra selección.
+:::
+
+## El escalamiento incluye la energía de la ventana
+
+El periodograma modificado compensa, según la convención, la suma cuadrática de $w[n]$:
+
+$$U=\frac{1}{L}\sum_{n=0}^{L-1}w^2[n].$$
+
+::: {.callout-important}
+La normalización correcta permite que la integral de la PSD represente potencia del segmento.
+:::
+
+## $N_{FFT}$ cambia la malla, no la evidencia
+
+Si $N_{FFT}>L$, se aplica zero padding dentro de cada segmento.
+
+::: {.callout-warning}
+La densidad de puntos puede facilitar lectura o integración, pero la resolución física sigue limitada por $L/f_s$ y la ventana.
+:::
+
+## Promediar requiere segmentos comparables
+
+Welch supone que los segmentos describen propiedades espectrales suficientemente semejantes.
+
+Problemas:
+
+- cambio de tarea;
+- transición fisiológica;
+- artefactos concentrados;
+- deriva prolongada.
+
+::: {.callout-warning}
+Promediar estados diferentes produce una PSD precisa para una mezcla que puede carecer de significado fisiológico.
+:::
+
+## Ancho de banda puede definirse de varias formas
+
+Definiciones habituales:
+
+- intervalo entre bordes fijados por especificación;
+- banda que contiene un porcentaje de potencia;
+- frecuencia media o mediana espectral;
+- soporte efectivo por encima de un umbral.
+
+::: {.callout-important}
+“Ancho de banda” necesita una definición operacional. Sin ella, la comparación no es reproducible.
+:::
+
+## Frecuencia mediana espectral
+
+La frecuencia $f_m$ satisface
+
+$$\int_{0}^{f_m}S_{xx}(f)df
+=\frac{1}{2}\int_{0}^{f_{max}}S_{xx}(f)df.$$
+
+::: {.callout-note}
+En EMG puede describir redistribución espectral, pero depende de fatiga, fuerza, geometría del registro y preprocesamiento.
+:::
+
+## Frecuencia media espectral
+
+$$f_{mean}=\frac{\int fS_{xx}(f)df}{\int S_{xx}(f)df}.$$
+
+::: {.callout-warning}
+La frecuencia media es sensible a contaminación de alta frecuencia y a los límites escogidos para la integración.
+:::
+
+## Potencia de banda mediante integración numérica
+
+```python
+from scipy.signal import welch
+import numpy as np
+
+f, Pxx = welch(x, fs=fs, window="hann",
+               nperseg=L, noverlap=L//2,
+               detrend="constant", scaling="density")
+mask = (f >= f1) & (f <= f2)
+P_band = np.trapz(Pxx[mask], f[mask])
+```
+
+::: {.callout-note}
+La integración debe incluir suficientes puntos y límites coherentes con la resolución disponible.
+:::
+
+## Selección razonada de parámetros
+
+1. fijar la mínima separación frecuencial de interés;
+2. elegir una duración compatible con esa separación;
+3. verificar estacionariedad local;
+4. seleccionar ventana según fuga y resolución;
+5. usar solapamiento justificado;
+6. validar potencia y estabilidad.
+
+::: {.callout-tip}
+Los parámetros forman parte del método y deben quedar registrados junto con el resultado.
+:::
+
+## Comparación entre condiciones
+
+Para comparar reposo y tarea:
+
+- igualar unidades y preprocesamiento;
+- usar parámetros espectrales iguales;
+- controlar duración y calidad;
+- comparar por participante cuando corresponda;
+- reportar variabilidad, no solo promedios.
+
+::: {.callout-warning}
+Normalizar cada condición por un denominador distinto puede cambiar la interpretación de las diferencias.
+:::
+
+## Verificación de la sesión 17
+
+Un registro de 60 s a 1000 Hz usa Welch con segmentos de 2 s y 50 % de solapamiento.
+
+1. determine $L$ y el avance $H$;
+2. calcule la separación nominal de bins;
+3. explique qué cambia con segmentos de 4 s;
+4. identifique el supuesto al promediar;
+5. proponga una prueba de conservación de potencia.
+
+::: {.callout-tip}
+## Criterio de logro
+La respuesta debe discutir resolución, varianza, dependencia y estacionariedad.
+:::
+
+## Sesión 18 · Una señal no estacionaria cambia durante el registro
+
+Ejemplos:
+
+- transición de reposo a ejercicio;
+- ráfagas EEG;
+- activación muscular durante marcha;
+- cambios de ritmo cardíaco.
+
+::: {.callout-important}
+Un espectro global mezcla tiempos. El análisis tiempo-frecuencia busca localizar cómo cambia el contenido espectral.
+:::
+
+## La estacionariedad es un supuesto de modelamiento
+
+En sentido amplio:
+
+$$\mathbb{E}\{x(t)\}=\mu,$$
+
+$$R_x(t_1,t_2)=R_x(t_1-t_2).$$
+
+::: {.callout-warning}
+Las bioseñales rara vez cumplen estacionariedad global. Se trabaja con segmentos donde las propiedades cambian poco para el objetivo.
+:::
+
+## La STFT aplica Fourier localmente
+
+$$X(\tau,f)=\int_{-\infty}^{\infty}x(t)w(t-\tau)e^{-j2\pi ft}dt.$$
+
+- $\tau$: posición temporal de la ventana.
+- $f$: frecuencia analizada.
+- $w$: ventana de análisis.
+
+::: {.callout-important}
+La STFT produce una colección de espectros locales con una ventana de forma y longitud fijas.
+:::
+
+## El espectrograma muestra magnitud o potencia
+
+Una definición habitual:
+
+$$\mathcal{S}(\tau,f)=|X(\tau,f)|^2.$$
+
+::: {.callout-warning}
+Color, escala logarítmica y normalización cambian la apariencia. Una imagen atractiva no garantiza unidades correctas.
+:::
+
+## La ventana fija impone un compromiso
+
+Ventana corta:
+
+- mejor localización temporal;
+- peor separación frecuencial.
+
+Ventana larga:
+
+- mejor separación frecuencial;
+- mayor mezcla temporal.
+
+::: {.callout-important}
+La STFT no ofrece máxima resolución en ambos dominios. La pregunta define el compromiso aceptable.
+:::
+
+## La incertidumbre expresa ese límite
+
+De forma conceptual:
+
+$$\Delta t\,\Delta f\geq C,$$
+
+donde $C$ depende de la definición y la ventana.
+
+::: {.callout-note}
+Reducir indefinidamente la ventana mejora tiempo, pero ensancha la respuesta frecuencial de cada componente.
+:::
+
+## El avance controla densidad temporal
+
+Con ventana $L$ y avance $H$:
+
+$$t_r=\frac{rH+\text{referencia de ventana}}{f_s}.$$
+
+::: {.callout-warning}
+Mayor solapamiento produce más columnas en el espectrograma, pero no aumenta la resolución temporal física en la misma proporción.
+:::
+
+## Las condiciones de borde necesitan atención
+
+Cerca del inicio y final, la ventana puede:
+
+- contener menos datos reales;
+- usar relleno;
+- introducir transitorios de borde;
+- cambiar la interpretación temporal.
+
+::: {.callout-important}
+Debe documentarse si se usa padding, centrado de ventanas y extensión del registro.
+:::
+
+## La escala logarítmica revela componentes débiles
+
+Una representación frecuente es
+
+$$P_{dB}(\tau,f)=10\log_{10}\left(\frac{P(\tau,f)}{P_{ref}}\right).$$
+
+::: {.callout-warning}
+Sin $P_{ref}$ y unidades, “dB” queda incompleto. Ceros o valores muy pequeños requieren un piso numérico declarado.
+:::
+
+## STFT de una activación EMG
+
+Una ventana corta puede localizar inicio y final de activación. Una ventana más larga estabiliza la distribución espectral dentro de la contracción.
+
+::: {.callout-note}
+La envolvente responde a variación de amplitud lenta. El espectrograma describe además cómo se distribuye energía dentro de la banda.
+:::
+
+## STFT de una ráfaga EEG
+
+Preguntas relevantes:
+
+- ¿cuándo comienza la ráfaga?
+- ¿qué banda domina?
+- ¿cambia su frecuencia central?
+- ¿aparece simultáneamente en varios canales?
+
+::: {.callout-warning}
+Una banda visible no identifica por sí sola una fuente neural. Artefactos o referencia común pueden generar patrones similares.
+:::
+
+## Código: espectrograma con parámetros explícitos
+
+```python
+from scipy.signal import stft
+
+f, t, Z = stft(
+    x, fs=fs, window="hann",
+    nperseg=L, noverlap=L-H,
+    nfft=Nfft, detrend="constant",
+    boundary=None, padded=False,
+)
+P = np.abs(Z)**2
+```
+
+::: {.callout-note}
+La conversión de $|Z|^2$ a PSD requiere revisar la normalización de la función y el propósito del análisis.
+:::
+
+## Validar un espectrograma
+
+1. contrastar eventos con el dominio temporal;
+2. verificar frecuencias con señales sintéticas;
+3. revisar efectos de ventana y borde;
+4. repetir con otra longitud razonable;
+5. comparar potencia integrada con estimaciones temporales;
+6. inspeccionar canales de artefacto.
+
+::: {.callout-tip}
+Una interpretación robusta debe persistir bajo cambios moderados de parámetros compatibles con la pregunta.
+:::
+
+## Verificación de la sesión 18
+
+Una ráfaga de 20 Hz dura 300 ms en un EEG a 250 Hz.
+
+1. compare ventanas de 128 ms y 1 s;
+2. indique cuál localiza mejor el inicio;
+3. indique cuál separa mejor 20 Hz de 22 Hz;
+4. discuta el efecto del solapamiento;
+5. proponga canales o marcas para validar origen.
+
+::: {.callout-tip}
+## Criterio de logro
+La respuesta debe conectar duración del evento, lóbulo temporal, resolución y evidencia fisiológica.
+:::
+
+## Cierre de la semana 9
+
+- Welch promedia periodogramas modificados para reducir variabilidad.
+- La longitud de segmento controla resolución y aproximación local.
+- Ancho de banda necesita una definición reproducible.
+- La STFT localiza cambios espectrales con resolución limitada.
+- Ventana, solapamiento, padding y escala forman parte del resultado.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Por qué un espectrograma con más columnas puede no contener mejor resolución temporal?
+:::
+
+# Semana 10 · Ventanas tiempo-frecuencia y sistemas LTI {.week-divider background-color="#0B3954"}
+
+## Sesión 19 · La ventana debe responder a la pregunta
+
+Tres preguntas dominan la selección:
+
+1. ¿qué duración tiene el evento?
+2. ¿qué separación frecuencial se necesita?
+3. ¿qué diferencia de amplitud existe entre componentes?
+
+::: {.callout-important}
+La forma y longitud de ventana se eligen conjuntamente. Ninguna ventana domina en todos los criterios.
+:::
+
+## La longitud fija una escala de observación
+
+Para $L$ muestras:
+
+$$T_w=\frac{L}{f_s},\qquad \Delta f_{nom}=\frac{f_s}{L}.$$
+
+::: {.callout-warning}
+La resolución efectiva depende además de la forma de la ventana y del criterio usado para distinguir componentes.
+:::
+
+## Rectangular prioriza un lóbulo principal estrecho
+
+Ventajas:
+
+- máxima conservación de un bloque alineado;
+- buena separación nominal de tonos comparables.
+
+Limitaciones:
+
+- lóbulos laterales altos;
+- sensibilidad a discontinuidades de borde.
+
+::: {.callout-note}
+Resulta útil como referencia para comprender por qué el recorte directo produce fuga.
+:::
+
+## Hann ofrece un compromiso general
+
+Ventajas:
+
+- extremos nulos;
+- menor fuga lateral que rectangular;
+- uso frecuente en Welch y STFT.
+
+Limitación principal: lóbulo central más ancho.
+
+::: {.callout-important}
+Hann suele ser un punto de partida defendible, no una selección automática.
+:::
+
+## Hamming mantiene extremos pequeños, no nulos
+
+Hamming reduce especialmente el primer lóbulo lateral, pero su extensión periódica mantiene una discontinuidad pequeña.
+
+::: {.callout-note}
+La diferencia frente a Hann puede ser relevante para estimación tonal y respuesta de filtros, aunque no siempre cambia una conclusión biomédica.
+:::
+
+## Blackman prioriza rango dinámico
+
+Sus lóbulos laterales bajos ayudan a observar componentes débiles cerca de componentes intensas.
+
+Costo: lóbulo principal más ancho y menor separación de frecuencias próximas.
+
+::: {.callout-warning}
+Reducir fuga lateral no mejora simultáneamente todas las formas de resolución.
+:::
+
+## Una ventana gaussiana localiza de forma equilibrada
+
+La familia gaussiana permite ajustar el compromiso mediante su dispersión y posee buenas propiedades de concentración tiempo-frecuencia.
+
+::: {.callout-note}
+La elección del parámetro debe quedar documentada. “Gaussiana” no define por sí sola una ventana única.
+:::
+
+## Ventana y evento deben tener escalas compatibles
+
+Ejemplos:
+
+- QRS: decenas a pocos cientos de milisegundos;
+- activación EMG: depende de la tarea y músculo;
+- oscilaciones respiratorias: varios segundos;
+- ritmos EEG sostenidos: duración definida por hipótesis.
+
+::: {.callout-important}
+Una ventana mucho mayor que el evento diluye su localización. Una ventana demasiado corta pierde detalle frecuencial.
+:::
+
+## La frecuencia de interés determina ciclos observados
+
+Número aproximado de ciclos dentro de la ventana:
+
+$$N_c=f_0T_w.$$
+
+::: {.callout-warning}
+Estimar una frecuencia a partir de menos de un ciclo completo es inestable y depende fuertemente del modelo.
+:::
+
+## Solapamiento mejora seguimiento visual
+
+Reducir el avance $H$ produce estimaciones más densas en el tiempo.
+
+::: {.callout-warning}
+Las columnas vecinas comparten datos y son dependientes. No deben contarse como observaciones independientes en análisis estadístico.
+:::
+
+## Zero padding facilita localizar máximos
+
+Una malla frecuencial densa puede ayudar a interpolar el máximo de un lóbulo.
+
+::: {.callout-important}
+La precisión de la estimación sigue limitada por SNR, duración, ventana y estabilidad de la frecuencia.
+:::
+
+## Normalizar entre ventanas requiere coherencia
+
+Opciones distintas responden preguntas distintas:
+
+- potencia absoluta;
+- potencia relativa por ventana;
+- cambio respecto de una línea base;
+- puntuación estandarizada por frecuencia.
+
+::: {.callout-warning}
+Normalizar cada columna por su propia potencia elimina cambios globales de amplitud y puede ocultar activaciones reales.
+:::
+
+## Aplicación: activación muscular durante marcha
+
+Una STFT puede describir cuándo aumenta energía EMG y si su distribución cambia dentro del ciclo.
+
+Diseño:
+
+- alinear ciclos con eventos de marcha;
+- conservar escala o usar referencia fisiológica;
+- separar análisis temporal y espectral;
+- validar artefactos de movimiento.
+
+::: {.callout-important}
+El espectrograma debe interpretarse junto con el ciclo de marcha y no como una imagen aislada.
+:::
+
+## Aplicación: cambio de ritmo respiratorio
+
+Ventanas largas separan frecuencias respiratorias próximas. Ventanas cortas localizan transiciones de ritmo.
+
+::: {.callout-note}
+Una estrategia útil compara varias longitudes plausibles y reporta qué conclusión permanece estable.
+:::
+
+## Flujo de selección documentada
+
+1. formular evento o banda de interés;
+2. estimar su escala temporal;
+3. fijar separación frecuencial necesaria;
+4. elegir longitud y forma;
+5. definir avance y padding;
+6. validar con señales conocidas;
+7. realizar análisis de sensibilidad.
+
+::: {.callout-tip}
+La selección final debe poder reproducirse a partir de parámetros guardados, no de ajustes visuales manuales.
+:::
+
+## Verificación de la sesión 19
+
+Se desea localizar una activación de 250 ms y distinguir componentes separadas 2 Hz.
+
+1. analice la tensión entre ambos objetivos;
+2. calcule la duración mínima nominal para 2 Hz;
+3. proponga una longitud inicial;
+4. seleccione una ventana y justifique;
+5. describa un análisis de sensibilidad.
+
+::: {.callout-tip}
+## Criterio de logro
+La solución debe reconocer que una única STFT puede no satisfacer simultáneamente ambos objetivos.
+:::
+
+## Sesión 20 · Un sistema transforma una señal
+
+$$y=\mathcal{T}\{x\}.$$
+
+El análisis pregunta qué propiedades de $\mathcal{T}$ permiten predecir la salida para entradas diferentes.
+
+::: {.callout-important}
+Las propiedades pertenecen al modelo del sistema dentro de condiciones definidas. Un sistema fisiológico puede ser aproximadamente lineal solo en un rango.
+:::
+
+## Linealidad combina aditividad y homogeneidad
+
+$$\mathcal{T}\{a x_1+b x_2\}
+=a\mathcal{T}\{x_1\}+b\mathcal{T}\{x_2\}.$$
+
+::: {.callout-warning}
+Verificar una sola entrada no demuestra linealidad. La propiedad debe sostenerse para las combinaciones consideradas.
+:::
+
+## Saturación viola linealidad
+
+Un amplificador ideal puede cumplir $y=Gx$ dentro de su rango. Al alcanzar los rieles, la salida se recorta.
+
+::: {.callout-important}
+La linealidad depende del rango operativo. Un modelo local puede ser útil aunque el dispositivo completo sea no lineal.
+:::
+
+## Invariancia temporal conserva la regla
+
+Si
+
+$$y(t)=\mathcal{T}\{x(t)\},$$
+
+un sistema invariante cumple
+
+$$\mathcal{T}\{x(t-t_0)\}=y(t-t_0).$$
+
+::: {.callout-note}
+El desplazamiento de la entrada debe producir el mismo desplazamiento de la salida, sin cambiar forma ni ganancia.
+:::
+
+## Adaptación fisiológica rompe invariancia
+
+La respuesta a un mismo estímulo puede cambiar por fatiga, aprendizaje, medicación o estado autonómico.
+
+::: {.callout-warning}
+Aplicar herramientas LTI a un sistema biológico exige justificar intervalo, amplitud y estado donde la aproximación resulta válida.
+:::
+
+## Memoria y causalidad son propiedades distintas
+
+- sin memoria: $y(t)$ depende solo de $x(t)$;
+- con memoria: depende de otros instantes;
+- causal: no usa valores futuros de la entrada.
+
+::: {.callout-important}
+Un promedio móvil causal tiene memoria. Un filtrado de fase cero fuera de línea usa muestras futuras y no es causal.
+:::
+
+## Estabilidad BIBO limita la salida
+
+Si $|x(t)|\leq M_x<\infty$, estabilidad BIBO exige $|y(t)|\leq M_y<\infty$.
+
+Para un sistema LTI continuo, una condición suficiente y necesaria habitual es
+
+$$\int_{-\infty}^{\infty}|h(t)|dt<\infty.$$
+
+::: {.callout-warning}
+Estabilidad matemática no implica seguridad clínica ni validez fisiológica.
+:::
+
+## El impulso ideal concentra área unitaria
+
+$$\delta(t)=0\quad\text{para }t\neq0,$$
+
+$$\int_{-\infty}^{\infty}\delta(t)dt=1.$$
+
+Propiedad de selección:
+
+$$\int x(\tau)\delta(t-\tau)d\tau=x(t).$$
+
+::: {.callout-note}
+El impulso de Dirac es una distribución matemática. Los experimentos físicos usan pulsos breves con amplitud y energía limitadas.
+:::
+
+## En discreto, el impulso es una secuencia ordinaria
+
+$$\delta[n]=\begin{cases}1,&n=0,\\0,&n\neq0.\end{cases}$$
+
+Toda secuencia puede escribirse como
+
+$$x[n]=\sum_{k=-\infty}^{\infty}x[k]\delta[n-k].$$
+
+::: {.callout-important}
+La descomposición expresa la entrada como suma de impulsos desplazados y ponderados.
+:::
+
+## La respuesta al impulso caracteriza un sistema LTI
+
+$$h(t)=\mathcal{T}\{\delta(t)\}.$$
+
+Por linealidad e invariancia:
+
+$$y(t)=\int_{-\infty}^{\infty}x(\tau)h(t-\tau)d\tau.$$
+
+::: {.callout-important}
+Conocer $h$ permite calcular la respuesta a cualquier entrada dentro del modelo LTI.
+:::
+
+## La salida es una convolución
+
+$$y(t)=x(t)*h(t).$$
+
+En tiempo discreto:
+
+$$y[n]=\sum_{k=-\infty}^{\infty}x[k]h[n-k].$$
+
+::: {.callout-note}
+La semana siguiente desarrolla interpretación gráfica, soporte y cálculo de la convolución.
+:::
+
+## Causalidad de un LTI se lee en $h$
+
+Un sistema LTI causal cumple
+
+$$h(t)=0\quad\text{para }t<0,$$
+
+o en discreto $h[n]=0$ para $n<0$.
+
+::: {.callout-warning}
+Una respuesta al impulso simétrica alrededor de cero no puede implementarse causalmente sin añadir retardo.
+:::
+
+## Las exponenciales complejas son autofunciones LTI
+
+Si $x(t)=e^{j2\pi ft}$, entonces
+
+$$y(t)=H(f)e^{j2\pi ft}.$$
+
+::: {.callout-important}
+El sistema conserva la frecuencia y modifica amplitud y fase mediante $H(f)$.
+:::
+
+## $H(f)$ es la transformada de $h(t)$
+
+$$H(f)=\int_{-\infty}^{\infty}h(t)e^{-j2\pi ft}dt.$$
+
+La relación
+
+$$Y(f)=X(f)H(f)$$
+
+coincide con el teorema de convolución estudiado en la semana 6.
+
+::: {.callout-tip}
+Tiempo y frecuencia describen el mismo sistema mediante $h(t)$ y $H(f)$.
+:::
+
+## Ejemplos de sistemas de procesamiento
+
+| Sistema | Respuesta temporal esperada | Acción frecuencial |
+|---|---|---|
+| promedio móvil | suaviza cambios rápidos | atenúa frecuencias altas |
+| diferenciador | resalta pendientes | amplifica frecuencias altas |
+| retardo | desplaza la señal | añade fase lineal |
+| ganancia | escala amplitud | multiplica por constante |
+
+::: {.callout-warning}
+La acción útil depende de preservar los eventos y medidas relevantes para la tarea biomédica.
+:::
+
+## Código: probar linealidad numéricamente
+
+```python
+import numpy as np
+
+y_combo = T(a*x1 + b*x2)
+y_super = a*T(x1) + b*T(x2)
+error = np.linalg.norm(y_combo - y_super)
+referencia = np.linalg.norm(y_combo)
+error_rel = error / max(referencia, 1e-12)
+```
+
+::: {.callout-warning}
+Un error pequeño para algunos vectores apoya la hipótesis, pero no demuestra linealidad para todas las entradas.
+:::
+
+## Verificación de la sesión 20
+
+Para $y[n]=0.5x[n]+0.5x[n-1]$:
+
+1. verifique linealidad;
+2. determine memoria y causalidad;
+3. obtenga $h[n]$;
+4. evalúe estabilidad BIBO;
+5. interprete su efecto sobre un ECG;
+6. anticipe su respuesta frecuencial.
+
+::: {.callout-tip}
+## Criterio de logro
+La respuesta debe conectar la ecuación, las propiedades, $h[n]$ y la interpretación biomédica.
+:::
+
+## Cierre de la semana 10
+
+- La selección de ventana define una escala tiempo-frecuencia.
+- Ninguna configuración maximiza ambas resoluciones.
+- Linealidad e invariancia temporal permiten usar superposición.
+- La respuesta al impulso caracteriza un sistema LTI.
+- $h(t)$ y $H(f)$ son descripciones complementarias.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Qué evidencia experimental necesitaría para tratar un sistema fisiológico como LTI durante un intervalo específico?
+:::
+
+# Síntesis y estudio autónomo {.week-divider background-color="#0B3954"}
+
+## La cadena completa de decisiones
+
+$$\begin{aligned}
+\text{pregunta}&\rightarrow\text{adquisición}\rightarrow\text{muestreo}\rightarrow\text{segmento}\\
+&\rightarrow\text{ventana}\rightarrow\text{estimador}\rightarrow\text{validación}\rightarrow\text{inferencia}
+\end{aligned}$$
+
+::: {.callout-important}
+Cada resultado espectral debe conservar trazabilidad hacia el registro, los parámetros y el estado fisiológico observado.
+:::
+
+## Errores que deben poder diagnosticarse
+
+1. sumar magnitudes cuando corresponde sumar espectros complejos;
+2. interpretar zero padding como mayor resolución real;
+3. atribuir fuga a nuevas oscilaciones fisiológicas;
+4. usar Nyquist sin margen para el filtro analógico;
+5. confundir potencia por bin con PSD;
+6. promediar estados incompatibles con Welch;
+7. leer resolución desde el número de columnas del espectrograma;
+8. asumir que un sistema biológico es LTI sin verificar rango y estado.
+
+## Autoevaluación acumulativa
+
+Puede explicar, sin consultar notas:
+
+- cómo un retraso modifica la fase;
+- por qué $\Delta f=1/T$;
+- qué cambia al aplicar Hann;
+- cómo se produce aliasing;
+- qué unidades tiene una PSD;
+- qué intercambia Welch entre resolución y varianza;
+- cómo se selecciona una ventana STFT;
+- por qué $h(t)$ caracteriza un sistema LTI.
+
+::: {.callout-note}
+Una explicación completa incluye ecuación, unidades, supuesto, efecto observable y límite de interpretación.
+:::
+
+## Actividad integradora sugerida
+
+Con un registro biomédico real o simulado:
+
+1. audite muestreo, unidades y duración;
+2. compare periodograma y Welch;
+3. analice dos ventanas;
+4. verifique potencia mediante integración;
+5. construya una STFT con dos longitudes;
+6. interprete cambios y artefactos;
+7. documente parámetros en Python;
+8. formule una conclusión limitada por la evidencia.
+
+::: {.callout-tip}
+## Producto esperado
+Un cuaderno reproducible que permita reconstruir cada figura y justificar cada decisión.
+:::
+
+## Referencias y alcance
+
+Contenido alineado con el programa de **Sistemas y Señales Biomédicos**, semanas 6–10, y con el desarrollo de Fourier, adquisición, potencia y sistemas lineales del texto guía [@semmlow2018]. Para formulación clásica consultar [@oppenheim1997]. Los ejemplos computacionales siguen prácticas de Python descritas en [@esakkirajan2024]. Para aplicaciones de bioseñales consultar [@rangayyan2015].
+
+::: {.callout-warning}
+Estas diapositivas apoyan formación en ingeniería. Los ejemplos no establecen criterios diagnósticos ni recomendaciones clínicas.
+:::
+
+## Cierre: criterio de dominio
+
+El estudiante debe sostener esta afirmación con evidencia:
+
+> Un espectro no es una propiedad aislada del organismo. Es el resultado de observar, segmentar y estimar una señal bajo decisiones explícitas.
+
+::: {.callout-important}
+El dominio del tema se demuestra cuando una conclusión puede rastrearse hasta la adquisición, las unidades, los parámetros y los supuestos.
+:::
+
+## Referencias {.allowframebreaks}
+
+::: {#refs}
+:::
+

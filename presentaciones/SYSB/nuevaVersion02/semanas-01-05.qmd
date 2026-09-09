@@ -1,0 +1,1304 @@
+---
+title: "Sistemas y Señales Biomédicos"
+subtitle: "Del fenómeno fisiológico al espectro"
+author: "Ph. D. Pablo Eduardo Caicedo-Rodríguez"
+lang: es
+bibliography: referencias.bib
+link-citations: true
+slide-level: 2
+logo: ../../../recursos/imagenes/generales/Escuela_Rosario_logo.png
+format:
+  revealjs:
+    theme: 
+        - default
+        - ../../../recursos/estilos/reveal.scss
+    width: 1600
+    height: 900
+    margin: 0.06
+    center: false
+    transition: fade
+    background-transition: fade
+    slide-number: c/t
+    hash: true
+    history: true
+    controls: true
+    progress: true
+    navigation-mode: linear
+    code-copy: true
+    code-line-numbers: false
+    chalkboard: false
+    footer: "[BioForja](https://pablocaicedor.github.io/)"
+    html-math-method: mathjax
+    embed-resources: true
+  beamer:
+    aspectratio: 169
+    theme: Madrid
+    colortheme: dolphin
+    fonttheme: professionalfonts
+    navigation: empty
+    pdf-engine: pdflatex
+    keep-tex: true
+    include-in-header: ../../../recursos/estilos/beamer-header.tex
+    toc: false
+execute:
+  enabled: false
+---
+
+# Cómo estudiar estas cinco semanas {.week-divider background-color="#0B3954"}
+
+## Una ruta desde el cuerpo hasta el espectro
+
+Al terminar la semana 5, el estudiante debe poder:
+
+1. distinguir **fenómeno fisiológico, bioseñal, medición y registro**;
+2. representar y transformar señales en tiempo continuo y discreto;
+3. calcular e interpretar descriptores temporales;
+4. segmentar, normalizar y detectar eventos sin perder el significado biomédico;
+5. explicar por qué una señal periódica admite una representación de Fourier;
+6. interpretar espectros de magnitud y fase.
+
+::: {.callout-important}
+## Idea conductora
+Una bioseñal no es solo una secuencia de números: es una **medición imperfecta de un fenómeno fisiológico**, obtenida mediante una cadena física y analizada para responder una pregunta.
+:::
+
+## Mapa de las diez sesiones
+
+| Semana | Sesión 1 | Sesión 2 |
+|---|---|---|
+| 1 | Señal, sistema y bioseñal | Origen, ruido, interferencia y artefacto |
+| 2 | Representación y descriptores | Señal sinusoidal |
+| 3 | Operaciones con señales | Rasgos y eventos temporales |
+| 4 | Segmentación y normalización | Del tiempo a la frecuencia |
+| 5 | Series de Fourier | Transformada de Fourier |
+
+Cada sesión combina fundamento, lectura fisiológica, desarrollo matemático, ejemplo computacional y verificación.
+
+# Semana 1 · Señales, sistemas y bioseñales {.week-divider background-color="#0B3954"}
+
+## Sesión 1 · La pregunta clínica define qué información importa
+
+Una medición solo adquiere sentido cuando se vincula con una pregunta:
+
+- **ECG:** ¿cómo se propaga la activación eléctrica cardíaca?
+- **EMG:** ¿cuándo y con qué patrón se activa un músculo?
+- **EEG:** ¿cómo cambia la actividad eléctrica cortical?
+- **Respiración:** ¿qué ritmo, amplitud o irregularidad presenta el ciclo ventilatorio?
+
+::: {.callout-warning}
+## No confundir
+El ECG no es “el corazón” ni representa directamente la fuerza de contracción. Registra diferencias de potencial asociadas con la actividad eléctrica cardíaca, observadas desde una configuración de electrodos.
+:::
+
+## Señal: una variable que porta información
+
+Una señal puede representarse como una función:
+
+$$x: \mathcal{D}\rightarrow\mathcal{C},\qquad x(t)\ \text{o}\ x[n]$$
+
+- $\mathcal{D}$: dominio de la variable independiente, usualmente tiempo.
+- $\mathcal{C}$: conjunto de valores de amplitud.
+- $x(t)$: señal en tiempo continuo.
+- $x[n]$: secuencia indexada en tiempo discreto.
+
+::: {.callout-tip}
+## Concepto clave
+La señal es una **representación**. La información fisiológica útil depende del fenómeno, del sensor, de la ubicación, del protocolo y del objetivo del análisis.
+:::
+
+## Sistema: una transformación con propósito
+
+Un sistema relaciona una entrada y una salida:
+
+$$y=\mathcal{T}\{x\}$$
+
+Ejemplos biomédicos:
+
+- sistema cardiovascular: control y demanda $\rightarrow$ presión y flujo;
+- amplificador: señal pequeña $\rightarrow$ señal medible;
+- filtro: registro ruidoso $\rightarrow$ componentes atenuadas;
+- detector: ECG $\rightarrow$ instantes R.
+
+::: {.callout-important}
+Un sistema puede ser biológico, físico, computacional o híbrido.
+:::
+
+## Modelo entrada–sistema–salida
+
+$$\text{estímulo }x(t)\quad\longrightarrow\quad
+\boxed{\text{sistema fisiológico }\mathcal{T}}
+\quad\longrightarrow\quad\text{respuesta }y(t)$$
+
+**Ejemplo:** reflejo pupilar.
+
+- Entrada: intensidad luminosa.
+- Sistema: retina, vías nerviosas y músculo del iris.
+- Salida: diámetro pupilar.
+- Perturbaciones: luz ambiental, movimiento, parpadeo y variación autónoma.
+
+::: {.callout-note}
+El diagrama es una abstracción. Elegir entradas, salidas y fronteras del sistema es ya una decisión de modelamiento.
+:::
+
+## Fuente, estímulo y respuesta
+
+| Concepto | Pregunta | Ejemplo |
+|---|---|---|
+| Fuente | ¿El sistema genera actividad observable sin estímulo explícito? | Ritmo cardíaco espontáneo |
+| Estímulo | ¿Qué señal externa modifica el sistema? | Luz sobre la retina |
+| Respuesta | ¿Qué cambio se observa tras el estímulo? | Constricción pupilar |
+| Perturbación | ¿Qué entrada no controlada altera la salida? | Movimiento del sujeto |
+
+::: {.callout-warning}
+La correlación temporal no demuestra causalidad: controle retardos y confundidores.
+:::
+
+## Jerarquía de una observación biomédica
+
+1. **Fenómeno:** proceso fisiológico real.
+2. **Mensurando:** magnitud que se desea medir.
+3. **Transducción:** conversión de energía a señal utilizable.
+4. **Registro:** valores almacenados con unidades y tiempo.
+5. **Rasgo:** descriptor extraído del registro.
+6. **Inferencia:** interpretación fisiológica o clínica.
+
+::: {.callout-important}
+Saltar directamente del registro a la inferencia suele ocultar supuestos. La trazabilidad exige declarar cada nivel.
+:::
+
+## Caso integrador: frecuencia cardíaca desde ECG
+
+El objetivo no es “medir frecuencia cardíaca” de forma directa:
+
+1. electrodos observan diferencias de potencial;
+2. el acondicionamiento limita y amplifica la señal;
+3. el registro digital conserva muestras $x[n]$;
+4. un detector estima instantes $t_{R,k}$;
+5. se calculan intervalos $RR_k=t_{R,k}-t_{R,k-1}$;
+6. se estima $HR_k=60/RR_k$ si $RR_k$ está en segundos.
+
+::: {.callout-warning}
+Un pico alto no es automáticamente una onda R. Artefactos de movimiento o estimulación pueden producir máximos espurios.
+:::
+
+## Verificación de la sesión 1
+
+Para un sensor de presión plantar durante la marcha:
+
+1. ¿Cuál es el fenómeno fisiomecánico?
+2. ¿Cuál es el mensurando?
+3. ¿Cuál es la variable independiente?
+4. ¿Qué parte es el sistema?
+5. ¿Qué inferencia sería razonable y cuál sería excesiva?
+
+::: {.callout-tip}
+## Criterio de logro
+La respuesta debe separar explícitamente cuerpo, sensor, señal registrada, procesamiento e interpretación.
+:::
+
+## Sesión 2 · Las bioseñales expresan distintas formas de energía
+
+| Origen | Variable observable | Ejemplos |
+|---|---|---|
+| Bioeléctrico | potencial o corriente | ECG, EEG, EMG, EOG |
+| Biomecánico | fuerza, presión, desplazamiento | presión arterial, marcha |
+| Bioacústico | presión sonora | fonocardiograma, voz |
+| Bioóptico | absorción o reflexión | fotopletismografía, oximetría |
+| Bioquímico | concentración o actividad | glucosa, $\mathrm{pH}$, gases |
+| Térmico | temperatura o radiación | termometría, termografía |
+
+::: {.callout-important}
+La modalidad de la bioseñal determina sensores, unidades, ancho de banda, fuentes de error y límites de interpretación.
+:::
+
+## Del fenómeno al dato: la cadena de observación
+
+$$\text{fisiología}\rightarrow\text{energía}\rightarrow\text{sensor}
+\rightarrow\text{acondicionamiento}\rightarrow\text{conversión}
+\rightarrow\text{datos}\rightarrow\text{decisión}$$
+
+Preguntas de control:
+
+- ¿Qué energía llega realmente al sensor?
+- ¿Qué parte de la señal altera cada etapa?
+- ¿Qué unidades tiene el dato almacenado?
+- ¿Qué calibración permite volver a unidades físicas?
+
+::: {.callout-note}
+La adquisición nunca es neutra: introduce sensibilidad, limitación de banda, ruido, retardo y posible distorsión.
+:::
+
+## Un modelo aditivo útil, pero incompleto
+
+$$x_{obs}(t)=s(t)+n(t)+i(t)+a(t)$$
+
+- $s(t)$: componente fisiológica de interés.
+- $n(t)$: ruido aleatorio del sistema de medición.
+- $i(t)$: interferencia originada por otra fuente.
+- $a(t)$: artefacto asociado con el procedimiento o el sujeto.
+
+::: {.callout-warning}
+Este modelo supone suma lineal. En la práctica también existen saturación, deriva, pérdidas de contacto y acoplamientos no lineales.
+:::
+
+## Ruido, interferencia y artefacto no son sinónimos
+
+| Término | Rasgo distintivo | Ejemplo |
+|---|---|---|
+| Ruido | fluctuación aleatoria no informativa para la tarea | ruido electrónico térmico |
+| Interferencia | señal estructurada de fuente ajena | red eléctrica de 50/60 Hz |
+| Artefacto | distorsión ligada a adquisición o conducta | movimiento de electrodos |
+| Variabilidad | cambio fisiológico real | arritmia o modulación respiratoria |
+
+::: {.callout-important}
+Eliminar toda variación “irregular” puede destruir información fisiológica. Primero se clasifica la fuente; después se decide cómo tratarla.
+:::
+
+## La relación señal–ruido necesita contexto
+
+Una forma basada en potencia es:
+
+$$\mathrm{SNR}_{dB}=10\log_{10}\left(\frac{P_s}{P_n}\right)$$
+
+Si se comparan amplitudes RMS bajo impedancias equivalentes:
+
+$$\mathrm{SNR}_{dB}=20\log_{10}\left(\frac{x_{s,\mathrm{RMS}}}{x_{n,\mathrm{RMS}}}\right)$$
+
+::: {.callout-warning}
+No puede calcularse una SNR válida si no existe una definición operacional de “señal” y “ruido” o una referencia razonable.
+:::
+
+## Artefactos frecuentes por modalidad
+
+- **ECG:** movimiento, mal contacto, actividad muscular, deriva de línea base.
+- **EMG superficial:** desplazamiento de electrodos, crosstalk, cambio de impedancia.
+- **EEG:** parpadeo, movimiento ocular, tensión muscular, cableado.
+- **PPG:** presión del sensor, movimiento, perfusión periférica variable.
+- **Respiración:** cambio de postura, habla, tos y desplazamiento de banda.
+
+::: {.callout-tip}
+## Principio de diseño
+La prevención experimental suele ser mejor que la corrección digital: fijación, preparación de piel, sincronización y protocolo reducen errores difíciles de revertir.
+:::
+
+## ¿Artefacto o fisiología?
+
+Evidencias útiles:
+
+1. coherencia con canales auxiliares;
+2. simultaneidad con una marca de evento;
+3. morfología y duración plausibles;
+4. distribución espacial entre sensores;
+5. respuesta esperada ante un estímulo;
+6. inspección del montaje o video sincronizado.
+
+::: {.callout-important}
+La clasificación de un segmento debe sustentarse con evidencia multimodal o experimental, no solo con su apariencia.
+:::
+
+## Cierre de la semana 1
+
+- Una señal porta información sobre una variable; un sistema transforma señales.
+- La bioseñal observada depende del fenómeno y de la cadena de medición.
+- Ruido, interferencia, artefacto y variabilidad fisiológica requieren tratamientos distintos.
+- Toda inferencia debe conservar la trazabilidad desde el mensurando.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Qué error de interpretación aparecería si se tratara una variabilidad fisiológica real como “ruido” y se filtrara agresivamente?
+:::
+
+# Semana 2 · Representación y descripción temporal {.week-divider background-color="#0B3954"}
+
+## Sesión 3 · Variable independiente y variable dependiente
+
+Para una señal temporal:
+
+$$x(t):\ t\mapsto\text{amplitud},\qquad x[n]:\ n\mapsto\text{amplitud}$$
+
+- $t$ tiene unidades de tiempo.
+- $n$ es un índice entero sin unidades.
+- Si el muestreo es uniforme, $t_n=nT_s=n/f_s$.
+- La amplitud conserva las unidades de la magnitud medida o del sistema digital.
+
+::: {.callout-warning}
+El índice $n$ no es tiempo físico. Para interpretar duración, retardo o frecuencia se necesita conocer $f_s$ o los sellos temporales.
+:::
+
+## Continuo, discreto, analógico y digital
+
+| Propiedad | Pregunta |
+|---|---|
+| Tiempo continuo | ¿La variable independiente admite cualquier $t$? |
+| Tiempo discreto | ¿Solo existen valores para índices $n$? |
+| Amplitud continua | ¿La amplitud admite un continuo de valores? |
+| Amplitud cuantizada | ¿La amplitud pertenece a niveles finitos? |
+
+::: {.callout-important}
+“Discreto” describe el eje independiente; “digital” suele implicar además amplitud cuantizada y una codificación numérica.
+:::
+
+## Determinista y aleatoria: una distinción de modelo
+
+- **Determinista:** una regla permite especificar cada valor, por ejemplo $x(t)=A\cos(2\pi f_0t+\phi)$.
+- **Aleatoria:** se modela mediante variables aleatorias y propiedades estadísticas.
+- Una bioseñal registrada es una **realización** de un proceso fisiológico variable.
+
+::: {.callout-note}
+Que una señal sea reproducible parcialmente no la convierte en determinista. Ritmo, amplitud y morfología cambian intra- e intersujeto.
+:::
+
+## Media y mediana responden preguntas distintas
+
+Para $N$ muestras:
+
+$$\bar{x}=\frac{1}{N}\sum_{n=0}^{N-1}x[n]$$
+
+- La **media** representa el balance algebraico y es sensible a valores extremos.
+- La **mediana** es el percentil 50 y es más robusta a observaciones atípicas.
+
+::: {.callout-warning}
+En EMG bipolar con oscilación alrededor de cero, una media cercana a cero no implica ausencia de actividad muscular.
+:::
+
+## Varianza y desviación estándar cuantifican dispersión
+
+Varianza poblacional del segmento:
+
+$$\sigma_x^2=\frac{1}{N}\sum_{n=0}^{N-1}(x[n]-\bar{x})^2$$
+
+Desviación estándar:
+
+$$\sigma_x=\sqrt{\sigma_x^2}$$
+
+::: {.callout-tip}
+La varianza tiene unidades al cuadrado; la desviación estándar recupera las unidades de la señal y suele ser más interpretable.
+:::
+
+## Valor RMS: amplitud efectiva
+
+$$x_{\mathrm{RMS}}=\sqrt{\frac{1}{N}\sum_{n=0}^{N-1}x^2[n]}$$
+
+Relación útil:
+
+$$x_{\mathrm{RMS}}^2=\sigma_x^2+\bar{x}^{,2}$$
+
+- Si $\bar{x}=0$, entonces $x_{\mathrm{RMS}}=\sigma_x$.
+- El RMS no elimina el signo arbitrariamente: mide magnitud cuadrática media.
+
+::: {.callout-important}
+En EMG, el RMS de una ventana puede describir nivel de actividad, pero depende de colocación, ganancia, tejido, ventana y normalización.
+:::
+
+## Energía y potencia media
+
+Para una secuencia:
+
+$$E_x=\sum_{n=-\infty}^{\infty}|x[n]|^2$$
+
+Potencia media:
+
+$$P_x=\lim_{N\to\infty}\frac{1}{2N+1}\sum_{n=-N}^{N}|x[n]|^2$$
+
+En un registro finito de $N$ muestras, se usa frecuentemente:
+
+$$E_N=\sum_{n=0}^{N-1}|x[n]|^2,\qquad P_N=\frac{E_N}{N}$$
+
+::: {.callout-warning}
+La “energía” matemática no siempre coincide con energía física. La interpretación depende de unidades, impedancia y calibración.
+:::
+
+## Ejemplo computacional: descriptores explícitos
+
+```python
+import numpy as np
+
+x = np.asarray(x, dtype=float)
+media = np.mean(x)
+mediana = np.median(x)
+varianza = np.mean((x - media)**2)  # denominador N
+desv = np.sqrt(varianza)
+rms = np.sqrt(np.mean(x**2))
+energia = np.sum(x**2)
+```
+
+::: {.callout-note}
+Antes de calcular: comprobar unidades, valores faltantes, saturación, longitud del segmento y si el segmento es comparable entre sujetos.
+:::
+
+## Sesión 4 · La sinusoide como coordenada de oscilación
+
+$$x(t)=A\cos(2\pi f_0t+\phi)=A\cos(\omega_0t+\phi)$$
+
+| Parámetro | Significado | Unidad |
+|---|---|---|
+| $A$ | amplitud pico | unidad de $x$ |
+| $f_0$ | frecuencia | Hz |
+| $T_0$ | periodo, $T_0=1/f_0$ | s |
+| $\omega_0$ | frecuencia angular, $2\pi f_0$ | rad/s |
+| $\phi$ | fase inicial | rad |
+
+::: {.callout-important}
+La sinusoide es fundamental porque conserva su frecuencia al atravesar sistemas lineales invariantes en el tiempo.
+:::
+
+## Frecuencia no significa rapidez de muestreo
+
+- $f_0$: oscilaciones de la señal por segundo.
+- $f_s$: muestras adquiridas por segundo.
+- $N$: número de muestras del registro.
+- $T=N/f_s$: duración observada.
+
+Ejemplo: si $f_s=500$ Hz y $N=2000$, la duración es $4$ s. Una componente de $10$ Hz completa aproximadamente $40$ ciclos en ese intervalo.
+
+::: {.callout-warning}
+Confundir $f_0$ con $f_s$ conduce a errores de interpretación y, más adelante, a errores de aliasing y resolución espectral.
+:::
+
+## La fase ubica el ciclo respecto de una referencia
+
+Dos señales con igual amplitud y frecuencia:
+
+$$x_1(t)=A\cos(\omega_0t),\qquad x_2(t)=A\cos(\omega_0t+\phi)$$
+
+presentan un desplazamiento temporal equivalente:
+
+$$\Delta t=-\frac{\phi}{\omega_0}=-\frac{\phi}{2\pi f_0}$$
+
+::: {.callout-note}
+El signo depende de la convención. Una fase positiva en $\cos(\omega t+\phi)$ representa un adelanto respecto de $\cos(\omega t)$.
+:::
+
+## Senoides complejas: representación compacta
+
+Por la identidad de Euler:
+
+$$e^{j\theta}=\cos\theta+j\sin\theta$$
+
+Entonces:
+
+$$A\cos(\omega_0t+\phi)=\Re\{Ae^{j\phi}e^{j\omega_0t}\}$$
+
+::: {.callout-tip}
+La exponencial compleja separa la amplitud/fase, contenida en $Ae^{j\phi}$, de la evolución temporal $e^{j\omega_0t}$.
+:::
+
+## Una señal real requiere frecuencias conjugadas
+
+$$A\cos(\omega_0t+\phi)=\frac{A}{2}e^{j\phi}e^{j\omega_0t}
++\frac{A}{2}e^{-j\phi}e^{-j\omega_0t}$$
+
+Consecuencias:
+
+- el espectro bilateral de una cosenoide tiene componentes en $\pm f_0$;
+- para señales reales, la magnitud es simétrica;
+- la fase presenta simetría impar cuando se cumplen las condiciones apropiadas.
+
+::: {.callout-important}
+Las frecuencias negativas son una consecuencia matemática de la representación compleja; no significan “oscilaciones hacia atrás” en el cuerpo.
+:::
+
+## Verificación de la semana 2
+
+Una ventana de EMG tiene media $0.01$ mV, desviación estándar $0.30$ mV y RMS $0.3002$ mV.
+
+1. ¿Es coherente con $x_{RMS}^2=\sigma^2+\bar{x}^2$?
+2. ¿Qué descriptor informa mejor sobre magnitud de actividad?
+3. ¿Qué datos faltan para comparar con otra persona?
+4. Si $f_s=1000$ Hz y hay 250 muestras, ¿cuánto dura la ventana?
+
+::: {.callout-tip}
+## Criterio de logro
+Debe justificar unidades, ventana, muestreo y significado fisiológico; no basta con sustituir valores.
+:::
+
+# Semana 3 · Operaciones y rasgos temporales {.week-divider background-color="#0B3954"}
+
+## Sesión 5 · Desplazamiento temporal
+
+Para tiempo continuo:
+
+$$y(t)=x(t-t_0)$$
+
+- $t_0>0$: retraso.
+- $t_0<0$: adelanto.
+
+Para tiempo discreto:
+
+$$y[n]=x[n-n_0]$$
+
+::: {.callout-warning}
+El signo se interpreta desde el argumento. $x(t-2)$ aparece dos unidades a la derecha; el “menos” no implica adelanto.
+:::
+
+## Escalamiento temporal cambia la velocidad
+
+$$y(t)=x(at)$$
+
+- $|a|>1$: compresión temporal.
+- $0<|a|<1$: expansión temporal.
+- $a<0$: incluye inversión temporal.
+
+Si $x(t)$ tiene periodo $T_0$, $x(at)$ tiene periodo $T_0/|a|$.
+
+::: {.callout-important}
+Escalar el tiempo modifica frecuencias. No equivale a multiplicar la amplitud por una constante.
+:::
+
+## Inversión temporal: una operación matemática
+
+$$y(t)=x(-t)$$
+
+Procedimiento gráfico:
+
+1. identificar puntos de quiebre y eventos;
+2. cambiar cada coordenada temporal $t_k\mapsto -t_k$;
+3. conservar la amplitud;
+4. reordenar el trazo.
+
+::: {.callout-note}
+En señales biomédicas causales, la inversión suele usarse para análisis matemático; no representa un proceso fisiológico realizable en tiempo real.
+:::
+
+## El orden de las transformaciones importa
+
+Para $y(t)=x(at-b)$:
+
+$$at-b=a\left(t-\frac{b}{a}\right)$$
+
+Esto permite leer:
+
+1. escalamiento/inversión por $a$;
+2. desplazamiento de $b/a$.
+
+::: {.callout-warning}
+Aplicar primero un desplazamiento de $b$ y luego un escalamiento produce, en general, una señal diferente.
+:::
+
+## Operaciones de amplitud
+
+- **Ganancia:** $y(t)=Kx(t)$.
+- **Desplazamiento vertical:** $y(t)=x(t)+C$.
+- **Suma:** $y(t)=x_1(t)+x_2(t)$.
+- **Producto:** $y(t)=x_1(t)x_2(t)$.
+
+Interpretaciones:
+
+- ganancia del amplificador;
+- deriva o nivel DC;
+- superposición de fuentes;
+- modulación o enmascaramiento temporal.
+
+::: {.callout-important}
+Sumar señales exige compatibilidad de unidades y referencia. Multiplicarlas cambia las unidades y puede generar nuevas componentes frecuenciales.
+:::
+
+## Ventaneo como multiplicación
+
+Para seleccionar un intervalo $[t_1,t_2]$:
+
+$$x_w(t)=x(t)w(t),\qquad
+w(t)=u(t-t_1)-u(t-t_2)$$
+
+En discreto, una máscara booleana cumple el mismo papel.
+
+::: {.callout-warning}
+Recortar en el tiempo no es inocuo: más adelante veremos que una ventana modifica el espectro y puede producir fuga espectral.
+:::
+
+## Código: tiempo y amplitud no se transforman igual
+
+```python
+import numpy as np
+
+fs = 500
+t = np.arange(len(x)) / fs
+
+y_amp = 2.0 * x              # amplitud
+y_shift = np.roll(x, 25)      # 50 ms, con efecto circular
+mask = (t >= 1.0) & (t < 2.0)
+segmento = x[mask]
+```
+
+::: {.callout-warning}
+`np.roll` realiza un desplazamiento circular: las últimas muestras reaparecen al inicio. Para un retraso físico deben rellenarse las nuevas posiciones.
+:::
+
+## Sesión 6 · Un rasgo temporal comprime información
+
+Un rasgo $r=F\{x[n]\}$ resume una propiedad del segmento:
+
+- amplitud o dispersión;
+- forma o morfología;
+- temporalidad de eventos;
+- regularidad;
+- relación con otro canal.
+
+::: {.callout-important}
+Todo rasgo pierde información. Debe seleccionarse porque conserva lo relevante para la pregunta biomédica, no porque sea fácil de calcular.
+:::
+
+## Envolvente: describir variaciones lentas de amplitud
+
+Dos rutas comunes:
+
+1. rectificación + filtro pasa-bajas;
+2. módulo de la señal analítica mediante Hilbert.
+
+$$x_a(t)=x(t)+j\,\mathcal{H}\{x(t)\},\qquad e(t)=|x_a(t)|$$
+
+::: {.callout-warning}
+La envolvente depende del preprocesamiento y del ancho de banda. No debe interpretarse automáticamente como fuerza muscular o intensidad fisiológica.
+:::
+
+## Cruces por cero
+
+Conteo básico:
+
+$$ZC=\sum_{n=1}^{N-1}\mathbf{1}\{x[n]x[n-1]<0\}$$
+
+Problema: ruido pequeño alrededor de cero genera cruces falsos.
+
+Con umbral $\delta$ se exige además:
+
+$$|x[n]-x[n-1]|\geq\delta$$
+
+::: {.callout-tip}
+En EMG, el número de cruces puede relacionarse con contenido frecuencial, pero es sensible al umbral, ruido, amplitud y frecuencia de muestreo.
+:::
+
+## Máximos y mínimos no equivalen a eventos
+
+Un pico candidato puede requerir:
+
+- altura mínima;
+- prominencia;
+- distancia mínima entre picos;
+- ancho plausible;
+- contexto morfológico;
+- consistencia entre canales.
+
+::: {.callout-important}
+Detectar eventos es formular restricciones fisiológicas y temporales. `argmax` solo localiza el valor máximo del intervalo.
+:::
+
+## Intervalos y tasas
+
+Si los eventos ocurren en $t_k$:
+
+$$\Delta t_k=t_k-t_{k-1},\qquad r_k=\frac{1}{\Delta t_k}$$
+
+Para frecuencia cardíaca:
+
+$$HR_k=\frac{60}{RR_k}\quad [\mathrm{latidos/min}]$$
+
+::: {.callout-warning}
+Promediar tasas instantáneas y calcular la tasa a partir del intervalo promedio no producen exactamente el mismo resultado.
+:::
+
+## Código: detección con restricciones
+
+```python
+from scipy.signal import find_peaks
+
+distancia = int(0.30 * fs)
+picos, propiedades = find_peaks(
+    x,
+    distance=distancia,
+    prominence=prominencia_minima
+)
+tiempos = picos / fs
+intervalos = np.diff(tiempos)
+```
+
+::: {.callout-note}
+Los parámetros deben justificarse con fisiología, frecuencia de muestreo y población; no deben copiarse sin validación.
+:::
+
+## Matriz de validación de un detector
+
+| | Evento real | No evento |
+|---|---:|---:|
+| Detectado | verdadero positivo | falso positivo |
+| No detectado | falso negativo | verdadero negativo |
+
+$$\mathrm{Sensibilidad}=\frac{VP}{VP+FN},\qquad
+\mathrm{PPV}=\frac{VP}{VP+FP}$$
+
+::: {.callout-important}
+En detección temporal también importa la tolerancia: una detección debe considerarse correcta solo si cae dentro de una ventana definida alrededor de la referencia.
+:::
+
+## Cierre de la semana 3
+
+- Las operaciones en tiempo deben leerse desde el argumento.
+- Ventanear es multiplicar; desplazar con arreglos puede ser circular.
+- Los rasgos resumen la señal bajo supuestos.
+- Un evento requiere criterios fisiológicos, no solo geométricos.
+- La validación necesita referencia, tolerancia y métricas adecuadas.
+
+::: {.callout-note}
+## Pregunta de salida
+¿Por qué un detector con sensibilidad del 99 % puede ser clínicamente poco útil si su valor predictivo positivo es bajo?
+:::
+
+# Semana 4 · Segmentación, normalización y límites del tiempo {.week-divider background-color="#0B3954"}
+
+## Sesión 7 · Segmentar es definir la unidad de análisis
+
+Formas frecuentes:
+
+- ventanas de longitud fija;
+- ventanas solapadas;
+- segmentos sincronizados con eventos;
+- ciclos fisiológicos completos;
+- épocas definidas por el protocolo.
+
+::: {.callout-important}
+La segmentación determina qué variación queda dentro del ejemplo y qué variación se compara entre ejemplos. Es una decisión analítica, no un trámite.
+:::
+
+## Longitud de ventana: compromiso fundamental
+
+Ventanas cortas:
+
+- mejor localización temporal;
+- menos ciclos observados;
+- descriptores más variables.
+
+Ventanas largas:
+
+- estimaciones más estables;
+- mezclan estados fisiológicos;
+- reducen localización temporal.
+
+::: {.callout-warning}
+No existe una longitud universal. Debe ser compatible con la escala temporal del fenómeno y con la hipótesis de estacionariedad local.
+:::
+
+## Solapamiento aumenta ejemplos, no información independiente
+
+Con longitud $L$ y avance $H$:
+
+$$\text{solapamiento}=1-\frac{H}{L}$$
+
+Si $H=L/2$, el solapamiento es 50 %.
+
+::: {.callout-warning}
+Ventanas vecinas muy solapadas comparten muestras. Si se reparten aleatoriamente entre entrenamiento y prueba, aparece fuga de información.
+:::
+
+## Segmentar por evento conserva contexto fisiológico
+
+Para un evento en $t_k$:
+
+$$x_k(\tau)=x(t_k+\tau),\qquad \tau\in[-T_{pre},T_{post}]$$
+
+Ejemplos:
+
+- épocas EEG alrededor de un estímulo;
+- latidos ECG alineados por onda R;
+- ciclos de marcha alineados por contacto de talón.
+
+::: {.callout-tip}
+Alinear permite comparar morfologías, pero transfiere al análisis el error temporal del detector de eventos.
+:::
+
+## Normalización de amplitud
+
+**Estandarización por segmento:**
+
+$$z[n]=\frac{x[n]-\bar{x}}{s_x}$$
+
+**Escalamiento min–max:**
+
+$$x'[n]=\frac{x[n]-x_{min}}{x_{max}-x_{min}}$$
+
+**Normalización por referencia:** $x'[n]=x[n]/x_{ref}$.
+
+::: {.callout-warning}
+Normalizar cambia la pregunta. La estandarización elimina nivel y escala; puede borrar diferencias fisiológicas relevantes de amplitud.
+:::
+
+## Normalización fisiológica: ventajas y riesgos
+
+Ejemplos:
+
+- EMG como porcentaje de contracción voluntaria de referencia;
+- ciclo de marcha expresado de 0 % a 100 %;
+- presión relativa a línea base;
+- PPG normalizada por componente lenta.
+
+::: {.callout-important}
+Una referencia inestable transmite su error a todos los datos normalizados. Deben registrarse protocolo, repetibilidad y criterio de selección.
+:::
+
+## Evitar fuga de información en normalización
+
+Procedimiento correcto para aprendizaje automático:
+
+1. dividir por sujeto o unidad independiente;
+2. estimar media, desviación u otros parámetros **solo en entrenamiento**;
+3. aplicar esos parámetros sin reajuste a validación y prueba.
+
+::: {.callout-warning}
+Calcular parámetros con todo el conjunto permite que la prueba influya en el preprocesamiento y produce una evaluación optimista.
+:::
+
+## Lista de control de un segmento analizable
+
+- ¿Tiene sello temporal y frecuencia de muestreo?
+- ¿Conserva unidades y calibración?
+- ¿Contiene valores faltantes o saturación?
+- ¿Su longitud está justificada?
+- ¿La etiqueta se definió sin usar información futura?
+- ¿Pertenece a un sujeto ya presente en otro subconjunto?
+
+::: {.callout-tip}
+## Evidencia mínima
+Guardar índices inicial/final, regla de segmentación, parámetros de normalización y relación con el registro original.
+:::
+
+## Sesión 8 · El dominio temporal puede ocultar estructura
+
+Dos señales pueden tener:
+
+- media y RMS similares;
+- amplitud comparable;
+- duración igual;
+
+pero oscilaciones dominantes distintas.
+
+::: {.callout-important}
+El dominio temporal responde bien “cuándo” y “cuánto”. El dominio frecuencial ayuda a responder “a qué ritmos” se distribuye la variación.
+:::
+
+## Frecuencia como tasa de repetición
+
+$$f=\frac{1}{T},\qquad \omega=2\pi f$$
+
+Interpretaciones:
+
+- respiración a 0.25 Hz: un ciclo cada 4 s;
+- oscilación a 10 Hz: diez ciclos por segundo;
+- componente DC: frecuencia 0 Hz, asociada al promedio.
+
+::: {.callout-warning}
+Una frecuencia presente en el registro no identifica por sí sola su origen: puede ser fisiológica, instrumental o artefactual.
+:::
+
+## Una señal compleja puede verse como suma de oscilaciones
+
+Modelo conceptual:
+
+$$x(t)=\sum_k A_k\cos(2\pi f_kt+\phi_k)$$
+
+El análisis frecuencial busca estimar:
+
+- qué frecuencias $f_k$ participan;
+- con qué amplitudes $A_k$;
+- con qué fases $\phi_k$;
+- cómo cambian con el tiempo.
+
+::: {.callout-note}
+La suma de sinusoides no implica que el organismo posea “osciladores puros”; es una base matemática para representar el registro.
+:::
+
+## Tiempo y frecuencia son representaciones complementarias
+
+| Dominio temporal | Dominio frecuencial |
+|---|---|
+| localiza transitorios y eventos | separa ritmos superpuestos |
+| muestra morfología | resume distribución por frecuencia |
+| facilita alineación fisiológica | permite estudiar banda y resonancia |
+| puede ocultar periodicidades débiles | pierde localización temporal global |
+
+::: {.callout-important}
+No existe un dominio “mejor”. La elección depende de la pregunta y de si la señal puede considerarse estacionaria en el intervalo.
+:::
+
+## Estacionariedad: el supuesto que suele quedar oculto
+
+Una señal es estacionaria en sentido amplio si, idealmente:
+
+$$\mathbb{E}\{x(t)\}=\mu\quad\text{constante}$$
+
+$$R_x(t_1,t_2)=R_x(t_1-t_2)$$
+
+En práctica se habla de **estacionariedad local** en ventanas donde propiedades relevantes cambian poco.
+
+::: {.callout-warning}
+Un único espectro global puede mezclar reposo, movimiento, transición y artefacto, produciendo una descripción sin estado fisiológico claro.
+:::
+
+## Preparación responsable antes del espectro
+
+1. verificar frecuencia de muestreo y tiempo;
+2. revisar saturación y faltantes;
+3. seleccionar un segmento coherente;
+4. decidir si retirar media o tendencia;
+5. documentar unidades y preprocesamiento;
+6. anticipar duración y resolución requeridas.
+
+::: {.callout-tip}
+El espectro no corrige una adquisición deficiente. Solo reorganiza la información contenida en el registro disponible.
+:::
+
+## Verificación de la semana 4
+
+Se registran 60 s de PPG durante una transición de reposo a ejercicio.
+
+1. ¿Sería defendible un único espectro de 60 s?
+2. ¿Qué ventanas usaría y por qué?
+3. ¿Qué canal auxiliar ayudaría a identificar artefactos?
+4. ¿Qué normalización conservaría información de amplitud?
+5. ¿Cómo evitaría fuga entre entrenamiento y prueba?
+
+::: {.callout-tip}
+## Criterio de logro
+La propuesta debe enlazar escala fisiológica, estacionariedad local, dependencia entre ventanas y objetivo del análisis.
+:::
+
+# Semana 5 · De la periodicidad al espectro {.week-divider background-color="#0B3954"}
+
+## Sesión 9 · Una señal periódica se repite
+
+$$x(t+T_0)=x(t)$$
+
+El menor $T_0>0$ que satisface la igualdad es el periodo fundamental. Su frecuencia fundamental es:
+
+$$f_0=\frac{1}{T_0},\qquad \omega_0=\frac{2\pi}{T_0}$$
+
+::: {.callout-warning}
+Que un patrón parezca repetirse durante pocos ciclos no demuestra periodicidad matemática. Las bioseñales suelen ser cuasiperiódicas.
+:::
+
+## Armónicos: múltiplos de la frecuencia fundamental
+
+$$f_k=kf_0,\qquad k\in\mathbb{Z}$$
+
+- $k=0$: componente DC.
+- $k=1$: fundamental.
+- $k=2,3,\ldots$: armónicos.
+
+::: {.callout-important}
+La frecuencia fundamental describe repetición; los armónicos permiten reconstruir detalles de forma dentro de cada periodo.
+:::
+
+## Serie trigonométrica de Fourier
+
+$$x(t)=a_0+\sum_{k=1}^{\infty}
+\left[a_k\cos(k\omega_0t)+b_k\sin(k\omega_0t)\right]$$
+
+Los coeficientes miden la proyección de la señal sobre cada senoide armónica.
+
+::: {.callout-important}
+La serie no “descubre” componentes físicas aisladas: construye una representación completa en una base ortogonal.
+:::
+
+## Los coeficientes cuantifican cada armónico
+
+$$a_0=\frac{1}{T_0}\int_{T_0}x(t)\,dt$$
+
+$$a_k=\frac{2}{T_0}\int_{T_0}x(t)\cos(k\omega_0t)\,dt$$
+
+$$b_k=\frac{2}{T_0}\int_{T_0}x(t)\sin(k\omega_0t)\,dt$$
+
+**Convención:** algunos textos escriben $a_0/2$; debe conservarse una notación consistente.
+
+## Forma compleja de la serie
+
+$$x(t)=\sum_{k=-\infty}^{\infty}c_ke^{jk\omega_0t}$$
+
+$$c_k=\frac{1}{T_0}\int_{T_0}x(t)e^{-jk\omega_0t}\,dt$$
+
+Relación con la forma trigonométrica para $k>0$:
+
+$$c_k=\frac{a_k-jb_k}{2},\qquad c_{-k}=c_k^*$$
+
+::: {.callout-important}
+En señales reales, $c_{-k}=c_k^*$ vincula frecuencias positivas y negativas.
+:::
+
+## Simetría reduce el trabajo
+
+- Si $x(t)$ es **par**, $x(-t)=x(t)$: desaparecen los términos seno.
+- Si $x(t)$ es **impar**, $x(-t)=-x(t)$: desaparecen DC y términos coseno.
+- Si no hay simetría, se requieren ambos conjuntos.
+
+::: {.callout-tip}
+Antes de integrar, inspeccione simetría y elija un intervalo de longitud $T_0$ que simplifique el cálculo.
+:::
+
+## Ejemplo conceptual: pulso periódico
+
+Una forma con transiciones abruptas requiere muchos armónicos para aproximarse.
+
+- pocos armónicos: conserva tendencia y forma gruesa;
+- más armónicos: mejora bordes y detalles;
+- cerca de discontinuidades persiste sobreoscilación de Gibbs.
+
+::: {.callout-warning}
+Agregar armónicos no elimina completamente el sobreimpulso porcentual en una discontinuidad; estrecha la región donde ocurre.
+:::
+
+## Parseval conecta tiempo y armónicos
+
+Para la serie compleja:
+
+$$\frac{1}{T_0}\int_{T_0}|x(t)|^2dt
+=\sum_{k=-\infty}^{\infty}|c_k|^2$$
+
+::: {.callout-important}
+La potencia media calculada en el tiempo coincide con la suma de contribuciones cuadráticas de los coeficientes espectrales.
+:::
+
+## Reconstrucción truncada
+
+$$x_K(t)=\sum_{k=-K}^{K}c_ke^{jk\omega_0t}$$
+
+Preguntas de interpretación:
+
+- ¿qué rasgos morfológicos aparecen primero?
+- ¿cuántos armónicos se necesitan para la pregunta biomédica?
+- ¿el error se distribuye uniformemente?
+
+::: {.callout-note}
+La mejor reconstrucción matemática no siempre es la representación más útil. Puede bastar una banda limitada para un rasgo específico.
+:::
+
+## Sesión 10 · De la serie a la transformada de Fourier
+
+Al aumentar el periodo $T_0$, el espaciado armónico $\Delta f=1/T_0$ disminuye. En el límite aparece un continuo de frecuencias:
+
+$$X(f)=\int_{-\infty}^{\infty}x(t)e^{-j2\pi ft}\,dt$$
+
+Transformada inversa:
+
+$$x(t)=\int_{-\infty}^{\infty}X(f)e^{j2\pi ft}\,df$$
+
+::: {.callout-important}
+La transformada representa señales aperiódicas mediante un continuo de frecuencias complejas.
+:::
+
+## Magnitud y fase cumplen funciones distintas
+
+$$X(f)=|X(f)|e^{j\angle X(f)}$$
+
+- $|X(f)|$: contribución relativa por frecuencia.
+- $\angle X(f)$: alineación temporal de esas componentes.
+
+::: {.callout-warning}
+La magnitud sola no determina la morfología temporal. Dos señales pueden compartir magnitud espectral y diferir notablemente por su fase.
+:::
+
+## Simetría para señales reales
+
+Si $x(t)\in\mathbb{R}$:
+
+$$X(-f)=X^*(f)$$
+
+Por tanto:
+
+$$|X(-f)|=|X(f)|,\qquad \angle X(-f)=-\angle X(f)$$
+
+::: {.callout-note}
+La fase puede presentar saltos por envoltura en $(-\pi,\pi]$. La aparente discontinuidad no siempre representa un cambio físico.
+:::
+
+## Pares esenciales de transformada
+
+| Señal | Transformada |
+|---|---|
+| $\delta(t)$ | $1$ |
+| $1$ | $\delta(f)$ |
+| $e^{j2\pi f_0t}$ | $\delta(f-f_0)$ |
+| $\cos(2\pi f_0t)$ | $\tfrac12[\delta(f-f_0)+\delta(f+f_0)]$ |
+| $\mathrm{rect}(t/T)$ | $T\,\mathrm{sinc}(Tf)$ |
+
+::: {.callout-warning}
+La definición de $\mathrm{sinc}$ cambia entre disciplinas. Aquí se asume $\mathrm{sinc}(u)=\sin(\pi u)/(\pi u)$.
+:::
+
+## Duración y ancho de banda se compensan
+
+Un pulso más corto en el tiempo produce una transformada más extendida en frecuencia. Conceptualmente:
+
+$$\mathrm{rect}\left(\frac{t}{T}\right)
+\longleftrightarrow T\,\mathrm{sinc}(Tf)$$
+
+Al disminuir $T$, aumentan las frecuencias necesarias para representar la transición rápida.
+
+::: {.callout-important}
+Cambios temporales rápidos exigen contenido de alta frecuencia; variaciones lentas se concentran cerca de frecuencia cero.
+:::
+
+## Desplazamiento temporal modifica fase, no magnitud
+
+Si:
+
+$$x(t)\longleftrightarrow X(f)$$
+
+entonces:
+
+$$x(t-t_0)\longleftrightarrow X(f)e^{-j2\pi ft_0}$$
+
+::: {.callout-tip}
+Un retardo puro conserva $|X(f)|$ y añade fase lineal $-2\pi ft_0$. Esta propiedad explica por qué la fase contiene información de localización temporal.
+:::
+
+## Escalamiento temporal modifica el espectro
+
+$$x(at)\longleftrightarrow \frac{1}{|a|}X\left(\frac{f}{a}\right)$$
+
+- compresión temporal ($|a|>1$): expansión frecuencial;
+- expansión temporal ($0<|a|<1$): compresión frecuencial;
+- el factor $1/|a|$ preserva la relación integral correspondiente.
+
+::: {.callout-warning}
+No omitir el factor de amplitud. El escalamiento afecta simultáneamente eje frecuencial y magnitud.
+:::
+
+## Linealidad y superposición espectral
+
+$$a\,x_1(t)+b\,x_2(t)
+\longleftrightarrow a\,X_1(f)+b\,X_2(f)$$
+
+Aplicación:
+
+- una interferencia sinusoidal sumada a un ECG aparece como componentes estrechas;
+- una deriva lenta aporta contenido cerca de 0 Hz;
+- actividad muscular superpuesta puede extender contenido en una banda amplia.
+
+::: {.callout-important}
+Ver una banda no prueba un origen. El espectro debe interpretarse junto con el montaje, el tiempo y canales de referencia.
+:::
+
+## Código: aproximación discreta para explorar
+
+```python
+import numpy as np
+
+x0 = x - np.mean(x)
+N = len(x0)
+X = np.fft.rfft(x0)
+f = np.fft.rfftfreq(N, d=1/fs)
+magnitud = np.abs(X) / N
+fase = np.angle(X)
+```
+
+::: {.callout-warning}
+La FFT no es idéntica a la transformada continua. Escalamiento, ventana, duración, muestreo y convención deben declararse.
+:::
+
+## Lectura biomédica de un espectro
+
+Preguntas en orden:
+
+1. ¿qué segmento y estado fisiológico representa?
+2. ¿se retiraron media o tendencia?
+3. ¿qué resolución permite la duración?
+4. ¿qué componentes pueden ser interferencia?
+5. ¿qué bandas se justifican fisiológicamente?
+6. ¿la fase es interpretable con la referencia temporal disponible?
+
+::: {.callout-tip}
+Un pico espectral es una observación matemática. Convertirlo en evidencia biomédica requiere un argumento adicional.
+:::
+
+## Ejercicio integrador de la semana 5
+
+Una señal respiratoria de 40 s contiene una oscilación dominante cercana a 0.25 Hz y una deriva lenta.
+
+1. ¿Cuántos ciclos respiratorios se observan aproximadamente?
+2. ¿Dónde aparecería la deriva en frecuencia?
+3. ¿Qué cambia si se desplaza el registro 2 s?
+4. ¿Qué información se pierde al observar solo magnitud?
+5. ¿Por qué la señal real presenta simetría espectral bilateral?
+
+::: {.callout-tip}
+## Criterio de logro
+Debe conectar periodo, componente DC/baja frecuencia, fase lineal y simetría conjugada.
+:::
+
+# Síntesis y estudio autónomo {.week-divider background-color="#0B3954"}
+
+## La cadena completa de razonamiento
+
+$$\begin{aligned}
+\text{pregunta}&\rightarrow\text{fenómeno}\rightarrow\text{mensurando}\rightarrow\text{registro}\\
+&\rightarrow\text{segmento}\rightarrow\text{representación}\rightarrow\text{rasgo}\rightarrow\text{inferencia}
+\end{aligned}$$
+
+::: {.callout-important}
+La calidad del resultado está limitada por el eslabón más débil. Un método espectral sofisticado no compensa una pregunta ambigua, un sensor inadecuado o una segmentación sesgada.
+:::
+
+## Errores conceptuales que deben evitarse
+
+1. tratar bioseñal y fenómeno fisiológico como equivalentes;
+2. confundir índice de muestra con tiempo;
+3. interpretar media cero como ausencia de actividad;
+4. llamar “ruido” a toda variabilidad inesperada;
+5. usar picos sin restricciones fisiológicas;
+6. normalizar antes de separar entrenamiento y prueba;
+7. afirmar que la magnitud espectral reconstruye por sí sola la señal;
+8. interpretar una banda como diagnóstico sin validación.
+
+## Autoevaluación acumulativa
+
+Puede explicar, sin consultar notas:
+
+- qué mide realmente un ECG;
+- diferencia entre ruido, interferencia y artefacto;
+- relación entre RMS, media y varianza;
+- efecto de $x(at-b)$;
+- criterios de un detector de eventos;
+- cómo elegir una ventana;
+- por qué aparecen armónicos;
+- qué aportan magnitud y fase.
+
+::: {.callout-note}
+Si una explicación no incluye unidades, supuestos y significado fisiológico, todavía está incompleta.
+:::
+
+## Actividad integradora sugerida
+
+Seleccione un registro biomédico corto y documente:
+
+1. fenómeno, mensurando, sensor y unidades;
+2. fuentes plausibles de ruido/artefacto;
+3. frecuencia de muestreo y duración;
+4. segmentación y normalización justificadas;
+5. cinco descriptores temporales;
+6. eventos con criterios explícitos;
+7. magnitud y fase espectral;
+8. interpretación y limitaciones.
+
+::: {.callout-tip}
+## Producto esperado
+Un cuaderno reproducible en Python que permita rastrear cada conclusión hasta el segmento original.
+:::
+
+## Referencias y alcance
+
+Contenido alineado con el programa de **Sistemas y Señales Biomédicos**, semanas 1–5, y con la progresión conceptual del texto guía [@semmlow2018]. Para profundizar en análisis de bioseñales y casos aplicados, consultar [@rangayyan2015]; para formulación clásica de señales y sistemas, [@oppenheim1997].
+
+::: {.callout-warning}
+Estas diapositivas son material de estudio, no una guía clínica. Los ejemplos ilustran conceptos de ingeniería y no establecen criterios diagnósticos.
+:::
+
+## Cierre: criterio de dominio
+
+Al finalizar, el estudiante debe ser capaz de defender esta afirmación:
+
+> Un resultado cuantitativo sobre una bioseñal es válido solo si conserva la conexión entre la matemática, la adquisición y el fenómeno fisiológico.
+
+::: {.callout-important}
+La meta no es calcular más descriptores, sino construir inferencias técnicamente trazables y biomédicamente prudentes.
+:::
+
+## Referencias {.allowframebreaks}
+
+::: {#refs}
+:::
