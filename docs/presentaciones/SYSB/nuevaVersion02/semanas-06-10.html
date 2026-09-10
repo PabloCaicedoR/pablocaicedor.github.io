@@ -1,0 +1,4138 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Ph. D. Pablo Eduardo Caicedo-Rodríguez">
+
+<title>Sistemas y Señales Biomédicos – BioForja</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../recursos/imagenes/generales/bioforja_icon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-c40e139f9c4114c612eb61de435499b9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No se han encontrado resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../recursos/estilos/styles_site.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../.././recursos/imagenes/generales/bioforja_icon.svg" alt="" class="navbar-logo light-content">
+    <img src="../../.././recursos/imagenes/generales/bioforja_icon.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Buscar"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Navegación de palanca" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div class="quarto-alternate-formats"><h2>Otros formatos</h2><ul><li><a href="semanas-06-10.html"><i class="bi bi-file-slides"></i>RevealJS</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Sistemas y Señales Biomédicos</h1>
+<p class="subtitle lead">Del Espectro Finito hasta los Sistemas LTI</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Autor/a</div>
+    <div class="quarto-title-meta-contents">
+             <p>Ph. D. Pablo Eduardo Caicedo-Rodríguez </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="cómo-estudiar-las-semanas-610" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Cómo estudiar las semanas 6–10</h1>
+<section id="del-espectro-ideal-a-decisiones-reproducibles" class="level2">
+<h2 class="anchored" data-anchor-id="del-espectro-ideal-a-decisiones-reproducibles">Del espectro ideal a decisiones reproducibles</h2>
+<p>Al terminar la semana 10, el estudiante debe poder:</p>
+<ol type="1">
+<li>predecir el efecto de operaciones temporales sobre la transformada de Fourier;</li>
+<li>calcular e interpretar DFT y FFT con escalamiento explícito;</li>
+<li>explicar resolución frecuencial, fuga y efecto de las ventanas;</li>
+<li>relacionar adquisición, muestreo y almacenamiento con el espectro observado;</li>
+<li>estimar PSD mediante periodograma y Welch;</li>
+<li>analizar señales no estacionarias con STFT;</li>
+<li>verificar linealidad, invariancia temporal y respuesta al impulso.</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Importante</span>Idea conductora
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El espectro calculado depende tanto de la señal fisiológica como de la adquisición, la duración observada y el estimador seleccionado.</p>
+</div>
+</div>
+</section>
+<section id="mapa-de-las-diez-sesiones" class="level2">
+<h2 class="anchored" data-anchor-id="mapa-de-las-diez-sesiones">Mapa de las diez sesiones</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Semana</th>
+<th>Sesión 1</th>
+<th>Sesión 2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>6</td>
+<td>Propiedades de Fourier</td>
+<td>DFT y FFT</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>Resolución, fuga y ventanas</td>
+<td>Cadena de adquisición</td>
+</tr>
+<tr class="odd">
+<td>8</td>
+<td>Muestreo, Nyquist y aliasing</td>
+<td>Potencia, PSD y periodograma</td>
+</tr>
+<tr class="even">
+<td>9</td>
+<td>Promediado y Welch</td>
+<td>No estacionariedad y STFT</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>Ventanas tiempo-frecuencia</td>
+<td>Sistemas LTI y respuesta al impulso</td>
+</tr>
+</tbody>
+</table>
+<p>Cada sesión integra fundamento matemático, interpretación biomédica, ejemplo computacional y verificación conceptual.</p>
+</section>
+<section id="convenciones-del-bloque" class="level2">
+<h2 class="anchored" data-anchor-id="convenciones-del-bloque">Convenciones del bloque</h2>
+<p>Transformada continua en frecuencia ordinaria:</p>
+<p><span class="math display">\[X(f)=\int_{-\infty}^{\infty}x(t)e^{-j2\pi ft}\,dt\]</span></p>
+<p>DFT de <span class="math inline">\(N\)</span> muestras:</p>
+<p><span class="math display">\[X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N}\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Las constantes de normalización cambian entre textos y bibliotecas. Toda interpretación cuantitativa debe declarar la convención utilizada.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="semana-6-propiedades-de-fourier-y-dft" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Semana 6 · Propiedades de Fourier y DFT</h1>
+<section id="sesión-11-las-propiedades-permiten-razonar-sin-reintegrar" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-11-las-propiedades-permiten-razonar-sin-reintegrar">Sesión 11 · Las propiedades permiten razonar sin reintegrar</h2>
+<p>Si conocemos el par</p>
+<p><span class="math display">\[x(t)\longleftrightarrow X(f),\]</span></p>
+<p>podemos anticipar la transformada de una señal modificada mediante propiedades algebraicas.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Importante</span>Propósito
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Las propiedades no reemplazan la interpretación. Permiten conectar una operación en tiempo con su consecuencia en magnitud y fase.</p>
+</div>
+</div>
+</section>
+<section id="linealidad-conserva-la-combinación" class="level2">
+<h2 class="anchored" data-anchor-id="linealidad-conserva-la-combinación">Linealidad conserva la combinación</h2>
+<p>Si</p>
+<p><span class="math display">\[x_1(t)\longleftrightarrow X_1(f),\qquad x_2(t)\longleftrightarrow X_2(f),\]</span></p>
+<p>entonces</p>
+<p><span class="math display">\[a x_1(t)+b x_2(t)\longleftrightarrow aX_1(f)+bX_2(f).\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>En un ECG con deriva e interferencia de red, el espectro observado combina las transformadas de cada componente solo si el modelo aditivo resulta razonable.</p>
+</div>
+</div>
+</section>
+<section id="linealidad-no-separa-fuentes-automáticamente" class="level2">
+<h2 class="anchored" data-anchor-id="linealidad-no-separa-fuentes-automáticamente">Linealidad no separa fuentes automáticamente</h2>
+<p>Modelo aditivo:</p>
+<p><span class="math display">\[x_{obs}(t)=s(t)+i(t)+a(t).\]</span></p>
+<ul>
+<li><span class="math inline">\(s(t)\)</span>: señal de interés.</li>
+<li><span class="math inline">\(i(t)\)</span>: interferencia estructurada.</li>
+<li><span class="math inline">\(a(t)\)</span>: artefacto.</li>
+</ul>
+<p>Entonces <span class="math inline">\(X_{obs}(f)=S(f)+I(f)+A(f)\)</span>.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La suma espectral puede producir cancelación por fase. La magnitud de la suma no equivale a sumar magnitudes.</p>
+</div>
+</div>
+</section>
+<section id="un-retraso-añade-fase-lineal" class="level2">
+<h2 class="anchored" data-anchor-id="un-retraso-añade-fase-lineal">Un retraso añade fase lineal</h2>
+<p><span class="math display">\[x(t-t_0)\longleftrightarrow X(f)e^{-j2\pi ft_0}\]</span></p>
+<p>Por tanto:</p>
+<p><span class="math display">\[|X_{ret}(f)|=|X(f)|,\]</span></p>
+<p><span class="math display">\[\angle X_{ret}(f)=\angle X(f)-2\pi ft_0.\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un retraso puro conserva la magnitud. La información temporal aparece en la pendiente de fase.</p>
+</div>
+</div>
+</section>
+<section id="la-fase-lineal-representa-un-retardo-constante" class="level2">
+<h2 class="anchored" data-anchor-id="la-fase-lineal-representa-un-retardo-constante">La fase lineal representa un retardo constante</h2>
+<p>El retardo de grupo se define como</p>
+<p><span class="math display">\[\tau_g(f)=-\frac{1}{2\pi}\frac{d\phi(f)}{df}.\]</span></p>
+<p>Si <span class="math inline">\(\phi(f)=-2\pi ft_0\)</span>, entonces <span class="math inline">\(\tau_g(f)=t_0\)</span>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Cuando todas las frecuencias sufren el mismo retardo, la forma temporal puede conservarse. Una fase no lineal puede deformar morfologías como el complejo QRS.</p>
+</div>
+</div>
+</section>
+<section id="desplazar-en-frecuencia-equivale-a-modular" class="level2">
+<h2 class="anchored" data-anchor-id="desplazar-en-frecuencia-equivale-a-modular">Desplazar en frecuencia equivale a modular</h2>
+<p><span class="math display">\[x(t)e^{j2\pi f_0t}\longleftrightarrow X(f-f_0).\]</span></p>
+<p>Para modulación real:</p>
+<p><span class="math display">\[x(t)\cos(2\pi f_0t)
+\longleftrightarrow \frac{1}{2}X(f-f_0)+\frac{1}{2}X(f+f_0).\]</span></p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La multiplicación por una portadora crea copias desplazadas del espectro. Este principio aparece en instrumentación y comunicaciones biomédicas.</p>
+</div>
+</div>
+</section>
+<section id="el-escalamiento-temporal-modifica-ancho-y-amplitud" class="level2">
+<h2 class="anchored" data-anchor-id="el-escalamiento-temporal-modifica-ancho-y-amplitud">El escalamiento temporal modifica ancho y amplitud</h2>
+<p><span class="math display">\[x(at)\longleftrightarrow \frac{1}{|a|}X\left(\frac{f}{a}\right).\]</span></p>
+<ul>
+<li><span class="math inline">\(|a|&gt;1\)</span>: la señal se comprime en tiempo y su espectro se expande.</li>
+<li><span class="math inline">\(0&lt;|a|&lt;1\)</span>: la señal se expande en tiempo y su espectro se comprime.</li>
+<li><span class="math inline">\(a&lt;0\)</span>: también ocurre inversión temporal.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El factor <span class="math inline">\(1/|a|\)</span> forma parte de la propiedad. Omitirlo cambia la escala de la transformada.</p>
+</div>
+</div>
+</section>
+<section id="derivar-resalta-componentes-rápidas" class="level2">
+<h2 class="anchored" data-anchor-id="derivar-resalta-componentes-rápidas">Derivar resalta componentes rápidas</h2>
+<p><span class="math display">\[\frac{dx(t)}{dt}\longleftrightarrow j2\pi fX(f).\]</span></p>
+<p>Consecuencias:</p>
+<ul>
+<li>frecuencia cero queda anulada;</li>
+<li>las componentes altas reciben mayor ponderación;</li>
+<li>el ruido de alta frecuencia puede amplificarse.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un diferenciador ayuda a localizar cambios rápidos, pero puede deteriorar una bioseñal si no se controla el ruido.</p>
+</div>
+</div>
+</section>
+<section id="integrar-favorece-variaciones-lentas" class="level2">
+<h2 class="anchored" data-anchor-id="integrar-favorece-variaciones-lentas">Integrar favorece variaciones lentas</h2>
+<p>De forma conceptual, para condiciones adecuadas:</p>
+<p><span class="math display">\[\int_{-\infty}^{t}x(\tau)d\tau
+\longleftrightarrow \frac{X(f)}{j2\pi f}+\text{término en }\delta(f).\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La singularidad en <span class="math inline">\(f=0\)</span> obliga a considerar media, condiciones iniciales y convergencia. La integración no debe aplicarse como una división numérica directa por cero.</p>
+</div>
+</div>
+</section>
+<section id="la-convolución-se-convierte-en-multiplicación" class="level2">
+<h2 class="anchored" data-anchor-id="la-convolución-se-convierte-en-multiplicación">La convolución se convierte en multiplicación</h2>
+<p><span class="math display">\[y(t)=x(t)*h(t)\]</span></p>
+<p><span class="math display">\[Y(f)=X(f)H(f).\]</span></p>
+<p>Interpretación:</p>
+<ul>
+<li><span class="math inline">\(X(f)\)</span> describe el contenido de la entrada;</li>
+<li><span class="math inline">\(H(f)\)</span> describe la acción frecuencial del sistema;</li>
+<li><span class="math inline">\(Y(f)\)</span> conserva, atenúa o cambia la fase de cada componente.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El teorema de convolución conecta el análisis de señales con el análisis de sistemas LTI.</p>
+</div>
+</div>
+</section>
+<section id="multiplicar-en-tiempo-produce-convolución-espectral" class="level2">
+<h2 class="anchored" data-anchor-id="multiplicar-en-tiempo-produce-convolución-espectral">Multiplicar en tiempo produce convolución espectral</h2>
+<p><span class="math display">\[y(t)=x(t)w(t)\]</span></p>
+<p><span class="math display">\[Y(f)=X(f)*W(f).\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Seleccionar un segmento mediante una ventana mezcla el espectro de la señal con el de la ventana. Esta es la base matemática de la fuga espectral.</p>
+</div>
+</div>
+</section>
+<section id="dualidad-tiempo-y-frecuencia-intercambian-estructuras" class="level2">
+<h2 class="anchored" data-anchor-id="dualidad-tiempo-y-frecuencia-intercambian-estructuras">Dualidad: tiempo y frecuencia intercambian estructuras</h2>
+<p>Bajo la convención empleada:</p>
+<p><span class="math display">\[x(t)\longleftrightarrow X(f)\]</span></p>
+<p>implica</p>
+<p><span class="math display">\[X(t)\longleftrightarrow x(-f).\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La dualidad ayuda a generar pares de transformada, pero requiere atención a signos y factores según la convención.</p>
+</div>
+</div>
+</section>
+<section id="tabla-de-predicción-rápida" class="level2">
+<h2 class="anchored" data-anchor-id="tabla-de-predicción-rápida">Tabla de predicción rápida</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Operación temporal</th>
+<th>Efecto principal en frecuencia</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>suma ponderada</td>
+<td>suma compleja de espectros</td>
+</tr>
+<tr class="even">
+<td>retraso</td>
+<td>fase lineal</td>
+</tr>
+<tr class="odd">
+<td>compresión temporal</td>
+<td>expansión espectral</td>
+</tr>
+<tr class="even">
+<td>derivada</td>
+<td>ponderación por <span class="math inline">\(j2\pi f\)</span></td>
+</tr>
+<tr class="odd">
+<td>convolución</td>
+<td>producto de espectros</td>
+</tr>
+<tr class="even">
+<td>ventaneo</td>
+<td>convolución con <span class="math inline">\(W(f)\)</span></td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Antes de calcular, prediga qué aspectos deberían cambiar y cuáles deberían conservarse.</p>
+</div>
+</div>
+</section>
+<section id="caso-biomédico-tres-modificaciones-del-ecg" class="level2">
+<h2 class="anchored" data-anchor-id="caso-biomédico-tres-modificaciones-del-ecg">Caso biomédico: tres modificaciones del ECG</h2>
+<p>Considere un latido ideal <span class="math inline">\(x(t)\)</span>.</p>
+<ol type="1">
+<li><span class="math inline">\(x(t-0.2)\)</span> conserva magnitud y añade fase lineal.</li>
+<li><span class="math inline">\(x(2t)\)</span> dura la mitad y extiende el contenido frecuencial.</li>
+<li><span class="math inline">\(dx/dt\)</span> enfatiza las pendientes rápidas del QRS.</li>
+</ol>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Ninguna operación garantiza mejorar detección o diagnóstico. La utilidad depende del objetivo y de la contaminación presente.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-11" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-11">Verificación de la sesión 11</h2>
+<p>Para <span class="math inline">\(y(t)=3x(2t-4)\)</span>:</p>
+<ol type="1">
+<li>reescriba el argumento para identificar escalamiento y retraso;</li>
+<li>obtenga <span class="math inline">\(Y(f)\)</span> a partir de <span class="math inline">\(X(f)\)</span>;</li>
+<li>indique qué ocurre con el ancho espectral;</li>
+<li>determine si la fase cambia por el desplazamiento.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La solución debe incluir el factor de amplitud, el escalamiento frecuencial y la fase asociada al retardo efectivo.</p>
+</div>
+</div>
+</section>
+<section id="sesión-12-la-dft-analiza-un-bloque-finito" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-12-la-dft-analiza-un-bloque-finito">Sesión 12 · La DFT analiza un bloque finito</h2>
+<p>La DFT opera sobre <span class="math inline">\(N\)</span> muestras:</p>
+<p><span class="math display">\[X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N},\qquad k=0,\ldots,N-1.\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La DFT produce coeficientes de una representación discreta y periódica. No entrega un continuo de frecuencias.</p>
+</div>
+</div>
+</section>
+<section id="la-transformada-inversa-reconstruye-el-bloque" class="level2">
+<h2 class="anchored" data-anchor-id="la-transformada-inversa-reconstruye-el-bloque">La transformada inversa reconstruye el bloque</h2>
+<p><span class="math display">\[x[n]=\frac{1}{N}\sum_{k=0}^{N-1}X[k]e^{j2\pi kn/N}.\]</span></p>
+<p>La DFT y la IDFT forman un par exacto salvo error numérico.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Esta convención asigna el factor <span class="math inline">\(1/N\)</span> a la inversa. Otras convenciones reparten la normalización entre ambas transformadas.</p>
+</div>
+</div>
+</section>
+<section id="cada-índice-corresponde-a-una-frecuencia" class="level2">
+<h2 class="anchored" data-anchor-id="cada-índice-corresponde-a-una-frecuencia">Cada índice corresponde a una frecuencia</h2>
+<p>Para muestreo uniforme a <span class="math inline">\(f_s\)</span>:</p>
+<p><span class="math display">\[f_k=\frac{k}{N}f_s,\qquad \Delta f=\frac{f_s}{N}=\frac{1}{T}.\]</span></p>
+<p>donde <span class="math inline">\(T=N/f_s\)</span> es la duración.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La separación entre bins depende de la duración observada. Aumentar <span class="math inline">\(f_s\)</span> sin aumentar <span class="math inline">\(N\)</span> no mejora la resolución frecuencial.</p>
+</div>
+</div>
+</section>
+<section id="los-índices-superiores-representan-frecuencias-negativas" class="level2">
+<h2 class="anchored" data-anchor-id="los-índices-superiores-representan-frecuencias-negativas">Los índices superiores representan frecuencias negativas</h2>
+<p>Para una DFT bilateral:</p>
+<p><span class="math display">\[f_k=\begin{cases}
+kf_s/N, &amp; 0\leq k\leq N/2,\\
+(k-N)f_s/N, &amp; N/2&lt;k&lt;N.
+\end{cases}\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>np.fft.fftfreq</code> construye este eje y evita asignaciones manuales incorrectas.</p>
+</div>
+</div>
+</section>
+<section id="señales-reales-poseen-simetría-conjugada" class="level2">
+<h2 class="anchored" data-anchor-id="señales-reales-poseen-simetría-conjugada">Señales reales poseen simetría conjugada</h2>
+<p>Si <span class="math inline">\(x[n]\in\mathbb{R}\)</span>:</p>
+<p><span class="math display">\[X[N-k]=X^*[k].\]</span></p>
+<p>Por tanto, la mitad no negativa contiene información suficiente, con cuidado especial en DC y Nyquist.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>rfft</code> calcula solo las frecuencias no negativas de una entrada real y reduce costo y almacenamiento.</p>
+</div>
+</div>
+</section>
+<section id="la-fft-es-un-algoritmo" class="level2">
+<h2 class="anchored" data-anchor-id="la-fft-es-un-algoritmo">La FFT es un algoritmo</h2>
+<ul>
+<li>DFT: transformación matemática.</li>
+<li>FFT: familia de algoritmos que calcula la DFT eficientemente.</li>
+<li>La FFT no cambia bins, resolución, fuga ni significado físico.</li>
+</ul>
+<p>Complejidad aproximada:</p>
+<p><span class="math display">\[\mathcal{O}(N^2)\quad\text{frente a}\quad\mathcal{O}(N\log N).\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una FFT más rápida no corrige un segmento mal elegido ni una frecuencia de muestreo inadecuada.</p>
+</div>
+</div>
+</section>
+<section id="la-dft-supone-extensión-periódica-del-bloque" class="level2">
+<h2 class="anchored" data-anchor-id="la-dft-supone-extensión-periódica-del-bloque">La DFT supone extensión periódica del bloque</h2>
+<p>El bloque <span class="math inline">\(x[0],\ldots,x[N-1]\)</span> se interpreta como un periodo de una secuencia periódica.</p>
+<p>Si los extremos no enlazan suavemente, la repetición introduce discontinuidades.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La fuga espectral surge porque el bloque finito y su extensión periódica rara vez contienen un número entero de ciclos.</p>
+</div>
+</div>
+</section>
+<section id="magnitud-bilateral-y-unilateral" class="level2">
+<h2 class="anchored" data-anchor-id="magnitud-bilateral-y-unilateral">Magnitud bilateral y unilateral</h2>
+<p>Con <span class="math inline">\(X[k]=\mathrm{DFT}\{x[n]\}\)</span>:</p>
+<p><span class="math display">\[A_{2}[k]=\frac{|X[k]|}{N}.\]</span></p>
+<p>Para espectro unilateral de una señal real, se duplican los bins interiores:</p>
+<p><span class="math display">\[A_{1}[k]=2A_{2}[k],\]</span></p>
+<p>excepto DC y, si existe, Nyquist.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Duplicar todos los bins produce una amplitud incorrecta en los extremos del espectro.</p>
+</div>
+</div>
+</section>
+<section id="la-fase-necesita-una-referencia-de-amplitud" class="level2">
+<h2 class="anchored" data-anchor-id="la-fase-necesita-una-referencia-de-amplitud">La fase necesita una referencia de amplitud</h2>
+<p><span class="math display">\[\phi[k]=\operatorname{angle}(X[k]).\]</span></p>
+<p>En bins donde <span class="math inline">\(|X[k]|\)</span> es casi cero, la fase resulta numéricamente inestable.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La fase debe interpretarse solo donde la magnitud o coherencia aporten evidencia suficiente.</p>
+</div>
+</div>
+</section>
+<section id="convolución-circular-y-periodicidad" class="level2">
+<h2 class="anchored" data-anchor-id="convolución-circular-y-periodicidad">Convolución circular y periodicidad</h2>
+<p>La multiplicación de DFT corresponde a convolución circular:</p>
+<p><span class="math display">\[\mathrm{IDFT}\{X[k]H[k]\}=x[n]\circledast h[n].\]</span></p>
+<p>Para obtener convolución lineal sin solapamiento circular, se usa relleno con ceros hasta al menos <span class="math inline">\(N_x+N_h-1\)</span>.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El relleno evita plegamiento circular en convolución, pero no añade información espectral al registro.</p>
+</div>
+</div>
+</section>
+<section id="código-eje-y-espectro-unilateral" class="level2">
+<h2 class="anchored" data-anchor-id="código-eje-y-espectro-unilateral">Código: eje y espectro unilateral</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>x0 <span class="op">=</span> x <span class="op">-</span> np.mean(x)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="bu">len</span>(x0)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.fft.rfft(x0)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> np.fft.rfftfreq(N, d<span class="op">=</span><span class="dv">1</span><span class="op">/</span>fs)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.<span class="bu">abs</span>(X) <span class="op">/</span> N</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> N <span class="op">&gt;</span> <span class="dv">2</span>:</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    A[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>] <span class="op">*=</span> <span class="dv">2</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>fase <span class="op">=</span> np.angle(X)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Para <span class="math inline">\(N\)</span> impar, el último bin no corresponde exactamente a Nyquist y también requiere duplicación. El código debe tratar paridad de forma explícita.</p>
+</div>
+</div>
+</section>
+<section id="código-robusto-para-n-par-o-impar" class="level2">
+<h2 class="anchored" data-anchor-id="código-robusto-para-n-par-o-impar">Código robusto para <span class="math inline">\(N\)</span> par o impar</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.fft.rfft(x0)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>A <span class="op">=</span> np.<span class="bu">abs</span>(X) <span class="op">/</span> N</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> N <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">0</span>:      <span class="co"># existe bin de Nyquist</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    A[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>] <span class="op">*=</span> <span class="dv">2</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    A[<span class="dv">1</span>:] <span class="op">*=</span> <span class="dv">2</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una prueba útil consiste en aplicar el código a una cosenoide de amplitud conocida alineada con un bin.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-12" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-12">Verificación de la sesión 12</h2>
+<p>Un registro tiene <span class="math inline">\(f_s=500\)</span> Hz y <span class="math inline">\(N=2000\)</span>.</p>
+<ol type="1">
+<li>calcule su duración;</li>
+<li>calcule <span class="math inline">\(\Delta f\)</span>;</li>
+<li>identifique el rango de <code>rfft</code>;</li>
+<li>explique qué mejora y qué no mejora al usar 4096 puntos mediante zero padding;</li>
+<li>indique por qué la fase de bins pequeños puede ser inestable.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Debe distinguir duración, resolución, densidad gráfica y costo computacional.</p>
+</div>
+</div>
+</section>
+<section id="cierre-de-la-semana-6" class="level2">
+<h2 class="anchored" data-anchor-id="cierre-de-la-semana-6">Cierre de la semana 6</h2>
+<ul>
+<li>Las propiedades conectan operaciones temporales con cambios espectrales.</li>
+<li>El retraso actúa sobre fase; el escalamiento temporal modifica el ancho.</li>
+<li>La convolución temporal equivale a multiplicación frecuencial.</li>
+<li>La DFT representa un bloque finito sobre bins discretos.</li>
+<li>La FFT acelera el cálculo sin alterar la interpretación.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Pregunta de salida
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>¿Por qué dos registros con la misma frecuencia de muestreo pueden tener resoluciones frecuenciales distintas?</p>
+</div>
+</div>
+</section>
+</section>
+<section id="semana-7-resolución-fuga-y-adquisición" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Semana 7 · Resolución, fuga y adquisición</h1>
+<section id="sesión-13-la-resolución-proviene-de-la-duración" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-13-la-resolución-proviene-de-la-duración">Sesión 13 · La resolución proviene de la duración</h2>
+<p><span class="math display">\[\Delta f=\frac{f_s}{N}=\frac{1}{T}.\]</span></p>
+<p>Ejemplo: <span class="math inline">\(T=10\)</span> s produce bins separados 0.1 Hz, con independencia de la forma usada para calcular <span class="math inline">\(N=f_sT\)</span>.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Observar durante más tiempo permite separar componentes más próximas, siempre que la señal mantenga propiedades suficientemente estables.</p>
+</div>
+</div>
+</section>
+<section id="resolución-nominal-no-garantiza-separación-efectiva" class="level2">
+<h2 class="anchored" data-anchor-id="resolución-nominal-no-garantiza-separación-efectiva">Resolución nominal no garantiza separación efectiva</h2>
+<p>Dos tonos separados por <span class="math inline">\(\Delta f\)</span> pueden seguir sin distinguirse si:</p>
+<ul>
+<li>la ventana ensancha el lóbulo principal;</li>
+<li>una componente es mucho mayor que la otra;</li>
+<li>el ruido oculta la componente débil;</li>
+<li>la frecuencia cambia durante el registro.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El ancho del lóbulo principal y el nivel de lóbulos laterales importan tanto como el espaciado entre bins.</p>
+</div>
+</div>
+</section>
+<section id="una-frecuencia-alineada-con-un-bin-produce-un-caso-especial" class="level2">
+<h2 class="anchored" data-anchor-id="una-frecuencia-alineada-con-un-bin-produce-un-caso-especial">Una frecuencia alineada con un bin produce un caso especial</h2>
+<p>Si una cosenoide completa un número entero de ciclos en <span class="math inline">\(T\)</span>:</p>
+<p><span class="math display">\[f_0=m\Delta f,\]</span></p>
+<p>su energía coincide con bins de la DFT bajo una ventana rectangular.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Este caso facilita pruebas de escalamiento, pero rara vez describe exactamente una bioseñal real.</p>
+</div>
+</div>
+</section>
+<section id="la-fuga-distribuye-energía-entre-bins" class="level2">
+<h2 class="anchored" data-anchor-id="la-fuga-distribuye-energía-entre-bins">La fuga distribuye energía entre bins</h2>
+<p>Una componente no alineada con los bins produce valores en múltiples frecuencias.</p>
+<p>La causa matemática es el producto temporal:</p>
+<p><span class="math display">\[x_w[n]=x[n]w[n],\]</span></p>
+<p>que corresponde a convolución espectral.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La fuga no implica que la señal contenga todas esas frecuencias como oscilaciones independientes.</p>
+</div>
+</div>
+</section>
+<section id="la-ventana-rectangular-conserva-amplitud-y-genera-lóbulos-altos" class="level2">
+<h2 class="anchored" data-anchor-id="la-ventana-rectangular-conserva-amplitud-y-genera-lóbulos-altos">La ventana rectangular conserva amplitud y genera lóbulos altos</h2>
+<p>La ventana rectangular equivale a recortar el registro sin suavizar extremos.</p>
+<ul>
+<li>lóbulo principal estrecho;</li>
+<li>lóbulos laterales relativamente altos;</li>
+<li>buena separación para tonos comparables y alineados;</li>
+<li>mayor contaminación alrededor de componentes intensas.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Usar “sin ventana” significa usar una ventana rectangular.</p>
+</div>
+</div>
+</section>
+<section id="hann-reduce-lóbulos-laterales-y-ensancha-el-principal" class="level2">
+<h2 class="anchored" data-anchor-id="hann-reduce-lóbulos-laterales-y-ensancha-el-principal">Hann reduce lóbulos laterales y ensancha el principal</h2>
+<p><span class="math display">\[w[n]=\frac{1}{2}\left(1-\cos\frac{2\pi n}{N-1}\right).\]</span></p>
+<p>La ventana lleva los extremos hacia cero y reduce discontinuidades en la extensión periódica.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La reducción de fuga se paga con menor capacidad para separar componentes cercanas.</p>
+</div>
+</div>
+</section>
+<section id="hamming-y-blackman-ofrecen-otros-compromisos" class="level2">
+<h2 class="anchored" data-anchor-id="hamming-y-blackman-ofrecen-otros-compromisos">Hamming y Blackman ofrecen otros compromisos</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ventana</th>
+<th>Uso orientativo</th>
+<th>Compromiso</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Rectangular</td>
+<td>tonos alineados y cercanos</td>
+<td>lóbulos laterales altos</td>
+</tr>
+<tr class="even">
+<td>Hann</td>
+<td>análisis general y Welch</td>
+<td>balance habitual</td>
+</tr>
+<tr class="odd">
+<td>Hamming</td>
+<td>atenuación del primer lateral</td>
+<td>extremos no nulos</td>
+</tr>
+<tr class="even">
+<td>Blackman</td>
+<td>componente débil junto a fuerte</td>
+<td>lóbulo principal más ancho</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La selección no debe basarse en una lista memorizada. Debe responder a separación, rango dinámico y objetivo de amplitud.</p>
+</div>
+</div>
+</section>
+<section id="la-ganancia-coherente-corrige-amplitud" class="level2">
+<h2 class="anchored" data-anchor-id="la-ganancia-coherente-corrige-amplitud">La ganancia coherente corrige amplitud</h2>
+<p>Una ventana reduce la amplitud de un tono. Su ganancia coherente es</p>
+<p><span class="math display">\[G_c=\frac{1}{N}\sum_{n=0}^{N-1}w[n].\]</span></p>
+<p>Para estimar amplitud se corrige por <span class="math inline">\(G_c\)</span> cuando el modelo de tono y alineación lo justifican.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La corrección de amplitud no elimina fuga ni convierte una señal no estacionaria en estacionaria.</p>
+</div>
+</div>
+</section>
+<section id="el-ancho-de-banda-equivalente-afecta-el-ruido" class="level2">
+<h2 class="anchored" data-anchor-id="el-ancho-de-banda-equivalente-afecta-el-ruido">El ancho de banda equivalente afecta el ruido</h2>
+<p>Una forma discreta normalizada en bins es</p>
+<p><span class="math display">\[\mathrm{ENBW}=N\frac{\sum_n w^2[n]}{\left(\sum_n w[n]\right)^2}.\]</span></p>
+<p>Una ENBW mayor integra más potencia de ruido por bin espectral.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La ventana afecta tanto la forma de una componente tonal como el piso de ruido estimado.</p>
+</div>
+</div>
+</section>
+<section id="zero-padding-densifica-el-eje" class="level2">
+<h2 class="anchored" data-anchor-id="zero-padding-densifica-el-eje">Zero padding densifica el eje</h2>
+<p>Agregar ceros hasta <span class="math inline">\(N_{FFT}&gt;N\)</span> produce separación gráfica</p>
+<p><span class="math display">\[\Delta f_{grid}=\frac{f_s}{N_{FFT}},\]</span></p>
+<p>pero la resolución física sigue determinada principalmente por <span class="math inline">\(T=N/f_s\)</span> y la ventana.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una curva más suave no contiene más observación ni permite separar componentes que el registro original no resolvía.</p>
+</div>
+</div>
+</section>
+<section id="duraciones-largas-también-tienen-costos" class="level2">
+<h2 class="anchored" data-anchor-id="duraciones-largas-también-tienen-costos">Duraciones largas también tienen costos</h2>
+<ul>
+<li>pueden mezclar estados fisiológicos;</li>
+<li>reducen localización temporal;</li>
+<li>aumentan probabilidad de artefactos;</li>
+<li>exigen mayor estabilidad del reloj y del protocolo.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La duración óptima surge del equilibrio entre resolución frecuencial y estacionariedad local.</p>
+</div>
+</div>
+</section>
+<section id="ejemplo-biomédico-ritmo-respiratorio" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-biomédico-ritmo-respiratorio">Ejemplo biomédico: ritmo respiratorio</h2>
+<p>Para distinguir 0.20 Hz de 0.25 Hz se necesita una observación suficientemente larga.</p>
+<ul>
+<li>con <span class="math inline">\(T=10\)</span> s, <span class="math inline">\(\Delta f=0.1\)</span> Hz;</li>
+<li>con <span class="math inline">\(T=40\)</span> s, <span class="math inline">\(\Delta f=0.025\)</span> Hz.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La mejor separación nominal de 40 s solo es útil si el ritmo no cambia de manera importante durante esos 40 s.</p>
+</div>
+</div>
+</section>
+<section id="código-comparar-ventanas" class="level2">
+<h2 class="anchored" data-anchor-id="código-comparar-ventanas">Código: comparar ventanas</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> get_window</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="bu">len</span>(x)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> nombre <span class="kw">in</span> [<span class="st">"boxcar"</span>, <span class="st">"hann"</span>, <span class="st">"hamming"</span>, <span class="st">"blackman"</span>]:</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> get_window(nombre, N, fftbins<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    Xw <span class="op">=</span> np.fft.rfft((x <span class="op">-</span> np.mean(x)) <span class="op">*</span> w)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    Gc <span class="op">=</span> np.mean(w)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> np.<span class="bu">abs</span>(Xw) <span class="op">/</span> (N <span class="op">*</span> Gc)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La comparación debe mantener el mismo segmento y declarar la corrección aplicada.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-13" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-13">Verificación de la sesión 13</h2>
+<p>Un EEG se analiza con <span class="math inline">\(f_s=256\)</span> Hz y ventanas de 2 s.</p>
+<ol type="1">
+<li>determine <span class="math inline">\(N\)</span> y <span class="math inline">\(\Delta f\)</span>;</li>
+<li>explique si zero padding a 2048 puntos cambia la resolución real;</li>
+<li>compare el efecto esperado de rectangular y Hann;</li>
+<li>proponga una duración para separar 9.8 Hz de 10.2 Hz;</li>
+<li>discuta el supuesto fisiológico de esa duración.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La respuesta debe separar espaciado de bins, ancho del lóbulo y estabilidad temporal.</p>
+</div>
+</div>
+</section>
+<section id="sesión-14-la-cadena-de-adquisición-condiciona-el-dato" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-14-la-cadena-de-adquisición-condiciona-el-dato">Sesión 14 · La cadena de adquisición condiciona el dato</h2>
+<ol type="1">
+<li>El fenómeno fisiológico origina una magnitud observable.</li>
+<li>El sensor y el acoplamiento convierten esa magnitud.</li>
+<li>El acondicionamiento limita banda y adapta nivel.</li>
+<li>El ADC discretiza tiempo y amplitud.</li>
+<li>El registro conserva valores, unidades y metadatos.</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Cada etapa limita la información disponible para el procesamiento posterior.</p>
+</div>
+</div>
+</section>
+<section id="el-sensor-define-sensibilidad-y-ancho-de-banda" class="level2">
+<h2 class="anchored" data-anchor-id="el-sensor-define-sensibilidad-y-ancho-de-banda">El sensor define sensibilidad y ancho de banda</h2>
+<p>Modelo local:</p>
+<p><span class="math display">\[v_s(t)=Sx(t)+b+n_s(t).\]</span></p>
+<ul>
+<li><span class="math inline">\(S\)</span>: sensibilidad con unidades físicas.</li>
+<li><span class="math inline">\(b\)</span>: offset.</li>
+<li><span class="math inline">\(n_s(t)\)</span>: perturbación propia del sensor.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La relación lineal suele ser válida solo dentro de un rango. Saturación, histéresis y acoplamiento alteran el modelo.</p>
+</div>
+</div>
+</section>
+<section id="el-acoplamiento-forma-parte-de-la-medición" class="level2">
+<h2 class="anchored" data-anchor-id="el-acoplamiento-forma-parte-de-la-medición">El acoplamiento forma parte de la medición</h2>
+<p>Ejemplos:</p>
+<ul>
+<li>impedancia electrodo-piel en ECG y EEG;</li>
+<li>presión de contacto en PPG;</li>
+<li>orientación y fijación en acelerometría;</li>
+<li>posición de banda en respiración.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un sensor correcto con acoplamiento deficiente puede producir un registro inválido.</p>
+</div>
+</div>
+</section>
+<section id="el-acondicionamiento-protege-y-adapta-la-señal" class="level2">
+<h2 class="anchored" data-anchor-id="el-acondicionamiento-protege-y-adapta-la-señal">El acondicionamiento protege y adapta la señal</h2>
+<p>Funciones frecuentes:</p>
+<ul>
+<li>amplificación;</li>
+<li>rechazo de modo común;</li>
+<li>limitación de banda;</li>
+<li>ajuste de nivel y protección;</li>
+<li>aislamiento cuando corresponde.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La ganancia debe usar el rango del convertidor sin recortar transitorios fisiológicos ni artefactos plausibles.</p>
+</div>
+</div>
+</section>
+<section id="el-filtro-antialias-actúa-antes-del-adc" class="level2">
+<h2 class="anchored" data-anchor-id="el-filtro-antialias-actúa-antes-del-adc">El filtro antialias actúa antes del ADC</h2>
+<p>La etapa analógica atenúa componentes por encima de la banda que el sistema digital puede representar.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un filtro digital posterior no puede distinguir una frecuencia real de su alias cuando ambas ya producen las mismas muestras.</p>
+</div>
+</div>
+</section>
+<section id="el-adc-discretiza-tiempo-y-amplitud" class="level2">
+<h2 class="anchored" data-anchor-id="el-adc-discretiza-tiempo-y-amplitud">El ADC discretiza tiempo y amplitud</h2>
+<p>Dos decisiones distintas:</p>
+<ul>
+<li>muestreo: intervalos temporales <span class="math inline">\(T_s=1/f_s\)</span>;</li>
+<li>cuantización: niveles de amplitud.</li>
+</ul>
+<p>Para un rango <span class="math inline">\(V_{FS}\)</span> y <span class="math inline">\(B\)</span> bits:</p>
+<p><span class="math display">\[\Delta_q\approx\frac{V_{FS}}{2^B}.\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Más bits reducen el escalón ideal de cuantización, pero no evitan ruido analógico, mala calibración ni clipping.</p>
+</div>
+</div>
+</section>
+<section id="el-rango-dinámico-exige-margen" class="level2">
+<h2 class="anchored" data-anchor-id="el-rango-dinámico-exige-margen">El rango dinámico exige margen</h2>
+<p>Si la señal supera el rango del ADC, aparece saturación. Si ocupa una fracción muy pequeña, se desaprovecha resolución.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El clipping es una distorsión no lineal. El filtrado no reconstruye de manera confiable las amplitudes recortadas.</p>
+</div>
+</div>
+</section>
+<section id="el-reloj-determina-el-eje-temporal" class="level2">
+<h2 class="anchored" data-anchor-id="el-reloj-determina-el-eje-temporal">El reloj determina el eje temporal</h2>
+<p>Un registro requiere:</p>
+<ul>
+<li>frecuencia nominal de muestreo;</li>
+<li>sellos temporales o instante inicial;</li>
+<li>información sobre muestras perdidas;</li>
+<li>tolerancia o deriva del reloj;</li>
+<li>sincronización con otros equipos.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Pequeños errores de reloj pueden alterar fase, coherencia y alineación de eventos en registros prolongados.</p>
+</div>
+</div>
+</section>
+<section id="la-sincronización-sostiene-análisis-multicanal" class="level2">
+<h2 class="anchored" data-anchor-id="la-sincronización-sostiene-análisis-multicanal">La sincronización sostiene análisis multicanal</h2>
+<p>Para comparar ECG, presión y respiración se necesita una referencia temporal común.</p>
+<p>Fuentes de desalineación:</p>
+<ul>
+<li>retardos distintos de sensores y filtros;</li>
+<li>buffers de software;</li>
+<li>marcas manuales;</li>
+<li>relojes independientes.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un desfase instrumental puede confundirse con un retardo fisiológico.</p>
+</div>
+</div>
+</section>
+<section id="almacenar-valores-exige-conservar-contexto" class="level2">
+<h2 class="anchored" data-anchor-id="almacenar-valores-exige-conservar-contexto">Almacenar valores exige conservar contexto</h2>
+<p>Metadatos mínimos:</p>
+<ul>
+<li>unidades y escala;</li>
+<li>frecuencia de muestreo;</li>
+<li>nombres y ubicación de canales;</li>
+<li>configuración de ganancia y filtros;</li>
+<li>eventos del protocolo;</li>
+<li>identificador seudonimizado del participante.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un archivo numérico sin metadatos puede ser ilegible desde el punto de vista científico aunque abra correctamente.</p>
+</div>
+</div>
+</section>
+<section id="formato-tabular-no-siempre-basta" class="level2">
+<h2 class="anchored" data-anchor-id="formato-tabular-no-siempre-basta">Formato tabular no siempre basta</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Necesidad</th>
+<th>Riesgo de un CSV aislado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>tiempo irregular</td>
+<td>se pierde si solo hay índice</td>
+</tr>
+<tr class="even">
+<td>múltiples unidades</td>
+<td>columnas ambiguas</td>
+</tr>
+<tr class="odd">
+<td>eventos</td>
+<td>quedan en archivos separados</td>
+</tr>
+<tr class="even">
+<td>calibración</td>
+<td>no se documenta</td>
+</tr>
+<tr class="odd">
+<td>datos faltantes</td>
+<td>pueden confundirse con cero</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El contrato de datos debe describir estructura, tipos, unidades, valores faltantes y relación entre archivos.</p>
+</div>
+</div>
+</section>
+<section id="control-de-calidad-antes-del-análisis" class="level2">
+<h2 class="anchored" data-anchor-id="control-de-calidad-antes-del-análisis">Control de calidad antes del análisis</h2>
+<ol type="1">
+<li>verificar longitud y tasa efectiva;</li>
+<li>comprobar monotonicidad del tiempo;</li>
+<li>identificar faltantes y saturación;</li>
+<li>revisar unidades y calibración;</li>
+<li>contrastar eventos con el protocolo;</li>
+<li>inspeccionar canales auxiliares.</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La inspección debe preceder al filtrado para evitar que el procesamiento oculte problemas de adquisición.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-14" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-14">Verificación de la sesión 14</h2>
+<p>Un ECG de 12 bits usa un rango de <span class="math inline">\(\pm 5\)</span> mV y <span class="math inline">\(f_s=500\)</span> Hz.</p>
+<ol type="1">
+<li>estime el escalón ideal de cuantización;</li>
+<li>identifique el máximo tiempo entre muestras;</li>
+<li>explique por qué necesita filtro antialias analógico;</li>
+<li>enumere metadatos para interpretar derivaciones;</li>
+<li>proponga una prueba de saturación y pérdida de muestras.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La solución debe conectar especificaciones del sensor, acondicionamiento, ADC y archivo final.</p>
+</div>
+</div>
+</section>
+<section id="cierre-de-la-semana-7" class="level2">
+<h2 class="anchored" data-anchor-id="cierre-de-la-semana-7">Cierre de la semana 7</h2>
+<ul>
+<li>La duración determina el espaciado básico de frecuencias.</li>
+<li>La ventana modifica resolución, fuga y potencia de ruido.</li>
+<li>Zero padding interpola el eje sin mejorar la información.</li>
+<li>La adquisición define qué contenido llega al computador.</li>
+<li>Metadatos y sincronización forman parte de la validez.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Pregunta de salida
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>¿Qué problema espectral puede parecer un fenómeno fisiológico cuando dos equipos no comparten el mismo reloj?</p>
+</div>
+</div>
+</section>
+</section>
+<section id="semana-8-muestreo-y-estimación-de-potencia" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Semana 8 · Muestreo y estimación de potencia</h1>
+<section id="sesión-15-muestrear-observa-la-señal-en-instantes-discretos" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-15-muestrear-observa-la-señal-en-instantes-discretos">Sesión 15 · Muestrear observa la señal en instantes discretos</h2>
+<p>Un modelo ideal usa un tren de impulsos:</p>
+<p><span class="math display">\[p(t)=\sum_{n=-\infty}^{\infty}\delta(t-nT_s).\]</span></p>
+<p>La señal muestreada es</p>
+<p><span class="math display">\[x_s(t)=x(t)p(t)=\sum_n x(nT_s)\delta(t-nT_s).\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El muestreo conserva valores en instantes separados por <span class="math inline">\(T_s\)</span>. Entre muestras no existe observación directa.</p>
+</div>
+</div>
+</section>
+<section id="muestrear-replica-el-espectro" class="level2">
+<h2 class="anchored" data-anchor-id="muestrear-replica-el-espectro">Muestrear replica el espectro</h2>
+<p>El espectro del tren de impulsos también es periódico:</p>
+<p><span class="math display">\[P(f)=f_s\sum_{k=-\infty}^{\infty}\delta(f-kf_s).\]</span></p>
+<p>Por tanto:</p>
+<p><span class="math display">\[X_s(f)=f_s\sum_{k=-\infty}^{\infty}X(f-kf_s).\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El muestreo crea réplicas del espectro separadas por <span class="math inline">\(f_s\)</span>. El aliasing aparece cuando esas réplicas se superponen.</p>
+</div>
+</div>
+</section>
+<section id="nyquist-establece-una-condición-ideal" class="level2">
+<h2 class="anchored" data-anchor-id="nyquist-establece-una-condición-ideal">Nyquist establece una condición ideal</h2>
+<p>Si <span class="math inline">\(X(f)=0\)</span> para <span class="math inline">\(|f|&gt;B\)</span>, la reconstrucción ideal requiere</p>
+<p><span class="math display">\[f_s&gt;2B.\]</span></p>
+<p>La frecuencia <span class="math inline">\(f_s/2\)</span> se denomina frecuencia de Nyquist.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La condición supone banda estrictamente limitada y un filtro ideal. Las señales y filtros físicos requieren margen de transición.</p>
+</div>
+</div>
+</section>
+<section id="la-frecuencia-de-nyquist-no-es-la-tasa-de-nyquist" class="level2">
+<h2 class="anchored" data-anchor-id="la-frecuencia-de-nyquist-no-es-la-tasa-de-nyquist">La frecuencia de Nyquist no es la tasa de Nyquist</h2>
+<ul>
+<li>frecuencia de Nyquist: <span class="math inline">\(f_s/2\)</span> para una tasa dada;</li>
+<li>tasa de Nyquist: al menos <span class="math inline">\(2B\)</span> para una señal limitada a <span class="math inline">\(B\)</span>.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Intercambiar estos términos produce especificaciones ambiguas. Debe indicarse si se habla de la señal o del sistema de adquisición.</p>
+</div>
+</div>
+</section>
+<section id="el-alias-de-una-frecuencia-depende-de-f_s" class="level2">
+<h2 class="anchored" data-anchor-id="el-alias-de-una-frecuencia-depende-de-f_s">El alias de una frecuencia depende de <span class="math inline">\(f_s\)</span></h2>
+<p>Una frecuencia <span class="math inline">\(f_0\)</span> se pliega dentro de <span class="math inline">\([0,f_s/2]\)</span>. Una forma operativa es</p>
+<p><span class="math display">\[f_a=\left|\left((f_0+f_s/2)\bmod f_s\right)-f_s/2\right|.\]</span></p>
+<p>Ejemplo: con <span class="math inline">\(f_s=100\)</span> Hz, una componente de 70 Hz aparece a 30 Hz.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El alias conserva una apariencia sinusoidal válida. El registro aislado no permite saber si provino de 30 Hz o de 70 Hz.</p>
+</div>
+</div>
+</section>
+<section id="el-filtro-antialias-necesita-una-banda-de-transición" class="level2">
+<h2 class="anchored" data-anchor-id="el-filtro-antialias-necesita-una-banda-de-transición">El filtro antialias necesita una banda de transición</h2>
+<p>Especificación conceptual:</p>
+<ul>
+<li>banda útil hasta <span class="math inline">\(f_p\)</span>;</li>
+<li>banda de rechazo desde <span class="math inline">\(f_a\)</span>;</li>
+<li>borde digital máximo <span class="math inline">\(f_s/2\)</span>;</li>
+<li>atenuación suficiente antes de Nyquist.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Elegir <span class="math inline">\(f_s\)</span> implica reservar espacio para que el filtro analógico pase de la banda útil a la banda de rechazo.</p>
+</div>
+</div>
+</section>
+<section id="sobremuestrear-simplifica-parte-del-diseño" class="level2">
+<h2 class="anchored" data-anchor-id="sobremuestrear-simplifica-parte-del-diseño">Sobremuestrear simplifica parte del diseño</h2>
+<p>Una tasa mayor puede:</p>
+<ul>
+<li>ampliar la transición del filtro antialias;</li>
+<li>mejorar la localización temporal;</li>
+<li>reducir sensibilidad a ciertos errores analógicos.</li>
+</ul>
+<p>También aumenta datos, consumo y costo de transmisión.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Sobremuestrear no aumenta por sí mismo la duración ni la resolución frecuencial de un registro fijo en segundos.</p>
+</div>
+</div>
+</section>
+<section id="la-resolución-temporal-básica-es-t_s" class="level2">
+<h2 class="anchored" data-anchor-id="la-resolución-temporal-básica-es-t_s">La resolución temporal básica es <span class="math inline">\(T_s\)</span></h2>
+<p><span class="math display">\[T_s=\frac{1}{f_s}.\]</span></p>
+<p>Si <span class="math inline">\(f_s=500\)</span> Hz, la separación nominal entre muestras es 2 ms.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La precisión de un evento no queda determinada solo por <span class="math inline">\(T_s\)</span>. Interpolación, ruido, ancho de banda y algoritmo también influyen.</p>
+</div>
+</div>
+</section>
+<section id="duración-y-muestreo-controlan-aspectos-distintos" class="level2">
+<h2 class="anchored" data-anchor-id="duración-y-muestreo-controlan-aspectos-distintos">Duración y muestreo controlan aspectos distintos</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parámetro</th>
+<th>Relación principal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(f_s\)</span></td>
+<td>rango frecuencial representable y paso temporal</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(T\)</span></td>
+<td>resolución frecuencial básica y contexto observado</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(N=f_sT\)</span></td>
+<td>tamaño del registro y costo computacional</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una mayor cantidad de muestras puede provenir de mayor duración o mayor tasa. Esas decisiones no son equivalentes.</p>
+</div>
+</div>
+</section>
+<section id="muestreo-irregular-exige-otro-modelo" class="level2">
+<h2 class="anchored" data-anchor-id="muestreo-irregular-exige-otro-modelo">Muestreo irregular exige otro modelo</h2>
+<p>Si los instantes son <span class="math inline">\(t_n\)</span> y no cumplen <span class="math inline">\(t_n=nT_s\)</span>, la DFT estándar no representa exactamente el eje temporal real.</p>
+<p>Opciones:</p>
+<ul>
+<li>corregir o interpolar con justificación;</li>
+<li>usar métodos para muestreo no uniforme;</li>
+<li>modelar explícitamente los sellos temporales.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Asignar una frecuencia nominal a datos irregulares puede introducir errores de fase y frecuencia.</p>
+</div>
+</div>
+</section>
+<section id="código-observar-aliasing" class="level2">
+<h2 class="anchored" data-anchor-id="código-observar-aliasing">Código: observar aliasing</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>fs <span class="op">=</span> <span class="fl">100.0</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span><span class="op">/</span>fs)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>x30 <span class="op">=</span> np.cos(<span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span><span class="dv">30</span><span class="op">*</span>t)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>x70 <span class="op">=</span> np.cos(<span class="dv">2</span><span class="op">*</span>np.pi<span class="op">*</span><span class="dv">70</span><span class="op">*</span>t)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>error <span class="op">=</span> np.<span class="bu">max</span>(np.<span class="bu">abs</span>(x30 <span class="op">-</span> x70))</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Con esos instantes, ambas secuencias coinciden salvo error numérico. El ejemplo demuestra indistinguibilidad discreta, no igualdad de las señales continuas.</p>
+</div>
+</div>
+</section>
+<section id="selección-de-f_s-para-una-bioseñal" class="level2">
+<h2 class="anchored" data-anchor-id="selección-de-f_s-para-una-bioseñal">Selección de <span class="math inline">\(f_s\)</span> para una bioseñal</h2>
+<p>Procedimiento:</p>
+<ol type="1">
+<li>definir la banda fisiológica necesaria para la tarea;</li>
+<li>incluir transitorios que deban conservarse;</li>
+<li>establecer margen para el filtro antialias;</li>
+<li>revisar precisión temporal y sincronización;</li>
+<li>evaluar almacenamiento y transmisión;</li>
+<li>documentar la tasa efectiva.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La tasa se justifica desde la pregunta y la cadena completa, no desde una regla fija por modalidad.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-15" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-15">Verificación de la sesión 15</h2>
+<p>Una señal contiene información hasta 120 Hz y se muestrea a 250 Hz.</p>
+<ol type="1">
+<li>calcule la frecuencia de Nyquist;</li>
+<li>explique por qué el margen de 5 Hz resulta insuficiente para un filtro real;</li>
+<li>determine el alias de una interferencia de 180 Hz;</li>
+<li>calcule <span class="math inline">\(T_s\)</span>;</li>
+<li>proponga una tasa razonada, sin asumir un valor universal.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La propuesta debe incluir banda de transición, atenuación y precisión temporal.</p>
+</div>
+</div>
+</section>
+<section id="sesión-16-potencia-espectral-describe-distribución-cuadrática" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-16-potencia-espectral-describe-distribución-cuadrática">Sesión 16 · Potencia espectral describe distribución cuadrática</h2>
+<p>Para una señal de potencia, la PSD <span class="math inline">\(S_{xx}(f)\)</span> distribuye potencia por unidad de frecuencia.</p>
+<p><span class="math display">\[P=\int_{-\infty}^{\infty}S_{xx}(f)\,df.\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La PSD permite integrar potencia en bandas, comparar ritmos y cuantificar cómo se distribuye la variabilidad.</p>
+</div>
+</div>
+</section>
+<section id="energía-y-potencia-no-son-intercambiables" class="level2">
+<h2 class="anchored" data-anchor-id="energía-y-potencia-no-son-intercambiables">Energía y potencia no son intercambiables</h2>
+<p>Energía discreta:</p>
+<p><span class="math display">\[E_x=\sum_{n=-\infty}^{\infty}|x[n]|^2.\]</span></p>
+<p>Potencia media:</p>
+<p><span class="math display">\[P_x=\lim_{N\to\infty}\frac{1}{2N+1}\sum_{n=-N}^{N}|x[n]|^2.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un registro finito siempre tiene suma cuadrática finita, pero su modelo fisiológico puede tratarse como realización de un proceso de potencia.</p>
+</div>
+</div>
+</section>
+<section id="espectro-de-energía-y-psd-responden-a-modelos-distintos" class="level2">
+<h2 class="anchored" data-anchor-id="espectro-de-energía-y-psd-responden-a-modelos-distintos">Espectro de energía y PSD responden a modelos distintos</h2>
+<ul>
+<li><span class="math inline">\(|X(f)|^2\)</span> describe densidad de energía para señales de energía.</li>
+<li><span class="math inline">\(S_{xx}(f)\)</span> describe densidad de potencia para procesos o señales persistentes.</li>
+<li>Un registro finito permite estimar estas cantidades, no observarlas sin incertidumbre.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El periodograma es un estimador de PSD. No es la PSD verdadera del proceso.</p>
+</div>
+</div>
+</section>
+<section id="el-periodograma-parte-de-la-dft" class="level2">
+<h2 class="anchored" data-anchor-id="el-periodograma-parte-de-la-dft">El periodograma parte de la DFT</h2>
+<p>Una forma bilateral para <span class="math inline">\(N\)</span> muestras y tasa <span class="math inline">\(f_s\)</span> es</p>
+<p><span class="math display">\[\widehat S_{xx}[k]=\frac{1}{Nf_s}|X[k]|^2.\]</span></p>
+<p>La constante cambia si se usa ventana, espectro unilateral o una convención diferente.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>No se puede comparar PSD entre programas si no se verifican escalamiento, ventana, detrend y lados del espectro.</p>
+</div>
+</div>
+</section>
+<section id="las-unidades-distinguen-espectro-y-densidad" class="level2">
+<h2 class="anchored" data-anchor-id="las-unidades-distinguen-espectro-y-densidad">Las unidades distinguen espectro y densidad</h2>
+<p>Si <span class="math inline">\(x\)</span> se mide en mV:</p>
+<ul>
+<li>amplitud espectral: mV;</li>
+<li>potencia por bin: mV<span class="math inline">\(^2\)</span>;</li>
+<li>PSD: mV<span class="math inline">\(^2\)</span>/Hz.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La integración de PSD sobre Hz debe recuperar una potencia en unidades cuadráticas de la señal.</p>
+</div>
+</div>
+</section>
+<section id="la-psd-unilateral-conserva-potencia" class="level2">
+<h2 class="anchored" data-anchor-id="la-psd-unilateral-conserva-potencia">La PSD unilateral conserva potencia</h2>
+<p>Para señales reales se combinan contribuciones positivas y negativas.</p>
+<ul>
+<li>DC no se duplica.</li>
+<li>Nyquist no se duplica cuando existe.</li>
+<li>Los bins interiores se duplican.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La regla de duplicación depende de si se trabaja con amplitud, potencia o densidad. Debe aplicarse en la escala correspondiente.</p>
+</div>
+</div>
+</section>
+<section id="parseval-ofrece-una-prueba-de-consistencia" class="level2">
+<h2 class="anchored" data-anchor-id="parseval-ofrece-una-prueba-de-consistencia">Parseval ofrece una prueba de consistencia</h2>
+<p>Para la DFT adoptada:</p>
+<p><span class="math display">\[\sum_{n=0}^{N-1}|x[n]|^2=\frac{1}{N}\sum_{k=0}^{N-1}|X[k]|^2.\]</span></p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Comparar potencia temporal con la integral numérica de PSD permite detectar errores de escalamiento.</p>
+</div>
+</div>
+</section>
+<section id="retirar-la-media-cambia-la-psd-cerca-de-0-hz" class="level2">
+<h2 class="anchored" data-anchor-id="retirar-la-media-cambia-la-psd-cerca-de-0-hz">Retirar la media cambia la PSD cerca de 0 Hz</h2>
+<p>La componente DC representa el promedio del segmento.</p>
+<p><span class="math display">\[x_0[n]=x[n]-\bar{x}.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Retirar media o tendencia debe declararse. Puede ser conveniente para estudiar oscilaciones, pero elimina información de nivel.</p>
+</div>
+</div>
+</section>
+<section id="el-periodograma-tiene-alta-variabilidad" class="level2">
+<h2 class="anchored" data-anchor-id="el-periodograma-tiene-alta-variabilidad">El periodograma tiene alta variabilidad</h2>
+<p>Aumentar <span class="math inline">\(N\)</span> mejora el espaciado frecuencial, pero el periodograma simple no se vuelve necesariamente estable como estimador puntual.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La varianza del estimador motiva el promediado de segmentos y el método de Welch.</p>
+</div>
+</div>
+</section>
+<section id="potencia-en-una-banda" class="level2">
+<h2 class="anchored" data-anchor-id="potencia-en-una-banda">Potencia en una banda</h2>
+<p>Para una banda <span class="math inline">\([f_1,f_2]\)</span>:</p>
+<p><span class="math display">\[P_{banda}=\int_{f_1}^{f_2}S_{xx}(f)\,df.\]</span></p>
+<p>En un eje discreto uniforme se aproxima mediante suma o integración trapezoidal.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Las bandas deben justificarse para la modalidad, población, estado y método de adquisición.</p>
+</div>
+</div>
+</section>
+<section id="potencia-absoluta-y-relativa" class="level2">
+<h2 class="anchored" data-anchor-id="potencia-absoluta-y-relativa">Potencia absoluta y relativa</h2>
+<p><span class="math display">\[P_{rel}=\frac{P_{banda}}{P_{referencia}}.\]</span></p>
+<p>La potencia relativa reduce algunas diferencias de escala, pero acopla el numerador al denominador.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un aumento de potencia relativa puede deberse a aumento de la banda o disminución de la potencia de referencia.</p>
+</div>
+</div>
+</section>
+<section id="código-periodograma-con-unidades-explícitas" class="level2">
+<h2 class="anchored" data-anchor-id="código-periodograma-con-unidades-explícitas">Código: periodograma con unidades explícitas</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> periodogram</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>f, Pxx <span class="op">=</span> periodogram(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    x,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    fs<span class="op">=</span>fs,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    window<span class="op">=</span><span class="st">"hann"</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    detrend<span class="op">=</span><span class="st">"constant"</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    scaling<span class="op">=</span><span class="st">"density"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    return_onesided<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>potencia <span class="op">=</span> np.trapz(Pxx, f)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Con <code>scaling="density"</code>, <code>Pxx</code> tiene unidades de la señal al cuadrado por Hz.</p>
+</div>
+</div>
+</section>
+<section id="lectura-biomédica-prudente" class="level2">
+<h2 class="anchored" data-anchor-id="lectura-biomédica-prudente">Lectura biomédica prudente</h2>
+<p>Antes de interpretar un pico o una banda:</p>
+<ul>
+<li>verificar estado fisiológico y protocolo;</li>
+<li>revisar artefactos y canales auxiliares;</li>
+<li>confirmar duración y resolución;</li>
+<li>comprobar preprocesamiento;</li>
+<li>estimar incertidumbre o variabilidad.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una asociación entre banda y fenómeno requiere evidencia adicional. La frecuencia por sí sola no identifica la fuente.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-16" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-16">Verificación de la sesión 16</h2>
+<p>Una PSD de aceleración se expresa en <span class="math inline">\((m/s^2)^2/Hz\)</span>.</p>
+<ol type="1">
+<li>indique las unidades de su integral entre 0 y 20 Hz;</li>
+<li>explique qué hace <code>detrend="constant"</code>;</li>
+<li>compare periodograma unilateral y bilateral;</li>
+<li>proponga una prueba de Parseval;</li>
+<li>explique por qué un pico no identifica automáticamente un mecanismo.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La respuesta debe conservar unidades y diferenciar estimador, parámetro y explicación fisiológica.</p>
+</div>
+</div>
+</section>
+<section id="cierre-de-la-semana-8" class="level2">
+<h2 class="anchored" data-anchor-id="cierre-de-la-semana-8">Cierre de la semana 8</h2>
+<ul>
+<li>El muestreo replica el espectro y puede producir aliasing.</li>
+<li>Nyquist ofrece una condición ideal, no un margen de diseño suficiente.</li>
+<li><span class="math inline">\(f_s\)</span> y <span class="math inline">\(T\)</span> controlan propiedades distintas.</li>
+<li>El periodograma estima densidad de potencia a partir de un bloque finito.</li>
+<li>Las unidades y Parseval permiten verificar el escalamiento.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Pregunta de salida
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>¿Por qué duplicar la frecuencia de muestreo sin cambiar la duración no divide a la mitad la incertidumbre del periodograma?</p>
+</div>
+</div>
+</section>
+</section>
+<section id="semana-9-welch-y-análisis-tiempo-frecuencia" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Semana 9 · Welch y análisis tiempo-frecuencia</h1>
+<section id="sesión-17-welch-reduce-variabilidad-mediante-promediado" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-17-welch-reduce-variabilidad-mediante-promediado">Sesión 17 · Welch reduce variabilidad mediante promediado</h2>
+<p>El método divide el registro en segmentos, aplica una ventana y promedia periodogramas modificados.</p>
+<p><span class="math display">\[\widehat S_{Welch}(f)=\frac{1}{K}\sum_{r=1}^{K}\widehat S_r(f).\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El promediado reduce variabilidad del estimador a cambio de resolución frecuencial y dependencia entre segmentos solapados.</p>
+</div>
+</div>
+</section>
+<section id="el-procedimiento-contiene-cuatro-decisiones" class="level2">
+<h2 class="anchored" data-anchor-id="el-procedimiento-contiene-cuatro-decisiones">El procedimiento contiene cuatro decisiones</h2>
+<ol type="1">
+<li>longitud de segmento <span class="math inline">\(L\)</span>;</li>
+<li>solapamiento <span class="math inline">\(O\)</span>;</li>
+<li>ventana <span class="math inline">\(w[n]\)</span>;</li>
+<li>número de FFT <span class="math inline">\(N_{FFT}\)</span>.</li>
+</ol>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Dos PSD calculadas con parámetros distintos pueden diferir aunque provengan del mismo registro.</p>
+</div>
+</div>
+</section>
+<section id="segmentos-cortos-producen-más-promedios" class="level2">
+<h2 class="anchored" data-anchor-id="segmentos-cortos-producen-más-promedios">Segmentos cortos producen más promedios</h2>
+<p>Al reducir <span class="math inline">\(L\)</span>:</p>
+<ul>
+<li>aumenta el número de segmentos;</li>
+<li>suele disminuir la variabilidad;</li>
+<li>empeora la resolución frecuencial;</li>
+<li>mejora la aproximación de estacionariedad local.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La longitud debe relacionarse con la separación frecuencial necesaria y la escala temporal del fenómeno.</p>
+</div>
+</div>
+</section>
+<section id="el-solapamiento-reutiliza-muestras" class="level2">
+<h2 class="anchored" data-anchor-id="el-solapamiento-reutiliza-muestras">El solapamiento reutiliza muestras</h2>
+<p>Con avance <span class="math inline">\(H=L-O\)</span>:</p>
+<p><span class="math display">\[\text{solapamiento relativo}=\frac{O}{L}=1-\frac{H}{L}.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Más solapamiento no crea observaciones independientes. Su beneficio depende de la ventana y del costo computacional.</p>
+</div>
+</div>
+</section>
+<section id="hann-y-50-forman-una-elección-frecuente" class="level2">
+<h2 class="anchored" data-anchor-id="hann-y-50-forman-una-elección-frecuente">Hann y 50 % forman una elección frecuente</h2>
+<p>La combinación suele ofrecer cobertura uniforme razonable y eficiencia computacional.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>“Frecuente” no significa universal. Eventos transitorios, registros breves o necesidades de amplitud pueden exigir otra selección.</p>
+</div>
+</div>
+</section>
+<section id="el-escalamiento-incluye-la-energía-de-la-ventana" class="level2">
+<h2 class="anchored" data-anchor-id="el-escalamiento-incluye-la-energía-de-la-ventana">El escalamiento incluye la energía de la ventana</h2>
+<p>El periodograma modificado compensa, según la convención, la suma cuadrática de <span class="math inline">\(w[n]\)</span>:</p>
+<p><span class="math display">\[U=\frac{1}{L}\sum_{n=0}^{L-1}w^2[n].\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La normalización correcta permite que la integral de la PSD represente potencia del segmento.</p>
+</div>
+</div>
+</section>
+<section id="n_fft-cambia-la-malla-no-la-evidencia" class="level2">
+<h2 class="anchored" data-anchor-id="n_fft-cambia-la-malla-no-la-evidencia"><span class="math inline">\(N_{FFT}\)</span> cambia la malla, no la evidencia</h2>
+<p>Si <span class="math inline">\(N_{FFT}&gt;L\)</span>, se aplica zero padding dentro de cada segmento.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La densidad de puntos puede facilitar lectura o integración, pero la resolución física sigue limitada por <span class="math inline">\(L/f_s\)</span> y la ventana.</p>
+</div>
+</div>
+</section>
+<section id="promediar-requiere-segmentos-comparables" class="level2">
+<h2 class="anchored" data-anchor-id="promediar-requiere-segmentos-comparables">Promediar requiere segmentos comparables</h2>
+<p>Welch supone que los segmentos describen propiedades espectrales suficientemente semejantes.</p>
+<p>Problemas:</p>
+<ul>
+<li>cambio de tarea;</li>
+<li>transición fisiológica;</li>
+<li>artefactos concentrados;</li>
+<li>deriva prolongada.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Promediar estados diferentes produce una PSD precisa para una mezcla que puede carecer de significado fisiológico.</p>
+</div>
+</div>
+</section>
+<section id="ancho-de-banda-puede-definirse-de-varias-formas" class="level2">
+<h2 class="anchored" data-anchor-id="ancho-de-banda-puede-definirse-de-varias-formas">Ancho de banda puede definirse de varias formas</h2>
+<p>Definiciones habituales:</p>
+<ul>
+<li>intervalo entre bordes fijados por especificación;</li>
+<li>banda que contiene un porcentaje de potencia;</li>
+<li>frecuencia media o mediana espectral;</li>
+<li>soporte efectivo por encima de un umbral.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>“Ancho de banda” necesita una definición operacional. Sin ella, la comparación no es reproducible.</p>
+</div>
+</div>
+</section>
+<section id="frecuencia-mediana-espectral" class="level2">
+<h2 class="anchored" data-anchor-id="frecuencia-mediana-espectral">Frecuencia mediana espectral</h2>
+<p>La frecuencia <span class="math inline">\(f_m\)</span> satisface</p>
+<p><span class="math display">\[\int_{0}^{f_m}S_{xx}(f)df
+=\frac{1}{2}\int_{0}^{f_{max}}S_{xx}(f)df.\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>En EMG puede describir redistribución espectral, pero depende de fatiga, fuerza, geometría del registro y preprocesamiento.</p>
+</div>
+</div>
+</section>
+<section id="frecuencia-media-espectral" class="level2">
+<h2 class="anchored" data-anchor-id="frecuencia-media-espectral">Frecuencia media espectral</h2>
+<p><span class="math display">\[f_{mean}=\frac{\int fS_{xx}(f)df}{\int S_{xx}(f)df}.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La frecuencia media es sensible a contaminación de alta frecuencia y a los límites escogidos para la integración.</p>
+</div>
+</div>
+</section>
+<section id="potencia-de-banda-mediante-integración-numérica" class="level2">
+<h2 class="anchored" data-anchor-id="potencia-de-banda-mediante-integración-numérica">Potencia de banda mediante integración numérica</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> welch</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>f, Pxx <span class="op">=</span> welch(x, fs<span class="op">=</span>fs, window<span class="op">=</span><span class="st">"hann"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>               nperseg<span class="op">=</span>L, noverlap<span class="op">=</span>L<span class="op">//</span><span class="dv">2</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>               detrend<span class="op">=</span><span class="st">"constant"</span>, scaling<span class="op">=</span><span class="st">"density"</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>mask <span class="op">=</span> (f <span class="op">&gt;=</span> f1) <span class="op">&amp;</span> (f <span class="op">&lt;=</span> f2)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>P_band <span class="op">=</span> np.trapz(Pxx[mask], f[mask])</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La integración debe incluir suficientes puntos y límites coherentes con la resolución disponible.</p>
+</div>
+</div>
+</section>
+<section id="selección-razonada-de-parámetros" class="level2">
+<h2 class="anchored" data-anchor-id="selección-razonada-de-parámetros">Selección razonada de parámetros</h2>
+<ol type="1">
+<li>fijar la mínima separación frecuencial de interés;</li>
+<li>elegir una duración compatible con esa separación;</li>
+<li>verificar estacionariedad local;</li>
+<li>seleccionar ventana según fuga y resolución;</li>
+<li>usar solapamiento justificado;</li>
+<li>validar potencia y estabilidad.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Los parámetros forman parte del método y deben quedar registrados junto con el resultado.</p>
+</div>
+</div>
+</section>
+<section id="comparación-entre-condiciones" class="level2">
+<h2 class="anchored" data-anchor-id="comparación-entre-condiciones">Comparación entre condiciones</h2>
+<p>Para comparar reposo y tarea:</p>
+<ul>
+<li>igualar unidades y preprocesamiento;</li>
+<li>usar parámetros espectrales iguales;</li>
+<li>controlar duración y calidad;</li>
+<li>comparar por participante cuando corresponda;</li>
+<li>reportar variabilidad, no solo promedios.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Normalizar cada condición por un denominador distinto puede cambiar la interpretación de las diferencias.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-17" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-17">Verificación de la sesión 17</h2>
+<p>Un registro de 60 s a 1000 Hz usa Welch con segmentos de 2 s y 50 % de solapamiento.</p>
+<ol type="1">
+<li>determine <span class="math inline">\(L\)</span> y el avance <span class="math inline">\(H\)</span>;</li>
+<li>calcule la separación nominal de bins;</li>
+<li>explique qué cambia con segmentos de 4 s;</li>
+<li>identifique el supuesto al promediar;</li>
+<li>proponga una prueba de conservación de potencia.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La respuesta debe discutir resolución, varianza, dependencia y estacionariedad.</p>
+</div>
+</div>
+</section>
+<section id="sesión-18-una-señal-no-estacionaria-cambia-durante-el-registro" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-18-una-señal-no-estacionaria-cambia-durante-el-registro">Sesión 18 · Una señal no estacionaria cambia durante el registro</h2>
+<p>Ejemplos:</p>
+<ul>
+<li>transición de reposo a ejercicio;</li>
+<li>ráfagas EEG;</li>
+<li>activación muscular durante marcha;</li>
+<li>cambios de ritmo cardíaco.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un espectro global mezcla tiempos. El análisis tiempo-frecuencia busca localizar cómo cambia el contenido espectral.</p>
+</div>
+</div>
+</section>
+<section id="la-estacionariedad-es-un-supuesto-de-modelamiento" class="level2">
+<h2 class="anchored" data-anchor-id="la-estacionariedad-es-un-supuesto-de-modelamiento">La estacionariedad es un supuesto de modelamiento</h2>
+<p>En sentido amplio:</p>
+<p><span class="math display">\[\mathbb{E}\{x(t)\}=\mu,\]</span></p>
+<p><span class="math display">\[R_x(t_1,t_2)=R_x(t_1-t_2).\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Las bioseñales rara vez cumplen estacionariedad global. Se trabaja con segmentos donde las propiedades cambian poco para el objetivo.</p>
+</div>
+</div>
+</section>
+<section id="la-stft-aplica-fourier-localmente" class="level2">
+<h2 class="anchored" data-anchor-id="la-stft-aplica-fourier-localmente">La STFT aplica Fourier localmente</h2>
+<p><span class="math display">\[X(\tau,f)=\int_{-\infty}^{\infty}x(t)w(t-\tau)e^{-j2\pi ft}dt.\]</span></p>
+<ul>
+<li><span class="math inline">\(\tau\)</span>: posición temporal de la ventana.</li>
+<li><span class="math inline">\(f\)</span>: frecuencia analizada.</li>
+<li><span class="math inline">\(w\)</span>: ventana de análisis.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La STFT produce una colección de espectros locales con una ventana de forma y longitud fijas.</p>
+</div>
+</div>
+</section>
+<section id="el-espectrograma-muestra-magnitud-o-potencia" class="level2">
+<h2 class="anchored" data-anchor-id="el-espectrograma-muestra-magnitud-o-potencia">El espectrograma muestra magnitud o potencia</h2>
+<p>Una definición habitual:</p>
+<p><span class="math display">\[\mathcal{S}(\tau,f)=|X(\tau,f)|^2.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Color, escala logarítmica y normalización cambian la apariencia. Una imagen atractiva no garantiza unidades correctas.</p>
+</div>
+</div>
+</section>
+<section id="la-ventana-fija-impone-un-compromiso" class="level2">
+<h2 class="anchored" data-anchor-id="la-ventana-fija-impone-un-compromiso">La ventana fija impone un compromiso</h2>
+<p>Ventana corta:</p>
+<ul>
+<li>mejor localización temporal;</li>
+<li>peor separación frecuencial.</li>
+</ul>
+<p>Ventana larga:</p>
+<ul>
+<li>mejor separación frecuencial;</li>
+<li>mayor mezcla temporal.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La STFT no ofrece máxima resolución en ambos dominios. La pregunta define el compromiso aceptable.</p>
+</div>
+</div>
+</section>
+<section id="la-incertidumbre-expresa-ese-límite" class="level2">
+<h2 class="anchored" data-anchor-id="la-incertidumbre-expresa-ese-límite">La incertidumbre expresa ese límite</h2>
+<p>De forma conceptual:</p>
+<p><span class="math display">\[\Delta t\,\Delta f\geq C,\]</span></p>
+<p>donde <span class="math inline">\(C\)</span> depende de la definición y la ventana.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Reducir indefinidamente la ventana mejora tiempo, pero ensancha la respuesta frecuencial de cada componente.</p>
+</div>
+</div>
+</section>
+<section id="el-avance-controla-densidad-temporal" class="level2">
+<h2 class="anchored" data-anchor-id="el-avance-controla-densidad-temporal">El avance controla densidad temporal</h2>
+<p>Con ventana <span class="math inline">\(L\)</span> y avance <span class="math inline">\(H\)</span>:</p>
+<p><span class="math display">\[t_r=\frac{rH+\text{referencia de ventana}}{f_s}.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Mayor solapamiento produce más columnas en el espectrograma, pero no aumenta la resolución temporal física en la misma proporción.</p>
+</div>
+</div>
+</section>
+<section id="las-condiciones-de-borde-necesitan-atención" class="level2">
+<h2 class="anchored" data-anchor-id="las-condiciones-de-borde-necesitan-atención">Las condiciones de borde necesitan atención</h2>
+<p>Cerca del inicio y final, la ventana puede:</p>
+<ul>
+<li>contener menos datos reales;</li>
+<li>usar relleno;</li>
+<li>introducir transitorios de borde;</li>
+<li>cambiar la interpretación temporal.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Debe documentarse si se usa padding, centrado de ventanas y extensión del registro.</p>
+</div>
+</div>
+</section>
+<section id="la-escala-logarítmica-revela-componentes-débiles" class="level2">
+<h2 class="anchored" data-anchor-id="la-escala-logarítmica-revela-componentes-débiles">La escala logarítmica revela componentes débiles</h2>
+<p>Una representación frecuente es</p>
+<p><span class="math display">\[P_{dB}(\tau,f)=10\log_{10}\left(\frac{P(\tau,f)}{P_{ref}}\right).\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Sin <span class="math inline">\(P_{ref}\)</span> y unidades, “dB” queda incompleto. Ceros o valores muy pequeños requieren un piso numérico declarado.</p>
+</div>
+</div>
+</section>
+<section id="stft-de-una-activación-emg" class="level2">
+<h2 class="anchored" data-anchor-id="stft-de-una-activación-emg">STFT de una activación EMG</h2>
+<p>Una ventana corta puede localizar inicio y final de activación. Una ventana más larga estabiliza la distribución espectral dentro de la contracción.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La envolvente responde a variación de amplitud lenta. El espectrograma describe además cómo se distribuye energía dentro de la banda.</p>
+</div>
+</div>
+</section>
+<section id="stft-de-una-ráfaga-eeg" class="level2">
+<h2 class="anchored" data-anchor-id="stft-de-una-ráfaga-eeg">STFT de una ráfaga EEG</h2>
+<p>Preguntas relevantes:</p>
+<ul>
+<li>¿cuándo comienza la ráfaga?</li>
+<li>¿qué banda domina?</li>
+<li>¿cambia su frecuencia central?</li>
+<li>¿aparece simultáneamente en varios canales?</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una banda visible no identifica por sí sola una fuente neural. Artefactos o referencia común pueden generar patrones similares.</p>
+</div>
+</div>
+</section>
+<section id="código-espectrograma-con-parámetros-explícitos" class="level2">
+<h2 class="anchored" data-anchor-id="código-espectrograma-con-parámetros-explícitos">Código: espectrograma con parámetros explícitos</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.signal <span class="im">import</span> stft</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>f, t, Z <span class="op">=</span> stft(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    x, fs<span class="op">=</span>fs, window<span class="op">=</span><span class="st">"hann"</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    nperseg<span class="op">=</span>L, noverlap<span class="op">=</span>L<span class="op">-</span>H,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    nfft<span class="op">=</span>Nfft, detrend<span class="op">=</span><span class="st">"constant"</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    boundary<span class="op">=</span><span class="va">None</span>, padded<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>P <span class="op">=</span> np.<span class="bu">abs</span>(Z)<span class="op">**</span><span class="dv">2</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La conversión de <span class="math inline">\(|Z|^2\)</span> a PSD requiere revisar la normalización de la función y el propósito del análisis.</p>
+</div>
+</div>
+</section>
+<section id="validar-un-espectrograma" class="level2">
+<h2 class="anchored" data-anchor-id="validar-un-espectrograma">Validar un espectrograma</h2>
+<ol type="1">
+<li>contrastar eventos con el dominio temporal;</li>
+<li>verificar frecuencias con señales sintéticas;</li>
+<li>revisar efectos de ventana y borde;</li>
+<li>repetir con otra longitud razonable;</li>
+<li>comparar potencia integrada con estimaciones temporales;</li>
+<li>inspeccionar canales de artefacto.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una interpretación robusta debe persistir bajo cambios moderados de parámetros compatibles con la pregunta.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-18" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-18">Verificación de la sesión 18</h2>
+<p>Una ráfaga de 20 Hz dura 300 ms en un EEG a 250 Hz.</p>
+<ol type="1">
+<li>compare ventanas de 128 ms y 1 s;</li>
+<li>indique cuál localiza mejor el inicio;</li>
+<li>indique cuál separa mejor 20 Hz de 22 Hz;</li>
+<li>discuta el efecto del solapamiento;</li>
+<li>proponga canales o marcas para validar origen.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La respuesta debe conectar duración del evento, lóbulo temporal, resolución y evidencia fisiológica.</p>
+</div>
+</div>
+</section>
+<section id="cierre-de-la-semana-9" class="level2">
+<h2 class="anchored" data-anchor-id="cierre-de-la-semana-9">Cierre de la semana 9</h2>
+<ul>
+<li>Welch promedia periodogramas modificados para reducir variabilidad.</li>
+<li>La longitud de segmento controla resolución y aproximación local.</li>
+<li>Ancho de banda necesita una definición reproducible.</li>
+<li>La STFT localiza cambios espectrales con resolución limitada.</li>
+<li>Ventana, solapamiento, padding y escala forman parte del resultado.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Pregunta de salida
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>¿Por qué un espectrograma con más columnas puede no contener mejor resolución temporal?</p>
+</div>
+</div>
+</section>
+</section>
+<section id="semana-10-ventanas-tiempo-frecuencia-y-sistemas-lti" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Semana 10 · Ventanas tiempo-frecuencia y sistemas LTI</h1>
+<section id="sesión-19-la-ventana-debe-responder-a-la-pregunta" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-19-la-ventana-debe-responder-a-la-pregunta">Sesión 19 · La ventana debe responder a la pregunta</h2>
+<p>Tres preguntas dominan la selección:</p>
+<ol type="1">
+<li>¿qué duración tiene el evento?</li>
+<li>¿qué separación frecuencial se necesita?</li>
+<li>¿qué diferencia de amplitud existe entre componentes?</li>
+</ol>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La forma y longitud de ventana se eligen conjuntamente. Ninguna ventana domina en todos los criterios.</p>
+</div>
+</div>
+</section>
+<section id="la-longitud-fija-una-escala-de-observación" class="level2">
+<h2 class="anchored" data-anchor-id="la-longitud-fija-una-escala-de-observación">La longitud fija una escala de observación</h2>
+<p>Para <span class="math inline">\(L\)</span> muestras:</p>
+<p><span class="math display">\[T_w=\frac{L}{f_s},\qquad \Delta f_{nom}=\frac{f_s}{L}.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La resolución efectiva depende además de la forma de la ventana y del criterio usado para distinguir componentes.</p>
+</div>
+</div>
+</section>
+<section id="rectangular-prioriza-un-lóbulo-principal-estrecho" class="level2">
+<h2 class="anchored" data-anchor-id="rectangular-prioriza-un-lóbulo-principal-estrecho">Rectangular prioriza un lóbulo principal estrecho</h2>
+<p>Ventajas:</p>
+<ul>
+<li>máxima conservación de un bloque alineado;</li>
+<li>buena separación nominal de tonos comparables.</li>
+</ul>
+<p>Limitaciones:</p>
+<ul>
+<li>lóbulos laterales altos;</li>
+<li>sensibilidad a discontinuidades de borde.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Resulta útil como referencia para comprender por qué el recorte directo produce fuga.</p>
+</div>
+</div>
+</section>
+<section id="hann-ofrece-un-compromiso-general" class="level2">
+<h2 class="anchored" data-anchor-id="hann-ofrece-un-compromiso-general">Hann ofrece un compromiso general</h2>
+<p>Ventajas:</p>
+<ul>
+<li>extremos nulos;</li>
+<li>menor fuga lateral que rectangular;</li>
+<li>uso frecuente en Welch y STFT.</li>
+</ul>
+<p>Limitación principal: lóbulo central más ancho.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Hann suele ser un punto de partida defendible, no una selección automática.</p>
+</div>
+</div>
+</section>
+<section id="hamming-mantiene-extremos-pequeños-no-nulos" class="level2">
+<h2 class="anchored" data-anchor-id="hamming-mantiene-extremos-pequeños-no-nulos">Hamming mantiene extremos pequeños, no nulos</h2>
+<p>Hamming reduce especialmente el primer lóbulo lateral, pero su extensión periódica mantiene una discontinuidad pequeña.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La diferencia frente a Hann puede ser relevante para estimación tonal y respuesta de filtros, aunque no siempre cambia una conclusión biomédica.</p>
+</div>
+</div>
+</section>
+<section id="blackman-prioriza-rango-dinámico" class="level2">
+<h2 class="anchored" data-anchor-id="blackman-prioriza-rango-dinámico">Blackman prioriza rango dinámico</h2>
+<p>Sus lóbulos laterales bajos ayudan a observar componentes débiles cerca de componentes intensas.</p>
+<p>Costo: lóbulo principal más ancho y menor separación de frecuencias próximas.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Reducir fuga lateral no mejora simultáneamente todas las formas de resolución.</p>
+</div>
+</div>
+</section>
+<section id="una-ventana-gaussiana-localiza-de-forma-equilibrada" class="level2">
+<h2 class="anchored" data-anchor-id="una-ventana-gaussiana-localiza-de-forma-equilibrada">Una ventana gaussiana localiza de forma equilibrada</h2>
+<p>La familia gaussiana permite ajustar el compromiso mediante su dispersión y posee buenas propiedades de concentración tiempo-frecuencia.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La elección del parámetro debe quedar documentada. “Gaussiana” no define por sí sola una ventana única.</p>
+</div>
+</div>
+</section>
+<section id="ventana-y-evento-deben-tener-escalas-compatibles" class="level2">
+<h2 class="anchored" data-anchor-id="ventana-y-evento-deben-tener-escalas-compatibles">Ventana y evento deben tener escalas compatibles</h2>
+<p>Ejemplos:</p>
+<ul>
+<li>QRS: decenas a pocos cientos de milisegundos;</li>
+<li>activación EMG: depende de la tarea y músculo;</li>
+<li>oscilaciones respiratorias: varios segundos;</li>
+<li>ritmos EEG sostenidos: duración definida por hipótesis.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una ventana mucho mayor que el evento diluye su localización. Una ventana demasiado corta pierde detalle frecuencial.</p>
+</div>
+</div>
+</section>
+<section id="la-frecuencia-de-interés-determina-ciclos-observados" class="level2">
+<h2 class="anchored" data-anchor-id="la-frecuencia-de-interés-determina-ciclos-observados">La frecuencia de interés determina ciclos observados</h2>
+<p>Número aproximado de ciclos dentro de la ventana:</p>
+<p><span class="math display">\[N_c=f_0T_w.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Estimar una frecuencia a partir de menos de un ciclo completo es inestable y depende fuertemente del modelo.</p>
+</div>
+</div>
+</section>
+<section id="solapamiento-mejora-seguimiento-visual" class="level2">
+<h2 class="anchored" data-anchor-id="solapamiento-mejora-seguimiento-visual">Solapamiento mejora seguimiento visual</h2>
+<p>Reducir el avance <span class="math inline">\(H\)</span> produce estimaciones más densas en el tiempo.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Las columnas vecinas comparten datos y son dependientes. No deben contarse como observaciones independientes en análisis estadístico.</p>
+</div>
+</div>
+</section>
+<section id="zero-padding-facilita-localizar-máximos" class="level2">
+<h2 class="anchored" data-anchor-id="zero-padding-facilita-localizar-máximos">Zero padding facilita localizar máximos</h2>
+<p>Una malla frecuencial densa puede ayudar a interpolar el máximo de un lóbulo.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La precisión de la estimación sigue limitada por SNR, duración, ventana y estabilidad de la frecuencia.</p>
+</div>
+</div>
+</section>
+<section id="normalizar-entre-ventanas-requiere-coherencia" class="level2">
+<h2 class="anchored" data-anchor-id="normalizar-entre-ventanas-requiere-coherencia">Normalizar entre ventanas requiere coherencia</h2>
+<p>Opciones distintas responden preguntas distintas:</p>
+<ul>
+<li>potencia absoluta;</li>
+<li>potencia relativa por ventana;</li>
+<li>cambio respecto de una línea base;</li>
+<li>puntuación estandarizada por frecuencia.</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Normalizar cada columna por su propia potencia elimina cambios globales de amplitud y puede ocultar activaciones reales.</p>
+</div>
+</div>
+</section>
+<section id="aplicación-activación-muscular-durante-marcha" class="level2">
+<h2 class="anchored" data-anchor-id="aplicación-activación-muscular-durante-marcha">Aplicación: activación muscular durante marcha</h2>
+<p>Una STFT puede describir cuándo aumenta energía EMG y si su distribución cambia dentro del ciclo.</p>
+<p>Diseño:</p>
+<ul>
+<li>alinear ciclos con eventos de marcha;</li>
+<li>conservar escala o usar referencia fisiológica;</li>
+<li>separar análisis temporal y espectral;</li>
+<li>validar artefactos de movimiento.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El espectrograma debe interpretarse junto con el ciclo de marcha y no como una imagen aislada.</p>
+</div>
+</div>
+</section>
+<section id="aplicación-cambio-de-ritmo-respiratorio" class="level2">
+<h2 class="anchored" data-anchor-id="aplicación-cambio-de-ritmo-respiratorio">Aplicación: cambio de ritmo respiratorio</h2>
+<p>Ventanas largas separan frecuencias respiratorias próximas. Ventanas cortas localizan transiciones de ritmo.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una estrategia útil compara varias longitudes plausibles y reporta qué conclusión permanece estable.</p>
+</div>
+</div>
+</section>
+<section id="flujo-de-selección-documentada" class="level2">
+<h2 class="anchored" data-anchor-id="flujo-de-selección-documentada">Flujo de selección documentada</h2>
+<ol type="1">
+<li>formular evento o banda de interés;</li>
+<li>estimar su escala temporal;</li>
+<li>fijar separación frecuencial necesaria;</li>
+<li>elegir longitud y forma;</li>
+<li>definir avance y padding;</li>
+<li>validar con señales conocidas;</li>
+<li>realizar análisis de sensibilidad.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La selección final debe poder reproducirse a partir de parámetros guardados, no de ajustes visuales manuales.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-19" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-19">Verificación de la sesión 19</h2>
+<p>Se desea localizar una activación de 250 ms y distinguir componentes separadas 2 Hz.</p>
+<ol type="1">
+<li>analice la tensión entre ambos objetivos;</li>
+<li>calcule la duración mínima nominal para 2 Hz;</li>
+<li>proponga una longitud inicial;</li>
+<li>seleccione una ventana y justifique;</li>
+<li>describa un análisis de sensibilidad.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La solución debe reconocer que una única STFT puede no satisfacer simultáneamente ambos objetivos.</p>
+</div>
+</div>
+</section>
+<section id="sesión-20-un-sistema-transforma-una-señal" class="level2">
+<h2 class="anchored" data-anchor-id="sesión-20-un-sistema-transforma-una-señal">Sesión 20 · Un sistema transforma una señal</h2>
+<p><span class="math display">\[y=\mathcal{T}\{x\}.\]</span></p>
+<p>El análisis pregunta qué propiedades de <span class="math inline">\(\mathcal{T}\)</span> permiten predecir la salida para entradas diferentes.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Las propiedades pertenecen al modelo del sistema dentro de condiciones definidas. Un sistema fisiológico puede ser aproximadamente lineal solo en un rango.</p>
+</div>
+</div>
+</section>
+<section id="linealidad-combina-aditividad-y-homogeneidad" class="level2">
+<h2 class="anchored" data-anchor-id="linealidad-combina-aditividad-y-homogeneidad">Linealidad combina aditividad y homogeneidad</h2>
+<p><span class="math display">\[\mathcal{T}\{a x_1+b x_2\}
+=a\mathcal{T}\{x_1\}+b\mathcal{T}\{x_2\}.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Verificar una sola entrada no demuestra linealidad. La propiedad debe sostenerse para las combinaciones consideradas.</p>
+</div>
+</div>
+</section>
+<section id="saturación-viola-linealidad" class="level2">
+<h2 class="anchored" data-anchor-id="saturación-viola-linealidad">Saturación viola linealidad</h2>
+<p>Un amplificador ideal puede cumplir <span class="math inline">\(y=Gx\)</span> dentro de su rango. Al alcanzar los rieles, la salida se recorta.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La linealidad depende del rango operativo. Un modelo local puede ser útil aunque el dispositivo completo sea no lineal.</p>
+</div>
+</div>
+</section>
+<section id="invariancia-temporal-conserva-la-regla" class="level2">
+<h2 class="anchored" data-anchor-id="invariancia-temporal-conserva-la-regla">Invariancia temporal conserva la regla</h2>
+<p>Si</p>
+<p><span class="math display">\[y(t)=\mathcal{T}\{x(t)\},\]</span></p>
+<p>un sistema invariante cumple</p>
+<p><span class="math display">\[\mathcal{T}\{x(t-t_0)\}=y(t-t_0).\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El desplazamiento de la entrada debe producir el mismo desplazamiento de la salida, sin cambiar forma ni ganancia.</p>
+</div>
+</div>
+</section>
+<section id="adaptación-fisiológica-rompe-invariancia" class="level2">
+<h2 class="anchored" data-anchor-id="adaptación-fisiológica-rompe-invariancia">Adaptación fisiológica rompe invariancia</h2>
+<p>La respuesta a un mismo estímulo puede cambiar por fatiga, aprendizaje, medicación o estado autonómico.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Aplicar herramientas LTI a un sistema biológico exige justificar intervalo, amplitud y estado donde la aproximación resulta válida.</p>
+</div>
+</div>
+</section>
+<section id="memoria-y-causalidad-son-propiedades-distintas" class="level2">
+<h2 class="anchored" data-anchor-id="memoria-y-causalidad-son-propiedades-distintas">Memoria y causalidad son propiedades distintas</h2>
+<ul>
+<li>sin memoria: <span class="math inline">\(y(t)\)</span> depende solo de <span class="math inline">\(x(t)\)</span>;</li>
+<li>con memoria: depende de otros instantes;</li>
+<li>causal: no usa valores futuros de la entrada.</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un promedio móvil causal tiene memoria. Un filtrado de fase cero fuera de línea usa muestras futuras y no es causal.</p>
+</div>
+</div>
+</section>
+<section id="estabilidad-bibo-limita-la-salida" class="level2">
+<h2 class="anchored" data-anchor-id="estabilidad-bibo-limita-la-salida">Estabilidad BIBO limita la salida</h2>
+<p>Si <span class="math inline">\(|x(t)|\leq M_x&lt;\infty\)</span>, estabilidad BIBO exige <span class="math inline">\(|y(t)|\leq M_y&lt;\infty\)</span>.</p>
+<p>Para un sistema LTI continuo, una condición suficiente y necesaria habitual es</p>
+<p><span class="math display">\[\int_{-\infty}^{\infty}|h(t)|dt&lt;\infty.\]</span></p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Estabilidad matemática no implica seguridad clínica ni validez fisiológica.</p>
+</div>
+</div>
+</section>
+<section id="el-impulso-ideal-concentra-área-unitaria" class="level2">
+<h2 class="anchored" data-anchor-id="el-impulso-ideal-concentra-área-unitaria">El impulso ideal concentra área unitaria</h2>
+<p><span class="math display">\[\delta(t)=0\quad\text{para }t\neq0,\]</span></p>
+<p><span class="math display">\[\int_{-\infty}^{\infty}\delta(t)dt=1.\]</span></p>
+<p>Propiedad de selección:</p>
+<p><span class="math display">\[\int x(\tau)\delta(t-\tau)d\tau=x(t).\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El impulso de Dirac es una distribución matemática. Los experimentos físicos usan pulsos breves con amplitud y energía limitadas.</p>
+</div>
+</div>
+</section>
+<section id="en-discreto-el-impulso-es-una-secuencia-ordinaria" class="level2">
+<h2 class="anchored" data-anchor-id="en-discreto-el-impulso-es-una-secuencia-ordinaria">En discreto, el impulso es una secuencia ordinaria</h2>
+<p><span class="math display">\[\delta[n]=\begin{cases}1,&amp;n=0,\\0,&amp;n\neq0.\end{cases}\]</span></p>
+<p>Toda secuencia puede escribirse como</p>
+<p><span class="math display">\[x[n]=\sum_{k=-\infty}^{\infty}x[k]\delta[n-k].\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La descomposición expresa la entrada como suma de impulsos desplazados y ponderados.</p>
+</div>
+</div>
+</section>
+<section id="la-respuesta-al-impulso-caracteriza-un-sistema-lti" class="level2">
+<h2 class="anchored" data-anchor-id="la-respuesta-al-impulso-caracteriza-un-sistema-lti">La respuesta al impulso caracteriza un sistema LTI</h2>
+<p><span class="math display">\[h(t)=\mathcal{T}\{\delta(t)\}.\]</span></p>
+<p>Por linealidad e invariancia:</p>
+<p><span class="math display">\[y(t)=\int_{-\infty}^{\infty}x(\tau)h(t-\tau)d\tau.\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Conocer <span class="math inline">\(h\)</span> permite calcular la respuesta a cualquier entrada dentro del modelo LTI.</p>
+</div>
+</div>
+</section>
+<section id="la-salida-es-una-convolución" class="level2">
+<h2 class="anchored" data-anchor-id="la-salida-es-una-convolución">La salida es una convolución</h2>
+<p><span class="math display">\[y(t)=x(t)*h(t).\]</span></p>
+<p>En tiempo discreto:</p>
+<p><span class="math display">\[y[n]=\sum_{k=-\infty}^{\infty}x[k]h[n-k].\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La semana siguiente desarrolla interpretación gráfica, soporte y cálculo de la convolución.</p>
+</div>
+</div>
+</section>
+<section id="causalidad-de-un-lti-se-lee-en-h" class="level2">
+<h2 class="anchored" data-anchor-id="causalidad-de-un-lti-se-lee-en-h">Causalidad de un LTI se lee en <span class="math inline">\(h\)</span></h2>
+<p>Un sistema LTI causal cumple</p>
+<p><span class="math display">\[h(t)=0\quad\text{para }t&lt;0,\]</span></p>
+<p>o en discreto <span class="math inline">\(h[n]=0\)</span> para <span class="math inline">\(n&lt;0\)</span>.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una respuesta al impulso simétrica alrededor de cero no puede implementarse causalmente sin añadir retardo.</p>
+</div>
+</div>
+</section>
+<section id="las-exponenciales-complejas-son-autofunciones-lti" class="level2">
+<h2 class="anchored" data-anchor-id="las-exponenciales-complejas-son-autofunciones-lti">Las exponenciales complejas son autofunciones LTI</h2>
+<p>Si <span class="math inline">\(x(t)=e^{j2\pi ft}\)</span>, entonces</p>
+<p><span class="math display">\[y(t)=H(f)e^{j2\pi ft}.\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El sistema conserva la frecuencia y modifica amplitud y fase mediante <span class="math inline">\(H(f)\)</span>.</p>
+</div>
+</div>
+</section>
+<section id="hf-es-la-transformada-de-ht" class="level2">
+<h2 class="anchored" data-anchor-id="hf-es-la-transformada-de-ht"><span class="math inline">\(H(f)\)</span> es la transformada de <span class="math inline">\(h(t)\)</span></h2>
+<p><span class="math display">\[H(f)=\int_{-\infty}^{\infty}h(t)e^{-j2\pi ft}dt.\]</span></p>
+<p>La relación</p>
+<p><span class="math display">\[Y(f)=X(f)H(f)\]</span></p>
+<p>coincide con el teorema de convolución estudiado en la semana 6.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Tiempo y frecuencia describen el mismo sistema mediante <span class="math inline">\(h(t)\)</span> y <span class="math inline">\(H(f)\)</span>.</p>
+</div>
+</div>
+</section>
+<section id="ejemplos-de-sistemas-de-procesamiento" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplos-de-sistemas-de-procesamiento">Ejemplos de sistemas de procesamiento</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Sistema</th>
+<th>Respuesta temporal esperada</th>
+<th>Acción frecuencial</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>promedio móvil</td>
+<td>suaviza cambios rápidos</td>
+<td>atenúa frecuencias altas</td>
+</tr>
+<tr class="even">
+<td>diferenciador</td>
+<td>resalta pendientes</td>
+<td>amplifica frecuencias altas</td>
+</tr>
+<tr class="odd">
+<td>retardo</td>
+<td>desplaza la señal</td>
+<td>añade fase lineal</td>
+</tr>
+<tr class="even">
+<td>ganancia</td>
+<td>escala amplitud</td>
+<td>multiplica por constante</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La acción útil depende de preservar los eventos y medidas relevantes para la tarea biomédica.</p>
+</div>
+</div>
+</section>
+<section id="código-probar-linealidad-numéricamente" class="level2">
+<h2 class="anchored" data-anchor-id="código-probar-linealidad-numéricamente">Código: probar linealidad numéricamente</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>y_combo <span class="op">=</span> T(a<span class="op">*</span>x1 <span class="op">+</span> b<span class="op">*</span>x2)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>y_super <span class="op">=</span> a<span class="op">*</span>T(x1) <span class="op">+</span> b<span class="op">*</span>T(x2)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>error <span class="op">=</span> np.linalg.norm(y_combo <span class="op">-</span> y_super)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>referencia <span class="op">=</span> np.linalg.norm(y_combo)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>error_rel <span class="op">=</span> error <span class="op">/</span> <span class="bu">max</span>(referencia, <span class="fl">1e-12</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un error pequeño para algunos vectores apoya la hipótesis, pero no demuestra linealidad para todas las entradas.</p>
+</div>
+</div>
+</section>
+<section id="verificación-de-la-sesión-20" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-de-la-sesión-20">Verificación de la sesión 20</h2>
+<p>Para <span class="math inline">\(y[n]=0.5x[n]+0.5x[n-1]\)</span>:</p>
+<ol type="1">
+<li>verifique linealidad;</li>
+<li>determine memoria y causalidad;</li>
+<li>obtenga <span class="math inline">\(h[n]\)</span>;</li>
+<li>evalúe estabilidad BIBO;</li>
+<li>interprete su efecto sobre un ECG;</li>
+<li>anticipe su respuesta frecuencial.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Criterio de logro
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La respuesta debe conectar la ecuación, las propiedades, <span class="math inline">\(h[n]\)</span> y la interpretación biomédica.</p>
+</div>
+</div>
+</section>
+<section id="cierre-de-la-semana-10" class="level2">
+<h2 class="anchored" data-anchor-id="cierre-de-la-semana-10">Cierre de la semana 10</h2>
+<ul>
+<li>La selección de ventana define una escala tiempo-frecuencia.</li>
+<li>Ninguna configuración maximiza ambas resoluciones.</li>
+<li>Linealidad e invariancia temporal permiten usar superposición.</li>
+<li>La respuesta al impulso caracteriza un sistema LTI.</li>
+<li><span class="math inline">\(h(t)\)</span> y <span class="math inline">\(H(f)\)</span> son descripciones complementarias.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Pregunta de salida
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>¿Qué evidencia experimental necesitaría para tratar un sistema fisiológico como LTI durante un intervalo específico?</p>
+</div>
+</div>
+</section>
+</section>
+<section id="síntesis-y-estudio-autónomo" class="level1 week-divider" data-background-color="#0B3954">
+<h1 class="week-divider" data-background-color="#0B3954">Síntesis y estudio autónomo</h1>
+<section id="la-cadena-completa-de-decisiones" class="level2">
+<h2 class="anchored" data-anchor-id="la-cadena-completa-de-decisiones">La cadena completa de decisiones</h2>
+<p><span class="math display">\[\begin{aligned}
+\text{pregunta}&amp;\rightarrow\text{adquisición}\rightarrow\text{muestreo}\rightarrow\text{segmento}\\
+&amp;\rightarrow\text{ventana}\rightarrow\text{estimador}\rightarrow\text{validación}\rightarrow\text{inferencia}
+\end{aligned}\]</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Cada resultado espectral debe conservar trazabilidad hacia el registro, los parámetros y el estado fisiológico observado.</p>
+</div>
+</div>
+</section>
+<section id="errores-que-deben-poder-diagnosticarse" class="level2">
+<h2 class="anchored" data-anchor-id="errores-que-deben-poder-diagnosticarse">Errores que deben poder diagnosticarse</h2>
+<ol type="1">
+<li>sumar magnitudes cuando corresponde sumar espectros complejos;</li>
+<li>interpretar zero padding como mayor resolución real;</li>
+<li>atribuir fuga a nuevas oscilaciones fisiológicas;</li>
+<li>usar Nyquist sin margen para el filtro analógico;</li>
+<li>confundir potencia por bin con PSD;</li>
+<li>promediar estados incompatibles con Welch;</li>
+<li>leer resolución desde el número de columnas del espectrograma;</li>
+<li>asumir que un sistema biológico es LTI sin verificar rango y estado.</li>
+</ol>
+</section>
+<section id="autoevaluación-acumulativa" class="level2">
+<h2 class="anchored" data-anchor-id="autoevaluación-acumulativa">Autoevaluación acumulativa</h2>
+<p>Puede explicar, sin consultar notas:</p>
+<ul>
+<li>cómo un retraso modifica la fase;</li>
+<li>por qué <span class="math inline">\(\Delta f=1/T\)</span>;</li>
+<li>qué cambia al aplicar Hann;</li>
+<li>cómo se produce aliasing;</li>
+<li>qué unidades tiene una PSD;</li>
+<li>qué intercambia Welch entre resolución y varianza;</li>
+<li>cómo se selecciona una ventana STFT;</li>
+<li>por qué <span class="math inline">\(h(t)\)</span> caracteriza un sistema LTI.</li>
+</ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Una explicación completa incluye ecuación, unidades, supuesto, efecto observable y límite de interpretación.</p>
+</div>
+</div>
+</section>
+<section id="actividad-integradora-sugerida" class="level2">
+<h2 class="anchored" data-anchor-id="actividad-integradora-sugerida">Actividad integradora sugerida</h2>
+<p>Con un registro biomédico real o simulado:</p>
+<ol type="1">
+<li>audite muestreo, unidades y duración;</li>
+<li>compare periodograma y Welch;</li>
+<li>analice dos ventanas;</li>
+<li>verifique potencia mediante integración;</li>
+<li>construya una STFT con dos longitudes;</li>
+<li>interprete cambios y artefactos;</li>
+<li>documente parámetros en Python;</li>
+<li>formule una conclusión limitada por la evidencia.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Producto esperado
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Un cuaderno reproducible que permita reconstruir cada figura y justificar cada decisión.</p>
+</div>
+</div>
+</section>
+<section id="referencias-y-alcance" class="level2">
+<h2 class="anchored" data-anchor-id="referencias-y-alcance">Referencias y alcance</h2>
+<p>Contenido alineado con el programa de <strong>Sistemas y Señales Biomédicos</strong>, semanas 6–10, y con el desarrollo de Fourier, adquisición, potencia y sistemas lineales del texto guía <span class="citation" data-cites="semmlow2018">(<a href="#ref-semmlow2018" role="doc-biblioref">Semmlow 2018</a>)</span>. Para formulación clásica consultar <span class="citation" data-cites="oppenheim1997">(<a href="#ref-oppenheim1997" role="doc-biblioref">Oppenheim, Willsky, y Nawab 1997</a>)</span>. Los ejemplos computacionales siguen prácticas de Python descritas en <span class="citation" data-cites="esakkirajan2024">(<a href="#ref-esakkirajan2024" role="doc-biblioref">Esakkirajan, Veerakumar, y Subudhi 2024</a>)</span>. Para aplicaciones de bioseñales consultar <span class="citation" data-cites="rangayyan2015">(<a href="#ref-rangayyan2015" role="doc-biblioref">Rangayyan 2015</a>)</span>.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Advertencia
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Estas diapositivas apoyan formación en ingeniería. Los ejemplos no establecen criterios diagnósticos ni recomendaciones clínicas.</p>
+</div>
+</div>
+</section>
+<section id="cierre-criterio-de-dominio" class="level2">
+<h2 class="anchored" data-anchor-id="cierre-criterio-de-dominio">Cierre: criterio de dominio</h2>
+<p>El estudiante debe sostener esta afirmación con evidencia:</p>
+<blockquote class="blockquote">
+<p>Un espectro no es una propiedad aislada del organismo. Es el resultado de observar, segmentar y estimar una señal bajo decisiones explícitas.</p>
+</blockquote>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>El dominio del tema se demuestra cuando una conclusión puede rastrearse hasta la adquisición, las unidades, los parámetros y los supuestos.</p>
+</div>
+</div>
+</section>
+<section id="referencias" class="level2 allowframebreaks">
+<h2 class="allowframebreaks anchored" data-anchor-id="referencias">Referencias</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-esakkirajan2024" class="csl-entry" role="listitem">
+Esakkirajan, S., T. Veerakumar, y Badri N. Subudhi. 2024. <em>Digital Signal Processing: Illustration Using Python</em>. Springer. <a href="https://doi.org/10.1007/978-981-99-6752-0">https://doi.org/10.1007/978-981-99-6752-0</a>.
+</div>
+<div id="ref-oppenheim1997" class="csl-entry" role="listitem">
+Oppenheim, Alan V., Alan S. Willsky, y S. Hamid Nawab. 1997. <em>Signals and Systems</em>. 2.ª ed. Prentice Hall.
+</div>
+<div id="ref-rangayyan2015" class="csl-entry" role="listitem">
+Rangayyan, Rangaraj M. 2015. <em>Biomedical Signal Analysis: A Case-Study Approach</em>. 2.ª ed. Wiley-IEEE Press. <a href="https://doi.org/10.1002/9781119068129">https://doi.org/10.1002/9781119068129</a>.
+</div>
+<div id="ref-semmlow2018" class="csl-entry" role="listitem">
+Semmlow, John L. 2018. <em>Circuits, Signals, and Systems for Bioengineers: A MATLAB-Based Introduction</em>. 3.ª ed. Academic Press.
+</div>
+</div>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
