@@ -124,6 +124,7 @@
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
 
 \usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
 \usepackage{calc} % for calculating minipage widths
 \usepackage{caption}
 % Make caption package work with longtable
@@ -149,13 +150,13 @@
 
 
 \ifLuaTeX
-\usepackage[bidi=basic]{babel}
+\usepackage[bidi=basic,shorthands=off]{babel}
 \else
-\usepackage[bidi=default]{babel}
+\usepackage[bidi=default,shorthands=off]{babel}
 \fi
-% get rid of language-specific shorthands (see #6817):
-\let\LanguageShortHands\languageshorthands
-\def\languageshorthands#1{}
+\ifLuaTeX
+  \usepackage{selnolig} % disable illegal ligatures
+\fi
 
 
 \setlength{\emergencystretch}{3em} % prevent overfull lines
@@ -246,11 +247,13 @@
   pdfcreator={LaTeX via pandoc}}
 
 
-\title{Sistemas y Señales Biomédicos}
-\subtitle{Adquisición, sistemas LTI, análisis frecuencial y filtros
-digitales}
+\title{\texorpdfstring{Sistemas y Señales
+Biomédicos}{Sistemas y Señales Biomédicos}}
+\subtitle{\texorpdfstring{Adquisición, sistemas LTI, análisis
+frecuencial y filtros
+digitales}{Adquisición, sistemas LTI, análisis frecuencial y filtros digitales}}
 \author{Ph.D.~Pablo Eduardo Caicedo Rodríguez}
-\date{2026-09-08}
+\date{2026-09-09}
 
 \begin{document}
 \frame{\titlepage}
@@ -260,12 +263,12 @@ digitales}
 \end{frame}
 
 \begin{frame}{Propósito del bloque}
-\phantomsection\label{propuxf3sito-del-bloque}
+\protect\phantomsection\label{propuxf3sito-del-bloque}
 Al finalizar la semana 10, el estudiante podrá \textbf{trazar una
 decisión de filtrado} desde la adquisición de una bioseñal hasta su
 implementación y validación digital.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Idea que articula las cinco semanas}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Idea que articula las cinco semanas}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Un filtro no corrige una adquisición deficiente ni crea información
 ausente. Solo modifica, de manera cuantificable, el contenido
@@ -275,7 +278,8 @@ registrado.
 \end{frame}
 
 \begin{frame}[shrink]{Ruta de aprendizaje}
-\phantomsection\label{ruta-de-aprendizaje}
+\protect\phantomsection\label{ruta-de-aprendizaje}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedleft\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4000}}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
@@ -302,10 +306,11 @@ y diseño FIR \\
 EMG \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 \end{frame}
 
 \begin{frame}{Cómo estudiar con estas diapositivas}
-\phantomsection\label{cuxf3mo-estudiar-con-estas-diapositivas}
+\protect\phantomsection\label{cuxf3mo-estudiar-con-estas-diapositivas}
 \begin{enumerate}
 \tightlist
 \item
@@ -318,7 +323,7 @@ EMG \\
   \textbf{Valide} la salida en tiempo y frecuencia.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Criterio de dominio}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Criterio de dominio}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 No basta reconocer una fórmula: debe poder indicar sus supuestos,
 unidades, límites y consecuencias sobre la interpretación biomédica.
@@ -329,7 +334,7 @@ unidades, límites y consecuencias sobre la interpretación biomédica.
 \section{Semana 6 · Sesión 1}\label{semana-6-sesiuxf3n-1}
 
 \begin{frame}{De la fisiología al dato digital}
-\phantomsection\label{de-la-fisiologuxeda-al-dato-digital}
+\protect\phantomsection\label{de-la-fisiologuxeda-al-dato-digital}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -349,7 +354,8 @@ fisiológica y empieza el dato?
 \end{frame}
 
 \begin{frame}[shrink]{La medición es una cadena, no un sensor aislado}
-\phantomsection\label{la-mediciuxf3n-es-una-cadena-no-un-sensor-aislado}
+\protect\phantomsection\label{la-mediciuxf3n-es-una-cadena-no-un-sensor-aislado}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
@@ -375,8 +381,9 @@ Almacenamiento & Codifica y documenta & ¿Se preservan unidades y
 metadatos? \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 El dato almacenado es la salida de toda la cadena. Atribuir cada rasgo
 al órgano sin evaluar la cadena es un error de inferencia.
@@ -385,7 +392,7 @@ al órgano sin evaluar la cadena es un error de inferencia.
 \end{frame}
 
 \begin{frame}{Transducción: convertir no significa copiar perfectamente}
-\phantomsection\label{transducciuxf3n-convertir-no-significa-copiar-perfectamente}
+\protect\phantomsection\label{transducciuxf3n-convertir-no-significa-copiar-perfectamente}
 Un modelo local útil del sensor es
 
 \[
@@ -406,7 +413,7 @@ el offset y \(n(t)\) la perturbación agregada.
   El sensor posee dinámica: retardo, histéresis y ancho de banda.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Confundir el voltaje de salida con la magnitud fisiológica. La
 conversión requiere una relación de calibración y unidades trazables.
@@ -415,7 +422,8 @@ conversión requiere una relación de calibración y unidades trazables.
 \end{frame}
 
 \begin{frame}{Señal, interferencia, artefacto y ruido no son sinónimos}
-\phantomsection\label{seuxf1al-interferencia-artefacto-y-ruido-no-son-sinuxf3nimos}
+\protect\phantomsection\label{seuxf1al-interferencia-artefacto-y-ruido-no-son-sinuxf3nimos}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
@@ -443,8 +451,9 @@ Ruido instrumental & Electrónica y ambiente & Ruido térmico o de red &
 Se reduce, no desaparece \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Decisión correcta}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Decisión correcta}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Clasifique primero la fuente de la perturbación. La misma frecuencia
 puede contener señal útil en un contexto y contaminación en otro.
@@ -453,7 +462,7 @@ puede contener señal útil en un contexto y contaminación en otro.
 \end{frame}
 
 \begin{frame}[shrink]{El modelo aditivo es útil, pero no universal}
-\phantomsection\label{el-modelo-aditivo-es-uxfatil-pero-no-universal}
+\protect\phantomsection\label{el-modelo-aditivo-es-uxfatil-pero-no-universal}
 Modelo simple:
 
 \[
@@ -478,7 +487,7 @@ y(t)=g\!\left(x(t)\right)+n(t).
   El filtrado lineal no revierte clipping ni recupera muestras perdidas.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Límite metodológico}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Límite metodológico}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Si la distorsión no es aditiva ni lineal, asumir \(y=x+n\) puede
 producir una falsa sensación de limpieza.
@@ -487,7 +496,7 @@ producir una falsa sensación de limpieza.
 \end{frame}
 
 \begin{frame}[shrink]{SNR cuantifica contraste, no calidad clínica}
-\phantomsection\label{snr-cuantifica-contraste-no-calidad-cluxednica}
+\protect\phantomsection\label{snr-cuantifica-contraste-no-calidad-cluxednica}
 Para potencias promedio \(P_x\) y \(P_n\):
 
 \[
@@ -503,7 +512,7 @@ Si se comparan amplitudes RMS bajo la misma impedancia:
 \textbf{Interpretación:} aumentar 20 dB la SNR multiplica por 10 la
 razón de amplitudes.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Precaución}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Precaución}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una SNR alta no garantiza conservar morfología, sincronía o eventos
 raros. La métrica debe corresponder al objetivo biomédico.
@@ -512,7 +521,7 @@ raros. La métrica debe corresponder al objetivo biomédico.
 \end{frame}
 
 \begin{frame}{Ganancia: usar el rango sin recortar}
-\phantomsection\label{ganancia-usar-el-rango-sin-recortar}
+\protect\phantomsection\label{ganancia-usar-el-rango-sin-recortar}
 Si el ADC admite \([-V_{FS},V_{FS}]\) y la entrada acondicionada alcanza
 \(V_{p}\), una condición práctica es
 
@@ -533,7 +542,7 @@ donde \(M\) es un margen para transitorios y variabilidad.
   universal.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Pregunta de diseño}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Pregunta de diseño}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 ¿Cuál es el mayor valor fisiológico plausible y cuál es el mayor
 artefacto esperable durante el protocolo?
@@ -542,7 +551,7 @@ artefacto esperable durante el protocolo?
 \end{frame}
 
 \begin{frame}{Electrodos: la interfaz también filtra}
-\phantomsection\label{electrodos-la-interfaz-tambiuxe9n-filtra}
+\protect\phantomsection\label{electrodos-la-interfaz-tambiuxe9n-filtra}
 En registros bioeléctricos, la interfaz electrodo-piel puede
 representarse con una impedancia dependiente de frecuencia.
 
@@ -558,7 +567,7 @@ representarse con una impedancia dependiente de frecuencia.
   La geometría del montaje modifica selectividad espacial.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Consecuencia}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Consecuencia}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La ubicación, orientación y referencia forman parte del modelo de
 medición. No son detalles administrativos.
@@ -570,7 +579,7 @@ III, doi:10.1007/978-3-319-74917-4.
 \end{frame}
 
 \begin{frame}{Verificación 6.1}
-\phantomsection\label{verificaciuxf3n-6.1}
+\protect\phantomsection\label{verificaciuxf3n-6.1}
 Un ECG presenta segmentos planos exactamente en el límite superior del
 ADC.
 
@@ -584,7 +593,7 @@ ADC.
   ¿Qué cambios evaluaría primero en la cadena?
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Respuesta esperada}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Respuesta esperada}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Es clipping. Deben revisarse ganancia, offset, rango del ADC, contacto y
 artefactos. El filtrado no recupera amplitudes que nunca fueron
@@ -594,8 +603,8 @@ codificadas.
 \end{frame}
 
 \begin{frame}{Cierre de la sesión 11}
-\phantomsection\label{cierre-de-la-sesiuxf3n-11}
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Síntesis}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\protect\phantomsection\label{cierre-de-la-sesiuxf3n-11}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Síntesis}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 \begin{itemize}
 \tightlist
@@ -615,7 +624,7 @@ codificadas.
 \section{Semana 6 · Sesión 2}\label{semana-6-sesiuxf3n-2}
 
 \begin{frame}{Muestrear y cuantizar son decisiones diferentes}
-\phantomsection\label{muestrear-y-cuantizar-son-decisiones-diferentes}
+\protect\phantomsection\label{muestrear-y-cuantizar-son-decisiones-diferentes}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -633,7 +642,7 @@ de muestreo insuficiente?
 \end{frame}
 
 \begin{frame}{Muestrear es multiplicar por un tren de impulsos}
-\phantomsection\label{muestrear-es-multiplicar-por-un-tren-de-impulsos}
+\protect\phantomsection\label{muestrear-es-multiplicar-por-un-tren-de-impulsos}
 \[
 x_s(t)=x(t)\sum_{n=-\infty}^{\infty}\delta(t-nT_s),
 \qquad x[n]=x(nT_s),qquad f_s=\frac{1}{T_s}.
@@ -645,7 +654,7 @@ En frecuencia, el espectro se replica cada \(f_s\):
 X_s(f)=\frac{1}{T_s}\sum_{k=-\infty}^{\infty}X(f-kf_s).
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Teorema de muestreo}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Teorema de muestreo}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Si \(x(t)\) está limitada a \(B\) Hz, \(f_s>2B\) evita solapamiento
 ideal de réplicas. La igualdad \(f_s=2B\) no ofrece margen de
@@ -656,10 +665,10 @@ implementación.
 
 \begin{frame}[shrink]{Aliasing: frecuencias distintas producen las
 mismas muestras}
-\phantomsection\label{aliasing-frecuencias-distintas-producen-las-mismas-muestras}
+\protect\phantomsection\label{aliasing-frecuencias-distintas-producen-las-mismas-muestras}
 \includegraphics[width=0.91\linewidth,height=\textheight,keepaspectratio]{assets/aliasing.png}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Lectura de la figura}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Lectura de la figura}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Con \(f_s=100\) Hz, 70 Hz y 30 Hz generan secuencias indistinguibles
 salvo por fase/signo. Aumentar bits no resuelve esta ambigüedad
@@ -669,10 +678,11 @@ temporal.
 \end{frame}
 
 \begin{frame}{El filtro antialias debe ser analógico}
-\phantomsection\label{el-filtro-antialias-debe-ser-analuxf3gico}
+\protect\phantomsection\label{el-filtro-antialias-debe-ser-analuxf3gico}
 Antes del ADC se requiere un pasa-bajas que atenúe contenido por encima
 de la banda admisible.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Parámetro & Significado \\
@@ -685,8 +695,9 @@ Parámetro & Significado \\
 \(f_s/2\) & Límite de Nyquist \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Orden causal de las operaciones}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Orden causal de las operaciones}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una componente que ya se plegó dentro de la banda después de muestrear
 no puede identificarse como alias mediante un filtro digital ordinario.
@@ -695,7 +706,7 @@ no puede identificarse como alias mediante un filtro digital ordinario.
 \end{frame}
 
 \begin{frame}{Elegir \(f_s\): Nyquist es el piso teórico}
-\phantomsection\label{elegir-f_s-nyquist-es-el-piso-teuxf3rico}
+\protect\phantomsection\label{elegir-f_s-nyquist-es-el-piso-teuxf3rico}
 Ejemplo: si una medición EMG debe conservar hasta 450 Hz:
 
 \begin{itemize}
@@ -722,7 +733,7 @@ La elección también depende de:
   ancho de banda real del sensor.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Criterio}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Criterio}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Justifique \(f_s\) con banda útil, transición del filtro analógico y
 recursos del sistema.
@@ -731,7 +742,7 @@ recursos del sistema.
 \end{frame}
 
 \begin{frame}{Cuantizar es discretizar la amplitud}
-\phantomsection\label{cuantizar-es-discretizar-la-amplitud}
+\protect\phantomsection\label{cuantizar-es-discretizar-la-amplitud}
 Para un cuantizador uniforme de \(N\) bits y rango \(V_{max}-V_{min}\):
 
 \[
@@ -744,7 +755,7 @@ Si no hay sobrecarga y se redondea al nivel más cercano:
 -\frac{\Delta}{2}\le e_q < \frac{\Delta}{2}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Distinción}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Distinción}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La frecuencia de muestreo controla resolución temporal; los bits
 controlan resolución de amplitud. Son ejes diferentes.
@@ -753,13 +764,13 @@ controlan resolución de amplitud. Son ejes diferentes.
 \end{frame}
 
 \begin{frame}[shrink]{Más bits reducen el escalón, no evitan clipping}
-\phantomsection\label{muxe1s-bits-reducen-el-escaluxf3n-no-evitan-clipping}
+\protect\phantomsection\label{muxe1s-bits-reducen-el-escaluxf3n-no-evitan-clipping}
 \includegraphics[width=0.9\linewidth,height=\textheight,keepaspectratio]{assets/quantization.png}
 
 El ejemplo usa una señal tipo ECG \textbf{sintética}. No representa un
 registro clínico.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Observación}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Observación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Si la señal excede el rango, todos los bits adicionales codifican el
 mismo límite saturado. Primero se asegura el rango; después se discute
@@ -769,7 +780,7 @@ resolución.
 \end{frame}
 
 \begin{frame}{El modelo de ruido de cuantización tiene supuestos}
-\phantomsection\label{el-modelo-de-ruido-de-cuantizaciuxf3n-tiene-supuestos}
+\protect\phantomsection\label{el-modelo-de-ruido-de-cuantizaciuxf3n-tiene-supuestos}
 Bajo condiciones de señal suficientemente variable y sin sobrecarga:
 
 \[
@@ -798,7 +809,7 @@ No debe extrapolarse sin revisión a señales:
 \end{frame}
 
 \begin{frame}{ENOB resume imperfecciones reales del convertidor}
-\phantomsection\label{enob-resume-imperfecciones-reales-del-convertidor}
+\protect\phantomsection\label{enob-resume-imperfecciones-reales-del-convertidor}
 El número efectivo de bits puede estimarse desde SINAD:
 
 \[
@@ -808,7 +819,7 @@ El número efectivo de bits puede estimarse desde SINAD:
 ENOB incorpora, de forma agregada, ruido y distorsión del sistema de
 conversión.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={No confundir}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={No confundir}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Un ADC de 16 bits nominales no garantiza 16 bits efectivos en la banda,
 ganancia y frecuencia de operación usadas.
@@ -817,7 +828,7 @@ ganancia y frecuencia de operación usadas.
 \end{frame}
 
 \begin{frame}[fragile]{Código mínimo para cuantización uniforme}
-\phantomsection\label{cuxf3digo-muxednimo-para-cuantizaciuxf3n-uniforme}
+\protect\phantomsection\label{cuxf3digo-muxednimo-para-cuantizaciuxf3n-uniforme}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
@@ -831,7 +842,7 @@ ganancia y frecuencia de operación usadas.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Verificación computacional}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Verificación computacional}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Compruebe por separado porcentaje de muestras recortadas, \(\Delta\),
 distribución del error y amplitud de los eventos de interés.
@@ -840,7 +851,7 @@ distribución del error y amplitud de los eventos de interés.
 \end{frame}
 
 \begin{frame}{Checklist de adquisición biomédica}
-\phantomsection\label{checklist-de-adquisiciuxf3n-biomuxe9dica}
+\protect\phantomsection\label{checklist-de-adquisiciuxf3n-biomuxe9dica}
 \begin{itemize}
 \tightlist
 \item[$\square$]
@@ -859,7 +870,7 @@ distribución del error y amplitud de los eventos de interés.
   Metadatos suficientes para reproducir el protocolo.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Principio rector}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Principio rector}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La calidad del análisis digital está acotada por la información que la
 adquisición logró preservar.
@@ -871,8 +882,8 @@ doi:10.1007/978-981-99-6752-0.
 \end{frame}
 
 \begin{frame}{Cierre de la semana 6}
-\phantomsection\label{cierre-de-la-semana-6}
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Síntesis}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\protect\phantomsection\label{cierre-de-la-semana-6}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Síntesis}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Muestreo y cuantización limitan dimensiones distintas. El filtro
 antialias debe actuar antes del ADC, y ningún aumento de bits recupera
@@ -884,7 +895,7 @@ información plegada o recortada.
 \section{Semana 7 · Sesión 1}\label{semana-7-sesiuxf3n-1}
 
 \begin{frame}{Modelar una transformación exige declarar sus propiedades}
-\phantomsection\label{modelar-una-transformaciuxf3n-exige-declarar-sus-propiedades}
+\protect\phantomsection\label{modelar-una-transformaciuxf3n-exige-declarar-sus-propiedades}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -904,7 +915,7 @@ filtro LTI?
 \end{frame}
 
 \begin{frame}{Un sistema es una regla que transforma señales}
-\phantomsection\label{un-sistema-es-una-regla-que-transforma-seuxf1ales}
+\protect\phantomsection\label{un-sistema-es-una-regla-que-transforma-seuxf1ales}
 \[
 y=\mathcal{T}\{x\}.
 \]
@@ -925,7 +936,7 @@ Representaciones habituales:
   algoritmo computacional.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Dos implementaciones son equivalentes solo si producen la misma relación
 entrada-salida bajo los mismos supuestos y condiciones iniciales.
@@ -934,7 +945,7 @@ entrada-salida bajo los mismos supuestos y condiciones iniciales.
 \end{frame}
 
 \begin{frame}{Memoria: ¿la salida usa otras muestras?}
-\phantomsection\label{memoria-la-salida-usa-otras-muestras}
+\protect\phantomsection\label{memoria-la-salida-usa-otras-muestras}
 Sin memoria:
 
 \[
@@ -950,7 +961,7 @@ y[n]=\frac{x[n]+x[n-1]+x[n-2]}{3}.
 En bioseñales, una estimación de RMS móvil, una derivada o un filtro
 digital tienen memoria.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Prueba rápida}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Prueba rápida}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Si cambiar \(x[k]\) para \(k\neq n\) puede modificar \(y[n]\), el
 sistema tiene memoria.
@@ -959,10 +970,11 @@ sistema tiene memoria.
 \end{frame}
 
 \begin{frame}[fragile]{Causalidad: presente y pasado, nunca futuro}
-\phantomsection\label{causalidad-presente-y-pasado-nunca-futuro}
+\protect\phantomsection\label{causalidad-presente-y-pasado-nunca-futuro}
 Un sistema discreto es causal si \(y[n_0]\) depende solo de \(x[n]\) con
 \(n\le n_0\).
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lrl@{}}
 \toprule\noalign{}
 Operación & ¿Causal? & Uso típico \\
@@ -974,8 +986,9 @@ Promedio centrado & No & Análisis fuera de línea \\
 \texttt{sosfiltfilt} & No & Corrección de fase fuera de línea \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Implicación}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Implicación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Un método no causal puede ser válido para análisis retrospectivo, pero
 no para monitoreo en tiempo real.
@@ -984,7 +997,7 @@ no para monitoreo en tiempo real.
 \end{frame}
 
 \begin{frame}{Linealidad exige aditividad y homogeneidad}
-\phantomsection\label{linealidad-exige-aditividad-y-homogeneidad}
+\protect\phantomsection\label{linealidad-exige-aditividad-y-homogeneidad}
 \[
 \mathcal{T}\{a x_1+b x_2\}=a\mathcal{T}\{x_1\}+b\mathcal{T}\{x_2\}.
 \]
@@ -1001,7 +1014,7 @@ no para monitoreo en tiempo real.
   Saturación: no lineal.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Consecuencia}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Consecuencia}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Rectificar EMG cambia su contenido espectral porque la rectificación no
 es una operación lineal.
@@ -1010,7 +1023,7 @@ es una operación lineal.
 \end{frame}
 
 \begin{frame}{Invariancia temporal: la regla no cambia con el reloj}
-\phantomsection\label{invariancia-temporal-la-regla-no-cambia-con-el-reloj}
+\protect\phantomsection\label{invariancia-temporal-la-regla-no-cambia-con-el-reloj}
 Si \(y[n]=\mathcal{T}\{x[n]\}\), un sistema invariante cumple
 
 \[
@@ -1029,7 +1042,7 @@ Ejemplos:
   Filtro adaptativo: deliberadamente variante.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Contexto biomédico}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Contexto biomédico}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La fisiología suele ser no estacionaria, aunque el filtro aplicado sea
 LTI. No confunda propiedad del sistema con propiedad de la señal.
@@ -1038,7 +1051,7 @@ LTI. No confunda propiedad del sistema con propiedad de la señal.
 \end{frame}
 
 \begin{frame}{Estabilidad BIBO evita salidas no acotadas}
-\phantomsection\label{estabilidad-bibo-evita-salidas-no-acotadas}
+\protect\phantomsection\label{estabilidad-bibo-evita-salidas-no-acotadas}
 Un sistema es BIBO estable si toda entrada acotada produce salida
 acotada.
 
@@ -1049,7 +1062,7 @@ Para un sistema LTI discreto:
 \quad \Longrightarrow \quad \text{estabilidad BIBO}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Importancia práctica}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Importancia práctica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Un IIR con polos fuera del círculo unidad puede amplificar errores
 numéricos y ruido hasta dominar la señal.
@@ -1058,7 +1071,8 @@ numéricos y ruido hasta dominar la señal.
 \end{frame}
 
 \begin{frame}{Las propiedades no vienen en paquete}
-\phantomsection\label{las-propiedades-no-vienen-en-paquete}
+\protect\phantomsection\label{las-propiedades-no-vienen-en-paquete}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lcccc@{}}
 \toprule\noalign{}
 Sistema & Lineal & Invariante & Causal & Estable \\
@@ -1070,8 +1084,9 @@ Sistema & Lineal & Invariante & Causal & Estable \\
 \(y[n]=x^2[n]\) & No & Sí & Sí & Sí para entrada acotada \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Método}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Método}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Evalúe cada propiedad con su definición. No concluya causalidad o
 estabilidad a partir de que el sistema sea lineal.
@@ -1080,7 +1095,7 @@ estabilidad a partir de que el sistema sea lineal.
 \end{frame}
 
 \begin{frame}{Verificación 7.1}
-\phantomsection\label{verificaciuxf3n-7.1}
+\protect\phantomsection\label{verificaciuxf3n-7.1}
 Considere \(y[n]=0.8y[n-1]+x[n]\).
 
 \begin{enumerate}
@@ -1095,7 +1110,7 @@ Considere \(y[n]=0.8y[n-1]+x[n]\).
   ¿Qué propiedad del polo anticipa la estabilidad?
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Respuesta esperada}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Respuesta esperada}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Tiene memoria, es LTI y causal. Su polo está en \(0.8\), dentro del
 círculo unidad; para la realización causal resulta BIBO estable.
@@ -1104,8 +1119,8 @@ círculo unidad; para la realización causal resulta BIBO estable.
 \end{frame}
 
 \begin{frame}{Cierre de la sesión 13}
-\phantomsection\label{cierre-de-la-sesiuxf3n-13}
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Síntesis}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\protect\phantomsection\label{cierre-de-la-sesiuxf3n-13}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Síntesis}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Las propiedades de memoria, causalidad, linealidad, invariancia y
 estabilidad deben probarse por separado. Juntas determinan qué análisis
@@ -1117,7 +1132,7 @@ y qué implementación son válidos.
 \section{Semana 7 · Sesión 2}\label{semana-7-sesiuxf3n-2}
 
 \begin{frame}{La respuesta al impulso determina un sistema LTI}
-\phantomsection\label{la-respuesta-al-impulso-determina-un-sistema-lti}
+\protect\phantomsection\label{la-respuesta-al-impulso-determina-un-sistema-lti}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -1136,7 +1151,7 @@ cualquier salida?
 
 \begin{frame}[shrink]{Toda secuencia puede escribirse con impulsos
 desplazados}
-\phantomsection\label{toda-secuencia-puede-escribirse-con-impulsos-desplazados}
+\protect\phantomsection\label{toda-secuencia-puede-escribirse-con-impulsos-desplazados}
 \[
 x[n]=\sum_{k=-\infty}^{\infty}x[k]\,\delta[n-k].
 \]
@@ -1153,7 +1168,7 @@ Por superposición:
 y[n]=\sum_{k=-\infty}^{\infty}x[k]h[n-k]=(x*h)[n].
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La convolución no es una receta aislada: es la consecuencia de
 linealidad e invariancia temporal.
@@ -1162,7 +1177,7 @@ linealidad e invariancia temporal.
 \end{frame}
 
 \begin{frame}{Convolución: invertir, desplazar, multiplicar y sumar}
-\phantomsection\label{convoluciuxf3n-invertir-desplazar-multiplicar-y-sumar}
+\protect\phantomsection\label{convoluciuxf3n-invertir-desplazar-multiplicar-y-sumar}
 \[
 y[n]=\sum_k x[k]h[n-k].
 \]
@@ -1181,7 +1196,7 @@ Para un \(n\) fijo:
   Sume sobre \(k\).
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Mover \(h[k-n]\) en lugar de \(h[n-k]\) cambia el resultado. Verifique
 siempre el índice dentro de la suma.
@@ -1191,10 +1206,10 @@ siempre el índice dentro de la suma.
 
 \begin{frame}[shrink]{Un promedio móvil ensancha bordes y reduce
 variación rápida}
-\phantomsection\label{un-promedio-muxf3vil-ensancha-bordes-y-reduce-variaciuxf3n-ruxe1pida}
+\protect\phantomsection\label{un-promedio-muxf3vil-ensancha-bordes-y-reduce-variaciuxf3n-ruxe1pida}
 \includegraphics[width=0.86\linewidth,height=\textheight,keepaspectratio]{assets/convolution.png}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Lectura}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Lectura}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La rampa de entrada y salida aparece porque el promedio incluye
 progresivamente más o menos muestras del pulso.
@@ -1203,7 +1218,7 @@ progresivamente más o menos muestras del pulso.
 \end{frame}
 
 \begin{frame}{Longitud y soporte permiten anticipar la salida}
-\phantomsection\label{longitud-y-soporte-permiten-anticipar-la-salida}
+\protect\phantomsection\label{longitud-y-soporte-permiten-anticipar-la-salida}
 Si \(x[n]\) tiene longitud \(N\) y \(h[n]\) longitud \(M\):
 
 \[
@@ -1216,7 +1231,7 @@ Si los soportes son \([n_{x0},n_{x1}]\) y \([n_{h0},n_{h1}]\):
 \mathrm{supp}(y)=[n_{x0}+n_{h0},\ n_{x1}+n_{h1}].
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Control de errores}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Control de errores}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Antes de calcular valores, determine soporte, longitud y posibles
 simetrías. Son pruebas independientes del código.
@@ -1225,7 +1240,7 @@ simetrías. Son pruebas independientes del código.
 \end{frame}
 
 \begin{frame}{Convolución continua: el área de solapamiento cambia}
-\phantomsection\label{convoluciuxf3n-continua-el-uxe1rea-de-solapamiento-cambia}
+\protect\phantomsection\label{convoluciuxf3n-continua-el-uxe1rea-de-solapamiento-cambia}
 \[
 y(t)=\int_{-\infty}^{\infty}x(\tau)h(t-\tau)\,d\tau.
 \]
@@ -1242,7 +1257,7 @@ Para señales por tramos, los límites de integración dependen de \(t\).
   Solapamiento total: puede aparecer una meseta.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Interpretación geométrica}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Interpretación geométrica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La integral suma productos solo donde \(x(\tau)\) y \(h(t-\tau)\) se
 superponen.
@@ -1251,7 +1266,7 @@ superponen.
 \end{frame}
 
 \begin{frame}{El filtro promedio móvil es FIR y LTI}
-\phantomsection\label{el-filtro-promedio-muxf3vil-es-fir-y-lti}
+\protect\phantomsection\label{el-filtro-promedio-muxf3vil-es-fir-y-lti}
 Para \(M\) muestras:
 
 \[
@@ -1281,7 +1296,7 @@ Efectos:
 \end{frame}
 
 \begin{frame}[fragile]{Código y prueba mínima de convolución}
-\phantomsection\label{cuxf3digo-y-prueba-muxednima-de-convoluciuxf3n}
+\protect\phantomsection\label{cuxf3digo-y-prueba-muxednima-de-convoluciuxf3n}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
@@ -1295,7 +1310,7 @@ Efectos:
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Interpretación}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Interpretación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La prueba de longitud detecta errores de modo o recorte; la suma
 unitaria verifica ganancia DC, no toda la respuesta en frecuencia.
@@ -1305,7 +1320,8 @@ unitaria verifica ganancia DC, no toda la respuesta en frecuencia.
 
 \begin{frame}[fragile]{Convolución, correlación y filtrado no son
 intercambiables}
-\phantomsection\label{convoluciuxf3n-correlaciuxf3n-y-filtrado-no-son-intercambiables}
+\protect\phantomsection\label{convoluciuxf3n-correlaciuxf3n-y-filtrado-no-son-intercambiables}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
@@ -1327,8 +1343,9 @@ Filtrado & Implementación de \(H\) & ¿Cómo modificar una señal según una
 respuesta? \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Convención}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Convención}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Las bibliotecas difieren en normalización, conjugación, retardos y modos
 \texttt{full}, \texttt{same}, \texttt{valid}. Documente la definición
@@ -1338,7 +1355,7 @@ usada.
 \end{frame}
 
 \begin{frame}[shrink]{Cierre de la semana 7}
-\phantomsection\label{cierre-de-la-semana-7}
+\protect\phantomsection\label{cierre-de-la-semana-7}
 Puede modelar una operación como LTI cuando:
 
 \begin{itemize}
@@ -1365,7 +1382,7 @@ Entonces \(h[n]\) permite estudiar:
   respuesta en frecuencia.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Puente a la semana 8}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Puente a la semana 8}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La convolución en tiempo se convierte en multiplicación en frecuencia.
 Esa equivalencia hace operativo el análisis de Fourier.
@@ -1376,7 +1393,7 @@ Esa equivalencia hace operativo el análisis de Fourier.
 \section{Semana 8 · Sesión 1}\label{semana-8-sesiuxf3n-1}
 
 \begin{frame}{La transformada extiende Fourier a señales aperiódicas}
-\phantomsection\label{la-transformada-extiende-fourier-a-seuxf1ales-aperiuxf3dicas}
+\protect\phantomsection\label{la-transformada-extiende-fourier-a-seuxf1ales-aperiuxf3dicas}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -1394,7 +1411,7 @@ representarse mediante frecuencias?
 \end{frame}
 
 \begin{frame}{La transformada aparece al llevar el período al infinito}
-\phantomsection\label{la-transformada-aparece-al-llevar-el-peruxedodo-al-infinito}
+\protect\phantomsection\label{la-transformada-aparece-al-llevar-el-peruxedodo-al-infinito}
 La serie compleja usa líneas separadas por \(\omega_0=2\pi/T_0\). Cuando
 \(T_0\to\infty\), esa separación tiende a cero y la suma se convierte en
 integral:
@@ -1407,7 +1424,7 @@ X(\omega)=\int_{-\infty}^{\infty}x(t)e^{-j\omega t}\,dt.
 x(t)=\frac{1}{2\pi}\int_{-\infty}^{\infty}X(\omega)e^{j\omega t}\,d\omega.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Continuidad con la semana 5}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Continuidad con la semana 5}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La serie describe espectros de líneas para señales periódicas; la
 transformada describe un continuo de frecuencias para señales
@@ -1417,7 +1434,7 @@ aperiódicas.
 \end{frame}
 
 \begin{frame}{Las exponenciales complejas son autofunciones LTI}
-\phantomsection\label{las-exponenciales-complejas-son-autofunciones-lti}
+\protect\phantomsection\label{las-exponenciales-complejas-son-autofunciones-lti}
 Si \(x(t)=e^{j\omega t}\), entonces
 
 \[
@@ -1435,7 +1452,7 @@ El sistema no cambia la frecuencia; multiplica por un número complejo:
   \(\angle H(j\omega)\): desplaza fase.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Por qué importa}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Por qué importa}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Si una señal se descompone en frecuencias, basta conocer cómo el sistema
 modifica cada componente.
@@ -1444,7 +1461,7 @@ modifica cada componente.
 \end{frame}
 
 \begin{frame}{Magnitud y fase responden preguntas diferentes}
-\phantomsection\label{magnitud-y-fase-responden-preguntas-diferentes}
+\protect\phantomsection\label{magnitud-y-fase-responden-preguntas-diferentes}
 \[
 X(\omega)=|X(\omega)|e^{j\phi(\omega)}.
 \]
@@ -1460,7 +1477,7 @@ X(\omega)=|X(\omega)|e^{j\phi(\omega)}.
   por su fase.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Interpretar solo \(|X(\omega)|\) como si contuviera toda la estructura
 temporal. La reconstrucción exige magnitud y fase.
@@ -1469,7 +1486,7 @@ temporal. La reconstrucción exige magnitud y fase.
 \end{frame}
 
 \begin{frame}{La simetría conjugada caracteriza señales reales}
-\phantomsection\label{la-simetruxeda-conjugada-caracteriza-seuxf1ales-reales}
+\protect\phantomsection\label{la-simetruxeda-conjugada-caracteriza-seuxf1ales-reales}
 Si \(x(t)\) es real:
 
 \[
@@ -1488,7 +1505,7 @@ Por tanto:
   el espectro bilateral contiene redundancia para una señal real.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Lectura correcta}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Lectura correcta}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La frecuencia negativa es parte de la representación compleja; no
 corresponde a una oscilación fisiológica que transcurre hacia atrás.
@@ -1497,7 +1514,8 @@ corresponde a una oscilación fisiológica que transcurre hacia atrás.
 \end{frame}
 
 \begin{frame}[shrink]{Las propiedades permiten predecir sin reintegrar}
-\phantomsection\label{las-propiedades-permiten-predecir-sin-reintegrar}
+\protect\phantomsection\label{las-propiedades-permiten-predecir-sin-reintegrar}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Operación temporal & Efecto frecuencial \\
@@ -1510,8 +1528,9 @@ Operación temporal & Efecto frecuencial \\
 \(x(t)e^{j\omega_0t}\) & \(X(\omega-\omega_0)\) \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Método de estudio}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Método de estudio}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Explique primero el efecto cualitativo. Luego use la propiedad y
 verifique dimensiones, signo y factor de escala.
@@ -1520,7 +1539,7 @@ verifique dimensiones, signo y factor de escala.
 \end{frame}
 
 \begin{frame}{Convolución en tiempo es multiplicación en frecuencia}
-\phantomsection\label{convoluciuxf3n-en-tiempo-es-multiplicaciuxf3n-en-frecuencia}
+\protect\phantomsection\label{convoluciuxf3n-en-tiempo-es-multiplicaciuxf3n-en-frecuencia}
 \[
 y(t)=x(t)*h(t)
 \quad\Longleftrightarrow\quad
@@ -1541,7 +1560,7 @@ El teorema permite:
   validar resultados en dos dominios.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Puente hacia filtrado}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Puente hacia filtrado}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Un filtro LTI no «busca» eventos: pondera cada componente según su
 respuesta compleja \(H(\omega)\).
@@ -1550,7 +1569,7 @@ respuesta compleja \(H(\omega)\).
 \end{frame}
 
 \begin{frame}{Parseval conserva energía entre dominios}
-\phantomsection\label{parseval-conserva-energuxeda-entre-dominios}
+\protect\phantomsection\label{parseval-conserva-energuxeda-entre-dominios}
 Con esta convención de transformada:
 
 \[
@@ -1570,7 +1589,7 @@ Aplicaciones:
   cuantificar la fracción contenida en una banda.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Convenciones}, coltitle=black, colbacktitle=quarto-callout-caution-color!10!white, toprule=.15mm, colframe=quarto-callout-caution-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-caution-color!10!white, colframe=quarto-callout-caution-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Convenciones}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Los factores \(2\pi\) cambian según se use \(f\) en Hz o \(\omega\) en
 rad/s. Declare el par de transformada.
@@ -1579,7 +1598,7 @@ rad/s. Declare el par de transformada.
 \end{frame}
 
 \begin{frame}{Verificación 8.1}
-\phantomsection\label{verificaciuxf3n-8.1}
+\protect\phantomsection\label{verificaciuxf3n-8.1}
 Un sistema tiene \(|H(j\omega)|\approx 0\) por encima de \(40\) Hz y
 fase no lineal en la banda pasante.
 
@@ -1593,7 +1612,7 @@ fase no lineal en la banda pasante.
   ¿Qué propiedad explica esa deformación?
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Criterio de respuesta}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Criterio de respuesta}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Atenúa principalmente contenido superior a 40 Hz. Sí puede alterar la
 forma aunque conserve magnitud en la banda, porque distintos componentes
@@ -1603,8 +1622,8 @@ sufren desplazamientos de fase diferentes.
 \end{frame}
 
 \begin{frame}{Cierre de la sesión 15}
-\phantomsection\label{cierre-de-la-sesiuxf3n-15}
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Síntesis}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\protect\phantomsection\label{cierre-de-la-sesiuxf3n-15}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Síntesis}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 \begin{itemize}
 \tightlist
@@ -1625,7 +1644,7 @@ sufren desplazamientos de fase diferentes.
 \section{Semana 8 · Sesión 2}\label{semana-8-sesiuxf3n-2}
 
 \begin{frame}{La DFT convierte un bloque finito en muestras espectrales}
-\phantomsection\label{la-dft-convierte-un-bloque-finito-en-muestras-espectrales}
+\protect\phantomsection\label{la-dft-convierte-un-bloque-finito-en-muestras-espectrales}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -1643,7 +1662,8 @@ frecuencia fisiológica dominante?
 \end{frame}
 
 \begin{frame}{Tres objetos distintos suelen llamarse ``Fourier''}
-\phantomsection\label{tres-objetos-distintos-suelen-llamarse-fourier}
+\protect\phantomsection\label{tres-objetos-distintos-suelen-llamarse-fourier}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
@@ -1668,8 +1688,9 @@ DFT & Bloque finito de \(N\) muestras & \(k=0,\ldots,N-1\) & \(N\)
 muestras frecuenciales \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La DFT analiza un registro finito como un período de una extensión
 periódica. Sus resultados dependen de duración y ventana.
@@ -1678,7 +1699,7 @@ periódica. Sus resultados dependen de duración y ventana.
 \end{frame}
 
 \begin{frame}[shrink]{La DFT y su inversa forman un par exacto}
-\phantomsection\label{la-dft-y-su-inversa-forman-un-par-exacto}
+\protect\phantomsection\label{la-dft-y-su-inversa-forman-un-par-exacto}
 \[
 X[k]=\sum_{n=0}^{N-1}x[n]e^{-j2\pi kn/N},
 \]
@@ -1693,7 +1714,7 @@ La frecuencia del bin \(k\) es
 f_k=\frac{k f_s}{N},\qquad \Delta f=\frac{f_s}{N}=\frac{1}{T}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Interpretación}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Interpretación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La resolución entre bins mejora principalmente al aumentar la duración
 observada \(T\), no solo al aumentar \(f_s\).
@@ -1702,7 +1723,7 @@ observada \(T\), no solo al aumentar \(f_s\).
 \end{frame}
 
 \begin{frame}{La FFT acelera el cálculo; no cambia el significado}
-\phantomsection\label{la-fft-acelera-el-cuxe1lculo-no-cambia-el-significado}
+\protect\phantomsection\label{la-fft-acelera-el-cuxe1lculo-no-cambia-el-significado}
 \begin{itemize}
 \tightlist
 \item
@@ -1713,7 +1734,7 @@ observada \(T\), no solo al aumentar \(f_s\).
   La salida numérica representa la misma DFT.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Llamar ``FFT'' al espectro físico. FFT es el algoritmo; unidades,
 normalización y eje frecuencial dependen de cómo se construya el
@@ -1724,10 +1745,10 @@ análisis.
 
 \begin{frame}[shrink]{Fuga espectral: el segmento observado tiene
 bordes}
-\phantomsection\label{fuga-espectral-el-segmento-observado-tiene-bordes}
+\protect\phantomsection\label{fuga-espectral-el-segmento-observado-tiene-bordes}
 \includegraphics[width=0.88\linewidth,height=\textheight,keepaspectratio]{assets/spectral_leakage.png}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Compromiso de las ventanas}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Compromiso de las ventanas}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una ventana reduce lóbulos laterales a costa de ensanchar el lóbulo
 principal y cambiar la ganancia. No existe una ventana óptima para todo
@@ -1737,7 +1758,7 @@ objetivo.
 \end{frame}
 
 \begin{frame}{Zero padding interpola la gráfica, no la información}
-\phantomsection\label{zero-padding-interpola-la-gruxe1fica-no-la-informaciuxf3n}
+\protect\phantomsection\label{zero-padding-interpola-la-gruxe1fica-no-la-informaciuxf3n}
 Agregar ceros aumenta el número de puntos evaluados en frecuencia:
 
 \[
@@ -1747,7 +1768,7 @@ N_{FFT}>N.
 Pero la separación física de componentes cercanas sigue limitada por
 duración, SNR y ventana.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Diagnóstico}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Diagnóstico}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una curva más suave no implica mayor capacidad para distinguir dos
 frecuencias próximas.
@@ -1756,7 +1777,7 @@ frecuencias próximas.
 \end{frame}
 
 \begin{frame}{Un espectro de amplitud exige normalización explícita}
-\phantomsection\label{un-espectro-de-amplitud-exige-normalizaciuxf3n-expluxedcita}
+\protect\phantomsection\label{un-espectro-de-amplitud-exige-normalizaciuxf3n-expluxedcita}
 Para una señal real y espectro unilateral:
 
 \begin{enumerate}
@@ -1773,7 +1794,7 @@ Para una señal real y espectro unilateral:
   declare si muestra amplitud, potencia o PSD.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Unidades}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Unidades}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Amplitud {[}unidad{]}, potencia {[}unidad²{]} y PSD {[}unidad²/Hz{]} no
 son intercambiables.
@@ -1782,7 +1803,7 @@ son intercambiables.
 \end{frame}
 
 \begin{frame}{PSD de Welch reduce varianza mediante promediado}
-\phantomsection\label{psd-de-welch-reduce-varianza-mediante-promediado}
+\protect\phantomsection\label{psd-de-welch-reduce-varianza-mediante-promediado}
 Welch divide la señal en segmentos, aplica ventana y promedia
 periodogramas.
 
@@ -1802,7 +1823,7 @@ Decisiones que deben reportarse:
   promedio y escalamiento.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Compromiso}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Compromiso}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Segmentos largos mejoran resolución frecuencial; más segmentos mejoran
 estabilidad del estimador. No se maximizan ambos con una duración fija.
@@ -1811,7 +1832,7 @@ estabilidad del estimador. No se maximizan ambos con una duración fija.
 \end{frame}
 
 \begin{frame}{Lectura biomédica: banda no equivale a mecanismo}
-\phantomsection\label{lectura-biomuxe9dica-banda-no-equivale-a-mecanismo}
+\protect\phantomsection\label{lectura-biomuxe9dica-banda-no-equivale-a-mecanismo}
 Un aumento de potencia en una banda puede reflejar:
 
 \begin{itemize}
@@ -1830,7 +1851,7 @@ Un aumento de potencia en una banda puede reflejar:
   filtrado previo.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Rigor interpretativo}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Rigor interpretativo}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 El espectro describe el registro. Vincularlo con un mecanismo
 fisiológico requiere protocolo, control de artefactos y evidencia
@@ -1843,7 +1864,7 @@ doi:10.1201/9781003201137.
 \end{frame}
 
 \begin{frame}[fragile]{Código mínimo de PSD con Welch}
-\phantomsection\label{cuxf3digo-muxednimo-de-psd-con-welch}
+\protect\phantomsection\label{cuxf3digo-muxednimo-de-psd-con-welch}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{from}\NormalTok{ scipy }\ImportTok{import}\NormalTok{ signal}
@@ -1859,7 +1880,7 @@ doi:10.1201/9781003201137.
 \textbf{Reporte mínimo:} \(f_s\), duración, \texttt{nperseg},
 \texttt{noverlap}, ventana, unidades y preprocesamiento.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Comprobación}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Comprobación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La integral aproximada de la PSD sobre frecuencia debe ser coherente con
 la varianza de la señal detrendida.
@@ -1868,7 +1889,7 @@ la varianza de la señal detrendida.
 \end{frame}
 
 \begin{frame}{Cierre de la semana 8}
-\phantomsection\label{cierre-de-la-semana-8}
+\protect\phantomsection\label{cierre-de-la-semana-8}
 \begin{itemize}
 \tightlist
 \item
@@ -1882,7 +1903,7 @@ la varianza de la señal detrendida.
   Un pico espectral no es, por sí solo, una conclusión fisiológica.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Puente a la semana 9}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Puente a la semana 9}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Para filtros discretos, necesitamos una representación que incluya
 respuesta frecuencial, transitorios y estabilidad: la transformada Z.
@@ -1893,7 +1914,7 @@ respuesta frecuencial, transitorios y estabilidad: la transformada Z.
 \section{Semana 9 · Sesión 1}\label{semana-9-sesiuxf3n-1}
 
 \begin{frame}{La región de convergencia completa la transformada Z}
-\phantomsection\label{la-regiuxf3n-de-convergencia-completa-la-transformada-z}
+\protect\phantomsection\label{la-regiuxf3n-de-convergencia-completa-la-transformada-z}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -1911,7 +1932,7 @@ expresión algebraica en \(z\) y ser diferentes?
 \end{frame}
 
 \begin{frame}{La transformada Z incluye una variable radial}
-\phantomsection\label{la-transformada-z-incluye-una-variable-radial}
+\protect\phantomsection\label{la-transformada-z-incluye-una-variable-radial}
 \[
 X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n},
 \qquad z=re^{j\omega}.
@@ -1928,7 +1949,7 @@ X(z)=\sum_{n=-\infty}^{\infty}x[n]z^{-n},
   unidad pertenece a la ROC.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una transformada Z completa requiere expresión algebraica \textbf{y
 región de convergencia}.
@@ -1937,7 +1958,7 @@ región de convergencia}.
 \end{frame}
 
 \begin{frame}{La serie geométrica explica polos y ROC}
-\phantomsection\label{la-serie-geomuxe9trica-explica-polos-y-roc}
+\protect\phantomsection\label{la-serie-geomuxe9trica-explica-polos-y-roc}
 Para \(x[n]=a^n u[n]\):
 
 \[
@@ -1952,7 +1973,7 @@ si
 |az^{-1}|<1\quad\Longrightarrow\quad |z|>|a|.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Lectura}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Lectura}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 El polo está en \(z=a\), pero la secuencia causal se identifica por la
 ROC exterior al polo.
@@ -1961,11 +1982,12 @@ ROC exterior al polo.
 \end{frame}
 
 \begin{frame}{La misma fracción puede representar otra secuencia}
-\phantomsection\label{la-misma-fracciuxf3n-puede-representar-otra-secuencia}
+\protect\phantomsection\label{la-misma-fracciuxf3n-puede-representar-otra-secuencia}
 \[
 X(z)=\frac{1}{1-az^{-1}}.
 \]
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lll@{}}
 \toprule\noalign{}
 ROC & Secuencia & Lateralidad \\
@@ -1975,8 +1997,9 @@ ROC & Secuencia & Lateralidad \\
 \(|z|<|a|\) & \(-a^n u[-n-1]\) & Izquierda, anticausal \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Invertir una transformada racional sin especificar ROC produce una
 respuesta ambigua.
@@ -1986,7 +2009,7 @@ respuesta ambigua.
 
 \begin{frame}[shrink]{De la ecuación en diferencias a la función de
 transferencia}
-\phantomsection\label{de-la-ecuaciuxf3n-en-diferencias-a-la-funciuxf3n-de-transferencia}
+\protect\phantomsection\label{de-la-ecuaciuxf3n-en-diferencias-a-la-funciuxf3n-de-transferencia}
 Considere condiciones iniciales nulas:
 
 \[
@@ -2004,7 +2027,7 @@ H(z)=\frac{Y(z)}{X(z)}
 =\frac{1-0.4z^{-1}}{1-0.8z^{-1}}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Supuesto}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Supuesto}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La función de transferencia se obtiene con condiciones iniciales nulas;
 la respuesta total puede incluir respuesta de estado inicial.
@@ -2013,7 +2036,7 @@ la respuesta total puede incluir respuesta de estado inicial.
 \end{frame}
 
 \begin{frame}[shrink]{Polos y ceros moldean la respuesta}
-\phantomsection\label{polos-y-ceros-moldean-la-respuesta}
+\protect\phantomsection\label{polos-y-ceros-moldean-la-respuesta}
 \includegraphics[width=0.83\linewidth,height=\textheight,keepaspectratio]{assets/pole_zero_response.png}
 
 \begin{itemize}
@@ -2027,7 +2050,7 @@ la respuesta total puede incluir respuesta de estado inicial.
   La ganancia fija la escala global.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Regla geométrica}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Regla geométrica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 \(|H(e^{j\omega})|\) depende de la razón entre distancias desde
 \(e^{j\omega}\) a ceros y polos.
@@ -2036,7 +2059,7 @@ la respuesta total puede incluir respuesta de estado inicial.
 \end{frame}
 
 \begin{frame}{Estabilidad causal en sistemas racionales}
-\phantomsection\label{estabilidad-causal-en-sistemas-racionales}
+\protect\phantomsection\label{estabilidad-causal-en-sistemas-racionales}
 Para un sistema LTI racional:
 
 \begin{itemize}
@@ -2049,7 +2072,7 @@ Para un sistema LTI racional:
   causal y estable: todos los polos quedan dentro del círculo unidad.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Matiz}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Matiz}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 ``Polos dentro del círculo'' implica estabilidad solo después de fijar
 la realización causal y descartar cancelaciones frágiles.
@@ -2058,7 +2081,8 @@ la realización causal y descartar cancelaciones frágiles.
 \end{frame}
 
 \begin{frame}{Propiedades operativas de la transformada Z}
-\phantomsection\label{propiedades-operativas-de-la-transformada-z}
+\protect\phantomsection\label{propiedades-operativas-de-la-transformada-z}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Operación en tiempo & Transformada \\
@@ -2070,8 +2094,9 @@ Operación en tiempo & Transformada \\
 \(a^n x[n]\) & \(X(z/a)\) \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Puente}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Puente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 El desplazamiento se vuelve multiplicación por \(z^{-1}\); por eso los
 retardos aparecen directamente en ecuaciones de filtros.
@@ -2080,7 +2105,7 @@ retardos aparecen directamente en ecuaciones de filtros.
 \end{frame}
 
 \begin{frame}{Verificación 9.1}
-\phantomsection\label{verificaciuxf3n-9.1}
+\protect\phantomsection\label{verificaciuxf3n-9.1}
 Para
 
 \[
@@ -2097,7 +2122,7 @@ H(z)=\frac{1+z^{-1}}{1-1.1z^{-1}},
   explique por qué el cero en \(-1\) atenúa Nyquist.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Respuesta esperada}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Respuesta esperada}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Cero \(z=-1\), polo \(z=1.1\). La realización causal no es estable. En
 \(z=e^{j\pi}=-1\), el numerador se anula.
@@ -2106,8 +2131,8 @@ Cero \(z=-1\), polo \(z=1.1\). La realización causal no es estable. En
 \end{frame}
 
 \begin{frame}{Cierre de la sesión 17}
-\phantomsection\label{cierre-de-la-sesiuxf3n-17}
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Síntesis}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\protect\phantomsection\label{cierre-de-la-sesiuxf3n-17}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Síntesis}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La transformada Z incorpora convergencia y lateralidad. En sistemas
 racionales causales, polos, ceros y círculo unidad permiten razonar
@@ -2119,7 +2144,7 @@ sobre respuesta frecuencial y estabilidad.
 \section{Semana 9 · Sesión 2}\label{semana-9-sesiuxf3n-2}
 
 \begin{frame}{Diseñar un FIR significa controlar el truncamiento}
-\phantomsection\label{diseuxf1ar-un-fir-significa-controlar-el-truncamiento}
+\protect\phantomsection\label{diseuxf1ar-un-fir-significa-controlar-el-truncamiento}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -2137,7 +2162,8 @@ implementarse directamente?
 \end{frame}
 
 \begin{frame}{El diseño empieza con una especificación medible}
-\phantomsection\label{el-diseuxf1o-empieza-con-una-especificaciuxf3n-medible}
+\protect\phantomsection\label{el-diseuxf1o-empieza-con-una-especificaciuxf3n-medible}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}ll@{}}
 \toprule\noalign{}
 Símbolo & Decisión \\
@@ -2151,8 +2177,9 @@ Símbolo & Decisión \\
 fase/retardo & distorsión temporal tolerable \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 ``Quitar ruido'' no es una especificación. Debe indicar qué frecuencias
 conservar, cuáles atenuar y cuánto error tolerar.
@@ -2161,7 +2188,7 @@ conservar, cuáles atenuar y cuánto error tolerar.
 \end{frame}
 
 \begin{frame}{El pasa-bajas ideal tiene respuesta infinita y no causal}
-\phantomsection\label{el-pasa-bajas-ideal-tiene-respuesta-infinita-y-no-causal}
+\protect\phantomsection\label{el-pasa-bajas-ideal-tiene-respuesta-infinita-y-no-causal}
 \[
 H_d(e^{j\omega})=
 \begin{cases}
@@ -2177,7 +2204,7 @@ h_d[n]=\frac{\sin(\omega_c n)}{\pi n},
 \qquad h_d[0]=\frac{\omega_c}{\pi}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Limitación}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Limitación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 \(h_d[n]\) se extiende hacia \(n=\pm\infty\). Se debe truncar y
 desplazar para implementarla.
@@ -2186,11 +2213,12 @@ desplazar para implementarla.
 \end{frame}
 
 \begin{frame}{Ventanar controla el compromiso de truncamiento}
-\phantomsection\label{ventanar-controla-el-compromiso-de-truncamiento}
+\protect\phantomsection\label{ventanar-controla-el-compromiso-de-truncamiento}
 \[
 h[n]=h_d[n-M/2]w[n],\qquad 0\le n\le M.
 \]
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}llll@{}}
 \toprule\noalign{}
 Ventana & Transición & Lóbulos laterales & Uso típico \\
@@ -2202,8 +2230,9 @@ Blackman & Más ancha & Mucho menores & Mayor atenuación \\
 Kaiser & Ajustable & Ajustable & Diseño por especificaciones \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Principio}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Principio}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Reducir fuga en rechazo suele ampliar la transición para un orden fijo.
 
@@ -2211,7 +2240,7 @@ Reducir fuga en rechazo suele ampliar la transición para un orden fijo.
 \end{frame}
 
 \begin{frame}{Un FIR simétrico conserva forma mediante fase lineal}
-\phantomsection\label{un-fir-simuxe9trico-conserva-forma-mediante-fase-lineal}
+\protect\phantomsection\label{un-fir-simuxe9trico-conserva-forma-mediante-fase-lineal}
 \includegraphics[width=0.83\linewidth,height=\textheight,keepaspectratio]{assets/fir_design.png}
 
 Para un FIR simétrico de longitud \(L\), el retardo de grupo es
@@ -2221,7 +2250,7 @@ constante:
 \tau_g=\frac{L-1}{2}\ \text{muestras}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Interpretación biomédica}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Interpretación biomédica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La fase lineal preserva relaciones temporales internas, pero desplaza
 toda la señal. En tiempo real, ese retardo puede ser crítico.
@@ -2230,7 +2259,7 @@ toda la señal. En tiempo real, ese retardo puede ser crítico.
 \end{frame}
 
 \begin{frame}{El orden se paga con transición y latencia}
-\phantomsection\label{el-orden-se-paga-con-transiciuxf3n-y-latencia}
+\protect\phantomsection\label{el-orden-se-paga-con-transiciuxf3n-y-latencia}
 Al aumentar longitud del FIR:
 
 \begin{itemize}
@@ -2247,7 +2276,7 @@ Al aumentar longitud del FIR:
   crecen efectos de borde.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Decisión}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Decisión}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 No elija el orden por estética de la respuesta. Debe satisfacer
 especificaciones con la menor complejidad compatible con el uso.
@@ -2256,7 +2285,7 @@ especificaciones con la menor complejidad compatible con el uso.
 \end{frame}
 
 \begin{frame}[fragile]{Diseño FIR en Python}
-\phantomsection\label{diseuxf1o-fir-en-python}
+\protect\phantomsection\label{diseuxf1o-fir-en-python}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{from}\NormalTok{ scipy }\ImportTok{import}\NormalTok{ signal}
@@ -2273,7 +2302,7 @@ especificaciones con la menor complejidad compatible con el uso.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Buena práctica}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Buena práctica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Use \texttt{fs=} para expresar bordes en Hz y reduzca errores de
 normalización respecto a Nyquist.
@@ -2282,7 +2311,7 @@ normalización respecto a Nyquist.
 \end{frame}
 
 \begin{frame}{Aplicar no equivale a validar}
-\phantomsection\label{aplicar-no-equivale-a-validar}
+\protect\phantomsection\label{aplicar-no-equivale-a-validar}
 Una validación mínima incluye:
 
 \begin{enumerate}
@@ -2301,7 +2330,7 @@ Una validación mínima incluye:
   análisis de bordes y transitorios.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Criterio}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Criterio}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La figura de la señal filtrada es evidencia insuficiente si no se
 verifica que las especificaciones fueron satisfechas.
@@ -2311,7 +2340,8 @@ verifica que las especificaciones fueron satisfechas.
 
 \begin{frame}[fragile]{\texttt{lfilter}, \texttt{filtfilt} y convolución
 cambian la interpretación}
-\phantomsection\label{lfilter-filtfilt-y-convoluciuxf3n-cambian-la-interpretaciuxf3n}
+\protect\phantomsection\label{lfilter-filtfilt-y-convoluciuxf3n-cambian-la-interpretaciuxf3n}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2143}}
   >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3571}}
@@ -2337,8 +2367,9 @@ transitorio \\
 cambian \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Reproducibilidad}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Reproducibilidad}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Documente función, modo, relleno de bordes y si se compensó el retardo.
 El mismo vector de coeficientes puede producir salidas alineadas de
@@ -2348,7 +2379,7 @@ forma distinta.
 \end{frame}
 
 \begin{frame}{Cierre de la semana 9}
-\phantomsection\label{cierre-de-la-semana-9}
+\protect\phantomsection\label{cierre-de-la-semana-9}
 \begin{itemize}
 \tightlist
 \item
@@ -2361,7 +2392,7 @@ forma distinta.
   La ventana gobierna transición y lóbulos laterales.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Puente a la semana 10}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Puente a la semana 10}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Los IIR satisfacen transiciones exigentes con menos coeficientes, pero
 exigen controlar estabilidad, fase y precisión numérica.
@@ -2375,7 +2406,7 @@ doi:10.1007/978-981-99-6752-0.
 \section{Semana 10 · Sesión 1}\label{semana-10-sesiuxf3n-1}
 
 \begin{frame}{Un IIR traduce especificaciones en polos y ceros}
-\phantomsection\label{un-iir-traduce-especificaciones-en-polos-y-ceros}
+\protect\phantomsection\label{un-iir-traduce-especificaciones-en-polos-y-ceros}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -2393,7 +2424,8 @@ a un IIR?
 \end{frame}
 
 \begin{frame}{FIR e IIR resuelven compromisos diferentes}
-\phantomsection\label{fir-e-iir-resuelven-compromisos-diferentes}
+\protect\phantomsection\label{fir-e-iir-resuelven-compromisos-diferentes}
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lll@{}}
 \toprule\noalign{}
 Criterio & FIR & IIR \\
@@ -2407,8 +2439,9 @@ Estabilidad & Inherente si coeficientes finitos & Depende de polos \\
 Sensibilidad numérica & Menor & Mayor, especialmente en orden alto \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Decisión}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Decisión}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La elección depende de fase, latencia, recursos, estabilidad y
 especificaciones; no de una superioridad universal.
@@ -2417,7 +2450,7 @@ especificaciones; no de una superioridad universal.
 \end{frame}
 
 \begin{frame}{Un prototipo analógico define la forma de magnitud}
-\phantomsection\label{un-prototipo-analuxf3gico-define-la-forma-de-magnitud}
+\protect\phantomsection\label{un-prototipo-analuxf3gico-define-la-forma-de-magnitud}
 Familias clásicas:
 
 \begin{itemize}
@@ -2433,7 +2466,7 @@ Familias clásicas:
   \textbf{Elíptico:} rizado en ambas bandas, mínimo orden frecuente.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Selección didáctica}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Selección didáctica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Butterworth permite estudiar un diseño sin introducir rizado deliberado
 en la banda de EMG que se desea conservar.
@@ -2442,7 +2475,7 @@ en la banda de EMG que se desea conservar.
 \end{frame}
 
 \begin{frame}{La transformación bilineal evita aliasing de polos}
-\phantomsection\label{la-transformaciuxf3n-bilineal-evita-aliasing-de-polos}
+\protect\phantomsection\label{la-transformaciuxf3n-bilineal-evita-aliasing-de-polos}
 \[
 s=\frac{2f_s(1-z^{-1})}{1+z^{-1}}.
 \]
@@ -2459,7 +2492,7 @@ Mapea:
   todo el eje analógico en \(-\pi<\omega<\pi\).
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Consecuencia}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Consecuencia}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Preserva estabilidad, pero deforma no linealmente el eje de frecuencias.
 
@@ -2467,7 +2500,7 @@ Preserva estabilidad, pero deforma no linealmente el eje de frecuencias.
 \end{frame}
 
 \begin{frame}{Predeformar corrige los bordes críticos}
-\phantomsection\label{predeformar-corrige-los-bordes-cruxedticos}
+\protect\phantomsection\label{predeformar-corrige-los-bordes-cruxedticos}
 La relación entre frecuencia digital \(f_d\) y analógica predeformada es
 
 \[
@@ -2476,7 +2509,7 @@ La relación entre frecuencia digital \(f_d\) y analógica predeformada es
 
 No existe una escala lineal global entre ambos ejes.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Diseñar el prototipo con \(\Omega=2\pi f_d\) y aplicar bilineal desplaza
 los bordes, especialmente cerca de Nyquist.
@@ -2485,7 +2518,7 @@ los bordes, especialmente cerca de Nyquist.
 \end{frame}
 
 \begin{frame}{Butterworth distribuye polos para una magnitud plana}
-\phantomsection\label{butterworth-distribuye-polos-para-una-magnitud-plana}
+\protect\phantomsection\label{butterworth-distribuye-polos-para-una-magnitud-plana}
 Para un pasa-bajas normalizado:
 
 \[
@@ -2506,7 +2539,7 @@ Características:
   polos ubicados en el semiplano izquierdo del prototipo estable.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Interpretación}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Interpretación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 ``Máximamente plano'' describe magnitud cerca de DC; no significa fase
 lineal ni respuesta transitoria óptima.
@@ -2515,7 +2548,7 @@ lineal ni respuesta transitoria óptima.
 \end{frame}
 
 \begin{frame}{El orden se deriva de tolerancias, no se adivina}
-\phantomsection\label{el-orden-se-deriva-de-tolerancias-no-se-adivina}
+\protect\phantomsection\label{el-orden-se-deriva-de-tolerancias-no-se-adivina}
 Para un prototipo pasa-bajas:
 
 \[
@@ -2529,7 +2562,7 @@ N\ge
 
 Luego se redondea hacia arriba.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Lectura}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Lectura}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Transición más estrecha o mayor atenuación exigen orden mayor. El costo
 nace de la especificación.
@@ -2538,7 +2571,7 @@ nace de la especificación.
 \end{frame}
 
 \begin{frame}{Diseñar en SOS mejora robustez numérica}
-\phantomsection\label{diseuxf1ar-en-sos-mejora-robustez-numuxe9rica}
+\protect\phantomsection\label{diseuxf1ar-en-sos-mejora-robustez-numuxe9rica}
 Un IIR de orden alto en forma polinómica directa puede ser sensible al
 redondeo.
 
@@ -2548,7 +2581,7 @@ H(z)=\prod_{m=1}^{K}
 {a_{0m}+a_{1m}z^{-1}+a_{2m}z^{-2}}.
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Buena práctica}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Buena práctica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Implemente como secciones de segundo orden (SOS), especialmente en
 pasabandas y órdenes moderados o altos.
@@ -2557,7 +2590,7 @@ pasabandas y órdenes moderados o altos.
 \end{frame}
 
 \begin{frame}[fragile]{Código de diseño IIR reproducible}
-\phantomsection\label{cuxf3digo-de-diseuxf1o-iir-reproducible}
+\protect\phantomsection\label{cuxf3digo-de-diseuxf1o-iir-reproducible}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{from}\NormalTok{ scipy }\ImportTok{import}\NormalTok{ signal}
@@ -2573,7 +2606,7 @@ pasabandas y órdenes moderados o altos.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Verificación necesaria}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Verificación necesaria}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 \texttt{wn} es la frecuencia crítica devuelta por el diseño; no debe
 suponerse idéntica a los bordes iniciales sin revisar la respuesta.
@@ -2582,7 +2615,7 @@ suponerse idéntica a los bordes iniciales sin revisar la respuesta.
 \end{frame}
 
 \begin{frame}{Verificación 10.1}
-\phantomsection\label{verificaciuxf3n-10.1}
+\protect\phantomsection\label{verificaciuxf3n-10.1}
 Un diseñador cambia \(f_s\) de 2000 a 1000 Hz y conserva \(f_H=450\) Hz.
 
 \begin{enumerate}
@@ -2595,7 +2628,7 @@ Un diseñador cambia \(f_s\) de 2000 a 1000 Hz y conserva \(f_H=450\) Hz.
   ¿Por qué podría aumentar el orden o fallar la especificación?
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Respuesta esperada}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Respuesta esperada}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Nyquist baja de 1000 a 500 Hz; solo quedan 50 Hz de margen. La
 transición se vuelve mucho más exigente y sensible a predeformación y
@@ -2605,8 +2638,8 @@ orden.
 \end{frame}
 
 \begin{frame}{Cierre de la sesión 19}
-\phantomsection\label{cierre-de-la-sesiuxf3n-19}
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Síntesis}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\protect\phantomsection\label{cierre-de-la-sesiuxf3n-19}
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Síntesis}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 El prototipo fija la forma de magnitud, la transformación bilineal
 preserva estabilidad y deforma frecuencia, y las SOS reducen
@@ -2618,7 +2651,7 @@ sensibilidad numérica.
 \section{Semana 10 · Sesión 2}\label{semana-10-sesiuxf3n-2}
 
 \begin{frame}{Un pasabanda para EMG debe justificarse y validarse}
-\phantomsection\label{un-pasabanda-para-emg-debe-justificarse-y-validarse}
+\protect\phantomsection\label{un-pasabanda-para-emg-debe-justificarse-y-validarse}
 \textbf{Resultados de aprendizaje}
 
 \begin{itemize}
@@ -2636,7 +2669,7 @@ universal para EMG?
 \end{frame}
 
 \begin{frame}{La EMG superficial es una suma interferencial}
-\phantomsection\label{la-emg-superficial-es-una-suma-interferencial}
+\protect\phantomsection\label{la-emg-superficial-es-una-suma-interferencial}
 El registro combina potenciales de acción de múltiples unidades motoras,
 conducción volumétrica y respuesta del montaje.
 
@@ -2652,7 +2685,7 @@ conducción volumétrica y respuesta del montaje.
   Movimiento y otras fuentes fisiológicas pueden solaparse.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Concepto principal}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Concepto principal}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La banda útil no es una propiedad universal de ``la EMG''. Se justifica
 para un montaje, tarea, sensor, \(f_s\) y objetivo de análisis.
@@ -2664,10 +2697,11 @@ doi:10.1007/978-3-319-74917-4.
 \end{frame}
 
 \begin{frame}{Especificación didáctica del caso}
-\phantomsection\label{especificaciuxf3n-diduxe1ctica-del-caso}
+\protect\phantomsection\label{especificaciuxf3n-diduxe1ctica-del-caso}
 \textbf{Objetivo:} conservar actividad muscular útil y atenuar deriva,
 movimiento y contenido muy alto.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lrr@{}}
 \toprule\noalign{}
 Región & Borde propuesto & Tolerancia \\
@@ -2680,8 +2714,9 @@ Transición superior & \(450-550\) Hz & - \\
 Rechazo superior & \(550-1000\) Hz & al menos 40 dB \\
 \bottomrule\noalign{}
 \end{longtable}
+}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Alcance}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Alcance}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Son especificaciones docentes, no una recomendación clínica ni un
 estándar universal.
@@ -2690,13 +2725,13 @@ estándar universal.
 \end{frame}
 
 \begin{frame}{El resultado debe verse en tiempo y frecuencia}
-\phantomsection\label{el-resultado-debe-verse-en-tiempo-y-frecuencia}
+\protect\phantomsection\label{el-resultado-debe-verse-en-tiempo-y-frecuencia}
 \includegraphics[width=0.86\linewidth,height=\textheight,keepaspectratio]{assets/iir_emg.png}
 
 La señal y las contaminaciones son \textbf{sintéticas} y se usan para
 probar el comportamiento conocido del filtro.
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Lectura}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Lectura}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La PSD confirma atenuación de la deriva y de la componente alta. La
 inspección temporal evalúa si la actividad transitoria sigue siendo
@@ -2706,10 +2741,10 @@ reconocible.
 \end{frame}
 
 \begin{frame}{Causal y fase neta cero responden a preguntas distintas}
-\phantomsection\label{causal-y-fase-neta-cero-responden-a-preguntas-distintas}
+\protect\phantomsection\label{causal-y-fase-neta-cero-responden-a-preguntas-distintas}
 \includegraphics[width=0.85\linewidth,height=\textheight,keepaspectratio]{assets/phase_comparison.png}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Decisión}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Decisión}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Use filtrado causal para tiempo real. Use filtrado hacia adelante y
 atrás solo fuera de línea, declarando efectos de borde y el cambio de
@@ -2720,7 +2755,7 @@ magnitud efectiva.
 
 \begin{frame}[fragile]{\texttt{filtfilt} no es ``el mismo filtro sin
 retardo''}
-\phantomsection\label{filtfilt-no-es-el-mismo-filtro-sin-retardo}
+\protect\phantomsection\label{filtfilt-no-es-el-mismo-filtro-sin-retardo}
 Al aplicar hacia adelante y atrás:
 
 \[
@@ -2742,7 +2777,7 @@ Por tanto:
   se requieren decisiones de padding y longitud mínima.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Error frecuente}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Error frecuente}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Comparar \texttt{sosfilt} y \texttt{sosfiltfilt} como si solo difirieran
 en alineación temporal.
@@ -2751,7 +2786,7 @@ en alineación temporal.
 \end{frame}
 
 \begin{frame}{Un notch de red no debe añadirse automáticamente}
-\phantomsection\label{un-notch-de-red-no-debe-auxf1adirse-automuxe1ticamente}
+\protect\phantomsection\label{un-notch-de-red-no-debe-auxf1adirse-automuxe1ticamente}
 Antes de usar 50 o 60 Hz:
 
 \begin{enumerate}
@@ -2768,7 +2803,7 @@ Antes de usar 50 o 60 Hz:
   mida ringing y distorsión temporal.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Jerarquía de intervención}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Jerarquía de intervención}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Primero reduzca la interferencia en adquisición. El notch es una
 decisión adicional, no una etapa obligatoria.
@@ -2777,7 +2812,7 @@ decisión adicional, no una etapa obligatoria.
 \end{frame}
 
 \begin{frame}[fragile]{Validación mínima del caso EMG}
-\phantomsection\label{validaciuxf3n-muxednima-del-caso-emg}
+\protect\phantomsection\label{validaciuxf3n-muxednima-del-caso-emg}
 \textbf{Filtro}
 
 \begin{itemize}
@@ -2804,7 +2839,7 @@ decisión adicional, no una etapa obligatoria.
   Eventos fisiológicos relevantes preservados según el protocolo.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Regla}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Regla}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Validar el filtro y validar la interpretación son tareas relacionadas,
 pero no idénticas.
@@ -2813,7 +2848,7 @@ pero no idénticas.
 \end{frame}
 
 \begin{frame}[fragile]{Función reutilizable con contrato explícito}
-\phantomsection\label{funciuxf3n-reutilizable-con-contrato-expluxedcito}
+\protect\phantomsection\label{funciuxf3n-reutilizable-con-contrato-expluxedcito}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{from}\NormalTok{ scipy }\ImportTok{import}\NormalTok{ signal}
@@ -2829,7 +2864,7 @@ pero no idénticas.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Extensión}, coltitle=black, colbacktitle=quarto-callout-tip-color!10!white, toprule=.15mm, colframe=quarto-callout-tip-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Extensión}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La función implementa un orden dado. Para cumplir \(A_p/A_s\), derive
 primero el orden con \texttt{buttord} y verifique la respuesta
@@ -2839,7 +2874,7 @@ resultante.
 \end{frame}
 
 \begin{frame}[fragile]{Pruebas que deberían acompañar el código}
-\phantomsection\label{pruebas-que-deberuxedan-acompauxf1ar-el-cuxf3digo}
+\protect\phantomsection\label{pruebas-que-deberuxedan-acompauxf1ar-el-cuxf3digo}
 \begin{Shaded}
 \begin{Highlighting}[]
 \ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
@@ -2855,7 +2890,7 @@ resultante.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Alcance de las pruebas}, coltitle=black, colbacktitle=quarto-callout-warning-color!10!white, toprule=.15mm, colframe=quarto-callout-warning-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Alcance de las pruebas}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Estas pruebas detectan fallas estructurales; aún faltan tolerancias de
 magnitud, fase, transitorios y preservación del evento objetivo.
@@ -2864,7 +2899,7 @@ magnitud, fase, transitorios y preservación del evento objetivo.
 \end{frame}
 
 \begin{frame}{Actividad integradora}
-\phantomsection\label{actividad-integradora}
+\protect\phantomsection\label{actividad-integradora}
 Diseñe un preprocesamiento para una bioseñal elegida y entregue:
 
 \begin{enumerate}
@@ -2887,7 +2922,7 @@ Diseñe un preprocesamiento para una bioseñal elegida y entregue:
   limitaciones de interpretación.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Criterio de evaluación}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Criterio de evaluación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Se calificará la coherencia completa de la decisión, no la apariencia
 visual de una señal ``más limpia''.
@@ -2896,7 +2931,7 @@ visual de una señal ``más limpia''.
 \end{frame}
 
 \begin{frame}{Errores que deben poder diagnosticar}
-\phantomsection\label{errores-que-deben-poder-diagnosticar}
+\protect\phantomsection\label{errores-que-deben-poder-diagnosticar}
 \begin{itemize}
 \tightlist
 \item
@@ -2923,7 +2958,7 @@ visual de una señal ``más limpia''.
 \end{frame}
 
 \begin{frame}{Cierre de la semana 10}
-\phantomsection\label{cierre-de-la-semana-10}
+\protect\phantomsection\label{cierre-de-la-semana-10}
 \[
 \boxed{
 \text{Fisiología}
@@ -2936,7 +2971,7 @@ visual de una señal ``más limpia''.
 }
 \]
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Resultado de aprendizaje global}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Resultado de aprendizaje global}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Una decisión de procesamiento es defendible cuando conecta el fenómeno,
 la adquisición, el modelo, las especificaciones, la implementación y la
@@ -2946,7 +2981,7 @@ evidencia de validación.
 \end{frame}
 
 \begin{frame}{Preguntas de cierre}
-\phantomsection\label{preguntas-de-cierre}
+\protect\phantomsection\label{preguntas-de-cierre}
 \begin{enumerate}
 \tightlist
 \item
@@ -2968,7 +3003,7 @@ evidencia de validación.
 \end{frame}
 
 \begin{frame}{Referencias principales I}
-\phantomsection\label{referencias-principales-i}
+\protect\phantomsection\label{referencias-principales-i}
 \begin{itemize}
 \tightlist
 \item
@@ -2985,7 +3020,7 @@ evidencia de validación.
   \url{https://doi.org/10.1201/9781003201137}
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Uso de fuentes}, coltitle=black, colbacktitle=quarto-callout-note-color!10!white, toprule=.15mm, colframe=quarto-callout-note-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Uso de fuentes}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Las definiciones y ejemplos fueron reorganizados y desarrollados para
 este curso; no se reproducen figuras de los libros.
@@ -2994,7 +3029,7 @@ este curso; no se reproducen figuras de los libros.
 \end{frame}
 
 \begin{frame}[fragile]{Referencias principales II}
-\phantomsection\label{referencias-principales-ii}
+\protect\phantomsection\label{referencias-principales-ii}
 Materiales base del curso revisados:
 
 \begin{itemize}
@@ -3015,7 +3050,7 @@ Todas las figuras computacionales de estas diapositivas se generaron con
 señales sintéticas y Python (\texttt{NumPy}, \texttt{SciPy},
 \texttt{Matplotlib}).
 
-\begin{tcolorbox}[enhanced jigsaw, bottomrule=.15mm, opacitybacktitle=0.6, rightrule=.15mm, opacityback=0, left=2mm, leftrule=.75mm, title={Cierre}, coltitle=black, colbacktitle=quarto-callout-important-color!10!white, toprule=.15mm, colframe=quarto-callout-important-color-frame, bottomtitle=1mm, toptitle=1mm, breakable, titlerule=0mm, arc=.35mm, colback=white]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title={Cierre}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Antes de aceptar una señal filtrada, pregunte siempre: ¿qué se preservó,
 qué se atenuó, qué se desplazó y qué evidencia lo demuestra?
