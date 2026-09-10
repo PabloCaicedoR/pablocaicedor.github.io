@@ -1,0 +1,712 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  10pt,
+  ignorenonframetext,
+  aspectratio=169,
+  spanish,
+]{beamer}
+\newif\ifbibliography
+\usepackage{pgfpages}
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{caption label separator}{: }
+\setbeamercolor{caption name}{fg=normal text.fg}
+\beamertemplatenavigationsymbolsempty
+% remove section numbering
+\setbeamertemplate{part page}{
+  \centering
+  \begin{beamercolorbox}[sep=16pt,center]{part title}
+    \usebeamerfont{part title}\insertpart\par
+  \end{beamercolorbox}
+}
+\setbeamertemplate{section page}{
+  \centering
+  \begin{beamercolorbox}[sep=12pt,center]{section title}
+    \usebeamerfont{section title}\insertsection\par
+  \end{beamercolorbox}
+}
+\setbeamertemplate{subsection page}{
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center]{subsection title}
+    \usebeamerfont{subsection title}\insertsubsection\par
+  \end{beamercolorbox}
+}
+% Prevent slide breaks in the middle of a paragraph
+\widowpenalties 1 10000
+\raggedbottom
+\AtBeginPart{
+  \frame{\partpage}
+}
+\AtBeginSection{
+  \ifbibliography
+  \else
+    \frame{\sectionpage}
+  \fi
+}
+\AtBeginSubsection{
+  \frame{\subsectionpage}
+}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+
+\usetheme[]{Madrid}
+\usecolortheme[]{dolphin}
+\usefonttheme[]{professionalfonts}
+\usefonttheme{serif} % use mainfont rather than sansfont for slide text
+\ifPDFTeX\else
+  % xetex/luatex font selection
+  \setmainfont[]{DejaVu Sans}
+  \setsansfont[]{DejaVu Sans}
+  \setmonofont[]{DejaVu Sans Mono}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+\usepackage{caption}
+% Make caption package work with longtable
+\makeatletter
+\def\fnum@table{\tablename~\thetable}
+\makeatother
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\ifPDFTeX
+\else
+\babelfont{rm}[]{DejaVu Sans}
+\fi
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+% Estilo separado del contenido. Compilación comprobada con XeLaTeX.
+\definecolor{SYSBAzul}{HTML}{0B3954}
+\definecolor{SYSBVerde}{HTML}{168C91}
+\definecolor{SYSBTexto}{HTML}{203E50}
+\setbeamercolor{structure}{fg=SYSBAzul}
+\setbeamercolor{normal text}{fg=SYSBTexto,bg=white}
+\setbeamercolor{frametitle}{fg=white,bg=SYSBAzul}
+\setbeamercolor{block title}{fg=white,bg=SYSBAzul}
+\setbeamercolor{block body}{fg=SYSBTexto,bg=SYSBAzul!4}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamerfont{footline}{size=\tiny}
+\setbeamersize{text margin left=6mm,text margin right=6mm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{\hfill\textcolor{SYSBAzul}{SYSB\quad\insertframenumber/\inserttotalframenumber}\hspace{6mm}\vspace{2mm}}
+\setbeameroption{hide notes}
+\setlength{\parskip}{2pt}
+\setlength{\abovedisplayskip}{5pt}
+\setlength{\belowdisplayskip}{5pt}
+\hypersetup{pdftitle={Sistemas y Señales Biomédicos},pdfauthor={Pablo Eduardo Caicedo-Rodríguez}}
+
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Tabla de contenidos}
+\else
+  \newcommand\contentsname{Tabla de contenidos}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{Listado de Figuras}
+\else
+  \newcommand\listfigurename{Listado de Figuras}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{Listado de Tablas}
+\else
+  \newcommand\listtablename{Listado de Tablas}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figura}
+\else
+  \newcommand\figurename{Figura}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Tabla}
+\else
+  \newcommand\tablename{Tabla}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listado}
+\newcommand*\listoflistings{\listof{codelisting}{Listado de Listados}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Revisión académica de las diapositivas SYSB},
+  pdflang={es},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Revisión académica de las diapositivas SYSB}
+\subtitle{Microcurrículo, libro guía y correspondencia por diapositiva}
+\author{}
+\date{2026-09-09}
+
+\begin{document}
+\frame{\titlepage}
+
+
+\begin{frame}{Dictamen}
+\phantomsection\label{dictamen}
+\textbf{Los tres archivos originales seguían la secuencia temática de
+las 30 sesiones del microcurrículo, pero su correspondencia con el libro
+guía era parcial y contenían errores de formulación y de
+implementación.} El problema principal no era el orden de las semanas,
+sino la ausencia de referencias verificadas, la cobertura insuficiente
+de algunos fundamentos y la falta de distinción entre contenido del
+libro y ampliaciones curriculares.
+
+La revisión mantiene las 15 semanas, sus dos sesiones y el uso de
+Python. Corrige los errores identificados, incorpora desarrollos
+matemáticos y añade referencias en las notas de todas las diapositivas,
+incluidas las portadas, separadores y síntesis. Las notas distinguen
+referencias directas, adaptaciones y antecedentes de temas que el libro
+guía no desarrolla.
+
+La alineación resultante se refiere al \textbf{cronograma suministrado y
+a los fundamentos pertinentes del libro}. No significa cubrir la
+totalidad del libro, que incluye circuitos y otros capítulos fuera del
+alcance programado, ni resolver las inconsistencias administrativas del
+microcurrículo.
+\end{frame}
+
+\begin{frame}[fragile]{Fuentes efectivamente utilizadas}
+\phantomsection\label{fuentes-efectivamente-utilizadas}
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Fuente
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Función en la revisión
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\texttt{Programa\_SYSB\_2027-1.pdf} & Temas, 30 sesiones, actividades,
+resultados de aprendizaje y evaluación \\
+\texttt{Circuits,\ Signals\ and\ Systems\ for\ Bioengineers.pdf} & Texto
+guía: John Semmlow, \textbf{3.ª edición, 2018} \\
+\texttt{BIOSIGNAL\ and\ MEDICAL\ IMAGE\ PROCESSING.pdf} & Complemento de
+Semmlow y Griffel, \textbf{3.ª edición, 2014}: wavelets, señal analítica
+y clasificación \\
+\texttt{Digital\_Signal\_Processing\_Illustration\_Using\_Python\_Springer\_2024.pdf}
+& Complemento de Esakkirajan, Veerakumar y Subudhi, 2024: implementación
+DSP en Python \\
+Documentación oficial de SciPy, PyWavelets y scikit-learn & Convenciones
+computacionales, escalamiento y condiciones de uso \\
+\bottomrule\noalign{}
+\end{longtable}
+
+La revisión no atribuye a los demás libros adjuntos una validación que
+no se haya realizado. Las figuras incorporadas se calculan con señales
+sintéticas y no reproducen las ilustraciones del libro. Los ejemplos
+nuevos son elaboraciones docentes.
+
+\begin{block}{Discrepancias dentro del microcurrículo}
+\phantomsection\label{discrepancias-dentro-del-microcurruxedculo}
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Hallazgo
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidencia
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Decisión adoptada
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+Nombre de archivo e identificación interna diferentes & El nombre dice
+2027-1; portada y encabezados dicen 2022-2 & Registrar la
+inconsistencia. No cambiar el período institucional por inferencia \\
+Edición bibliográfica diferente & El programa cita \emph{Signals and
+Systems for Bioengineers}, 2.ª ed., 2012; el PDF guía suministrado es la
+3.ª ed., 2018, con otro título y organización & Usar las secciones
+reales de la \textbf{edición aportada} \\
+Numeración del cronograma diferente de la del libro & Por ejemplo, el
+cronograma sitúa sinusoides en 2.2, Laplace en 5.6--5.7 y wavelets en
+7.4--7.7 & Mantener esos números como identificadores curriculares y
+construir una correspondencia separada \\
+Horas dirigidas incongruentes & Información general: 4.5 h; cronograma:
+dos sesiones de 90 min, es decir, 3 h por semana & Conservar el
+cronograma solicitado. La distribución de las 1.5 h restantes requiere
+definición institucional \\
+Denominación del 16 \% final ambigua & Lista general: Proyecto Final 16
+\%; tabla del tercer corte: Laboratorios finales 16 \% & No inventar una
+equivalencia. Remitir los porcentajes al programa que confirme el
+profesor \\
+\bottomrule\noalign{}
+\end{longtable}
+
+Estas discrepancias pertenecen al documento de referencia y no pueden
+solucionarse honestamente cambiando las diapositivas para que aparenten
+concordancia.
+\end{block}
+\end{frame}
+
+\begin{frame}{Correspondencia entre las sesiones y el libro guía}
+\phantomsection\label{correspondencia-entre-las-sesiones-y-el-libro-guuxeda}
+Los números siguientes son \textbf{secciones reales de la 3.ª edición}.
+Las páginas incluidas en las notas son posiciones del visor del PDF
+aportado, no páginas impresas. Se contrastaron con los encabezados del
+cuerpo del libro, porque algunos destinos de sus marcadores internos son
+incorrectos.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Semana / sesión
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Tema del microcurrículo
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Secciones del libro guía y alcance
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+1 / 1 & Señal, sistema y bioseñal & 1.1--1.2; 1.4--1.4.5 \\
+1 / 2 & Origen fisiológico, ruido y artefactos & 1.2.1--1.2.2;
+1.3.1--1.3.2 \\
+2 / 1 & Representación y descriptores temporales & 1.2.3; 2.2.1--2.2.2.
+Se añade promediado de realizaciones: 2.2.3--2.2.4 \\
+2 / 2 & Sinusoides & \textbf{2.3.1--2.3.2}, no 2.2 \\
+3 / 1 & Operaciones temporales & Antecedentes: 1.4.2 y 2.4.4; desarrollo
+docente específico de composición de operaciones \\
+3 / 2 & Envolvente, cruces, eventos & Ampliación curricular con
+antecedentes en 2.2 y 2.4. Se añaden correlación y correlación cruzada:
+2.4.1, 2.4.3--2.4.4 \\
+4 / 1 & Segmentación y normalización & Aplicación de 2.2.4 y 2.4.3; se
+añade autocorrelación/autocovarianza: 2.4.5--2.4.6 \\
+4 / 2 & Relación tiempo--frecuencia & 3.2 y 3.3.1; puente de
+ortogonalidad: 2.4.2. Estacionariedad: 10.2, como anticipación \\
+5 / 1 & Series de Fourier & 3.3.2--3.3.6 \\
+5 / 2 & Fourier continuo, magnitud y fase & 3.3.7 y 3.4.3; propiedades y
+distribuciones como ampliación formal \\
+6 / 1 & Propiedades de Fourier & 3.3.7 y 5.6; integración/derivación:
+6.5.2--6.5.3 y 7.2.2 \\
+6 / 2 & DFT y FFT & 3.4.1--3.4.4 \\
+7 / 1 & Resolución, fuga y ventanas & 3.4.3; 4.2.3--4.2.4 \\
+7 / 2 & Adquisición y almacenamiento & 1.2.2--1.2.3; 4.2.1--4.2.2.
+Metadatos como ampliación reproducible \\
+8 / 1 & Muestreo y aliasing & 4.2.1; 5.6.1 \\
+8 / 2 & Potencia, PSD y periodograma & 4.3. Enlace con autocorrelación:
+2.4.5--2.4.6 \\
+9 / 1 & Welch y ancho de banda & \textbf{4.4--4.5}, no solo 4.3 \\
+9 / 2 & No estacionariedad y STFT & 4.6 y 10.2 \\
+10 / 1 & Ventanas tiempo--frecuencia & 4.2.4 y 4.6 \\
+10 / 2 & Linealidad, invariancia e impulso & \textbf{5.2--5.4};
+causalidad: 1.4.3; frecuencia: 6.3 y 6.7 \\
+11 / 1 & Convolución & \textbf{5.4--5.4.2} \\
+11 / 2 & Suavizadores y diferenciadores & \textbf{5.5} y 8.5.1 \\
+12 / 1 & Convolución en frecuencia & 5.6 y 6.4--6.7. Se incorporan
+modelos, fasores y Bode: 6.2--6.6 \\
+12 / 2 & Laplace, ROC, polos y ceros & \textbf{7.2--7.3}. ROC bilateral
+como ampliación explícita \\
+13 / 1 & Condiciones iniciales e identificación & \textbf{7.4--7.6} \\
+13 / 2 & Z, diferencias y FIR & \textbf{8.2--8.5}, más 8.6.1 para
+implementación \\
+14 / 1 & IIR y comparación de filtros & \textbf{8.4.1--8.4.3 y 8.6.2} \\
+14 / 2 & Wavelets & \textbf{Sin sección directa en el libro guía.}
+Complemento: Semmlow y Griffel, 7.1--7.2; Python: Esakkirajan et al.,
+5.7 \\
+15 / 1 & Multirresolución & \textbf{Sin sección directa.} Complemento:
+Semmlow y Griffel, 7.3; Python: Esakkirajan et al., 5.8 \\
+15 / 2 & Sistemas lineales para clasificación & \textbf{Sin sección
+directa para clasificación.} Antecedentes: 1.4.4 y 8.4. Complemento:
+Semmlow y Griffel, 16.2--16.3 y 16.6 \\
+\bottomrule\noalign{}
+\end{longtable}
+
+\begin{block}{Qué faltaba respecto del libro}
+\phantomsection\label{quuxe9-faltaba-respecto-del-libro}
+El capítulo 2 no es solamente una colección de descriptores: utiliza
+correlación, ortogonalidad, correlación cruzada y autocorrelación como
+puente hacia Fourier. Su cobertura era insuficiente en las diapositivas.
+Se incorporan definiciones, diferencias entre medidas, un ejemplo de
+retardo y el vínculo estadístico con la PSD.
+
+El capítulo 6 desarrolla modelos de sistemas, fasores, elementos
+básicos, Bode y combinación de transferencias. La exposición original de
+semanas 11--15 saltaba demasiado pronto de una respuesta frecuencial
+genérica a Laplace. Se añaden estas conexiones sin cambiar las sesiones
+del cronograma.
+
+El desarrollo original de Laplace y Z enunciaba definiciones y proponía
+ejercicios, pero no mostraba suficientes pasos intermedios. Se añaden
+convolución por intervalos, uso correcto del factor temporal en una
+suma, respuesta con estado inicial, contraejemplo del valor final y una
+ecuación en diferencias resuelta hasta su respuesta al impulso.
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]{Correcciones teóricas y computacionales}
+\phantomsection\label{correcciones-teuxf3ricas-y-computacionales}
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Tema
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Problema original
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Corrección
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+RMS & Exponente escrito como \texttt{\textbackslash{}bar\{x\}\^{}\{,2\}}
+& \(x_{RMS}^2=\sigma_x^2+\bar{x}^2\), usando denominador \(N\) \\
+Varianza & Denominación poblacional sin distinguir estimadores &
+Separación entre descripción del segmento con \(N\) y estimación con
+\(N-1\) \\
+Energía & Posible confusión entre suma discreta e integral física &
+Explicitar \(T_s\sum|x[n]|^2\) y sus unidades \\
+Transformaciones temporales & Se afirmaba que desplazar por \(b\) y
+después escalar no producía \(x(at-b)\) & Mostrar ambos órdenes
+equivalentes y la transformación de un evento \(t_k\mapsto(t_k+b)/a\) \\
+Detector de eventos & Matriz binaria con verdaderos negativos sin
+definir oportunidades negativas & Emparejamiento uno a uno, tolerancia,
+VP/FP/FN y error temporal \\
+Envolvente de Hilbert & Podía leerse como intensidad fisiológica general
+& Condiciones de banda, separación de escalas y advertencia sobre
+batimientos \\
+Normalización & No se explicitaban segmentos constantes ni diferencia
+entre parámetros globales y locales & Denominadores no nulos y alcance
+de la regla de ajustar solo con entrenamiento \\
+Fourier y tiempo & Se sugería pérdida de localización como propiedad de
+toda transformada & Distinguir transformada compleja invertible de
+resúmenes de magnitud o PSD \\
+Sinusoides y LTI & Frecuencia conservada sin indicar existencia de
+respuesta ni transitorio & Condiciones de convergencia y régimen
+permanente \\
+Integración & Término en DC dejado indeterminado & Valor principal y
+término distribucional explícitos \\
+DFT & Eje manual no coincidente con \texttt{fftfreq} en Nyquist; un
+fragmento no trataba \(N\) impar & Convención exacta y pruebas de
+amplitud con ambas paridades \\
+Amplitud & Semiespectro bilateral confundible con amplitud unilateral &
+Etiquetas correctas, duplicación de bins y supuestos de tono alineado \\
+Parseval con ventana & Comparación sugerida con potencia temporal sin la
+misma ponderación & Comparar con \(\sum|wx_0|^2/\sum w^2\); sumar bins
+completos para la prueba exacta \\
+Ancho de banda & Media y mediana espectral listadas como definiciones de
+ancho & Distinguir extensión de localización del espectro \\
+Hamming & Extremos no nulos presentados como discontinuidad periódica
+inevitable & Diferenciar extremos de la ventana y extremos de la señal
+ventaneada \\
+Muestreo & Un margen de 5 Hz se declaraba imposible para cualquier
+filtro real & Pedir atenuación, orden y tolerancia antes de concluir
+factibilidad \\
+Incertidumbre & Constante \(C\) no definida & Definir dispersión de
+energía y \(\sigma_t\sigma_f\ge1/(4\pi)\) \\
+STFT & Módulo cuadrado sin normalización cuantitativa completa &
+\texttt{scaling="psd"} y combinación explícita de potencia unilateral \\
+Promedio móvil & Implementación \texttt{same} usada junto con
+interpretación de retardo causal & \texttt{lfilter}, estado inicial y
+comportamiento en bordes \\
+Diferenciación & Diferencia presentada sin escala temporal & Explicitar
+división por \(T_s\) cuando se aproxima derivada física \\
+Laplace & Mezcla de bilateral y unilateral; polos descritos solo en
+rad/s & Separar transformadas; dimensión de \(s\) en s\(^{-1}\) y
+significado de sus componentes \\
+Modelo RC & Ganancia unitaria atribuida a membrana sin definir entrada &
+Separar voltaje--voltaje de corriente--voltaje, esta última con ganancia
+en ohmios \\
+Estabilidad & Regla de polos sin aclarar transferencia propia y término
+directo & Precisar condiciones de la regla y caso distribucional de
+ganancia directa \\
+Valor inicial/final & Condiciones descritas de forma conjunta & Separar
+hipótesis e incorporar contraejemplo oscilatorio \\
+FIR & Cortes nominales confundibles con banda plana & Especificar
+bordes, rizado, atenuación y convención de \texttt{firwin} \\
+Adelante--atrás & Se describía la eliminación de fase sin su cambio de
+magnitud & Respuesta ideal \(|H|^2\) y evaluación de la respuesta
+efectivamente aplicada \\
+CWT & Escalas 1--2 con Morlet compleja podían introducir aliasing &
+Selección desde pseudofrecuencias, margen y revisión de escalas
+pequeñas \\
+DWT & Faltaban control de nivel, orden de coeficientes y reconstrucción
+de bandas & Verificación de longitud, nivel máximo y síntesis a la tasa
+original \\
+Clasificación & Logaritmo de una cantidad dimensional y partición solo
+declarada & Cociente adimensional y ejemplo explícito de división por
+sujeto \\
+\bottomrule\noalign{}
+\end{longtable}
+
+La concordancia con un texto no justifica repetir una afirmación débil.
+Por ejemplo, la equivalencia entre ortogonalidad y correlación centrada
+requiere precisar el centrado; las diapositivas hacen esa distinción.
+Del mismo modo, que el libro privilegie Laplace unilateral no convierte
+la bilateral en incorrecta: se conserva como ampliación claramente
+identificada.
+\end{frame}
+
+\begin{frame}{Ajustes pedagógicos y didácticos}
+\phantomsection\label{ajustes-pedaguxf3gicos-y-diduxe1cticos}
+Se conservan las preguntas biomédicas y los criterios de interpretación
+ya útiles. En las semanas 11--15 se sustituyen las preguntas repetidas
+sobre ``el parámetro principal'' por comprobaciones concretas de
+soporte, retardo, polos, condiciones de los teoremas, frecuencia física,
+reconstrucción y unidad independiente.
+
+Se propone un uso de 90 minutos con apertura, fundamento, aplicación en
+parejas y comprobación individual. Es una pauta docente, no una medición
+del tiempo que tardará cualquier grupo. La cantidad de diapositivas
+responde a su doble uso como apoyo de clase y material de estudio:
+\textbf{no se recomienda leerlas todas de forma expositiva}.
+Correlación, Bode y desarrollos agregados deben seleccionarse según
+conocimientos previos y acompañarse de la lectura indicada.
+
+Los RAE no se satisfacen solo por incluir temas. Se añaden evidencias
+observables de lectura en inglés, explicación oral, cálculo individual,
+programación reproducible, escritura científica y colaboración. Las
+actividades integradoras requieren procedimiento, unidades, comprobación
+e interpretación. No se altera el esquema institucional de porcentajes
+ni se inventan fechas de exámenes.
+
+La ampliación de clasificación conserva la distinción entre un banco de
+filtros LTI, características no lineales y una frontera de decisión
+afín. El ejemplo LDA generativo se respalda adicionalmente con la
+documentación de scikit-learn: el capítulo 16 del complemento introduce
+discriminadores lineales, pero no se le atribuye esa derivación exacta.
+\end{frame}
+
+\begin{frame}[fragile]{Notas y trazabilidad}
+\phantomsection\label{notas-y-trazabilidad}
+Cada diapositiva contiene un bloque \texttt{:::\ \{.notes\}} con el
+libro y edición, número y título de sección, página del visor cuando
+corresponde, clase de correspondencia y sesión curricular. Los temas
+ausentes del libro se señalan como tales y se remiten al complemento
+adecuado.
+
+Puede consultar las notas en la vista del presentador de Revealjs o
+leerlas de forma continua en \texttt{notas-del-docente.html}. Los PDF
+Beamer se entregan con las notas ocultas para proyección; los bloques
+permanecen en el QMD y en el TEX generado. El archivo
+\texttt{correspondencia-diapositivas.json} permite revisar o reutilizar
+el mapeo completo.
+
+Se reemplazan las rutas externas que no venían adjuntas por recursos
+incluidos en el paquete. El formato continúa separado del contenido en
+\texttt{\_metadata.yml}, \texttt{estilos/reveal.scss},
+\texttt{estilos/beamer-header.tex} y un filtro que representa los
+callouts como bloques nativos de Beamer. La apariencia se basa en los
+colores y proporción disponibles en los QMD; \textbf{no puede afirmarse
+identidad visual con los estilos originales que no fueron aportados}. El
+logo externo tampoco estaba disponible.
+\end{frame}
+
+\begin{frame}{Comprobaciones de la entrega}
+\phantomsection\label{comprobaciones-de-la-entrega}
+\begin{longtable}[]{@{}lrr@{}}
+\toprule\noalign{}
+Archivo & Diapositivas & Bloques de notas \\
+\midrule\noalign{}
+\endhead
+Semanas 01--05 & 109 & 109 \\
+Semanas 06--10 & 172 & 172 \\
+Semanas 11--15 & 162 & 162 \\
+\textbf{Total} & \textbf{443} & \textbf{443} \\
+\bottomrule\noalign{}
+\end{longtable}
+
+Los tres QMD compilan a Revealjs y Beamer con Quarto 1.7.34. Se comprobó
+la presencia de las notas en el HTML y en el TEX, la sintaxis de los 29
+fragmentos Python y la compatibilidad de las expresiones matemáticas con
+el motor KaTeX utilizado por los HTML.
+
+Los casos numéricos reproducibles comprueban la identidad RMS, la
+amplitud unilateral con número par e impar de muestras, Parseval con la
+misma ventana, un retardo conocido, la aproximación de una convolución
+continua, el corte de un primer orden y la reconstrucción DWT. El error
+de Parseval fue aproximadamente \(5.6\times10^{-16}\); el error relativo
+de reconstrucción DWT fue \(3.9\times10^{-16}\). La aproximación de
+convolución usa \(T_s=0.001\) s y tiene error máximo cercano a 0.001.
+Estas pruebas cubren los casos incluidos en el script; no implican haber
+ejecutado todas las actividades con datos biomédicos reales.
+
+Se revisaron visualmente páginas representativas de los PDF y se
+corrigieron las alertas de texto desbordado detectadas al recorrer todas
+las páginas. \textbf{La revisión visual y de navegación de los HTML
+quedó limitada por el bloqueo de acceso del navegador a los archivos
+locales.} Su compilación, estructura, notas y sintaxis matemática sí se
+comprobaron. Las ecuaciones HTML requieren acceso a la CDN de KaTeX; los
+PDF no tienen esa dependencia.
+\end{frame}
+
+\begin{frame}{Documentación computacional consultada}
+\phantomsection\label{documentaciuxf3n-computacional-consultada}
+\begin{itemize}
+\tightlist
+\item
+  Normalización y potencia:
+  \href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.periodogram.html}{SciPy,
+  periodogram}.
+\item
+  Espectrograma:
+  \href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.stft.html}{SciPy,
+  stft}. Se conserva esta API para continuidad y se identifica su
+  condición de legacy.
+\item
+  Diseño de filtros:
+  \href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.firwin.html}{SciPy,
+  firwin} y
+  \href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html}{filtfilt}.
+\item
+  Escalas y aliasing:
+  \href{https://pywavelets.readthedocs.io/en/latest/ref/cwt.html}{PyWavelets,
+  CWT}.
+\item
+  Supuestos de LDA:
+  \href{https://scikit-learn.org/stable/modules/lda_qda.html}{scikit-learn,
+  Linear and Quadratic Discriminant Analysis}.
+\item
+  Vista del presentador:
+  \href{https://quarto.org/docs/presentations/revealjs/presenting.html}{Quarto,
+  Presenting Slides}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Bibliografía}
+\phantomsection\label{bibliografuxeda}
+Texto principal: J. Semmlow (\citeproc{ref-semmlow2018}{2018}).
+Complementos: J. L. Semmlow y Griffel
+(\citeproc{ref-semmlowgriffel2014}{2014}) y Esakkirajan, Veerakumar, y
+Subudhi (\citeproc{ref-esakkirajan2024}{2024}). El DOI de este último se
+verificó en la página de créditos del PDF aportado.
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-esakkirajan2024}
+Esakkirajan, S., T. Veerakumar, y Badri N. Subudhi. 2024. \emph{Digital
+Signal Processing: Illustration Using Python}. Springer.
+\url{https://doi.org/10.1007/978-981-99-6752-0}.
+
+\bibitem[\citeproctext]{ref-semmlow2018}
+Semmlow, John. 2018. \emph{Circuits, Signals, and Systems for
+Bioengineers: A MATLAB-Based Introduction}. 3.ª ed. Academic Press.
+
+\bibitem[\citeproctext]{ref-semmlowgriffel2014}
+Semmlow, John L., y Benjamin Griffel. 2014. \emph{Biosignal and Medical
+Image Processing}. 3.ª ed. CRC Press.
+
+\end{CSLReferences}
+\end{frame}
+
+
+
+
+\end{document}
