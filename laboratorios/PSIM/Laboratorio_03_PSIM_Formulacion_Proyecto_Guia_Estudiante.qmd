@@ -1,0 +1,635 @@
+---
+title: "Laboratorio 03"
+subtitle: "Formulación del proyecto semestral de Procesamiento de Señales e Imágenes Médicas"
+description: "Guía del estudiante para formular el problema, la pregunta de investigación, los objetivos, el cronograma y seleccionar un dataset reproducible para el proyecto de PSIM"
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+date: last-modified
+lang: es
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    number-depth: 2
+    code-copy: true
+    code-line-numbers: true
+    code-overflow: wrap
+    code-tools:
+      source: false
+      toggle: true
+      caption: "Código"
+    anchor-sections: true
+    link-external-newwindow: true
+    smooth-scroll: true
+execute:
+  enabled: false
+---
+
+# Presentación del laboratorio
+
+::: {.callout-note title="Información general"}
+**Asignatura:** Procesamiento de Señales e Imágenes Médicas (PSIM)  
+**Programa:** Ingeniería Biomédica  
+**Modalidad:** equipos de hasta tres estudiantes  
+**Duración máxima:** **5 h 50 min**  
+**Producto central:** formulación verificable del proyecto semestral y selección argumentada del dataset  
+**Continuidad:** el mismo proyecto se desarrollará en tres fases y culminará con su presentación en el Laboratorio 03.
+:::
+
+## Propósito
+
+El proyecto final de PSIM no debe comenzar escribiendo código sin una pregunta clara. Antes de procesar una imagen, elegir un filtro o extraer una característica, es necesario definir **qué problema se quiere estudiar, qué evidencia permitiría responderlo, qué datos son adecuados y qué operaciones del curso serán necesarias**.
+
+En este laboratorio cada equipo formulará un proyecto de procesamiento de imágenes biomédicas que pueda desarrollarse de manera acumulativa durante el semestre. El producto de esta sesión será un protocolo de proyecto suficientemente preciso para que otro equipo pueda comprender qué se quiere estudiar, con qué dataset, mediante qué fases y con qué criterios se decidirá si el proyecto respondió o no la pregunta de investigación.
+
+::: {.callout-important title="Criterio rector"}
+La calidad de la propuesta no se mide por la complejidad del algoritmo. Se mide por la **coherencia trazable** entre problema, pregunta de investigación, objetivos, dataset, técnicas de PSIM, productos esperados y cronograma.
+:::
+
+## Relación con la guía de Python científico reproducible
+
+Este laboratorio conserva las reglas de trabajo establecidas en la guía de Python científico reproducible del curso:
+
+- el proyecto se administra con `uv`;
+- las dependencias se declaran en `pyproject.toml` y se fijan con `uv.lock`;
+- no se entrega `.venv/`;
+- se usan rutas relativas con `pathlib`;
+- los datos originales se consideran de solo lectura;
+- los productos derivados deben poder regenerarse;
+- el código reusable se separa de los scripts de ejecución;
+- se documenta la procedencia de los datos;
+- Ruff y Pytest se incorporan desde el comienzo;
+- el README actúa como protocolo de reconstrucción del proyecto.
+
+La guía de referencia está disponible en:  
+<https://pablocaicedor.github.io/laboratorios/PythonLanguage/Laboratorio_00_Python_Cientifico_Reproducible_Guia_Estudiante.html>
+
+# Resultados de aprendizaje
+
+Al finalizar este laboratorio, el estudiante estará en capacidad de:
+
+1. delimitar un problema de procesamiento de imágenes biomédicas que sea realizable durante el curso;
+2. formular una pregunta de investigación medible y no ambigua;
+3. construir un objetivo general y objetivos específicos trazables a productos verificables;
+4. buscar, comparar y seleccionar datasets biomédicos públicos o institucionalmente autorizados;
+5. identificar restricciones éticas, técnicas, de licencia y de reproducibilidad del dataset;
+6. diseñar un proyecto en tres fases que cubra las técnicas desarrolladas en PSIM;
+7. definir un cronograma con actividades, dependencias, responsables y evidencias;
+8. crear la estructura reproducible inicial del proyecto con `uv`;
+9. establecer de antemano qué análisis estadístico se utilizará sin recurrir a modelos de aprendizaje automático.
+
+# Restricción metodológica: no Machine Learning
+
+::: {.callout-warning title="Restricción obligatoria del proyecto"}
+El proyecto **no puede utilizar Machine Learning como estrategia de solución**. No se permiten redes neuronales, CNN, transformers, SVM, k-NN, árboles de decisión, Random Forest, Gradient Boosting, XGBoost, clustering, AutoML ni modelos equivalentes.
+:::
+
+El énfasis del proyecto debe permanecer en **procesamiento, transformación, segmentación, extracción de características, análisis de frecuencias, wavelets y análisis estadístico interpretable**.
+
+Si la pregunta requiere una etapa predictiva, se aplicará exclusivamente una de las siguientes alternativas:
+
+| Tipo de variable de respuesta | Método permitido | Propósito |
+|---|---|---|
+| Categórica | **Regresión logística** binaria o multinomial | Relacionar características explícitamente extraídas con una clase |
+| Continua | **Regresión polinómica multivariable** | Modelar una respuesta continua a partir de características explícitas |
+| No predictiva | Estadística descriptiva, intervalos, comparación de grupos o pruebas de hipótesis | Caracterizar o comparar resultados del procesamiento |
+
+::: {.callout-tip title="Preferencia metodológica"}
+No es obligatorio que el proyecto sea de clasificación o regresión. Una pregunta de investigación sobre **calidad de imagen, segmentación, contraste, resolución, filtrado, cuantificación morfológica o extracción de características** puede ser más adecuada para PSIM.
+:::
+
+# Arquitectura del proyecto en tres fases
+
+El proyecto tendrá tres fases acumulativas. Cada fase debe dejar productos que sean usados en la siguiente.
+
+```{mermaid}
+flowchart LR
+    A["Fase 1 · Formular y caracterizar"] --> B["Fase 2 · Procesar y extraer características"]
+    B --> C["Fase 3 · Integrar, validar y presentar"]
+    A --> D["Repositorio único y reproducible"]
+    B --> D
+    C --> D
+```
+
+| Fase | Momento sugerido | Propósito | Producto acumulativo |
+|---|---|---|---|
+| **Fase 1 — Formulación y datos** | Semanas 1–5 / Laboratorio 01 | Delimitar el problema, formular la pregunta, seleccionar el dataset y definir el protocolo | Propuesta, ficha del dataset, estructura reproducible y matriz de técnicas |
+| **Fase 2 — Procesamiento y análisis** | Semanas 6–10 / Laboratorio 02 | Implementar y comparar las técnicas de PSIM sobre una muestra controlada y luego sobre el dataset | Pipeline reproducible, figuras, métricas, características y análisis intermedio |
+| **Fase 3 — Integración y proyecto final** | Semanas 11–15 / Laboratorio 03 | Responder la pregunta, validar resultados, documentar limitaciones y presentar el proyecto final | Informe final, resultados regenerables, repositorio y sustentación |
+
+::: {.callout-important title="Laboratorio 03"}
+El **Laboratorio 03 corresponde al cierre y presentación del proyecto final**. No debe iniciarse un proyecto nuevo en esa fase.
+:::
+
+# Cobertura técnica obligatoria de PSIM
+
+La propuesta debe demostrar desde hoy **dónde y para qué** aparecerá cada bloque técnico del curso. No basta con escribir una lista de métodos: cada técnica debe estar conectada con una entrada, una transformación, una evidencia y una decisión.
+
+## Matriz mínima de técnicas
+
+| Bloque | Técnicas que deben aparecer en el proyecto | Evidencia mínima prevista |
+|---|---|---|
+| **Representación y digitalización** | modalidad de adquisición, imagen como matriz, muestreo, cuantización, resolución espacial, resolución de intensidad, relaciones entre píxeles, vecindad, adyacencia, conectividad, regiones, bordes y distancias | ficha técnica del dataset + análisis de una imagen representativa |
+| **Espacios e intensidad** | RGB/HSV cuando el dataset sea color, conversión a escala de grises cuando sea pertinente, suma, multiplicación, normalización y transformaciones de intensidad | comparación cuantitativa y visual antes/después |
+| **Operaciones de vecindad** | media, mediana, Gaussiano, Sobel, Prewitt, Roberts, Laplaciano, realce (`sharpen`) y operador direccional tipo `emboss` como experimento controlado | panel comparativo + medida de efecto sobre contraste/ruido/bordes |
+| **Histogramas** | histograma, distribución de intensidades, ecualización y `histogram matching` | histogramas, CDF y comparación de contraste |
+| **Umbralización y morfología** | umbral global, adaptativo y Otsu; erosión, dilatación, apertura, cierre, `top-hat` y `black-hat` | máscara/ROI reproducible + métricas de región |
+| **Dominio de frecuencia** | DFT/FFT 2D, espectro, filtrado pasa-bajas, pasa-altas y pasa-banda; comparación de al menos máscaras Gaussianas y Butterworth cuando corresponda | espectro + reconstrucción inversa + métrica comparativa |
+| **Wavelets y multirresolución** | CWT sobre un perfil 1D representativo cuando sea metodológicamente pertinente; DWT, aproximación/detalle, multirresolución y reconstrucción; para imágenes se prioriza DWT 2D | coeficientes por escala/nivel + reconstrucción + interpretación |
+| **Características y estadística** | media, varianza, estimación/distribución de variables, extracción de características y al menos una comparación o prueba de hipótesis cuando la pregunta lo permita | tabla de características + estadística descriptiva/inferencial |
+| **Modelo estadístico opcional** | regresión logística para clasificación o regresión polinómica multivariable para respuesta continua | coeficientes interpretables + métricas definidas antes del análisis |
+
+::: {.callout-warning title="No aplicar técnicas sin justificación"}
+La cobertura completa del curso **no significa encadenar operaciones arbitrariamente**. Algunas técnicas pueden usarse como experimentos comparativos y no como parte del pipeline final. Si una técnica no es pertinente para la modalidad elegida, el equipo debe demostrarlo con un análisis controlado y justificar por qué no se conserva en la solución final.
+:::
+
+## Regla de trazabilidad
+
+Para cada técnica, la propuesta deberá contestar cuatro preguntas:
+
+1. ¿Qué entrada recibe?
+2. ¿Qué parámetro se modificará o estimará?
+3. ¿Qué producto genera?
+4. ¿Qué evidencia permitirá decidir si aporta al problema?
+
+# Organización y tiempo máximo
+
+La práctica está diseñada para completarse en **5 h 50 min**.
+
+| Etapa | Actividad | Tiempo máximo |
+|---:|---|---:|
+| 0 | Diagnóstico, reglas y elección preliminar del dominio | 20 min |
+| 1 | Planteamiento del problema y pregunta de investigación | 55 min |
+| 2 | Objetivos, variables y criterio de éxito | 35 min |
+| 3 | Búsqueda, comparación y selección del dataset | 85 min |
+| 4 | Diseño de las tres fases y matriz de técnicas PSIM | 70 min |
+| 5 | Cronograma, riesgos y responsabilidades | 40 min |
+| 6 | Estructura reproducible y verificación de la propuesta | 45 min |
+|  | **Total** | **5 h 50 min** |
+
+# Etapa 0 — Diagnóstico y reglas de trabajo
+
+## Delimitar el tipo de proyecto
+
+Antes de buscar datos, el equipo debe elegir un **fenómeno observable en imágenes biomédicas**. Ejemplos de familias de problemas válidos incluyen cuantificación de estructuras, comparación de filtros, segmentación de regiones, análisis de textura, caracterización de contraste, realce de bordes, análisis multirresolución o relación entre características de imagen y una variable clínica disponible en el dataset.
+
+El proyecto debe trabajar con imágenes digitales 2D o con cortes 2D extraídos de un volumen. Si se seleccionan datos 3D, el alcance debe especificar cómo se elegirán, registrarán y procesarán los cortes para mantener el proyecto realizable.
+
+## Criterios de exclusión temprana
+
+No continúe con una idea si requiere alguno de los siguientes elementos:
+
+- adquisición de datos nuevos en pacientes durante el semestre;
+- datos sin autorización de uso académico;
+- identificación directa de pacientes;
+- dependencia de un algoritmo de Machine Learning no permitido;
+- hardware especializado no disponible para el equipo;
+- dataset cuyo tamaño o formato haga inviable su procesamiento con los recursos disponibles;
+- una pregunta cuyo éxito dependa de demostrar diagnóstico clínico o superioridad médica sin un estándar de referencia adecuado.
+
+# Etapa 1 — Planteamiento del problema
+
+## 1.1 Redactar el problema
+
+El planteamiento debe tener entre **250 y 400 palabras** y contener explícitamente:
+
+| Componente | Pregunta que debe responder |
+|---|---|
+| Contexto | ¿Qué modalidad o tipo de imagen se estudia y qué representa físicamente? |
+| Situación problemática | ¿Qué dificultad concreta existe: ruido, contraste, segmentación, resolución, cuantificación, variabilidad u otra? |
+| Variable observable | ¿Qué se puede medir directamente en las imágenes? |
+| Consecuencia técnica | ¿Por qué la dificultad afecta una medición o interpretación computacional? |
+| Vacío abordable | ¿Qué comparación o análisis puede realizarse con las técnicas de PSIM? |
+| Alcance | ¿Qué NO pretende resolver el proyecto? |
+
+::: {.callout-tip title="Evite problemas demasiado amplios"}
+“Detectar cáncer con imágenes” no es un problema adecuado para este proyecto. “Evaluar cómo diferentes estrategias de realce y segmentación modifican la estabilidad de medidas morfológicas de una región de interés en un dataset público” sí tiene variables, operaciones y productos verificables.
+:::
+
+## 1.2 Construir un mapa causal-operativo simple
+
+El equipo debe proponer un esquema que diferencie, como mínimo:
+
+```{mermaid}
+flowchart LR
+    I["Imagen original"] --> Q["Calidad y adquisición"]
+    Q --> P["Preprocesamiento"]
+    P --> S["Segmentación / ROI"]
+    S --> F["Características"]
+    F --> R["Resultado cuantitativo"]
+    C["Factores de confusión técnicos"] --> Q
+    C --> P
+```
+
+En `docs/formulacion_proyecto.tex`, reemplace los nombres genéricos por las variables reales del proyecto.
+
+# Etapa 2 — Pregunta de investigación, objetivos y criterio de éxito
+
+## 2.1 Pregunta de investigación
+
+La pregunta debe ser **respondible con el dataset seleccionado y con técnicas del curso**. Utilice una estructura similar a:
+
+> ¿En qué medida **[conjunto de técnicas de procesamiento]** modifica o permite estimar **[variable cuantitativa]** en **[modalidad/dataset/población]**, respecto a **[referencia o condición de comparación]**?
+
+Para una clasificación permitida, la pregunta debe centrarse en si **características explícitas obtenidas mediante PSIM** se relacionan con una clase mediante regresión logística; no en “entrenar el mejor clasificador”.
+
+Para una respuesta continua, la pregunta debe centrarse en la relación entre características explícitas y la variable mediante regresión polinómica multivariable; no en optimizar un predictor opaco.
+
+## 2.2 Objetivo general
+
+Debe existir **un solo objetivo general**. Use un verbo verificable como *evaluar, comparar, cuantificar, caracterizar, estimar* o *analizar*. Evite verbos vagos como *conocer, aprender, comprender*.
+
+Plantilla:
+
+> **Evaluar** el efecto de [estrategias de procesamiento] sobre [variable o resultado] en [dataset/modalidad], mediante [criterio de comparación], para responder [propósito técnico].
+
+## 2.3 Objetivos específicos
+
+Defina entre **3 y 5 objetivos específicos**. Cada objetivo debe quedar asociado a una fase y a un archivo o resultado verificable.
+
+| Objetivo específico | Fase | Entrada | Producto verificable | Criterio de cumplimiento |
+|---|---:|---|---|---|
+| OE1 | 1 |  |  |  |
+| OE2 | 1–2 |  |  |  |
+| OE3 | 2 |  |  |  |
+| OE4 | 3 |  |  |  |
+
+## 2.4 Variables y criterio de éxito
+
+Complete antes de procesar los datos:
+
+| Elemento | Definición del equipo |
+|---|---|
+| Variable(s) de entrada |  |
+| Variable(s) de salida |  |
+| Características a extraer |  |
+| Variable de comparación o referencia |  |
+| Métrica principal |  |
+| Métricas secundarias |  |
+| Unidad de análisis: imagen, corte, estudio o paciente |  |
+| Criterio de éxito técnico |  |
+| Principal limitación esperada |  |
+
+::: {.callout-important title="Evitar fuga de información"}
+Si existen varias imágenes del mismo paciente, el paciente debe considerarse en la partición y en el análisis. No se deben mezclar imágenes del mismo sujeto entre conjuntos usados para ajuste y evaluación de una regresión.
+:::
+
+# Etapa 3 — Búsqueda y selección del dataset
+
+## 3.1 Estrategia de búsqueda
+
+Cada equipo debe identificar **al menos tres datasets candidatos**. La búsqueda debe priorizar repositorios científicos, institucionales o universitarios con documentación suficiente.
+
+Registre en `docs/datasets_candidatos.csv` las siguientes columnas:
+
+```text
+nombre,fuente,url,modalidad,formato,n_sujetos,n_imagenes,variable_objetivo,
+metadatos,licencia,tamano_descarga,version,fecha_consulta,ventajas,limitaciones,decision
+```
+
+## 3.2 Condiciones mínimas del dataset
+
+El dataset seleccionado debe cumplir estas condiciones:
+
+| Condición | Requisito |
+|---|---|
+| Acceso | público o con autorización académica documentada |
+| Privacidad | anonimizado o desidentificado; sin identificadores directos |
+| Licencia/uso | términos compatibles con docencia y análisis académico |
+| Procedencia | fuente, versión y referencia localizables |
+| Formato | legible mediante Python y suficientemente documentado |
+| Información técnica | modalidad, dimensiones y escala de intensidades identificables |
+| Tamaño | viable para almacenamiento y procesamiento del equipo |
+| Variabilidad | suficiente para realizar comparaciones o estimaciones |
+| Etiquetas | necesarias solamente si la pregunta usa clasificación/regresión |
+| Unidad de análisis | sujeto/estudio/imagen identificable para evitar pseudorreplicación |
+
+## 3.3 Ficha técnica o `dataset card`
+
+Cree `docs/dataset_card.md` con la siguiente estructura:
+
+```markdown
+# Dataset card
+
+## Identificación
+- Nombre:
+- Fuente:
+- URL permanente:
+- Versión:
+- Fecha de consulta:
+- Referencia/citación:
+- Licencia o condiciones de uso:
+
+## Contenido
+- Modalidad:
+- Población o procedencia:
+- Número de sujetos:
+- Número de estudios/imágenes:
+- Dimensiones típicas:
+- Profundidad de bits / rango de intensidad:
+- Formato de archivo:
+- Metadatos disponibles:
+
+## Variable de interés
+- Unidad de análisis:
+- Variable de salida, si existe:
+- Etiquetas o referencia:
+- Posibles factores de confusión:
+
+## Calidad y limitaciones
+- Datos faltantes:
+- Desbalance, si aplica:
+- Variabilidad de adquisición:
+- Artefactos conocidos:
+- Restricciones técnicas:
+
+## Reproducibilidad
+- Método de descarga:
+- Identificador de versión:
+- Hash o mecanismo de verificación, si está disponible:
+- Datos que se conservarán en data/raw/:
+- Datos que serán regenerables en data/processed/:
+```
+
+## 3.4 Matriz de decisión
+
+Califique cada candidato de 0 a 2 en cada criterio.
+
+| Criterio | 0 | 1 | 2 |
+|---|---|---|---|
+| Ajuste a la pregunta | débil | parcial | directo |
+| Documentación | insuficiente | usable | completa |
+| Licencia/acceso | dudoso | condicionado | claro |
+| Tamaño computacional | inviable | exigente | manejable |
+| Metadatos y unidad de análisis | insuficientes | parciales | suficientes |
+| Cobertura de técnicas PSIM | limitada | aceptable | amplia |
+
+El equipo debe conservar la tabla con los tres candidatos y justificar por escrito la selección final. Un puntaje alto **no sustituye** la justificación metodológica.
+
+# Etapa 4 — Diseñar las tres fases del proyecto
+
+## Fase 1 — Formulación, adquisición y caracterización
+
+Productos esperados:
+
+- propuesta y pregunta de investigación;
+- dataset card;
+- copia controlada o procedimiento reproducible de descarga;
+- inspección de formato, dimensiones, rango y metadatos;
+- análisis de muestreo, cuantización, resolución espacial e intensidad;
+- caracterización de píxeles, vecindades, conectividad y regiones;
+- estadísticas básicas e histogramas iniciales.
+
+**Pregunta de control:** ¿Qué propiedades de la adquisición pueden afectar los resultados de las fases posteriores?
+
+## Fase 2 — Procesamiento y extracción de características
+
+Esta fase debe implementar de forma reproducible los bloques de intensidad, vecindad, histogramas, bordes, umbralización, morfología, dominio de frecuencia y wavelets definidos en la matriz obligatoria.
+
+No se evaluará que “una imagen se vea mejor”. Cada comparación debe tener una métrica o criterio definido. Ejemplos: cambio en contraste, desviación estándar del fondo, conservación de bordes, área segmentada, estabilidad de perímetro, energía espectral por banda o energía de coeficientes wavelet.
+
+## Fase 3 — Integración, validación y presentación final
+
+La fase final debe:
+
+- reconstruir el pipeline completo desde los datos originales;
+- seleccionar las transformaciones que estén justificadas por la evidencia de la Fase 2;
+- obtener las características finales;
+- responder la pregunta de investigación;
+- aplicar análisis estadístico y, únicamente si corresponde, regresión logística o regresión polinómica multivariable;
+- incluir análisis de sensibilidad o limitaciones;
+- regenerar tablas y figuras mediante código;
+- presentar el proyecto final en el Laboratorio 03.
+
+# Etapa 5 — Matriz de cobertura técnica
+
+Cree `docs/matriz_tecnicas.csv` y complete una fila por técnica. El documento debe contener, como mínimo, las siguientes columnas:
+
+```text
+bloque,tecnica,fase,entrada,parametros,producto,metrica,decision_esperada,
+archivo_codigo,figura_o_tabla,estado
+```
+
+Ejemplo de una fila correctamente planteada:
+
+```text
+Vecindad,Filtro mediana,2,imagen_gris,tamano_kernel,
+imagen_filtrada,desviacion_fondo_y_conservacion_borde,
+conservar_si_reduce_ruido_sin_degradar_borde,
+src/psim/spatial.py,figures/fase2/median_comparison.png,planeado
+```
+
+::: {.callout-note title="Técnica presente ≠ técnica seleccionada"}
+Una técnica puede estar **evaluada** y finalmente ser descartada. Ese descarte también es un resultado si está sustentado cuantitativamente.
+:::
+
+# Etapa 6 — Cronograma
+
+## 6.1 Cronograma semestral
+
+Complete el siguiente cronograma y luego transfiéralo a `docs/cronograma.csv`.
+
+| Semana | Fase | Actividad | Dependencia | Responsable | Evidencia | Estado |
+|---:|---:|---|---|---|---|---|
+| 1 | 1 | Formulación inicial | — |  | `formulacion_proyecto.tex` | Planeado |
+| 2 | 1 | Búsqueda y selección de dataset | pregunta preliminar |  | `datasets_candidatos.csv` | Planeado |
+| 3 | 1 | Dataset card y descarga reproducible | dataset seleccionado |  | `dataset_card.md` | Planeado |
+| 4 | 1 | Caracterización de datos | datos disponibles |  | reporte exploratorio | Planeado |
+| 5 | 1 | Cierre de Fase 1 | actividades previas |  | entrega Lab 01 | Planeado |
+| 6–7 | 2 | Procesamiento espacial e histogramas | Fase 1 |  | figuras + métricas | Planeado |
+| 8 | 2 | Segmentación y morfología | preprocesamiento |  | máscaras + métricas | Planeado |
+| 9 | 2 | Dominio de frecuencia | imágenes preparadas |  | espectros + filtros | Planeado |
+| 10 | 2 | Wavelets y cierre de Fase 2 | imágenes/perfiles |  | coeficientes + informe | Planeado |
+| 11–12 | 3 | Integración y características | Fase 2 |  | tabla final | Planeado |
+| 13 | 3 | Estadística/modelo permitido | tabla final |  | resultados | Planeado |
+| 14 | 3 | Validación y reproducción limpia | pipeline completo |  | reporte final | Planeado |
+| 15 | 3 | **Laboratorio 03: presentación del proyecto final** | todo el proyecto |  | informe + sustentación | Planeado |
+
+## 6.2 Riesgos
+
+Identifique al menos cuatro riesgos y una respuesta concreta para cada uno.
+
+| Riesgo | Probabilidad | Impacto | Indicador temprano | Mitigación |
+|---|---|---|---|---|
+| Dataset no descargable |  |  |  |  |
+| Metadatos insuficientes |  |  |  |  |
+| Tamaño computacional excesivo |  |  |  |  |
+| Falta de referencia para validar |  |  |  |  |
+| Otro |  |  |  |  |
+
+# Etapa 7 — Crear la base reproducible
+
+La formulación debe quedar dentro del mismo proyecto que se desarrollará en los laboratorios siguientes.
+
+## 7.1 Crear proyecto con `uv`
+
+::: {.panel-tabset}
+### Windows PowerShell
+
+```powershell
+uv init psim-proyecto
+Set-Location psim-proyecto
+uv python pin 3.12
+uv add numpy scipy matplotlib pandas opencv-python scikit-image pywavelets statsmodels
+uv add --dev pytest ruff
+uv lock
+```
+
+### Linux
+
+```bash
+uv init psim-proyecto
+cd psim-proyecto
+uv python pin 3.12
+uv add numpy scipy matplotlib pandas opencv-python scikit-image pywavelets statsmodels
+uv add --dev pytest ruff
+uv lock
+```
+:::
+
+::: {.callout-warning title="Dependencias"}
+No agregue una biblioteca porque “tal vez se use”. Si el equipo elimina una dependencia del diseño metodológico, elimínela también del proyecto. No se aceptará instalar paquetes manualmente con `pip install` dentro del entorno del proyecto.
+:::
+
+## 7.2 Estructura mínima
+
+```text
+psim-proyecto/
+├── .python-version
+├── .gitignore
+├── README.md
+├── pyproject.toml
+├── uv.lock
+├── data/
+│   ├── raw/
+│   │   └── README.md
+│   └── processed/
+├── docs/
+│   ├── formulacion_proyecto.tex
+│   ├── dataset_card.md
+│   ├── datasets_candidatos.csv
+│   ├── matriz_tecnicas.csv
+│   └── cronograma.csv
+├── figures/
+│   ├── fase1/
+│   ├── fase2/
+│   └── fase3/
+├── results/
+│   ├── fase1/
+│   ├── fase2/
+│   └── fase3/
+├── scripts/
+│   ├── check_dataset.py
+│   └── reproduce.py
+├── src/
+│   └── psim/
+│       └── __init__.py
+└── tests/
+```
+
+## 7.3 Política para datos
+
+`data/raw/` debe contener datos originales o instrucciones inequívocas para obtenerlos. Los archivos originales no se sobrescriben. Todo cambio de tamaño, intensidad, formato, ROI, filtro o máscara produce un dato derivado en `data/processed/` o un resultado regenerable.
+
+Si el dataset no puede redistribuirse, `data/raw/README.md` debe indicar de dónde se obtiene, qué versión usar, qué archivo descargar y cómo verificar que corresponde al dataset descrito en la propuesta.
+
+# Producto a entregar
+
+La entrega del Laboratorio 01 debe contener:
+
+| Evidencia | Archivo esperado |
+|---|---|
+| Formulación completa | `docs/formulacion_proyecto.tex` |
+| Comparación de al menos 3 datasets | `docs/datasets_candidatos.csv` |
+| Ficha del dataset seleccionado | `docs/dataset_card.md` |
+| Cobertura completa de PSIM | `docs/matriz_tecnicas.csv` |
+| Cronograma de tres fases | `docs/cronograma.csv` |
+| Estructura reproducible | `pyproject.toml`, `.python-version`, `uv.lock`, carpetas base |
+| Protocolo del proyecto | `README.md` |
+
+El archivo `README.md` debe indicar el título del proyecto, la pregunta de investigación, el dataset elegido, la unidad de análisis, la estructura de las tres fases, los comandos `uv sync --locked` y la forma prevista de reproducir el proyecto completo.
+
+# Lista de verificación final
+
+Antes de entregar, cada equipo debe verificar:
+
+- [ ] el problema es específico y no depende de Machine Learning;
+- [ ] la pregunta puede responderse con los datos disponibles;
+- [ ] existe un objetivo general y entre 3 y 5 objetivos específicos;
+- [ ] cada objetivo genera un producto verificable;
+- [ ] se compararon al menos tres datasets;
+- [ ] el dataset seleccionado tiene licencia/procedencia documentada;
+- [ ] la unidad de análisis está definida;
+- [ ] las tres fases están conectadas y son acumulativas;
+- [ ] la matriz incluye todos los bloques técnicos obligatorios de PSIM;
+- [ ] las técnicas tienen una métrica o criterio de decisión;
+- [ ] el cronograma finaliza con la presentación del proyecto en el Laboratorio 03;
+- [ ] `pyproject.toml` y `uv.lock` existen;
+- [ ] no se entrega `.venv/`;
+- [ ] el README explica cómo reconstruir el entorno;
+- [ ] la propuesta distingue datos originales de productos derivados.
+
+# Criterios de no conformidad
+
+La propuesta se considerará metodológicamente no conforme si presenta cualquiera de las siguientes condiciones:
+
+1. la pregunta sólo puede responderse mediante un algoritmo de Machine Learning no permitido;
+2. el dataset no tiene procedencia o términos de uso verificables;
+3. problema, pregunta y objetivos describen problemas diferentes;
+4. no existe una unidad de análisis clara;
+5. la propuesta omite bloques técnicos del curso sin justificación metodológica;
+6. el cronograma no reserva una fase final de integración, validación y presentación;
+7. el entorno depende de instalaciones manuales no declaradas;
+8. se plantea modificar directamente los datos originales.
+
+# Sustentación breve del Laboratorio 01
+
+Cada equipo dispondrá de **6 minutos**:
+
+| Minuto | Contenido |
+|---:|---|
+| 0–1 | problema y pregunta de investigación |
+| 1–2 | dataset seleccionado y por qué supera a los otros candidatos |
+| 2–4 | tres fases y cobertura de técnicas PSIM |
+| 4–5 | criterio de éxito y análisis estadístico previsto |
+| 5–6 | principal riesgo y plan de mitigación |
+
+El docente puede seleccionar a cualquier integrante para explicar una decisión de la propuesta.
+
+# Rúbrica de evaluación
+
+La rúbrica contiene **seis criterios** y un total de 100 puntos.
+
+| Criterio | Peso | Excelente | Satisfactorio | Básico | Insuficiente |
+|---|---:|---|---|---|---|
+| **1. Problema y pregunta de investigación** | 20 | Problema delimitado, relevante para PSIM y técnicamente medible; pregunta clara, respondible y con comparación explícita | Coherentes, con una ambigüedad menor | Problema amplio o pregunta parcialmente medible | No hay coherencia o la solución depende de ML no permitido |
+| **2. Objetivos, variables y criterio de éxito** | 15 | Objetivo general y específicos completamente trazables; variables, unidad de análisis y métricas definidas antes del análisis | Trazabilidad adecuada con omisiones menores | Objetivos genéricos o métricas incompletas | Objetivos no evaluables o sin relación con la pregunta |
+| **3. Búsqueda y selección del dataset** | 20 | Compara ≥3 datasets; selección sustentada por acceso, licencia, documentación, unidad de análisis, tamaño y pertinencia | Selección adecuada con documentación menor pendiente | Comparación superficial o limitaciones importantes sin resolver | Dataset sin procedencia, licencia o viabilidad |
+| **4. Diseño de las tres fases y cobertura PSIM** | 20 | Las fases son acumulativas y la matriz conecta todas las técnicas del curso con entrada, parámetros, producto, métrica y decisión | Cubre casi todo con detalles menores pendientes | Técnicas listadas pero poco conectadas con la pregunta | Fases desconectadas o cobertura técnica insuficiente |
+| **5. Cronograma, riesgos y viabilidad** | 10 | Cronograma realista, con dependencias, responsables, evidencias y mitigaciones; Lab 03 cierra con presentación final | Plan viable con pequeños ajustes | Cronograma genérico o riesgos débilmente tratados | No existe planificación ejecutable |
+| **6. Reproducibilidad y documentación** | 15 | Proyecto con `uv`, `pyproject.toml`, `uv.lock`, estructura clara, política de datos y README suficiente para continuar sin instrucciones orales | Base reproducible con una omisión menor | Estructura existe pero depende de pasos manuales | No puede reconstruirse o mezcla datos/código/resultados sin trazabilidad |
+| **Total** | **100** |  |  |  |  |
+
+## Regla de calificación
+
+Si la propuesta utiliza un método de Machine Learning no autorizado como componente necesario de la solución, el **criterio 1 y el criterio 4 reciben cero** hasta que el proyecto sea reformulado. Si el dataset seleccionado no tiene procedencia o condiciones de uso verificables, el **criterio 3 recibe cero** hasta corregir la selección.
+
+# Preguntas de cierre
+
+1. ¿Qué evidencia concreta permitiría rechazar la estrategia de procesamiento que inicialmente parece más prometedora?
+2. ¿Cuál es la unidad de análisis real del proyecto y por qué no debe confundirse con el número de archivos?
+3. ¿Qué técnica del curso es más sensible a los parámetros de adquisición del dataset elegido?
+4. ¿Qué transformaciones pueden alterar una medición cuantitativa y deben registrarse explícitamente?
+5. ¿Cómo demostrará el equipo que una mejora visual también constituye una mejora medible?
+6. ¿Qué parte del proyecto debe poder reconstruirse automáticamente antes de la presentación del Laboratorio 03?
+
+# Referencias de apoyo
+
+- Prince, J. L., & Links, J. M. *Medical Imaging Signals and Systems*. Pearson. El enfoque de señales y sistemas permite relacionar la señal física, la adquisición, el sistema de imagen y la calidad del resultado.
+- Dougherty, G. *Digital Image Processing for Medical Applications*. Cambridge University Press. Presenta el procesamiento digital de imágenes médicas como una secuencia de adquisición, digitalización, transformación, análisis y evaluación.
+- Materiales de PSIM: introducción al procesamiento digital, muestreo y cuantización, operaciones puntuales y de vecindad, histogramas, segmentación, morfología, dominio de frecuencia y wavelets.
+- Guía del curso: *Laboratorio 00 — Python Científico Reproducible*. Se adoptan las reglas de administración con `uv`, bloqueo de dependencias, estructura de proyecto, separación de datos, rutas relativas, pruebas, Ruff y reconstrucción reproducible.

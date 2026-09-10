@@ -1,0 +1,687 @@
+---
+title: "Guía del Estudiante"
+subtitle: "Guía del estudiante: Dashboard interactivo para monitoreo de actividad muscular con EMG"
+description: "Guía teórico-práctica del estudiante: EMG aplicada al monitoreo de actividad física"
+author: "Material docente"
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-overflow: wrap
+    code-line-numbers: true
+    fig-align: center
+    embed-resources: true
+execute:
+  enabled: false
+---
+
+# 1. Propósito de la guía
+
+En esta actividad diseñará e implementará un **dashboard interactivo para electromiografía de superficie (sEMG)** orientado al **monitoreo de actividad física**. El usuario final será un **médico deportivo** que necesita revisar, de manera rápida pero técnicamente trazable, cómo cambia la activación muscular durante una tarea física.
+
+El objetivo **no** es construir un sistema de diagnóstico clínico ni generar recomendaciones terapéuticas automáticas. El objetivo es integrar fisiología, procesamiento de señales, análisis cuantitativo y visualización interactiva en una herramienta que permita explorar la información de EMG y sustentar decisiones de análisis.
+
+::: {.callout-important}
+## Pregunta rectora
+
+**¿Cómo transformar una señal EMG adquirida durante una actividad física en un conjunto reducido de métricas y visualizaciones que un médico deportivo pueda interpretar, sin ocultar las decisiones de procesamiento que condicionan esos resultados?**
+:::
+
+La actividad se articula con los resultados de aprendizaje del curso relacionados con: interpretación fisiológica de EMG, análisis temporal y espectral, diseño de dashboards interactivos y construcción de un pipeline completo desde los datos hasta la visualización.
+
+# 2. Producto final
+
+Debe entregar un proyecto Python reproducible que contenga:
+
+1. un pipeline de carga, validación y procesamiento de EMG;
+2. funciones independientes para filtrado y cálculo de métricas;
+3. un dashboard interactivo desarrollado en **Streamlit**;
+4. una tabla o panel que documente los parámetros de procesamiento utilizados;
+5. justificación fisiológica y metodológica de cada parámetro relevante;
+6. una breve exposición oral del sistema, sustentada en las preguntas orientadoras al final de esta guía.
+
+El dashboard debe permitir como mínimo seleccionar **registro/sesión, músculo o canal y segmento temporal**.
+
+# 3. Escenario de uso: médico deportivo
+
+Suponga que durante una sesión de ejercicio se registra sEMG en uno o más músculos superficiales. El médico deportivo no necesita inspeccionar cada muestra de la señal, pero sí responder preguntas como:
+
+- ¿En qué momentos aumenta o disminuye la activación muscular?
+- ¿Cuánto dura la activación durante una fase de la tarea?
+- ¿La amplitud de la actividad cambia a lo largo de la sesión?
+- ¿Existen cambios espectrales compatibles con manifestaciones mioeléctricas de fatiga?
+- ¿La señal observada parece estar dominada por artefactos o interferencia?
+- ¿Los resultados dependen fuertemente de la ventana temporal o de los parámetros de filtrado?
+
+::: {.callout-warning}
+## Límite de interpretación
+
+Una reducción de la frecuencia mediana o un aumento del RMS **no equivalen por sí solos a un diagnóstico de fatiga muscular**. La amplitud y el contenido espectral de sEMG dependen también de colocación de electrodos, geometría músculo-electrodo, contracción, temperatura, movimiento, tejido subcutáneo, cross-talk y otros factores. El dashboard debe mostrar tendencias e indicadores, no afirmaciones clínicas no validadas.
+:::
+
+# 4. Fundamento fisiológico esencial
+
+## 4.1 ¿Qué representa la sEMG?
+
+La sEMG registra en la superficie de la piel la superposición espacial y temporal de potenciales de acción generados por unidades motoras activas. La señal observada depende de la activación neural, las propiedades de propagación de los potenciales de acción, la geometría del volumen conductor y la configuración de adquisición.
+
+Por ello, el valor instantáneo de la señal cruda tiene utilidad limitada para comunicar el nivel de actividad muscular. Para resumirla se utilizan métricas de amplitud, envolventes y descriptores espectrales.
+
+## 4.2 Amplitud y activación muscular
+
+Dos descriptores frecuentes son el valor cuadrático medio (RMS) y la integral del valor absoluto de la señal (iEMG).
+
+Para una ventana de $N$ muestras:
+
+$$
+RMS = \sqrt{\frac{1}{N}\sum_{n=1}^{N}x[n]^2}
+$$
+
+El RMS aumenta cuando la energía de la señal dentro de la ventana aumenta. En tareas bien controladas puede utilizarse como descriptor de amplitud de la actividad muscular, pero su relación con fuerza **no es universalmente lineal**.
+
+La iEMG se define como:
+
+$$
+iEMG = \sum_{n=1}^{N}|x[n]|\Delta t
+$$
+
+Esta métrica integra actividad a lo largo de un intervalo y depende, por tanto, de la **duración del segmento**.
+
+## 4.3 Frecuencia mediana y manifestaciones mioeléctricas de fatiga
+
+A partir de una estimación de densidad espectral de potencia $P(f)$, la frecuencia mediana $f_{med}$ satisface aproximadamente:
+
+$$
+\int_0^{f_{med}}P(f)\,df = \frac{1}{2}\int_0^{f_{max}}P(f)\,df
+$$
+
+Durante contracciones sostenidas y controladas puede observarse un desplazamiento del espectro hacia frecuencias menores. Sin embargo, esta interpretación pierde robustez en tareas dinámicas rápidas, con cambios de fuerza, movimiento del electrodo o segmentos claramente no estacionarios.
+
+::: {.callout-note}
+## Consecuencia para el dashboard
+
+No basta con mostrar una métrica. Debe poder explicarse **qué fenómeno fisiológico intenta resumir, qué procesamiento la precede, sobre qué intervalo se calcula y qué factores pueden alterar su interpretación**.
+:::
+
+# 5. Principio de diseño: de la señal al dato interpretable
+
+El pipeline mínimo será:
+
+**carga → validación → inspección → preprocesamiento → segmentación → métricas → visualización → interpretación**
+
+Cada etapa debe ser explícita. Evite escribir todo el análisis dentro de `app.py`. El dashboard debe consumir funciones de procesamiento reutilizables.
+
+# 6. Proyecto Python reproducible
+
+## 6.1 Crear el proyecto con `uv`
+
+Desde una terminal:
+
+```bash
+uv init dashboard-emg
+cd dashboard-emg
+uv add numpy pandas scipy plotly streamlit
+```
+
+La instalación debe generar un archivo `pyproject.toml` y un archivo de bloqueo `uv.lock`. Ambos deben formar parte de la entrega.
+
+Estructure el proyecto así:
+
+```text
+dashboard-emg/
+├── app.py
+├── pyproject.toml
+├── uv.lock
+├── README.md
+├── data/
+│   ├── raw/
+│   └── processed/
+└── src/
+    └── emg_dashboard/
+        ├── __init__.py
+        ├── io.py
+        ├── processing.py
+        └── metrics.py
+```
+
+::: {.callout-tip}
+## Regla de reproducibilidad
+
+Los datos en `data/raw/` se consideran **inmutables**. El procesamiento genera nuevas variables o archivos, pero no modifica el registro original.
+:::
+
+Para ejecutar el dashboard:
+
+```bash
+uv run streamlit run app.py
+```
+
+# 7. Contrato mínimo de datos
+
+Su función de carga debe producir una tabla con, al menos, las siguientes variables conceptuales:
+
+| Variable | Significado | Restricción mínima |
+|---|---|---|
+| `time_s` | tiempo en segundos | creciente |
+| `emg` | amplitud de sEMG | numérica |
+| `channel` | canal o músculo | no vacío |
+| `session` | sesión o repetición | identificable |
+| `event` | fase/tarea, si existe | opcional pero recomendable |
+
+Además, la frecuencia de muestreo `fs` debe estar documentada explícitamente en metadatos o configuración.
+
+Antes de procesar, verifique:
+
+- datos faltantes;
+- duplicados de tiempo;
+- uniformidad aproximada del intervalo de muestreo;
+- unidades de amplitud;
+- duración total;
+- valores saturados o recortados;
+- existencia de segmentos claramente contaminados por movimiento.
+
+# 8. Decisiones de procesamiento que DEBEN justificarse
+
+No se calificará positivamente una cadena de procesamiento únicamente porque "funciona". Cada decisión debe estar conectada con una razón fisiológica o de análisis de señales.
+
+## 8.1 Eliminación de componente continua
+
+Puede restar la media o aplicar un procedimiento de detrending cuando exista una componente de muy baja frecuencia que no represente la actividad mioeléctrica de interés.
+
+Debe responder:
+
+- ¿Qué indica la media de la señal antes y después del ajuste?
+- ¿La corrección cambia sustancialmente la forma de la señal?
+
+## 8.2 Filtro pasa banda
+
+Para sEMG superficial suele analizarse una banda que preserve la mayor parte del contenido mioeléctrico y reduzca componentes de muy baja frecuencia asociadas a movimiento y componentes por encima del ancho de banda útil del sistema.
+
+Un intervalo **inicial de diseño**, que debe revisarse según el sistema de adquisición, puede ser aproximadamente:
+
+- corte inferior: alrededor de **10–30 Hz**;
+- corte superior: alrededor de **350–500 Hz**, siempre limitado por la frecuencia de muestreo y el ancho de banda real del equipo.
+
+Estos valores **no son universales**.
+
+Debe justificar:
+
+1. frecuencia de muestreo;
+2. ancho de banda del sensor/adquisidor si se conoce;
+3. presencia de artefactos de movimiento;
+4. contenido espectral de la señal;
+5. por qué los cortes elegidos no eliminan información necesaria para las métricas posteriores.
+
+## 8.3 Filtro notch
+
+No incluya un filtro notch de manera automática. Primero inspeccione el espectro. Si existe una componente estrecha asociada con interferencia de red, documente su frecuencia y explique por qué el notch es necesario.
+
+::: {.callout-warning}
+Aplicar notch sin evidencia puede deformar el contenido espectral y complicar la interpretación de métricas de frecuencia.
+:::
+
+## 8.4 Rectificación y envolvente
+
+La rectificación completa transforma $x(t)$ en $|x(t)|$. Posteriormente puede obtenerse una envolvente mediante un filtro pasa bajos.
+
+La frecuencia de corte de la envolvente debe relacionarse con la dinámica temporal que se desea observar. Un valor de pocos Hz produce una envolvente suave, pero puede ocultar cambios rápidos; un valor mayor responde más rápido, pero conserva más fluctuaciones.
+
+Debe justificar la frecuencia de corte elegida en función de la tarea física.
+
+# 9. Ventanas temporales: requisito central
+
+La elección de ventana afecta directamente las métricas. El dashboard debe mostrar o documentar claramente el tamaño de ventana utilizado.
+
+## 9.1 Compromiso fundamental
+
+Una ventana corta:
+
+- responde rápido a cambios;
+- permite localizar eventos;
+- produce estimaciones más variables;
+- ofrece menor resolución frecuencial.
+
+Una ventana larga:
+
+- estabiliza estimaciones;
+- mejora la resolución frecuencial;
+- mezcla fenómenos que pueden cambiar dentro de la ventana;
+- puede violar la hipótesis de estacionariedad local.
+
+## 9.2 Intervalos iniciales de exploración
+
+Los siguientes intervalos son **puntos de partida**, no valores obligatorios:
+
+| Métrica/visualización | Ventana inicial de exploración | Razón metodológica que debe analizar |
+|---|---:|---|
+| RMS móvil | 100–250 ms | equilibrio entre suavizado y seguimiento de activaciones |
+| iEMG | fase funcional o contracción definida | depende de la duración del evento; no debe compararse sin controlar el intervalo |
+| Frecuencia mediana/media | 1–2 s | requiere suficientes muestras y estacionariedad local razonable |
+| Welch/PSD | 1–2 s con solapamiento | compromiso entre resolución frecuencial y seguimiento temporal |
+| Envolvente | no se define solo por ventana; depende del filtrado | debe reflejar la dinámica de activación de la tarea |
+| Vista temporal del dashboard | 2–10 s ajustable | es una ventana de inspección, no necesariamente de cálculo |
+
+::: {.callout-important}
+## Experimento obligatorio de sensibilidad
+
+Seleccione al menos una métrica de amplitud y una espectral. Calcule cada una con:
+
+- una ventana menor que la elegida;
+- la ventana elegida;
+- una ventana mayor.
+
+Explique qué cambia y por qué. La justificación final debe mostrar que la ventana fue elegida **por el fenómeno observado**, no por conveniencia de programación.
+:::
+
+# 10. Implementación mínima del procesamiento
+
+En `src/emg_dashboard/processing.py` puede iniciar con la siguiente estructura.
+
+```python
+from __future__ import annotations
+
+import numpy as np
+from scipy.signal import butter, sosfiltfilt
+
+
+def remove_dc(x: np.ndarray) -> np.ndarray:
+    x = np.asarray(x, dtype=float)
+    return x - np.nanmean(x)
+
+
+def bandpass_emg(
+    x: np.ndarray,
+    fs: float,
+    low_hz: float,
+    high_hz: float,
+    order: int = 4,
+) -> np.ndarray:
+    if not 0 < low_hz < high_hz < fs / 2:
+        raise ValueError("Debe cumplirse 0 < low_hz < high_hz < fs/2")
+
+    sos = butter(
+        order,
+        [low_hz, high_hz],
+        btype="bandpass",
+        fs=fs,
+        output="sos",
+    )
+    return sosfiltfilt(sos, np.asarray(x, dtype=float))
+
+
+def rectify(x: np.ndarray) -> np.ndarray:
+    return np.abs(np.asarray(x, dtype=float))
+
+
+def lowpass_envelope(
+    x_rectified: np.ndarray,
+    fs: float,
+    cutoff_hz: float,
+    order: int = 4,
+) -> np.ndarray:
+    if not 0 < cutoff_hz < fs / 2:
+        raise ValueError("cutoff_hz debe estar entre 0 y fs/2")
+
+    sos = butter(order, cutoff_hz, btype="lowpass", fs=fs, output="sos")
+    return sosfiltfilt(sos, np.asarray(x_rectified, dtype=float))
+```
+
+::: {.callout-note}
+Se usan secciones de segundo orden (`sos`) por estabilidad numérica. `sosfiltfilt` realiza filtrado hacia adelante y atrás, por lo que evita desfase de fase en análisis offline. **No representa un filtro causal para monitoreo en tiempo real.** Si su propuesta afirma funcionamiento en tiempo real, debe discutir esta diferencia.
+:::
+
+# 11. Implementación de métricas
+
+En `src/emg_dashboard/metrics.py`:
+
+```python
+from __future__ import annotations
+
+import numpy as np
+from scipy.signal import welch
+
+
+def moving_rms(
+    x: np.ndarray,
+    fs: float,
+    window_ms: float,
+) -> np.ndarray:
+    x = np.asarray(x, dtype=float)
+    n = max(1, int(round(window_ms * fs / 1000.0)))
+    kernel = np.ones(n, dtype=float) / n
+    power = np.convolve(x**2, kernel, mode="same")
+    return np.sqrt(power)
+
+
+def iemg(x: np.ndarray, fs: float) -> float:
+    x = np.asarray(x, dtype=float)
+    return float(np.nansum(np.abs(x)) / fs)
+
+
+def median_frequency(
+    x: np.ndarray,
+    fs: float,
+    nperseg: int,
+) -> float:
+    x = np.asarray(x, dtype=float)
+    f, pxx = welch(x, fs=fs, nperseg=min(nperseg, len(x)))
+    cumulative = np.cumsum(pxx)
+
+    if cumulative[-1] <= 0:
+        return float("nan")
+
+    idx = np.searchsorted(cumulative, cumulative[-1] / 2)
+    return float(f[min(idx, len(f) - 1)])
+```
+
+## 11.1 Tarea práctica
+
+Modifique las funciones para que:
+
+1. validen señales demasiado cortas;
+2. informen claramente las unidades esperadas;
+3. permitan calcular las métricas por segmentos o eventos;
+4. no oculten valores `NaN` sin explicación;
+5. puedan ser utilizadas desde el dashboard sin copiar código.
+
+# 12. Arquitectura del dashboard
+
+El diseño debe responder a la jerarquía de información de un médico deportivo.
+
+## 12.1 Nivel 1 — Resumen
+
+En la parte superior muestre un número reducido de indicadores. Se recomiendan entre 3 y 5, por ejemplo:
+
+- RMS medio del segmento seleccionado;
+- duración de activación, si existe un método de detección definido;
+- iEMG del segmento;
+- frecuencia mediana actual;
+- cambio porcentual o pendiente de una métrica a lo largo de la sesión, si el cálculo es metodológicamente válido.
+
+No utilice códigos de color tipo "normal/anormal" si no dispone de límites clínicos o deportivos validados para ese protocolo.
+
+## 12.2 Nivel 2 — Señal y contexto temporal
+
+Debe existir una visualización sincronizada de:
+
+1. señal cruda;
+2. señal filtrada;
+3. envolvente;
+4. marcas de eventos o fases de la tarea, si están disponibles.
+
+El eje horizontal debe usar **tiempo en segundos**, no índice de muestra.
+
+## 12.3 Nivel 3 — Tendencias de métricas
+
+Incluya al menos dos tendencias temporales:
+
+- una métrica de amplitud: RMS o equivalente;
+- una métrica espectral: frecuencia mediana/media o representación tiempo-frecuencia.
+
+## 12.4 Nivel 4 — Transparencia del procesamiento
+
+Incluya un panel plegable denominado, por ejemplo, **"Parámetros de análisis"**, que muestre:
+
+| Parámetro | Valor elegido | Razón fisiológica/metodológica |
+|---|---|---|
+| `fs` | ... | ... |
+| corte pasa-altas | ... | ... |
+| corte pasa-bajas | ... | ... |
+| notch | sí/no; frecuencia | ... |
+| envolvente | ... Hz | ... |
+| ventana RMS | ... ms | ... |
+| ventana espectral | ... s | ... |
+| solapamiento | ... % | ... |
+
+Este panel es obligatorio.
+
+# 13. Esqueleto mínimo en Streamlit
+
+El siguiente código es una estructura, no una solución completa.
+
+```python
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+
+from src.emg_dashboard.processing import (
+    bandpass_emg,
+    lowpass_envelope,
+    rectify,
+    remove_dc,
+)
+from src.emg_dashboard.metrics import moving_rms
+
+
+st.set_page_config(page_title="Monitoreo EMG", layout="wide")
+st.title("Monitoreo de actividad muscular · sEMG")
+
+st.sidebar.header("Selección")
+# TODO: cargar datos y poblar estas opciones a partir del dataset
+selected_session = st.sidebar.selectbox("Sesión", options=[])
+selected_channel = st.sidebar.selectbox("Músculo/canal", options=[])
+
+st.sidebar.header("Intervalo")
+# TODO: implementar selección temporal
+
+st.header("Resumen")
+c1, c2, c3 = st.columns(3)
+c1.metric("RMS", "—")
+c2.metric("iEMG", "—")
+c3.metric("Frecuencia mediana", "—")
+
+st.header("Señal y activación")
+fig = go.Figure()
+# TODO: agregar señal filtrada, envolvente y eventos
+st.plotly_chart(fig, use_container_width=True)
+
+st.header("Tendencias")
+# TODO: RMS móvil y frecuencia mediana por ventanas
+
+with st.expander("Parámetros de análisis"):
+    st.write("Documente aquí los parámetros y su justificación.")
+```
+
+::: {.callout-warning}
+El dashboard no debe permitir cambiar parámetros sin control hasta producir combinaciones físicamente inválidas. Si incluye controles de filtrado, valide automáticamente que las frecuencias de corte sean coherentes con `fs` y con el orden de las frecuencias.
+:::
+
+# 14. Diseño de visualización para el usuario clínico-deportivo
+
+Para cada gráfica debe poder responderse: **¿qué decisión o interpretación facilita?**
+
+## 14.1 Reglas mínimas
+
+- Use unidades explícitas.
+- Mantenga escalas comparables cuando contraste canales o condiciones.
+- Identifique claramente señal cruda, filtrada y envolvente.
+- Use zoom y selección temporal cuando el trazado sea largo.
+- Evite llenar la pantalla de métricas redundantes.
+- No use gráficos 3D si una visualización 2D comunica la misma información.
+- No use "semáforos" sin umbrales validados.
+- Muestre eventos o fases de la actividad cuando su interpretación dependa de ellos.
+
+## 14.2 Visualizaciones mínimas obligatorias
+
+El dashboard debe contener:
+
+1. **trazado temporal** de EMG filtrada y envolvente;
+2. **RMS móvil** o métrica de amplitud equivalente;
+3. **tendencia de frecuencia mediana/media** o espectrograma;
+4. **panel de parámetros y justificación**;
+5. **selector temporal** para analizar una región de interés.
+
+# 15. Actividad guiada de construcción
+
+## Etapa A — Definir la pregunta de monitoreo
+
+Escriba una sola pregunta que el dashboard intentará responder. Ejemplo de estructura:
+
+> Durante [tarea física], ¿cómo cambia la actividad de [músculo/canal] en términos de amplitud y contenido espectral a lo largo de [fase o duración]?
+
+No use una pregunta que requiera diagnóstico médico si sus datos y protocolo no lo soportan.
+
+## Etapa B — Inspeccionar antes de filtrar
+
+Antes de aplicar cualquier filtro:
+
+1. grafique al menos 5–10 s de señal cruda;
+2. calcule un espectro exploratorio;
+3. identifique si existen offsets, saturación, ruido estrecho o artefactos de movimiento;
+4. documente lo observado.
+
+### Pregunta de predicción
+
+Antes de ejecutar el filtro, escriba qué espera que ocurra con:
+
+- las oscilaciones lentas;
+- el ruido de alta frecuencia;
+- la amplitud aparente;
+- el espectro.
+
+Después del filtrado, confronte la predicción con el resultado.
+
+## Etapa C — Seleccionar parámetros
+
+Complete la tabla de parámetros del dashboard. Ningún parámetro debe quedar sin explicación.
+
+## Etapa D — Probar sensibilidad de ventanas
+
+Para el RMS y la métrica espectral:
+
+1. defina tres tamaños de ventana;
+2. calcule las tendencias;
+3. compare estabilidad y resolución temporal;
+4. seleccione una ventana final;
+5. documente por qué descartó las otras dos.
+
+## Etapa E — Diseñar la interfaz
+
+Construya primero un boceto con cuatro zonas:
+
+```text
+┌───────────────────────────────────────────────────────┐
+│ Resumen: 3–5 indicadores                             │
+├───────────────────────────────┬───────────────────────┤
+│ Señal + envolvente            │ Controles/contexto    │
+├───────────────────────────────┴───────────────────────┤
+│ Tendencias: amplitud + espectro                       │
+├───────────────────────────────────────────────────────┤
+│ Parámetros y justificación metodológica               │
+└───────────────────────────────────────────────────────┘
+```
+
+Pregúntese si el orden de lectura es adecuado para un médico deportivo que dispone de pocos minutos para revisar una sesión.
+
+## Etapa F — Verificación final
+
+Realice al menos estas pruebas:
+
+- cambio de sesión;
+- cambio de canal;
+- selección de intervalo corto y largo;
+- registro con menos muestras que la ventana espectral;
+- presencia de datos faltantes;
+- parámetros de filtro inválidos;
+- segmento con actividad muy baja.
+
+El sistema debe fallar de forma controlada y con mensajes comprensibles.
+
+# 16. Entregables
+
+## 16.1 Proyecto
+
+Entregue el proyecto completo con:
+
+- `app.py`;
+- módulos de procesamiento y métricas;
+- `pyproject.toml`;
+- `uv.lock`;
+- `README.md` con instrucciones de ejecución;
+- datos permitidos por el curso o instrucciones reproducibles para obtenerlos;
+- descripción de parámetros y decisiones de procesamiento.
+
+## 16.2 Evidencia mínima en el README
+
+Incluya:
+
+1. problema de monitoreo;
+2. usuario objetivo;
+3. origen y estructura de los datos;
+4. frecuencia de muestreo;
+5. parámetros de procesamiento;
+6. tamaño de ventanas;
+7. métricas elegidas;
+8. limitaciones fisiológicas y metodológicas;
+9. comando exacto de ejecución:
+
+```bash
+uv run streamlit run app.py
+```
+
+# 17. Criterios de autoevaluación antes de exponer
+
+Marque cada punto únicamente si puede defenderlo oralmente.
+
+- [ ] Puedo explicar qué representa fisiológicamente la señal sEMG.
+- [ ] Puedo justificar cada frecuencia de corte del procesamiento.
+- [ ] Puedo explicar por qué usé o no un notch.
+- [ ] Puedo justificar la ventana del RMS.
+- [ ] Puedo justificar la ventana espectral.
+- [ ] Puedo explicar el efecto de duplicar o reducir a la mitad una ventana.
+- [ ] Puedo relacionar cada métrica con una pregunta del médico deportivo.
+- [ ] Puedo diferenciar una tendencia compatible con fatiga de una conclusión diagnóstica.
+- [ ] Puedo explicar qué no puede concluirse con mis datos.
+- [ ] Otra persona puede ejecutar el dashboard usando únicamente el repositorio y el README.
+
+# 18. Preguntas orientadoras para la exposición
+
+La exposición no debe limitarse a mostrar que el dashboard funciona. Debe defender las decisiones de diseño y procesamiento.
+
+1. ¿Qué problema concreto de monitoreo de actividad física intenta resolver el dashboard?
+2. ¿Qué necesita observar el médico deportivo y por qué las métricas seleccionadas responden a esa necesidad?
+3. ¿Qué músculo(s), tarea y condiciones de adquisición se analizaron?
+4. ¿Qué contenido fisiológico de la sEMG espera conservar después del preprocesamiento?
+5. ¿Por qué eligió esas frecuencias de corte? ¿Qué evidencia del registro respalda la elección?
+6. ¿Usó filtro notch? ¿Qué observación justificó usarlo o descartarlo?
+7. ¿Por qué eligió el RMS, iEMG, frecuencia mediana u otras métricas en lugar de mostrar únicamente la señal cruda?
+8. ¿Cuál es la ventana temporal del RMS y qué ocurre si se reduce o aumenta?
+9. ¿Cuál es la ventana usada para la métrica espectral y qué compromiso existe entre resolución temporal, resolución frecuencial y estacionariedad?
+10. ¿Cómo evita comparar iEMG de intervalos con duraciones incompatibles?
+11. ¿Qué gráfica del dashboard considera más útil para el médico deportivo y qué decisión facilita?
+12. ¿Cómo distingue una tendencia fisiológica de un artefacto de movimiento o de adquisición?
+13. ¿Qué significa una reducción de la frecuencia mediana en su protocolo y qué factores alternativos pueden explicarla?
+14. ¿Qué conclusión sería incorrecto extraer de su dashboard?
+15. ¿Qué parte del pipeline cambiaría si el sistema debiera funcionar verdaderamente en tiempo real?
+16. ¿Qué elementos garantizan que otra persona pueda reproducir el análisis?
+
+# 19. Rúbrica de evaluación de la exposición y el dashboard
+
+La evaluación se realiza sobre el **producto funcional y su defensa oral**. Máximo: **100 puntos**.
+
+| Criterio | Peso | Sobresaliente | Adecuado | Básico | Insuficiente |
+|---|---:|---|---|---|---|
+| **1. Fundamento fisiológico e interpretación** | 20 | Relaciona correctamente señal, activación y limitaciones; evita inferencias clínicas no sustentadas. | Interpretación correcta con limitaciones menores. | Explicación parcial o principalmente descriptiva. | Confunde la métrica con una conclusión fisiológica/diagnóstica. |
+| **2. Pipeline de procesamiento y justificación de parámetros** | 20 | Todas las etapas son técnicamente coherentes y cada parámetro está justificado con señal, adquisición y propósito. | Pipeline correcto; algunas justificaciones son poco profundas. | Procesamiento funcional pero parametrizado por costumbre o sin evidencia suficiente. | Parámetros incoherentes, no documentados o técnicamente inválidos. |
+| **3. Selección y análisis de ventanas temporales** | 15 | Justifica ventanas desde resolución temporal, espectral y estacionariedad; muestra análisis de sensibilidad. | Justifica tamaños y compara al menos alternativas relevantes. | Define ventanas sin análisis suficiente de sus efectos. | No documenta ventanas o usa tamaños incompatibles con las métricas. |
+| **4. Diseño del dashboard para médico deportivo** | 20 | Jerarquía visual clara, interacción pertinente, métricas no redundantes y visualizaciones vinculadas con decisiones de monitoreo. | Interfaz usable y técnicamente clara con detalles mejorables. | Visualizaciones funcionales pero con sobrecarga, unidades/escala deficientes o poca orientación al usuario. | La interfaz dificulta interpretación o induce conclusiones no sustentadas. |
+| **5. Reproducibilidad y calidad de implementación** | 15 | Proyecto modular, `uv`, dependencias bloqueadas, README suficiente, validaciones y manejo controlado de errores. | Reproducible con pequeños problemas de organización o documentación. | Ejecutable solo con intervención adicional o con código poco modular. | No es reproducible o el dashboard no funciona de manera consistente. |
+| **6. Exposición, argumentación y análisis crítico** | 10 | Responde con precisión, conecta fisiología–señal–visualización y reconoce límites del método. | Defensa clara con algunas respuestas incompletas. | Presenta el producto, pero la argumentación técnica es débil. | No puede justificar decisiones principales ni interpretar limitaciones. |
+
+# 20. Referencias mínimas para sustentar decisiones
+
+- De Luca, C. J. (1997). *The Use of Surface Electromyography in Biomechanics*. Journal of Applied Biomechanics, 13(2), 135–163. DOI: **10.1123/jab.13.2.135**.
+- Cifrek, M., Medved, V., Tonković, S., & Ostojić, S. (2009). *Surface EMG based muscle fatigue evaluation in biomechanics*. Clinical Biomechanics, 24(4), 327–340. DOI: **10.1016/j.clinbiomech.2009.01.010**.
+
+::: {.callout-note}
+## Cierre
+
+Un dashboard biomédico no es una colección de gráficas. Es una **interfaz entre una señal fisiológica, un método de procesamiento y una decisión humana**. Por ello, cada número mostrado debe tener una procedencia trazable y cada transformación debe poder ser defendida.
+:::
