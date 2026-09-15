@@ -507,6 +507,406 @@ $$y[n] = x[n] * h[n] = \sum_{m=-\infty}^{\infty} x[m] h[n - m]$$
 
 ![](../../recursos/videos/Convolution_of_box_signal_with_itself.gif)
 
+## Continuous example: the original signals
+
+![](assets/continuous-originals.png){width=100% fig-alt="A rising input ramp from t=0 to t=2 and a falling impulse response from t=0 to t=1. Both are zero elsewhere."}
+
+:::: {.columns}
+::: {.column width="50%"}
+$$x(t)=\begin{cases}t,&0\leq t<2,\\0,&\text{otherwise.}\end{cases}$$
+:::
+::: {.column width="50%"}
+$$h(t)=\begin{cases}1-t,&0\leq t<1,\\0,&\text{otherwise.}\end{cases}$$
+:::
+::::
+
+Both ramps have an asymmetric shape within their nonzero interval.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, especially Eq. 5.2 on printed p. 218 and manual continuous convolution in Example 5.3, pp. 221-222. The waveforms and values here are original teaching examples, not reproductions of the book. Time and amplitudes use normalized units. Treat x(t) as a finite rising stimulus and h(t) as a simplified causal sensor response. These functions are continuous-time signals. They need not be continuous functions at every endpoint. Hollow circles indicate excluded endpoint values. Changes at isolated endpoints do not change this ordinary convolution integral.
+:::
+
+
+
+## Time reversal and amplitude inversion
+
+![](assets/reversal-comparison.png){width=100% fig-alt="The original response, its time reversal about the vertical axis, and its amplitude inversion about the horizontal axis."}
+
+| Operation | Expression | Geometric effect |
+|:---|:---:|:---|
+| Time reversal | $h(-\tau)$ | Reflection across the **vertical** axis |
+| Amplitude inversion | $-h(\tau)$ | Reflection across the **horizontal** axis |
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.2 and discussion on p. 218. Interpret asymmetry as a shape that visibly changes when reversed in time. A nonzero single-valued signal graph cannot be invariant under reflection about the horizontal axis: that would require h(t)=-h(t) at every t. The pedagogically useful distinction is time reversal versus amplitude inversion. The finite ramps are not mirror-symmetric about the midpoint of their support, and the discrete sequences are not palindromes. Avoid saying that convolution reverses the sign of the impulse response.
+:::
+
+## Convolution for an LTI system
+
+For a **linear, time-invariant system at initial rest**, the impulse response determines the output.
+
+:::: {.columns}
+::: {.column width="45%"}
+**Continuous time**
+
+$$y(t)=\int_{-\infty}^{\infty}x(\tau)h(t-\tau)\,d\tau$$
+
+Fix $t$, then integrate over $\tau$.
+:::
+::: {.column width="45%"}
+**Discrete time**
+
+$$y[n]=\sum_{k=-\infty}^{\infty}x[k]h[n-k]$$
+
+Fix $n$, then sum over $k$.
+:::
+::::
+
+::: {.callout-note title="The same graphical procedure"}
+Reverse $h$, shift it to the output time, multiply aligned amplitudes, then integrate or sum the products.
+:::
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eqs. 5.2-5.3, printed pp. 218-220. The impulse response is the output to a unit impulse. Linearity gives scaling and superposition. Time invariance makes the response to a shifted impulse a shifted copy of h. Initial rest excludes an additional zero-input response. Convolution is a mathematical operation on functions or sequences even outside a systems context. The LTI assumption is necessary for using a fixed h to represent an arbitrary system output in this way. Convolution is commutative, so reversing x instead gives the same result when the corresponding variable substitution and shift are consistent.
+:::
+
+## Continuous example: reversal and shift
+
+![](assets/continuous-flip-shift.png){width=100% fig-alt="The falling response h(tau), the reversed rising response h(-tau), and that reversed response shifted right by 1.5."}
+
+$$h(t-\tau)=1-t+\tau\qquad\text{where }0\leq t-\tau<1.$$
+
+Thus the reversed response occupies the interval between $t-1$ and $t$.
+
+At $t=1.5$, its ramp runs from $\tau=0.5$ to $\tau=1.5$.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, p. 218 and manual graphical convolution pp. 221-222. Substitute t-tau into every occurrence of the original argument, including the support condition. The exact inequality is t-1 < tau <= t for h(t-tau). The endpoint at t-1 has zero amplitude. For integration limits the endpoints do not affect the result. Write h(t-tau)=h(-(tau-t)): first reflect about tau=0, then translate right by t for positive t. Keep the original input fixed in later plots.
+:::
+
+## Continuous example: overlap limits
+
+The product can contribute only where **both** signals are nonzero:
+
+$$a(t)=\max(0,t-1),\qquad b(t)=\min(2,t).$$
+
+$$y(t)=\int_{a(t)}^{b(t)}\tau(1-t+\tau)\,d\tau,
+\qquad a(t)<b(t).$$
+
+| Output time | Integration interval | Overlap |
+|:---|:---:|:---|
+| $t\leq0$ | None | Before contact |
+| $0<t\leq1$ | $0$ to $t$ | Entering |
+| $1<t\leq2$ | $t-1$ to $t$ | Entire response overlaps |
+| $2<t<3$ | $t-1$ to $2$ | Leaving |
+| $t\geq3$ | None | After contact |
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, actual limits set by signal lengths on p. 218, and Example 5.3. The input has support closure [0,2] and the shifted response has support closure [t-1,t]. Their intersection determines the integral. At t=0 and t=3 a possible single contact point has zero integration measure. Do not evaluate an integral with reversed limits when there is no overlap. The three nonzero intervals change at t=1 and t=2. These breakpoints come from support edges, not from arbitrary plotting choices.
+:::
+
+## Continuous example: entering overlap
+
+![](assets/continuous-t0p5.png){width=100% fig-alt="At t=0.5, the input and shifted response overlap from tau=0 to 0.5. The green product area gives y(0.5)."}
+
+For $0<t\leq1$:
+$$y(t)=\int_0^t\tau(1-t+\tau)\,d\tau
+=\left[\frac{(1-t)\tau^2}{2}+\frac{\tau^3}{3}\right]_0^t
+=\frac{t^2}{2}-\frac{t^3}{6}.$$
+
+At $t=0.5$: **$y(0.5)=5/48\approx0.10417$.**
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.2 and manual continuous convolution. Here the green area is the area under the pointwise product, not the geometric area common to the two original curves. Hold t=0.5 fixed. The shifted response is 0.5+tau over -0.5<tau<=0.5, but multiplication by x leaves only 0<=tau<=0.5. The integrand becomes 0.5 tau+tau squared. Its integral gives 1/16+1/24=5/48. The general antiderivative will be reused in the other intervals.
+:::
+
+## Continuous example: full response overlap
+
+![](assets/continuous-t1p5.png){width=100% fig-alt="At t=1.5, the complete shifted impulse response overlaps the input between tau=0.5 and tau=1.5."}
+
+For $1<t\leq2$:
+$$y(t)=\int_{t-1}^{t}\tau(1-t+\tau)\,d\tau
+=\left[\frac{(1-t)\tau^2}{2}+\frac{\tau^3}{3}\right]_{t-1}^{t}
+=\frac{t}{2}-\frac16.$$
+
+At $t=1.5$: **$y(1.5)=7/12\approx0.58333$.**
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.2. The overlap interval now moves while keeping width one. Its width alone does not determine y(t): the amplitudes of x under the shifted response keep increasing. For t=1.5 the product is tau(tau-0.5). Substituting 1.5 and 0.5 into the antiderivative gives 9/16-(-1/48)=7/12. The phrase complete response overlap means the entire nonzero part of the shifted impulse response is inside the support of x. It does not mean the supports are identical.
+:::
+
+## Continuous example: leaving overlap
+
+![](assets/continuous-t2p5.png){width=100% fig-alt="At t=2.5, only the interval from tau=1.5 to tau=2 contributes. The product area shrinks toward zero."}
+
+For $2<t<3$:
+$$y(t)=\int_{t-1}^{2}\tau(1-t+\tau)\,d\tau
+=\left[\frac{(1-t)\tau^2}{2}+\frac{\tau^3}{3}\right]_{t-1}^{2}
+=\frac{(3-t)^2(t+3)}6.$$
+
+At $t=2.5$: **$y(2.5)=11/48\approx0.22917$.**
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.2 and manual finite-support convolution. At t=2.5 the shifted impulse response extends to tau=2.5, but x is zero beyond tau=2, so the upper integration limit stays at 2. The integrand becomes tau(tau-1.5). Its primitive is tau cubed/3-3 tau squared/4. Evaluation gives -1/3-(-9/16)=11/48. The general result may also be written (t-1)^3/6-2t+14/3. Factoring it gives the expression on the slide, which makes y(3)=0 easy to see.
+:::
+
+## Continuous example: the complete output
+
+:::: {.columns}
+::: {.column width="52%"}
+$$y(t)=\begin{cases}
+0,&t\leq0,\\
+\dfrac{t^2}{2}-\dfrac{t^3}{6},&0<t\leq1,\\
+\dfrac{t}{2}-\dfrac16,&1<t\leq2,\\
+\dfrac{(3-t)^2(t+3)}6,&2<t<3,\\
+0,&t\geq3.
+\end{cases}$$
+:::
+::: {.column width="48%"}
+![](assets/continuous-output.png){width=100% fig-alt="The convolution rises to 5/6 at t=2 and returns to zero at t=3. Values at 0.5, 1, 1.5, and 2.5 are marked."}
+:::
+::::
+
+The three branches meet continuously at $t=1$ and $t=2$.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4. Original derived example. The branches match at 0, 1, 2, and 3: values are 0, 1/3, 5/6, and 0. The output is continuous even though the input has a jump at t=2 and the impulse response jumps at t=0. The derivative has a corner at t=2. Its maximum is 5/6 at t=2. The output support closure is [0,3]. The factored last branch is nonnegative for 2<t<3.
+:::
+
+## Continuous example: sensor interpretation
+
+The synthetic model illustrates how a **sensor with memory** combines recent input values.
+
+- The input lasts 2 time units. The response lasts 1 time unit.
+- The output continues until $t=3$, after the input has ended.
+- Since $x(t)\geq0$ and $h(t)\geq0$, the output stays nonnegative.
+
+$$\int x(t)\,dt=2,\qquad\int h(t)\,dt=\frac12,
+\qquad\int y(t)\,dt=2\left(\frac12\right)=1.$$
+
+::: {.callout-note title="Gain and duration are different properties"}
+The impulse response has area $1/2$. This filter does not preserve the area of the input.
+:::
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, discussion of memory and impulse response duration on p. 220. These simplified ramps demonstrate temporal spreading in a causal LTI acquisition channel. They are not a measured sensor model or a validated physiological response. Normalized units avoid assigning physical dimensions to the toy functions. In a dimensioned continuous model, h carries output units divided by input units and time. The area identity follows from the convolution integral for these integrable functions. The area of h equals the system's DC gain, 1/2. Causality and finite support do not imply unit gain.
+:::
+
+## Continuous example: Python calculation
+
+```python
+from scipy.integrate import quad
+
+def y_continuous(t):
+    a = max(0.0, t - 1.0)
+    b = min(2.0, t)
+    if a >= b:
+        return 0.0
+    return quad(lambda tau: tau * (1 - t + tau), a, b)[0]
+
+for t in (0.5, 1.5, 2.5):
+    print(f"y({t}) = {y_continuous(t):.5f}")
+```
+
+```text
+y(0.5) = 0.10417
+y(1.5) = 0.58333
+y(2.5) = 0.22917
+```
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.2. Python adaptation. The integration limits already enforce both supports, so the integrand needs no extra piecewise tests. scipy.integrate.quad numerically integrates over tau for one fixed t. The displayed output comes from this calculation, rounded to five decimal places. If the integral is instead approximated using sampled arrays, multiply their discrete convolution by the time step Delta t. This scale factor approximates d tau. The independent discrete FIR example uses its defined coefficients directly, with no additional time-step factor.
+:::
+
+## Discrete example: the original sequences
+
+![](assets/discrete-originals.png){width=100% fig-alt="The input has samples 2, minus 1, 3, 1 at indices 0 to 3. The impulse response has samples 1, 2, minus 1 at indices 0 to 2."}
+
+| Sample index $n$ | $0$ | $1$ | $2$ | $3$ |
+|:---|---:|---:|---:|---:|
+| Input $x[n]$ | $2$ | $-1$ | $3$ | $1$ |
+| Impulse response $h[n]$ | $1$ | $2$ | $-1$ | $0$ |
+
+Both sequences are zero elsewhere and asymmetric in time.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, convolution sum Eq. 5.3 on printed p. 220. These are original synthetic examples in normalized amplitude units. The first listed sample has index zero, a convention that will determine every later alignment. The extra h[3]=0 in the table only aligns the two rows. The FIR impulse response has three nonzero samples. These discrete sequences are independent of the continuous example. They are not samples of its ramps. A possible biomedical use is an illustrative finite filter applied to a short segment of a baseline-centered biosignal. No clinical performance claim follows from these toy coefficients.
+:::
+
+## Discrete example: reversal and shift
+
+![](assets/discrete-flip-shift.png){width=100% fig-alt="Original h at indices 0, 1, 2; reversed h at minus 2, minus 1, 0; and h[2-k] at 0, 1, 2 with amplitudes minus 1, 2, 1."}
+
+| Original sample | After reversal | After a shift by $n$ |
+|:---|:---|:---|
+| $h[0]=1$ | At $k=0$ | At $k=n$ |
+| $h[1]=2$ | At $k=-1$ | At $k=n-1$ |
+| $h[2]=-1$ | At $k=-2$ | At $k=n-2$ |
+
+The overlap is $\max(0,n-2)\leq k\leq\min(3,n)$, for integer $k$.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3 and manual discrete convolution in Example 5.4, pp. 222-223. An original index j moves to k=n-j. The original amplitude remains h[j], so the sample -1 stays negative. h[-k] has values -1, 2, 1 when read from k=-2 to k=0. For n=2 it has the same values at k=0,1,2. Never reverse only a printed list and silently keep its old index origin. The support inequality also gives an empty sum before n=0 and after n=5.
+:::
+
+## Discrete example: the first two output samples
+
+![](assets/discrete-n0-n1.png){width=100% fig-alt="Aligned sequences and pointwise products at n=0 and n=1. The sums are 2 and 3."}
+
+$$y[0]=(2)(1)=2,\qquad y[1]=(2)(2)+(-1)(1)=3.$$
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3. Upper plots use blue circles for x[k] and orange squares for h[n-k]. Dashed orange stems distinguish overlapping coefficients. Lower plots show the products. At n=0, k=0 is the only shared nonzero index. At n=1, k=0 and k=1 contribute 4 and -1. The zero-valued displayed stems outside the support are only reference positions. Every multiplication pairs values at the same k.
+:::
+
+## Discrete example: cancellation at $n=2$
+
+![](assets/discrete-n2.png){width=100% fig-alt="At n=2 the products at k=0,1,2 are minus 2, minus 2, and 3. Their signed sum is minus 1."}
+
+$$y[2]=(2)(-1)+(-1)(2)+(3)(1)=-2-2+3=\boxed{-1}.$$
+
+::: {.callout-note title="The products add with their signs"}
+Negative contributions can outweigh positive contributions, even with full response overlap.
+:::
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3. At n=2 all three response coefficients align with available input samples. This does not guarantee a positive or maximal output. The two negative products sum to -4 and the positive product is 3. Red stems indicate negative products. Replacing the signed sum with magnitudes would incorrectly give 7. Omitting reversal would calculate a different operation.
+:::
+
+## Discrete example: reinforcement at $n=3$
+
+![](assets/discrete-n3.png){width=100% fig-alt="At n=3 the products at k=1,2,3 are 1, 6, and 1, giving an output of 8."}
+
+$$y[3]=(-1)(-1)+(3)(2)+(1)(1)=1+6+1=\boxed{8}.$$
+
+The negative input sample and the negative coefficient now produce a positive contribution.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3. The overlap contains k=1,2,3. At k=1 the input -1 aligns with h[2]=-1. At k=2 the input 3 aligns with h[1]=2. At k=3 the input 1 aligns with h[0]=1. All three products are positive. The peak value exceeds every input sample because this filter has coefficients with magnitudes whose sum is four. No rule bounds the output by the maximum input unless the coefficient conditions support that rule.
+:::
+
+## Discrete example: the last two output samples
+
+![](assets/discrete-n4-n5.png){width=100% fig-alt="At n=4 the products are minus 3 and 2. At n=5 the only product is minus 1. Both output samples equal minus 1."}
+
+$$y[4]=(3)(-1)+(1)(2)=-1,\qquad y[5]=(1)(-1)=-1.$$
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3. At n=4, the remaining overlap is k=2,3. At n=5, only k=3 contributes. At n=6 no shared nonzero index remains. Therefore y[n]=0 for every n outside 0 through 5. The nonzero output after the final input sample illustrates the memory of the FIR filter.
+:::
+
+## Discrete example: every product and sum
+
+For each output index, $y[n]=\sum_{k=0}^{3}x[k]h[n-k]$.
+
+| $n$ | $x[0]h[n]$ | $x[1]h[n-1]$ | $x[2]h[n-2]$ | $x[3]h[n-3]$ | $y[n]$ |
+|---:|---:|---:|---:|---:|---:|
+| $0$ | $2$ | $0$ | $0$ | $0$ | **2** |
+| $1$ | $4$ | $-1$ | $0$ | $0$ | **3** |
+| $2$ | $-2$ | $-2$ | $3$ | $0$ | **-1** |
+| $3$ | $0$ | $1$ | $6$ | $1$ | **8** |
+| $4$ | $0$ | $0$ | $-3$ | $2$ | **-1** |
+| $5$ | $0$ | $0$ | $0$ | $-1$ | **-1** |
+
+Every row fixes the output index $n$. Each column tracks one input sample.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3. This table contains all 12 nonzero products of the four input samples and three response coefficients, arranged by their output index n=k+j. Row sums reproduce graphical convolution. Column sums offer an alternative superposition interpretation: each input sample scales a shifted impulse response. The h notation in each column includes zeros outside indices 0 to 2.
+:::
+
+## Discrete example: the complete output
+
+![](assets/discrete-output.png){width=100% fig-alt="The output sequence is 2, 3, minus 1, 8, minus 1, minus 1 at n=0 through 5 and zero elsewhere."}
+
+$$\boxed{y[n]=\{2,\ 3,\ -1,\ 8,\ -1,\ -1\},\quad n=0,\ldots,5}$$
+
+Output length: $L_y=L_x+L_h-1=4+3-1=6$ samples.
+
+Sum check: $\sum_n y[n]=10=(\sum_nx[n])(\sum_nh[n])=(5)(2)$.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4. The length formula describes full linear convolution of the stated finite arrays. The output starts at index 0+0=0 and ends at 3+2=5. A same-length output would omit part of the complete convolution. The sum identity follows from exchanging the finite sums. It gives a useful arithmetic check but does not independently guarantee that every sample or index is correct.
+:::
+
+## Discrete example: Python and filter meaning
+
+```python
+import numpy as np
+
+x = np.array([2, -1, 3, 1])       # n = 0, ..., 3
+h = np.array([1, 2, -1])         # n = 0, ..., 2
+y = np.convolve(x, h, mode="full")
+print(y.tolist())
+```
+
+```text
+[2, 3, -1, 8, -1, -1]
+```
+
+The same FIR system has the difference equation
+$$y[n]=x[n]+2x[n-1]-x[n-2].$$
+
+It combines the current sample with two past samples. Initial rest sets earlier input values to zero.
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eq. 5.3. Python adaptation of direct convolution. The displayed list is the executed result. np.convolve performs the convolution operation internally: pass h in its original order. Passing h[::-1] would undo the required coefficient reversal in the internal operation and produce a different result. Array multiplication x*h is pointwise multiplication, not convolution, and these two arrays also have incompatible lengths. This FIR is causal and stable. Its coefficients sum to 2, so it is neither a unit-gain moving average nor an ideal differentiator. It illustrates waveform reshaping, not a clinically validated ECG/EMG processing method.
+:::
+
+## Continuous and discrete convolution
+
+| Feature | Continuous example | Discrete example |
+|:---|:---|:---|
+| Moving response | $h(t-\tau)$ | $h[n-k]$ |
+| Variable to eliminate | $\tau$ | $k$ |
+| Accumulation | Integral of the product | Signed sum of products |
+| Complete output | $0<t<3$ | $n=0,\ldots,5$ |
+| Negative output here? | No: both factors are nonnegative | Yes: signed products can cancel |
+
+::: {.callout-note title="One shift produces one output value"}
+Sweeping all shifts constructs the output signal. Reversing time preserves amplitudes and changes their alignment.
+:::
+
+::: notes
+Textbook link: Semmlow (2018), Section 5.4, Eqs. 5.2-5.3. The nonnegative result in the continuous example is a property of these chosen functions, not of all continuous-time convolutions. Discrete convolution can also stay nonnegative when both sequences are nonnegative. Distinguish a genuine discrete LTI model with coefficients h[k] from a Riemann-sum approximation of a continuous convolution. The latter uses Delta t times the sum of products unless that factor is already incorporated in the discrete coefficients.
+:::
+
+## Questions for discussion
+
+1. At $t=2.5$, why does the continuous integral stop at $\tau=2$?
+2. Why does $y[2]$ become negative while $y[3]$ becomes positive?
+3. Where does the sample $h[2]=-1$ appear in $h[n-k]$?
+4. Why must the continuous output vanish after $t=3$ and the discrete output after $n=5$?
+
+::: {.callout-note title="Expected reasoning"}
+Identify the overlap limits, preserve signs, and justify each contributing product.
+:::
+
+::: notes
+Instructor answers: (1) x(tau)=0 for tau>=2, so no later tau can contribute, even though the shifted response continues to 2.5. (2) At n=2 the products are -2,-2,3, with sum -1. At n=3 they are 1,6,1, with sum 8. (3) At k=n-2. Its amplitude remains -1. (4) The support intervals no longer overlap after those limits. At t=3 the contact is at most one point, which has zero area. At n=6 there is no contributing integer index. Ask students to sketch the alignment before evaluating formulas. A satisfactory explanation must use support and signs, not only quote the output numbers.
+:::
+
+## Reading and course alignment
+
+**Main reference**
+
+John Semmlow (2018). *Circuits, Signals, and Systems for Bioengineers: A MATLAB-Based Introduction*. 3rd edition. Academic Press.
+
+- Section **5.4**, printed pp. **216-225**: convolution and worked examples.
+- Eq. **5.2**, p. **218**: continuous convolution.
+- Eq. **5.3**, p. **220**: discrete convolution.
+
+**SYSB course topic**
+
+Time-domain analysis of linear systems: convolution. The supplied program schedules definition and application in week 11.
+
+::: {.small}
+Waveforms, figures, worked calculations, and Python examples in this deck are original teaching material. All signals are synthetic.
+:::
+
+::: notes
+Source files inspected: Circuits, Signals and Systems for Bioengineers.pdf and Programa_SYSB_2027-1.pdf. Book bibliographic data come from its title and copyright pages: third edition, 2018, ISBN 978-0-12-809395-5. No DOI is asserted. Use the textbook's actual section numbering. The uploaded program names convolution in Part II topic 5 and schedules it in week 11, but its numerical cross-references differ from the inspected textbook. The program file's page headers still display SYSB 2022-2 despite its uploaded 2027-1 filename. This deck identifies the course and topic without asserting an academic term. Teacher notes cite the relevant textbook section throughout. The two examples are designed for visible time reversal, rather than reusing symmetric rectangles or palindromic sequences.
+<!-- :::
+
 ## Example: RC Low-Pass Filter Response
 
 Consider a first-order RC circuit with impulse response $h(t) = \frac{1}{RC} e^{-t/RC} u(t)$. If the input is a rectangular pulse $x(t) = u(t) - u(t-T)$, the output $y(t)$ is:
@@ -876,4 +1276,4 @@ Dado que $x[n]$ tiene longitud $N=3$ y $h[n]$ longitud $M=4$, $y[n]$ tendrá $N+
 * $y[4] = x[2]h[2] + x[1]h[3] = 1.5(-1) + 3(0.2) = \mathbf{-0.9}$
 * $y[5] = x[2]h[3] = 1.5(0.2) = \mathbf{0.3}$
 
-**Resultado:** $y[n] = \{0.5, 2.5, 2.75, -1.3, -0.9, 0.3\}$
+**Resultado:** $y[n] = \{0.5, 2.5, 2.75, -1.3, -0.9, 0.3\}$ -->
