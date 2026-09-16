@@ -1,0 +1,695 @@
+---
+title: "Dashboard de EMG con datos abiertos"
+subtitle: "Radiculopatía L5 · De la fisiología a la ingeniería"
+author: "Señales Bioeléctricas y Visualización Interactiva"
+lang: es
+format:
+  pdf:
+    documentclass: scrartcl
+    pdf-engine: xelatex
+    papersize: a4
+    fontsize: 10.5pt
+    geometry:
+      - top=24mm
+      - bottom=24mm
+      - left=23mm
+      - right=23mm
+    mainfont: Latin Modern Roman
+    sansfont: Latin Modern Sans
+    monofont: Latin Modern Mono
+    toc: true
+    toc-depth: 1
+    number-sections: true
+    colorlinks: true
+    linkcolor: teal
+    urlcolor: teal
+    keep-tex: true
+    include-in-header:
+      text: |
+        \usepackage{fvextra}
+        \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines=true,fontsize=\footnotesize}
+        \usepackage{scrlayer-scrpage}
+        \clearpairofpagestyles
+        \ihead{\small SBVI · Ingeniería Biomédica}
+        \ohead{\small EMGDB · Datos reales}
+        \cfoot{\pagemark}
+        \setkomafont{pageheadfoot}{\normalfont\sffamily\footnotesize}
+        \usepackage{microtype}
+        \usepackage{needspace}
+        \usepackage{tikz}
+        \usepackage{etoolbox}
+        \pretocmd{\section}{\Needspace{14\baselineskip}}{}{}
+        \setlength{\emergencystretch}{3em}
+        \setlength{\parskip}{5pt}
+        \setcounter{tocdepth}{1}
+execute:
+  enabled: false
+---
+
+\newpage
+
+# Solicitud del médico y resultado esperado
+
+> **Solicitud clínica ficticia para el equipo de ingeniería**  
+> Atiendo personas con neuropatía asociada a radiculopatía L5. Necesito una herramienta para revisar registros EMG del tibial anterior: localizar segmentos, examinar su calidad y describir cómo cambian la amplitud y el contenido espectral durante la exploración. Quiero conservar la señal original junto a los indicadores y documentar exactamente qué se calculó. En una etapa posterior me interesaría comparar visitas, siempre que los registros fueran comparables. Para desarrollar el prototipo, utilicen datos clínicos abiertos y no inventen pacientes, mediciones ni cambios de tratamiento.
+
+**Producto.** Construirá un dashboard local en Python y Streamlit sobre el dataset libre **Examples of Electromyograms, EMGDB 1.0.0, de PhysioNet**. El caso principal será `emg_neuropathy`; los otros dos registros se utilizarán como ejemplos de contraste. La aplicación descarga o lee los archivos originales y verifica su integridad. No contiene un modo de pacientes simulados.
+
+El PDF es una guía estática. Los controles interactivos funcionan en `app.py`. El archivo Quarto incluye el código completo de los módulos, las explicaciones, las fórmulas, las instrucciones de ejecución y la evaluación.
+
+## Alcance real del monitoreo
+
+Se implementa **exploración temporal dentro de un registro**. El dataset contiene tres ejemplos de personas diferentes, no una serie longitudinal. Por tanto, permite aprender a construir y verificar el sistema, pero no demostrar mejoría, empeoramiento, respuesta terapéutica ni capacidad diagnóstica poblacional.
+
+Una etiqueta clínica suministrada por el repositorio es información de contexto; no es una predicción producida por nuestro algoritmo. Los descriptores de señal tampoco son equivalentes a la gravedad de la lesión. No se usa un semáforo de “normal/patológico” ni un puntaje compuesto de enfermedad.
+
+## Articulación con la asignatura
+
+La actividad desarrolla la secuencia del microcurrículo adjunto: fisiología muscular, adquisición, análisis temporal y espectral, visualización e integración. Aporta a RA1–RA5 y al módulo de EMG. Aquí se analiza **EMG intramuscular**, por lo que no se traslada sin revisión el procesamiento de EMG superficial.
+
+**Prerrequisitos:** arreglos NumPy, archivos, frecuencia de muestreo, filtros y Fourier. **Dedicación orientativa:** 8 a 10 horas. Se destinan 2 h al problema y los datos, 3 h al procesamiento, 2 h a la interfaz y 1 a 3 h a la verificación y exposición.
+
+**Evidencias:** justificar cada indicador desde la fisiología, comprobar las unidades desde la cabecera, reproducir cálculos sobre datos reales y explicar los límites clínicos del tablero.
+
+# Dataset libre y trazabilidad de la fuente
+
+## Acceso, licencia y atribución
+
+El dataset está disponible sin cuenta ni aprobación individual en [PhysioNet EMGDB 1.0.0](https://physionet.org/content/emgdb/1.0.0/), DOI [10.13026/C24S3D](https://doi.org/10.13026/C24S3D). Su licencia es **Open Data Commons Attribution License v1.0 (ODC-By 1.0)**. Mantenga la atribución, el vínculo a la licencia y la identificación de las transformaciones al redistribuir un resultado derivado [1].
+
+Los ejemplos fueron facilitados por Seward Rutkove, Beth Israel Deaconess Medical Center/Harvard Medical School. Son registros de un canal del tibial anterior. Las cabeceras documentan 4000 muestras/s y una calibración de 10000 cuentas/mV [2–4].
+
+\Needspace{10\baselineskip}
+
+| Registro original | Etiqueta publicada | Muestras | Duración calculada |
+|:--|:--|--:|--:|
+| `emg_neuropathy` | Neuropatía por radiculopatía L5 derecha | 147858 | 36.9645 s |
+| `emg_healthy` | Sin historia de enfermedad neuromuscular | 50860 | 12.7150 s |
+| `emg_myopathy` | Miopatía por polimiositis | 110337 | 27.58425 s |
+
+Las duraciones son $N/f_s$, calculadas a partir de las cabeceras y confirmadas al leer los binarios. No son tres fases de una enfermedad ni tres condiciones de una misma persona.
+
+## Qué información está disponible y cuál falta
+
+Los archivos contienen EMG registrada durante una tarea muscular y su transición a relajación, según la descripción de origen. No incorporan un canal de fuerza ni anotaciones temporales expertas que delimiten cada potencial motor. El usuario no debe asignar automáticamente a toda ventana una condición fisiológica solo por su amplitud.
+
+La ficha indica adquisición inicial a 50 kHz y reducción posterior a 4 kHz. No se recuperan las frecuencias que se perdieron. Con 4 kHz, Nyquist es 2 kHz, independientemente de la banda original del equipo. El filtro digital posterior no corrige aliasing previo [1].
+
+El proyecto emplea archivos `.dat` y `.hea`. Se detectó una inconsistencia de separación numérica en la copia `.txt` del registro de neuropatía; no se corrige inventando números ni eliminando filas. Los binarios descargados se verifican contra los SHA-256 publicados [5].
+
+## Archivos que utilizará
+
+Cada registro necesita un archivo binario y su cabecera. El paquete incluye los seis archivos, el listado oficial de hashes y una nota de atribución. Si trabaja solo con el QMD, el módulo `datos.py` los descarga desde PhysioNet al ejecutarse.
+
+El lector se limita deliberadamente a **estos archivos de un canal, formato WFDB 16**. No es un lector general de todos los formatos WFDB. Rechaza cambios de formato, ganancia, frecuencia, longitud o integridad.
+
+# De la lesión al indicador de ingeniería
+
+## Qué mide el electrodo
+
+Una unidad motora agrupa una motoneurona y las fibras musculares que inerva. La EMG registra contribuciones de potenciales de acción cercanos al electrodo. Un modelo conceptual es
+
+$$x(t)=\sum_{k=1}^{K}\sum_j a_k h_k(t-t_{kj})+\eta(t),$$
+
+donde $h_k$ es la forma del potencial observado de la unidad $k$, $t_{kj}$ sus instantes de descarga, $a_k$ recoge la geometría y conducción, y $\eta$ representa ruido y otras contribuciones. El electrodo intramuscular observa un volumen diferente del de la EMG superficial. Sus amplitudes y morfologías no se intercambian directamente.
+
+En una lesión de raíz que afecte axones motores puede alterarse el conjunto de unidades activables. En procesos crónicos puede existir reinervación colateral y remodelación de unidades. Estos fenómenos pueden modificar la morfología y el patrón de interferencia, pero su evaluación exige contexto, esfuerzo y muestreo muscular adecuados. Un estudio de simulación de unidades reinervadas muestra precisamente que las propiedades observadas dependen de la organización de fibras y de la técnica de registro [6].
+
+## Separar tres niveles de evidencia
+
+**Fenómeno fisiológico:** pérdida o remodelación de unidades motoras. **Hallazgo electrofisiológico:** cambios en morfología o reclutamiento evaluados por un especialista. **Descriptor computacional:** un número calculado sobre una ventana de señal. Pasar del tercer nivel al primero requiere una validación que este dataset no proporciona.
+
+El tutorial construye descriptores exploratorios útiles para organizar la revisión. No estima número de unidades motoras, grado de denervación, porcentaje de recuperación ni duración de un potencial aislado.
+
+\Needspace{12\baselineskip}
+
+| Pregunta fisiológica | Medida implementada | Límite de interpretación |
+|:--|:--|:--|
+| ¿Cómo varía la amplitud eléctrica del segmento? | RMS de la EMG filtrada y centrada | También cambia con esfuerzo y posición del electrodo |
+| ¿Qué excursión de amplitud contiene la ventana? | Máximo menos mínimo | No equivale a amplitud de una unidad aislada |
+| ¿Predominan excursiones puntuales frente al nivel medio? | Factor de cresta | Un artefacto también puede elevarlo |
+| ¿Dónde se distribuye la potencia en la banda analizada? | Frecuencia mediana de 20–1000 Hz | No es frecuencia de descarga ni diagnóstico de neuropatía |
+
+## Qué requeriría un indicador más específico
+
+Para cuantificar duración, fases o amplitud de potenciales de unidad motora se necesitarían eventos aislados o descompuestos, límites de inicio y final validados y revisión experta. La anchura de cualquier pico de la mezcla no cumple esa condición. Para estudiar reclutamiento se necesita relacionar actividad con el nivel de activación o fuerza; contar picos no cuenta unidades.
+
+**Pregunta de verificación.** Si el RMS aumenta mientras cambia el esfuerzo, ¿se puede atribuir el cambio a reinervación? Identifique el factor de confusión y qué medición adicional haría falta antes de formular esa conclusión.
+
+# Diseño matemático y temporal
+
+## Preprocesamiento declarado
+
+El original permanece disponible para inspección. La rama analítica aplica un pasa banda Butterworth de 20–1000 Hz con orden de diseño 4 y secciones de segundo orden. La banda es una **decisión docente**, no un estándar diagnóstico ni un sustituto del registro original. Limitar el extremo superior elimina información que podría ser relevante para morfología de potenciales; por eso no se usa la salida para medir unidades aisladas.
+
+El filtrado bidireccional `sosfiltfilt` utiliza muestras futuras: es offline. La transformación pasa banda y la aplicación en dos sentidos modifican el orden y la respuesta efectivos; no se describe como un filtro causal de cuarto orden. Se filtra el registro continuo y después se recortan ventanas. El ejemplo excluye 0.25 s por extremo; este margen es una precaución de diseño que debe verificarse cuando cambien filtros o datos.
+
+No se rectifica antes de estimar el espectro. Aquí interesa el contenido espectral de la EMG, no una frecuencia lenta de temblor. Tampoco se aplica notch sin evidencia de interferencia y sin documentar su efecto.
+
+## Amplitud y carácter impulsivo
+
+Sea $y[n]$ la señal filtrada dentro de una ventana de $N$ muestras. Defina $z[n]=y[n]-\bar y$ para retirar su media. Las medidas son
+
+$$\mathrm{RMS}=\sqrt{\frac{1}{N}\sum_{n=0}^{N-1}z[n]^2},$$
+
+$$A_{pp}=\max_n z[n]-\min_n z[n],\qquad
+C=\frac{\max_n|z[n]|}{\mathrm{RMS}}.$$
+
+RMS y $A_{pp}$ se expresan en microvoltios. $C$ es adimensional y se deja no disponible si el denominador es prácticamente nulo. El pico a pico es sensible a extremos; al alargar la ventana aumenta la posibilidad de incluir un pico grande. Por eso no deben compararse ventanas de duración diferente sin reconocer ese efecto.
+
+Si todas las amplitudes se multiplican por dos, RMS y $A_{pp}$ se duplican, mientras $C$ permanece igual. Esta propiedad permite verificar el código usando el registro real, sin fabricar pacientes ni asumir un resultado clínico.
+
+## Espectro y frecuencia mediana
+
+Se estima la densidad espectral $S_z(f)$ con Welch sobre segmentos Hann de 0.25 s y solapamiento del 50 %. En 4000 Hz, cada segmento contiene 1000 muestras, por lo que la separación entre bins es 4 Hz [7].
+
+La frecuencia mediana restringida satisface
+
+$$\int_{20}^{f_{med}}S_z(f)\,df
+=\frac{1}{2}\int_{20}^{1000}S_z(f)\,df.$$
+
+La implementación integra por trapecios e interpola el punto de mitad de potencia. La PSD tiene unidades de $\mu V^2/Hz$. La interpolación no mejora la resolución física del estimador; imprimir muchos decimales no aporta precisión biológica.
+
+$f_{med}$ puede cambiar por morfología, mezcla de unidades, filtros o ruido. Un descenso no demuestra fatiga en este protocolo y una diferencia entre registros no establece gravedad. No hay fuerza, velocidad de conducción ni anotaciones suficientes para identificar el mecanismo solo a partir de esa cifra.
+
+## Escalas temporales
+
+\Needspace{12\baselineskip}
+
+| Escala | Configuración | Justificación |
+|:--|:--|:--|
+| Intervalo elegido | Inicialmente 0.25–5.25 s | Delimita la región que se inspeccionará |
+| Ventana analítica | 0.5, 1 o 2 s | Compromiso entre estabilidad y localización |
+| Paso | Mitad de la ventana | Tendencia más densa, con dependencia entre puntos |
+| Welch | 0.25 s, solapamiento 0.125 s | Grilla de 4 Hz; varios promedios por ventana |
+| Inspección de morfología | Zoom temporal del gráfico | Revisar eventos sin asignarles identidad automática |
+
+Una ventana de 1 s tiene 4000 muestras y siete segmentos Welch solapados; no son siete observaciones independientes. Los límites son $[i,j)$: incluyen $i$ y excluyen $j$. El centro temporal etiqueta el punto de la tendencia. Una transición brusca o un artefacto dentro de la ventana limita su interpretación, aunque la fórmula produzca un número.
+
+# Preparar el proyecto y descargar los datos
+
+## Entorno reproducible
+
+Use Python 3.11 o 3.12, uv y Quarto CLI. En una carpeta nueva:
+
+```bash
+uv init --python 3.11
+uv add numpy scipy pandas streamlit plotly
+uv lock
+```
+
+Copie los bloques de las secciones de código en los archivos indicados. Los fragmentos de un mismo archivo se concatenan en orden, separados por una línea en blanco. El paquete completo ya contiene esos archivos y los datos originales verificados.
+
+```bash
+uv run python datos.py
+uv run python verificar.py
+uv run streamlit run app.py
+```
+
+`datos.py` obtiene los archivos que falten y comprueba sus hashes. Una copia presente con hash incorrecto causa un error; no se procesa ni se reemplaza silenciosamente. Con los archivos del paquete, el análisis funciona sin conexión.
+
+Para crear el PDF:
+
+```bash
+quarto install tinytex
+quarto render tutorial-dashboard-emg.qmd --to pdf
+```
+
+La primera orden solo es necesaria si falta una distribución TeX. El QMD contiene su estilo y todo el código; los bloques se imprimen, no se ejecutan al compilar. La composición no requiere descargar el dataset. La aplicación sí necesita los módulos y los archivos, o conexión para obtenerlos.
+
+## Responsabilidad de cada módulo
+
+| Archivo | Función |
+|:--|:--|
+| `datos.py` | Descargar, verificar, calibrar y describir los registros |
+| `motor.py` | Filtrar y calcular indicadores sin depender de la interfaz |
+| `app.py` | Gestionar selecciones, figuras, revisión y exportación |
+| `verificar.py` | Comprobar integridad y propiedades del cálculo |
+
+Conserve `pyproject.toml` y `uv.lock`. Al compartir, incluya también la atribución del dataset. Cada exportación identifica registro, hash, parámetros e intervalo para que un tercero pueda reproducir el resultado.
+
+# Implementar el acceso al dataset
+
+## Fuente y hashes publicados
+
+Cree `datos.py`. Este bloque fija la versión y el conjunto de archivos autorizado. Los hashes provienen del listado del repositorio, no de una copia local asumida correcta.
+
+```python
+"""Acceso a EMGDB 1.0.0. Lector limitado a sus archivos WFDB 16."""
+from pathlib import Path
+from urllib.request import urlopen
+import hashlib
+import numpy as np
+
+BASE = 'https://physionet.org/files/emgdb/1.0.0/'
+DOI = 'https://doi.org/10.13026/C24S3D'
+CARPETA = Path(__file__).resolve().parent / 'datos'
+ETIQUETAS = {
+    'emg_neuropathy': 'Neuropatía por radiculopatía L5',
+    'emg_healthy': 'Sin historia de enfermedad neuromuscular',
+    'emg_myopathy': 'Miopatía por polimiositis',
+}
+# Valores publicados en SHA256SUMS.txt de EMGDB 1.0.0.
+HASHES = {
+ 'emg_healthy.dat':
+ '4990f34f0ffb314f6ce70c1d2089b7ce41fa96d19fcd9fb334815ca5033966fd',
+ 'emg_healthy.hea':
+ '61221ce33e167d246ec2ea8984ce2f25882b32b4d90bd7ef785c7b56ef95bac5',
+ 'emg_myopathy.dat':
+ '2c310a0f61843a5a5e906d413b6ff7f51370a91e516344af511c7fe6da9eaf7f',
+ 'emg_myopathy.hea':
+ '752093a1e3af87cd87e39f553b8725133f57a75413661208e5d93c8d2c60e73b',
+ 'emg_neuropathy.dat':
+ '108c6c71d3792f3dba645539bd9241119fb4c6a3a0f3e515399694b072375dd5',
+ 'emg_neuropathy.hea':
+ 'a424c80b6a5cc5733456f0848c2650321cac3658d9b02b845e08b619b2807ce0',
+}
+```
+
+## Descargar y verificar antes de interpretar
+
+Añada esta función. Primero comprueba si existe una copia local; en caso contrario descarga. Solo escribe una descarga que coincide con el hash publicado. No se omite la comprobación para hacer desaparecer un error.
+
+```python
+def asegurar(nombre):
+    if nombre not in HASHES:
+        raise ValueError('Archivo fuera del dataset permitido.')
+    ruta = CARPETA / nombre
+    CARPETA.mkdir(exist_ok=True)
+    if ruta.exists():
+        contenido = ruta.read_bytes()
+    else:
+        with urlopen(BASE + nombre, timeout=60) as respuesta:
+            contenido = respuesta.read()
+    real = hashlib.sha256(contenido).hexdigest()
+    if real != HASHES[nombre]:
+        raise ValueError(f'Integridad incorrecta: {nombre}')
+    if not ruta.exists():
+        ruta.write_bytes(contenido)
+    return contenido
+```
+
+## Leer cuentas digitales y obtener microvoltios
+
+Para estos archivos, WFDB 16 representa enteros con signo de 16 bits en orden little-endian. La cabecera especifica la ganancia y el cero. La conversión es
+
+$$x_{\mu V}[n]=\frac{d[n]-d_0}{G}\,1000,
+\qquad G=10000\ \text{cuentas/mV}.$$
+
+Cada cuenta representa 0.1 $\mu V$ en esta calibración. El tiempo se reconstruye como $t[n]=n/f_s$. Este origen en cero es una convención de análisis; no es una fecha de adquisición. Añada:
+
+```python
+def cargar(registro):
+    if registro not in ETIQUETAS:
+        raise ValueError('Registro desconocido.')
+    texto = asegurar(registro + '.hea').decode('ascii')
+    lineas = texto.splitlines()
+    cabecera, canal = lineas[0].split(), lineas[1].split()
+    if cabecera[1] != '1' or canal[1] != '16':
+        raise ValueError('Este lector requiere un canal WFDB 16.')
+    fs, n = float(cabecera[2]), int(cabecera[3])
+    if fs != 4000 or canal[2].lower() != '10000/mv':
+        raise ValueError('Muestreo o ganancia inesperados.')
+    contenido = asegurar(registro + '.dat')
+    cuentas = np.frombuffer(contenido, dtype='<i2')
+    if len(cuentas) != n or np.any(cuentas == -32768):
+        raise ValueError('Longitud incorrecta o muestras faltantes.')
+    cero = int(canal[4])
+    x = (cuentas.astype(float) - cero) / 10000 * 1000
+    t = np.arange(n) / fs
+    meta = dict(registro=registro, etiqueta=ETIQUETAS[registro],
+                fs_hz=fs, n=n, duracion_s=n/fs, unidades='uV',
+                modalidad='EMG intramuscular', musculo='Tibial anterior',
+                doi=DOI, licencia='ODC-By 1.0',
+                sha256_dat=HASHES[registro + '.dat'],
+                sha256_hea=HASHES[registro + '.hea'])
+    return t, x, meta
+
+
+if __name__ == '__main__':
+    for registro in ETIQUETAS:
+        _, _, meta = cargar(registro)
+        print(registro, meta['n'], meta['duracion_s'])
+```
+
+Ejecutar `datos.py` debe confirmar las longitudes y duraciones de la tabla del dataset. **No** interprete las dos columnas de un archivo de texto como dos músculos: una puede ser tiempo y la otra señal. Esta versión evita esa ambigüedad leyendo la cabecera y el binario.
+
+# Implementar los indicadores
+
+## Validar y filtrar
+
+Cree `motor.py` con este bloque. Se rechazan entradas no finitas y canales completamente planos. Esto no detecta todos los artefactos: es una primera condición de entrada.
+
+```python
+"""Descriptores exploratorios; no clasificador de enfermedad."""
+import numpy as np
+import pandas as pd
+from scipy import signal
+from scipy.integrate import cumulative_trapezoid
+
+
+def preparar(x, fs):
+    x = np.asarray(x, dtype=float)
+    if x.ndim != 1 or not np.isfinite(x).all():
+        raise ValueError('Se requiere un vector finito.')
+    if fs != 4000 or len(x) < 2*fs:
+        raise ValueError('Se requieren 4000 Hz y al menos 2 s.')
+    if np.ptp(x) < 1e-9:
+        raise ValueError('Canal plano: no interpretable.')
+    sos = signal.butter(4, [20, 1000], fs=fs,
+                        btype='bandpass', output='sos')
+    return signal.sosfiltfilt(sos, x)
+```
+
+## Una función para una ventana
+
+Añada el bloque siguiente. La misma función alimenta tarjetas, tendencias y verificaciones; así se evita calcular una fórmula diferente para cada componente del tablero.
+
+```python
+def medir(y, fs):
+    y = np.asarray(y, dtype=float)
+    if y.ndim != 1 or len(y) < int(0.5*fs):
+        raise ValueError('Ventana demasiado corta.')
+    if not np.isfinite(y).all():
+        raise ValueError('Ventana con valores no finitos.')
+    z = y - np.mean(y)
+    rms = float(np.sqrt(np.mean(z*z)))
+    f, p = signal.welch(z, fs=fs, window='hann',
+                        nperseg=int(0.25*fs),
+                        noverlap=int(0.125*fs),
+                        detrend='constant', scaling='density')
+    m = (f >= 20) & (f <= 1000)
+    fb, pb = f[m], p[m]
+    acumulada = cumulative_trapezoid(pb, fb, initial=0)
+    if acumulada[-1] <= 1e-12:
+        mediana = np.nan
+    else:
+        mediana = float(np.interp(acumulada[-1]/2, acumulada, fb))
+    metricas = dict(rms_uv=rms, pico_pico_uv=float(np.ptp(z)),
+                   cresta=float(np.max(np.abs(z))/rms)
+                   if rms > 1e-9 else np.nan,
+                   fmed_20_1000_hz=mediana)
+    return metricas, f, p
+```
+
+Un `NaN` de frecuencia mediana indica potencia insuficiente para definirla según la tolerancia numérica, no ausencia de enfermedad. No reemplace automáticamente ese valor por cero.
+
+## Recorrer intervalos sin perder sus límites
+
+Complete el módulo con `ventanas`. Convertir a índices enteros evita discrepancias debidas a comparaciones flotantes en los límites. Toda fila conserva inicio, final y centro temporal.
+
+```python
+def ventanas(y, fs, inicio, fin, W):
+    # Índices enteros: intervalos [i, j), sin ambigüedad de redondeo.
+    N = round(W*fs)
+    paso = N//2
+    i0, i1 = round(inicio*fs), round(fin*fs)
+    if not (0 <= i0 < i1 <= len(y)) or i1-i0 < N:
+        raise ValueError('Intervalo insuficiente o fuera del registro.')
+    rows = []
+    for i in range(i0, i1-N+1, paso):
+        j = i+N
+        valores, _, _ = medir(y[i:j], fs)
+        rows.append(dict(i=i, j=j, inicio_s=i/fs, fin_s=j/fs,
+                         centro_s=(i+j)/(2*fs), **valores))
+    return pd.DataFrame(rows)
+```
+
+**Actividad breve.** Use el mismo intervalo con ventanas de 0.5 y 2 s. Explique por qué cambian la cantidad de puntos y su estabilidad. No seleccione la ventana solo porque produce una curva visualmente más suave.
+
+# Construir el dashboard
+
+## Diseñar para la lectura clínica
+
+La interfaz muestra primero fuente y etiqueta, después la señal y finalmente los indicadores. El médico debe poder inspeccionar la evidencia que produjo cada cifra. Los colores distinguen original y filtrada, sin codificar severidad.
+
+\Needspace{12\baselineskip}
+
+| Componente | Pregunta que resuelve |
+|:--|:--|
+| Selector de registro | ¿Qué ejemplo clínico estoy observando? |
+| Intervalo y ventana | ¿Qué muestras entran en el cálculo? |
+| Original y filtrada | ¿El procesamiento conserva lo que quiero estudiar? |
+| Tarjetas | ¿Qué describen amplitud, extremos y espectro? |
+| Detalle y PSD | ¿Qué evidencia explica las tarjetas? |
+| Tendencia | ¿Cómo varía el descriptor dentro del registro? |
+| Exportación | ¿Puedo repetir exactamente este análisis? |
+
+El prototipo muestra todas las muestras del intervalo: evita que una reducción visual arbitraria oculte extremos. Para archivos muy grandes sería necesario otro diseño de visualización; reducir puntos en pantalla nunca debe alterar los datos usados en las métricas.
+
+## Cargar y mostrar el contexto
+
+Cree `app.py` con el siguiente bloque. La selección inicial es el registro de neuropatía. La etiqueta se toma de metadatos; no se presenta como salida de un clasificador.
+
+```python
+import json
+import plotly.graph_objects as go
+import streamlit as st
+from datos import cargar, ETIQUETAS
+from motor import preparar, medir, ventanas
+
+st.set_page_config(page_title='EMGDB | Dashboard', layout='wide')
+st.title('Dashboard de EMG y radiculopatía L5')
+st.caption('Dataset abierto EMGDB 1.0.0 | Análisis retrospectivo docente')
+st.info('Tres personas distintas. No son visitas de un mismo paciente.')
+registro = st.sidebar.selectbox('Registro', list(ETIQUETAS),
+                               format_func=ETIQUETAS.get)
+try:
+    t, x, meta = cargar(registro)
+    fs = meta['fs_hz']
+    y = preparar(x, fs)
+except Exception as exc:
+    st.error(f'No se pudo cargar o procesar: {exc}')
+    st.stop()
+st.caption(f"{registro} | {meta['modalidad']} | "
+           f"{meta['musculo']} | {fs:.0f} Hz | {len(x)/fs:.4f} s")
+st.markdown('[Fuente y licencia](https://physionet.org/content/emgdb/1.0.0/)')
+```
+
+## Elegir intervalo y revisar calidad
+
+Añada este bloque. La confirmación visual se reinicia al cambiar el registro o los límites. La anotación describe el segmento y las dudas de calidad. Es responsabilidad del usuario no atribuir significado fisiológico a artefactos; el programa no incluye un detector validado de ellos.
+
+```python
+# Descarte de 0.25 s en cada extremo del registro ya filtrado.
+a, b = st.sidebar.slider('Intervalo de análisis (s)',
+    0.25, float(len(x)/fs-0.25), (0.25, 5.25), step=0.25,
+    key='intervalo_' + registro)
+W = st.sidebar.selectbox('Duración de ventana (s)', [0.5, 1.0, 2.0], index=1)
+st.sidebar.caption('Paso = W/2. Banda 20–1000 Hz. Welch 0.25 s.')
+nota = st.sidebar.text_area('Anotación de calidad',
+                           key='nota_' + registro)
+revisado = st.sidebar.checkbox('Inspeccioné el intervalo seleccionado',
+                              key=f'revision_{registro}_{a}_{b}')
+if b-a < W:
+    st.error('Seleccione un intervalo al menos igual a la ventana.')
+    st.stop()
+
+fig = go.Figure()
+i0, i1 = round(a*fs), round(b*fs)
+fig.add_trace(go.Scattergl(x=t[i0:i1], y=x[i0:i1], name='Original'))
+fig.add_trace(go.Scattergl(x=t[i0:i1], y=y[i0:i1], name='Filtrada'))
+fig.update_layout(title='Control de calidad: todas las muestras del intervalo',
+                  xaxis_title='Tiempo (s)', yaxis_title='EMG (µV)')
+st.plotly_chart(fig, width='stretch')
+st.caption('Use zoom para inspeccionar eventos. La revisión visual '
+           'no sustituye anotaciones expertas ni detecta todo artefacto.')
+if not revisado:
+    st.warning('Revise original y filtrada antes de habilitar indicadores.')
+    st.stop()
+```
+
+## Vincular tarjetas y ventana activa
+
+El índice seleccionado determina las cuatro tarjetas, el detalle temporal y la PSD. Cada cifra corresponde al mismo intervalo. El pico a pico se rotula explícitamente como medida de ventana.
+
+```python
+res = ventanas(y, fs, a, b, W)
+seleccion = st.select_slider('Ventana activa', options=list(res.index),
+    format_func=lambda k: f"[{res.loc[k,'inicio_s']:.3f}, "
+                         f"{res.loc[k,'fin_s']:.3f}) s")
+r = res.loc[seleccion]
+i, j = int(r.i), int(r.j)
+valores, f, p = medir(y[i:j], fs)
+for col, clave, titulo in zip(st.columns(4), valores,
+    ['RMS (µV)', 'Pico a pico de ventana (µV)',
+     'Factor de cresta', 'Frecuencia mediana 20–1000 Hz']):
+    col.metric(titulo, f'{valores[clave]:.2f}')
+st.caption('Descriptores de la señal; no puntajes de gravedad ni medidas '
+           'automáticas de una unidad motora aislada.')
+
+fig = go.Figure(go.Scatter(x=t[i:j], y=y[i:j], name='Ventana activa'))
+fig.update_layout(title='Detalle temporal sin reducción de muestras',
+                  xaxis_title='Tiempo (s)', yaxis_title='EMG filtrada (µV)')
+st.plotly_chart(fig, width='stretch')
+fig = go.Figure(go.Scatter(x=f, y=p))
+fig.update_layout(title='PSD de la EMG filtrada y centrada',
+                  xaxis_title='Frecuencia (Hz)', yaxis_title='PSD (µV²/Hz)',
+                  xaxis_range=[0, 1200])
+st.plotly_chart(fig, width='stretch')
+```
+
+## Tendencias y exportación
+
+Complete `app.py`. El CSV guarda los indicadores y el identificador del registro. El JSON conserva la configuración y la anotación. Ambos deben mantenerse juntos.
+
+```python
+variable = st.selectbox('Indicador de tendencia', list(valores))
+fig = go.Figure(go.Scatter(x=res.centro_s, y=res[variable],
+                          mode='lines+markers'))
+fig.update_layout(title='Evolución dentro del registro',
+                  xaxis_title='Centro de ventana (s)', yaxis_title=variable)
+st.plotly_chart(fig, width='stretch')
+st.caption('Solapamiento 50 %. Los puntos no son réplicas independientes.')
+
+meta.update(banda_hz=[20,1000], filtro='Butterworth SOS bidireccional',
+            orden_diseno=4, borde_s=0.25, ventana_s=W, paso_s=W/2,
+            welch_s=0.25, solapamiento_welch_s=0.125,
+            intervalo_s=[i0/fs,i1/fs], nota_calidad=nota,
+            inspeccion_visual=True, version_pipeline='2.0')
+res['registro'] = registro
+res['sha256_dat'] = meta['sha256_dat']
+st.download_button('Indicadores CSV', res.to_csv(index=False).encode(),
+                   registro + '_indicadores.csv', 'text/csv')
+st.download_button('Parámetros JSON',
+                   json.dumps(meta, ensure_ascii=False, indent=2),
+                   registro + '_parametros.json', 'application/json')
+```
+
+Streamlit vuelve a ejecutar el script cuando cambia un control. Para estos registros pequeños, releer y verificar es aceptable. Una futura caché debe usar el contenido o hash junto con los parámetros; no debe reutilizar resultados de otro archivo [8].
+
+# Comprobar el resultado con datos reales
+
+## Verificación automática
+
+Guarde este bloque como `verificar.py`. Todas las comprobaciones parten de los archivos clínicos abiertos. La transformación de amplitud es una prueba algebraica sobre el mismo segmento, no una nueva observación ni un paciente artificial.
+
+```python
+import numpy as np
+from datos import cargar, ETIQUETAS
+from motor import preparar, medir, ventanas
+
+esperadas = dict(emg_healthy=50860, emg_myopathy=110337,
+                 emg_neuropathy=147858)
+for registro in ETIQUETAS:
+    t, x, meta = cargar(registro)  # Incluye SHA-256 de DAT y HEA.
+    fs = meta['fs_hz']
+    assert len(x) == esperadas[registro]
+    assert np.allclose(np.diff(t), 1/fs)
+    y = preparar(x, fs)
+    tabla = ventanas(y, fs, 1, 3, 1)
+    assert len(tabla) == 3
+    m, _, _ = medir(y[4000:8000], fs)
+    doble, _, _ = medir(2*y[4000:8000], fs)
+    assert np.isclose(doble['rms_uv'], 2*m['rms_uv'])
+    assert np.isclose(doble['pico_pico_uv'], 2*m['pico_pico_uv'])
+    assert np.isclose(doble['cresta'], m['cresta'])
+    assert np.isclose(doble['fmed_20_1000_hz'], m['fmed_20_1000_hz'])
+    print(registro, 'OK', meta['n'], meta['duracion_s'])
+# Calibración independiente de la primera muestra del registro L5.
+_, x, _ = cargar('emg_neuropathy')
+assert np.isclose(x[0], 90.0)
+x[10] = np.nan
+try:
+    preparar(x, 4000)
+except ValueError:
+    pass
+else:
+    raise AssertionError('Se aceptó un valor no finito.')
+print('Verificaciones superadas con los tres registros reales.')
+```
+
+La prueba de 90 $\mu V$ corresponde a la primera cuenta calibrada del archivo de neuropatía. Sirve para detectar errores de unidades. El éxito del script demuestra las propiedades verificadas, no validez clínica ni ausencia de todos los errores posibles.
+
+## Recorrido del usuario
+
+1. Ejecute la descarga o utilice los originales del paquete. Confirme que los hashes pasan.
+2. Abra el dashboard y conserve **Neuropatía por radiculopatía L5** como registro activo.
+3. Use el intervalo inicial. Acerque el gráfico y compare original y filtrada. Anote una observación de calidad.
+4. Habilite indicadores. Desplace la ventana activa y confirme que detalle, PSD y tarjetas corresponden a sus límites.
+5. Cambie la tendencia entre RMS, pico a pico, cresta y frecuencia mediana. Explique por qué no representan lo mismo.
+6. Repita con W de 0.5 y 2 s. Mantenga el intervalo para aislar el efecto de la ventana.
+7. Descargue CSV y JSON. Recalcule una fila usando `medir` y sus índices `i`, `j`.
+8. Abra los otros registros para contrastar ejemplos. Identifique al menos dos razones por las que una diferencia entre ellos no demuestra progresión clínica.
+
+## Pruebas negativas y criterios de aceptación
+
+| Perturbación | Respuesta exigida |
+|:--|:--|
+| Binario cambiado o incompleto | Bloqueo por SHA-256 |
+| Cabecera o ganancia inesperada | Error antes de interpretar unidades |
+| Dato no finito en procesamiento | Rechazo |
+| Canal completamente plano | Sin indicadores interpretables |
+| Intervalo más corto que W | Mensaje para corregir selección |
+| Multiplicar amplitud por dos | RMS y pico a pico duplicados; cresta y mediana invariantes |
+| Cambio de registro | Etiqueta, señal y contexto actualizados; revisión pendiente |
+
+No se considera fallo que los tres registros no se ordenen por una supuesta escala de gravedad. No existe esa escala en el diseño. Ajustar filtros o ventanas hasta obtener un orden deseado sería un sesgo de análisis.
+
+# Interpretación, extensión y evaluación
+
+## De la tendencia a la afirmación
+
+Una conclusión defendible describe **archivo, intervalo, parámetros y resultado calculado**. Por ejemplo: “El RMS varía entre ventanas del registro seleccionado; el patrón debe revisarse junto con la señal y la anotación de calidad”. Añada cifras solo después de ejecutar el análisis.
+
+No escriba “la neuropatía empeora” porque el RMS aumente, ni “hay menos unidades motoras” porque crezca el factor de cresta. Las métricas no identifican de forma única el mecanismo fisiológico. El esfuerzo, la geometría del registro, la interferencia y el procesamiento pueden producir cambios similares.
+
+La comparación de tres personas sirve para explorar ejemplos. Dividir cada registro en muchas ventanas no aumenta el número de pacientes. Entrenar y evaluar un clasificador repartiendo al azar ventanas de estas mismas personas induciría dependencia y no justificaría generalización clínica.
+
+## Qué falta para monitoreo longitudinal
+
+El requerimiento médico de comparar visitas necesita datos nuevos con identificadores seudónimos estables, fecha o número de visita, músculo, lado, modalidad, calibración, tarea, nivel de activación y evaluación clínica de referencia. Este dataset no proporciona esa estructura longitudinal.
+
+Como extensión de diseño, proponga una tabla `persona`, `visita`, `registro`, `musculo`, `lado`, `tarea`, `calibracion`, `configuracion`, `evaluacion_clinica`. Programe una verificación de compatibilidad antes de comparar. No rellene visitas inventadas con ventanas del mismo archivo.
+
+El tutorial analiza registros ya obtenidos. La adquisición intramuscular corresponde al personal clínico especializado y no forma parte de la práctica de programación.
+
+## Preguntas para la exposición
+
+1. ¿Qué cambia al pasar de EMG superficial a intramuscular?
+2. ¿Cómo se convierte una cuenta digital en microvoltios y dónde se verifica la ganancia?
+3. ¿Cómo conecta la radiculopatía con cambios potenciales de unidades motoras, sin convertir un descriptor en diagnóstico?
+4. ¿Por qué el pico a pico de ventana no es la amplitud de un potencial aislado?
+5. ¿Qué diferencia hay entre ventana analítica, paso y segmento Welch?
+6. ¿Qué información se pierde con el filtro de 1000 Hz? ¿Por qué se conserva el original?
+7. ¿Por qué una frecuencia mediana diferente no demuestra fatiga o gravedad?
+8. ¿Por qué las ventanas de tres personas no permiten validar seguimiento longitudinal?
+
+## Rúbrica sugerida
+
+Seis criterios, con nivel de 0 a 3: **3**, correcto y justificado; **2**, correcto pero parcialmente justificado; **1**, incompleto o con errores relevantes; **0**, ausente o incorrecto. El puntaje es $\sum_i w_iL_i/3$ sobre 100.
+
+\Needspace{16\baselineskip}
+
+| Criterio | Peso | Evidencia exigida para nivel 3 |
+|:--|--:|:--|
+| Fisiología e interpretación | 20 | Conecta lesión, señal y descriptor, explicando los límites |
+| Dataset y trazabilidad | 15 | Licencia, versión, hashes y unidades verificadas |
+| Procesamiento | 20 | Justifica banda, filtrado y escalas temporales |
+| Indicadores y verificación | 20 | Fórmulas coherentes y pruebas sobre datos reales |
+| Visualización | 15 | Selecciones consistentes y evidencia asociada a cada cifra |
+| Reproducibilidad y comunicación | 10 | Ejecución documentada, exportación y exposición clara |
+
+# Referencias y atribución
+
+[1] PhysioNet. *Examples of Electromyograms*, versión 1.0.0 (2009). Datos facilitados por Seward Rutkove. DOI: [10.13026/C24S3D](https://doi.org/10.13026/C24S3D). [Dataset](https://physionet.org/content/emgdb/1.0.0/) y [licencia ODC-By 1.0](https://physionet.org/content/emgdb/view-license/1.0.0/).
+
+[2] PhysioNet. [Cabecera del registro de neuropatía](https://physionet.org/files/emgdb/1.0.0/emg_neuropathy.hea). Fuente de muestreo, calibración y etiqueta clínica.
+
+[3] PhysioNet. [Cabecera del registro sin historia de enfermedad neuromuscular](https://physionet.org/files/emgdb/1.0.0/emg_healthy.hea).
+
+[4] PhysioNet. [Cabecera del registro de miopatía](https://physionet.org/files/emgdb/1.0.0/emg_myopathy.hea).
+
+[5] PhysioNet. [SHA256SUMS de EMGDB 1.0.0](https://physionet.org/files/emgdb/1.0.0/SHA256SUMS.txt). Base de las comprobaciones de integridad.
+
+[6] Nandedkar, S. D., Sanders, D. B. y Stålberg, E. V. (1988). *EMG of reinnervated motor units: a simulation study*. Electroencephalography and Clinical Neurophysiology, 70(2), 177–184. DOI: [10.1016/0013-4694(88)90117-4](https://doi.org/10.1016/0013-4694(88)90117-4). Referencia sobre relación entre organización de unidades y medición; no valida los indicadores de este prototipo.
+
+[7] SciPy. Documentación oficial de [Welch](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html) y [filtrado SOS bidireccional](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfiltfilt.html).
+
+[8] Streamlit. [Modelo de ejecución](https://docs.streamlit.io/develop/concepts/architecture) y [gráficos Plotly](https://docs.streamlit.io/develop/api-reference/charts/st.plotly_chart).
+
+[9] Quarto. [PDF Basics](https://quarto.org/docs/output-formats/pdf-basics.html).
+
+[10] Escuela Colombiana de Ingeniería Julio Garavito. *Señales Bioeléctricas y Visualización Interactiva*. Microcurrículo adjunto, sin vigencia diligenciada. Referencia curricular, no fuente de criterios diagnósticos.
+
+**Cambios y atribución del producto derivado.** Se conservaron los archivos de origen; el software convierte cuentas a microvoltios, filtra y calcula descriptores. Las bandas, ventanas, tolerancias y diseño de interfaz son decisiones docentes de esta guía. Los autores del dataset no avalan esta implementación. No se produjeron resultados longitudinales ni nuevos diagnósticos.
