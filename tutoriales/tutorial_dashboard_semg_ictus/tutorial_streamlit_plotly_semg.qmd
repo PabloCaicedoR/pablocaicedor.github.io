@@ -1,0 +1,501 @@
+---
+title: "Streamlit + Plotly para dashboards biomédicos"
+subtitle: "Caso: monitoreo neuromuscular post-ictus con sEMG"
+author: "Tutorial para Señales Bioeléctricas y Visualización Interactiva"
+date: "2026-09-16"
+lang: es
+bibliography: referencias.bib
+link-citations: true
+format:
+  beamer:
+    aspectratio: 169
+    theme: Madrid
+    colortheme: dolphin
+    fonttheme: professionalfonts
+    toc: false
+    slide-level: 2
+    pdf-engine: xelatex
+    include-in-header: beamer_header.tex
+---
+
+## Propósito del tutorial
+
+Construir un dashboard en **Streamlit + Plotly** para explorar señales de **sEMG** en un problema de monitoreo post-ictus.
+
+El resultado esperado no es una figura aislada, sino una aplicación modular, mantenible y verificable.
+
+
+a partir del caso clínico se implementan:
+
+- lectura parcial de datos desde PhysioNet/CVES;
+- preprocesamiento de sEMG;
+- indicadores temporales y espectrales;
+- visualizaciones interactivas con Plotly;
+- aplicación Streamlit organizada en varios scripts.
+
+## Solicitud clínica inicial
+
+::: {.block}
+### Solicitud del médico
+
+> Necesito observar si un paciente con antecedente de ictus muestra cambios en su patrón de activación muscular durante registros de sEMG. No busco un diagnóstico automático; necesito una herramienta para inspeccionar la señal, revisar calidad, cuantificar activación y comparar indicadores funcionales entre sesiones o condiciones.
+:::
+
+La respuesta de ingeniería debe convertir esa solicitud en variables, procesamiento y visualizaciones defendibles.
+
+## Problema biomédico
+
+El ictus puede alterar el control motor voluntario, la coordinación intermuscular y el patrón temporal de activación muscular.
+
+La sEMG permite observar actividad eléctrica muscular superficial, pero no mide directamente fuerza ni recuperación neurológica.
+
+Por tanto, el dashboard debe comunicar tres niveles:
+
+1. señal registrada;
+2. indicadores de ingeniería;
+3. interpretación clínica prudente.
+
+## Dataset base
+
+Usaremos **Cerebral Vasoregulation in Elderly with Stroke (CVES)**, alojado en PhysioNet [@physionet_cves].
+
+CVES es un estudio transversal que compara sujetos con ictus y controles. Incluye ECG, EMG, acelerometría y otros registros fisiológicos. PhysioNet informa registros de EMG de 24 horas muestreados a 1000 Hz en formato WFDB [@physionet_cves].
+
+::: {.block}
+### Restricción metodológica
+
+CVES permite enseñar carga, procesamiento y visualización de sEMG. No permite demostrar evolución longitudinal real si solo se usa una medición por sujeto. Para evolución clínica se requieren visitas repetidas con protocolo estandarizado.
+:::
+
+## Variables clínicas externas
+
+En el tablero se pueden mostrar variables clínicas, pero no deben confundirse con indicadores de sEMG.
+
+| Variable | Significado | Uso en el dashboard |
+|---|---|---|
+| NIHSS | Severidad del déficit neurológico | Contexto clínico |
+| mRS/MRS | Discapacidad funcional global | Contexto funcional |
+| Stroke Side | Lado/hemisferio reportado | Cuidado con lateralidad |
+| Symptoms | Descripción clínica | Interpretación cualitativa |
+
+## Indicadores de sEMG propuestos
+
+Indicadores mínimos del tutorial:
+
+| Indicador | Dominio | Interpretación |
+|---|---|---|
+| RMS local | Tiempo | Magnitud de activación |
+| Tiempo activo [%] | Tiempo | Proporción del segmento con actividad |
+| Episodios/min | Tiempo | Frecuencia de activaciones |
+| MDF | Frecuencia | Distribución espectral de potencia |
+| \(\Delta RMS_{rel}\) | Seguimiento | Cambio frente a visita basal |
+| \(D_{MDF}\) | Seguimiento | Distancia espectral frente a referencia |
+
+## De fisiología a ingeniería
+
+![](assets/pipeline_semg.pdf){width=0.92\linewidth}
+
+El punto crítico es no saltar directamente de "ictus" a "dashboard".
+
+Cada indicador debe tener una justificación fisiológica y una definición matemática.
+
+## Indicador 1: RMS activo
+
+La señal filtrada se denota:
+
+\[
+x_f[n]
+\]
+
+El RMS local con ventana de \(N_w\) muestras es:
+
+\[
+RMS[n] = \sqrt{\frac{1}{N_w}\sum_{i=n-N_w+1}^{n} x_f^2[i]}
+\]
+
+El RMS activo usa solo muestras donde:
+
+\[
+RMS[n] > T
+\]
+
+con \(T\) definido por un umbral robusto.
+
+## Indicador longitudinal: cambio relativo del RMS activo
+
+Para una visita basal \(0\) y una visita o condición \(k\):
+
+\[
+\Delta RMS_{rel,k} = 100\frac{RMS_{act,k}-RMS_{act,0}}{RMS_{act,0}}
+\]
+
+Interpretación prudente:
+
+- valores positivos pueden sugerir mayor activación registrada;
+- valores negativos pueden sugerir menor activación registrada;
+- no equivalen automáticamente a mayor o menor fuerza.
+
+## Indicador 2: MDF con Welch
+
+La frecuencia mediana divide en dos mitades el área bajo la PSD:
+
+\[
+\int_{f_L}^{MDF} P(f)df = \frac{1}{2}\int_{f_L}^{f_H} P(f)df
+\]
+
+La PSD se estima con Welch:
+
+\[
+\hat S_{xx}(f)=\frac{1}{M}\sum_{m=1}^{M}\left|FFT\{x_m[n]w[n]\}\right|^2
+\]
+
+Welch no reemplaza a Fourier; lo usa repetidamente sobre segmentos con ventana y promedia los periodogramas.
+
+## Indicador longitudinal: distancia relativa de MDF
+
+Cuando hay músculos homólogos correctamente identificados:
+
+\[
+D_{MDF,k}=100\frac{|MDF_{paretico,k}-MDF_{contra,k}|}{MDF_{contra,k}}
+\]
+
+Uso correcto:
+
+- observar convergencia/divergencia espectral;
+- comparar condiciones estandarizadas;
+- reportar incertidumbre y calidad de señal.
+
+No debe usarse si los canales EMG no tienen músculo y lateralidad verificados.
+
+## Herramientas del tutorial
+
+Streamlit permite construir aplicaciones de datos en Python. Para mostrar figuras Plotly, la API oficial usa `st.plotly_chart()` pasando un objeto `Figure` o `Data` [@streamlit_plotly_chart].
+
+Plotly ofrece una librería Python de visualización interactiva con múltiples tipos de gráficas [@plotly_python]. Para control fino se usará `plotly.graph_objects.Figure`, estructura documentada por Plotly [@plotly_graph_objects].
+
+## ¿Por qué dashboard multi-script?
+
+Un archivo único funciona para demos pequeñas, pero es débil para docencia avanzada.
+
+Problemas típicos del archivo único:
+
+- mezcla fisiología, carga de datos, filtros, métricas y visualización;
+- dificulta pruebas unitarias;
+- favorece errores silenciosos;
+- hace más difícil reutilizar funciones en laboratorios posteriores.
+
+## Arquitectura propuesta
+
+![](assets/arquitectura_dashboard.pdf){width=0.96\linewidth}
+
+La regla es simple:
+
+> La interfaz no debe contener la lógica biomédica crítica.
+
+El cálculo de RMS, MDF, umbrales y PSD debe vivir en módulos separados.
+
+## Estructura del proyecto
+
+```text
+semg_stroke_dashboard/
+|-- app.py
+|-- pages/
+|   |-- 01_Inspeccion_sEMG.py
+|   |-- 02_Indicadores.py
+|   `-- 03_Seguimiento.py
+|-- src/semg_dashboard/
+|   |-- config.py
+|   |-- data.py
+|   |-- processing.py
+|   |-- metrics.py
+|   |-- figures.py
+|   `-- ui.py
+|-- pyproject.toml
+`-- README.md
+```
+
+## Instalación reproducible
+
+Con `uv`:
+
+```bash
+uv sync
+uv run streamlit run app.py
+```
+
+Con `pip`:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+streamlit run app.py
+```
+
+No descargue el ZIP completo de CVES: supera 170 GB. Cargue segmentos usando WFDB y `pn_dir`.
+
+## `config.py`: constantes explícitas
+
+```python
+PN_DIR = "cves/1.0.0/data/24h-electromyography"
+SUBJECTS_URL = "https://physionet.org/files/cves/1.0.0/subjects.csv"
+
+RECORDS = {
+    "S0205 - ictus - NIHSS 10 / mRS 3": "s0205-05080904",
+    "S0185 - ictus - NIHSS 0 / mRS 0": "s0185-05063014",
+    "S0030 - control": "s0030-04051907",
+}
+```
+
+Una constante clínica o técnica no debe quedar enterrada dentro de una función de interfaz.
+
+## `data.py`: carga parcial desde PhysioNet
+
+```python
+@st.cache_data(show_spinner=False)
+def load_emg_segment(record_name: str, start_s: int, duration_s: int):
+    header = wfdb.rdheader(record_name, pn_dir=PN_DIR)
+    fs = float(header.fs)
+    emg_idx = [i for i, name in enumerate(header.sig_name)
+               if "emg" in name.lower()]
+
+    sampfrom = int(start_s * fs)
+    sampto = min(int((start_s + duration_s) * fs), int(header.sig_len))
+
+    rec = wfdb.rdrecord(record_name, pn_dir=PN_DIR,
+                        sampfrom=sampfrom, sampto=sampto,
+                        channels=emg_idx)
+    return rec.p_signal, float(rec.fs), rec.sig_name
+```
+
+`st.cache_data()` evita repetir cargas costosas mientras cambian solo controles de visualización [@streamlit_cache_data].
+
+## `processing.py`: señal antes que gráfica
+
+```python
+def bandpass_semg(x: np.ndarray, fs: float,
+                  low: float = 20.0,
+                  high: float = 450.0) -> np.ndarray:
+    x = interpolate_nan(x)
+    sos = signal.butter(4, [low, high],
+                        btype="bandpass", fs=fs,
+                        output="sos")
+    return signal.sosfiltfilt(sos, x)
+```
+
+No se filtra para "que se vea bonito". Se filtra para aislar el contenido fisiológicamente plausible de la sEMG superficial.
+
+## `metrics.py`: métricas trazables
+
+```python
+def median_frequency(x: np.ndarray, fs: float,
+                     band: tuple[float, float] = (20.0, 450.0)) -> float:
+    nperseg = min(len(x), max(256, int(4 * fs)))
+    f, pxx = signal.welch(x, fs=fs, nperseg=nperseg)
+    mask = (f >= band[0]) & (f <= band[1])
+    fb, pb = f[mask], pxx[mask]
+    area = cumulative_trapezoid(pb, fb, initial=0.0)
+    return float(fb[np.searchsorted(area, 0.5 * area[-1])])
+```
+
+El estudiante debe poder explicar por qué MDF depende de PSD y por qué PSD se estima mediante Welch.
+
+## `figures.py`: Plotly sin lógica clínica
+
+```python
+def raw_filtered_figure(t, raw, filtered, channel: str) -> go.Figure:
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=t, y=raw, name="Cruda"))
+    fig.add_trace(go.Scatter(x=t, y=filtered, name="Filtrada"))
+    fig.update_layout(title=f"{channel}: cruda vs filtrada",
+                      xaxis_title="Tiempo [s]",
+                      yaxis_title="Amplitud [uV]")
+    return fig
+```
+
+Plotly genera la figura; Streamlit la inserta en la aplicación.
+
+## `app.py`: entrada mínima
+
+```python
+import streamlit as st
+from semg_dashboard.ui import render_home
+
+st.set_page_config(
+    page_title="sEMG post-ictus",
+    layout="wide"
+)
+
+render_home()
+```
+
+La entrada principal no debe contener filtros, métricas ni lectura de datos.
+
+## Página 1: inspección de señal
+
+Objetivo docente:
+
+- revisar el segmento cargado;
+- observar cruda vs filtrada;
+- identificar saturación, faltantes, artefactos y ruido de línea;
+- decidir si se activa notch.
+
+Visualizaciones mínimas:
+
+1. señal cruda y filtrada;
+2. PSD por Welch;
+3. resumen de calidad.
+
+## Página 2: indicadores
+
+Objetivo docente:
+
+- calcular RMS local;
+- definir umbral robusto de actividad;
+- estimar tiempo activo y episodios/min;
+- calcular MDF.
+
+Visualizaciones mínimas:
+
+1. RMS + umbral;
+2. tabla por canal;
+3. barras comparativas de RMS activo y MDF.
+
+## Página 3: seguimiento
+
+Objetivo docente:
+
+- construir indicadores longitudinales;
+- distinguir dataset transversal de seguimiento real;
+- simular visitas solo con fines didácticos;
+- definir condiciones necesarias para interpretación clínica.
+
+Visualizaciones mínimas:
+
+1. \(\Delta RMS_{rel}\) por visita;
+2. \(D_{MDF}\) por visita;
+3. semáforo metodológico de comparabilidad.
+
+## Controles Streamlit mínimos
+
+```python
+record_label = st.sidebar.selectbox("Registro", list(RECORDS))
+start_s = st.sidebar.number_input("Inicio [s]", min_value=0, value=0)
+duration_s = st.sidebar.slider("Duración [s]", 30, 300, 120, 30)
+apply_notch = st.sidebar.checkbox("Aplicar notch 60 Hz", value=False)
+```
+
+Los controles deben modificar la pregunta de exploración, no ocultar decisiones metodológicas.
+
+## Inserción de figuras Plotly
+
+```python
+fig = raw_filtered_figure(t, raw, filtered, selected_channel)
+st.plotly_chart(fig, width="stretch", theme="streamlit")
+```
+
+La documentación actual de Streamlit indica que `width="stretch"` reemplaza el uso heredado de `use_container_width=True` [@streamlit_plotly_chart].
+
+## Selección interactiva
+
+Streamlit puede hacer que un gráfico Plotly opere como entrada usando `on_select="rerun"` [@streamlit_plotly_chart].
+
+```python
+event = st.plotly_chart(fig, key="psd", on_select="rerun")
+indices = event.selection.point_indices
+```
+
+Uso docente posible: seleccionar zonas de alta potencia o revisar canales anómalos.
+
+No conviene usar selección interactiva antes de que el estudiante domine la métrica base.
+
+## Buenas decisiones de visualización
+
+Para sEMG post-ictus:
+
+| Pregunta | Visualización |
+|---|---|
+| ¿La señal tiene artefactos? | cruda + filtrada |
+| ¿Hay ruido de línea? | PSD/Welch |
+| ¿Cuándo hay activación? | RMS + umbral |
+| ¿Cuál canal tiene más actividad? | barras de RMS activo |
+| ¿Cambió la distribución espectral? | MDF y distancia relativa |
+
+## Malas decisiones frecuentes
+
+- Graficar solo la envolvente y ocultar la señal cruda.
+- Usar `%MVC` sin medición MVC estandarizada.
+- Comparar amplitudes entre sujetos sin normalización defendible.
+- Calcular asimetría sin conocer músculo ni lateralidad del canal.
+- Activar notch de 60 Hz por costumbre y no por evidencia espectral.
+
+## Criterios mínimos de calidad de señal
+
+Antes de interpretar indicadores:
+
+1. porcentaje de datos faltantes;
+2. energía de baja frecuencia;
+3. energía alrededor de 60 Hz;
+4. rango de amplitud plausible;
+5. estabilidad del contacto electrodo-piel;
+6. coherencia con el protocolo de registro.
+
+## Mensaje clínico esperado
+
+El dashboard debe producir una salida interpretativa de este tipo:
+
+> En el segmento analizado, el canal `emg_0` presenta mayor RMS activo que `emg_1`, pero la lateralidad anatómica no está verificada. La MDF se encuentra dentro de la banda esperada para sEMG filtrada. El ruido de 60 Hz debe revisarse antes de interpretar diferencias entre canales.
+
+Esto es más sólido que entregar una conclusión clínica automática.
+
+## Actividad práctica
+
+Construya el dashboard multi-script y demuestre:
+
+1. carga parcial de un registro CVES;
+2. visualización cruda/filtrada;
+3. cálculo de RMS activo y MDF;
+4. tabla por canal;
+5. simulación didáctica de seguimiento;
+6. advertencias clínicas explícitas.
+
+## Entregables del estudiante
+
+- repositorio con estructura multi-script;
+- archivo `README.md` reproducible;
+- captura del dashboard en ejecución;
+- justificación fisiológica de indicadores;
+- explicación de parámetros de filtrado y ventanas;
+- discusión de límites clínicos.
+
+## Preguntas de verificación
+
+1. ¿Por qué Welch depende de Fourier?
+2. ¿Por qué RMS activo no equivale a fuerza muscular?
+3. ¿Cuándo es válido comparar MDF entre lados?
+4. ¿Qué condición experimental falta en CVES para inferir evolución real?
+5. ¿Qué parte del código contiene la lógica biomédica crítica?
+
+## Rúbrica breve
+
+| Criterio | Peso |
+|---|---:|
+| Trazabilidad fisiología-indicador | 20% |
+| Corrección del procesamiento sEMG | 25% |
+| Arquitectura multi-script | 20% |
+| Calidad de visualización Streamlit+Plotly | 20% |
+| Interpretación clínica prudente | 15% |
+
+## Cierre
+
+El objetivo no es construir un tablero visualmente cargado.
+
+El objetivo es construir una herramienta que conecte fisiología, procesamiento de señales, visualización interactiva e interpretación clínica responsable.
+
+Para este caso:
+
+\[
+\text{sEMG} \rightarrow \text{procesamiento} \rightarrow \text{indicadores} \rightarrow \text{dashboard} \rightarrow \text{discusión clínica limitada}
+\]
+
+## Referencias
