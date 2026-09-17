@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Señales Bioeléctricas y Visualización Interactiva">
+
+<title>Dashboard de EMG con datos abiertos – BioForja</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../recursos/imagenes/generales/bioforja_icon.svg" rel="icon" type="image/svg+xml">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c40e139f9c4114c612eb61de435499b9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No se han encontrado resultados",
+    "search-matching-documents-text": "documentos encontrados",
+    "search-copy-link-title": "Copiar el enlace en la búsqueda",
+    "search-hide-matches-text": "Ocultar resultados adicionales",
+    "search-more-match-text": "resultado adicional en este documento",
+    "search-more-matches-text": "resultados adicionales en este documento",
+    "search-clear-button-title": "Borrar",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancelar",
+    "search-submit-button-title": "Enviar",
+    "search-label": "Buscar"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../recursos/estilos/styles_site.css">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../.././recursos/imagenes/generales/bioforja_icon.svg" alt="" class="navbar-logo light-content">
+    <img src="../.././recursos/imagenes/generales/bioforja_icon.svg" alt="" class="navbar-logo dark-content">
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Buscar"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Navegación de palanca" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Principal</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">Acerca de mi</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div class="quarto-alternate-formats"><h2>Otros formatos</h2><ul><li><a href="tutorial-dashboard-emg.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Dashboard de EMG con datos abiertos</h1>
+<p class="subtitle lead">Radiculopatía L5 · De la fisiología a la ingeniería</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Autor/a</div>
+    <div class="quarto-title-meta-contents">
+             <p>Señales Bioeléctricas y Visualización Interactiva </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="solicitud-del-médico-y-resultado-esperado" class="level1">
+<h1>Solicitud del médico y resultado esperado</h1>
+<blockquote class="blockquote">
+<p><strong>Solicitud clínica ficticia para el equipo de ingeniería</strong><br>
+Atiendo personas con neuropatía asociada a radiculopatía L5. Necesito una herramienta para revisar registros EMG del tibial anterior: localizar segmentos, examinar su calidad y describir cómo cambian la amplitud y el contenido espectral durante la exploración. Quiero conservar la señal original junto a los indicadores y documentar exactamente qué se calculó. En una etapa posterior me interesaría comparar visitas, siempre que los registros fueran comparables. Para desarrollar el prototipo, utilicen datos clínicos abiertos y no inventen pacientes, mediciones ni cambios de tratamiento.</p>
+</blockquote>
+<p><strong>Producto.</strong> Construirá un dashboard local en Python y Streamlit sobre el dataset libre <strong>Examples of Electromyograms, EMGDB 1.0.0, de PhysioNet</strong>. El caso principal será <code>emg_neuropathy</code>; los otros dos registros se utilizarán como ejemplos de contraste. La aplicación descarga o lee los archivos originales y verifica su integridad. No contiene un modo de pacientes simulados.</p>
+<p>El PDF es una guía estática. Los controles interactivos funcionan en <code>app.py</code>. El archivo Quarto incluye el código completo de los módulos, las explicaciones, las fórmulas, las instrucciones de ejecución y la evaluación.</p>
+<section id="alcance-real-del-monitoreo" class="level2">
+<h2 class="anchored" data-anchor-id="alcance-real-del-monitoreo">Alcance real del monitoreo</h2>
+<p>Se implementa <strong>exploración temporal dentro de un registro</strong>. El dataset contiene tres ejemplos de personas diferentes, no una serie longitudinal. Por tanto, permite aprender a construir y verificar el sistema, pero no demostrar mejoría, empeoramiento, respuesta terapéutica ni capacidad diagnóstica poblacional.</p>
+<p>Una etiqueta clínica suministrada por el repositorio es información de contexto; no es una predicción producida por nuestro algoritmo. Los descriptores de señal tampoco son equivalentes a la gravedad de la lesión. No se usa un semáforo de “normal/patológico” ni un puntaje compuesto de enfermedad.</p>
+</section>
+<section id="articulación-con-la-asignatura" class="level2">
+<h2 class="anchored" data-anchor-id="articulación-con-la-asignatura">Articulación con la asignatura</h2>
+<p>La actividad desarrolla la secuencia del microcurrículo adjunto: fisiología muscular, adquisición, análisis temporal y espectral, visualización e integración. Aporta a RA1–RA5 y al módulo de EMG. Aquí se analiza <strong>EMG intramuscular</strong>, por lo que no se traslada sin revisión el procesamiento de EMG superficial.</p>
+<p><strong>Prerrequisitos:</strong> arreglos NumPy, archivos, frecuencia de muestreo, filtros y Fourier. <strong>Dedicación orientativa:</strong> 8 a 10 horas. Se destinan 2 h al problema y los datos, 3 h al procesamiento, 2 h a la interfaz y 1 a 3 h a la verificación y exposición.</p>
+<p><strong>Evidencias:</strong> justificar cada indicador desde la fisiología, comprobar las unidades desde la cabecera, reproducir cálculos sobre datos reales y explicar los límites clínicos del tablero.</p>
+</section>
+</section>
+<section id="dataset-libre-y-trazabilidad-de-la-fuente" class="level1">
+<h1>Dataset libre y trazabilidad de la fuente</h1>
+<section id="acceso-licencia-y-atribución" class="level2">
+<h2 class="anchored" data-anchor-id="acceso-licencia-y-atribución">Acceso, licencia y atribución</h2>
+<p>El dataset está disponible sin cuenta ni aprobación individual en <a href="https://physionet.org/content/emgdb/1.0.0/">PhysioNet EMGDB 1.0.0</a>, DOI <a href="https://doi.org/10.13026/C24S3D">10.13026/C24S3D</a>. Su licencia es <strong>Open Data Commons Attribution License v1.0 (ODC-By 1.0)</strong>. Mantenga la atribución, el vínculo a la licencia y la identificación de las transformaciones al redistribuir un resultado derivado [1].</p>
+<p>Los ejemplos fueron facilitados por Seward Rutkove, Beth Israel Deaconess Medical Center/Harvard Medical School. Son registros de un canal del tibial anterior. Las cabeceras documentan 4000 muestras/s y una calibración de 10000 cuentas/mV [2–4].</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Registro original</th>
+<th style="text-align: left;">Etiqueta publicada</th>
+<th style="text-align: right;">Muestras</th>
+<th style="text-align: right;">Duración calculada</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>emg_neuropathy</code></td>
+<td style="text-align: left;">Neuropatía por radiculopatía L5 derecha</td>
+<td style="text-align: right;">147858</td>
+<td style="text-align: right;">36.9645 s</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>emg_healthy</code></td>
+<td style="text-align: left;">Sin historia de enfermedad neuromuscular</td>
+<td style="text-align: right;">50860</td>
+<td style="text-align: right;">12.7150 s</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>emg_myopathy</code></td>
+<td style="text-align: left;">Miopatía por polimiositis</td>
+<td style="text-align: right;">110337</td>
+<td style="text-align: right;">27.58425 s</td>
+</tr>
+</tbody>
+</table>
+<p>Las duraciones son <span class="math inline">\(N/f_s\)</span>, calculadas a partir de las cabeceras y confirmadas al leer los binarios. No son tres fases de una enfermedad ni tres condiciones de una misma persona.</p>
+</section>
+<section id="qué-información-está-disponible-y-cuál-falta" class="level2">
+<h2 class="anchored" data-anchor-id="qué-información-está-disponible-y-cuál-falta">Qué información está disponible y cuál falta</h2>
+<p>Los archivos contienen EMG registrada durante una tarea muscular y su transición a relajación, según la descripción de origen. No incorporan un canal de fuerza ni anotaciones temporales expertas que delimiten cada potencial motor. El usuario no debe asignar automáticamente a toda ventana una condición fisiológica solo por su amplitud.</p>
+<p>La ficha indica adquisición inicial a 50 kHz y reducción posterior a 4 kHz. No se recuperan las frecuencias que se perdieron. Con 4 kHz, Nyquist es 2 kHz, independientemente de la banda original del equipo. El filtro digital posterior no corrige aliasing previo [1].</p>
+<p>El proyecto emplea archivos <code>.dat</code> y <code>.hea</code>. Se detectó una inconsistencia de separación numérica en la copia <code>.txt</code> del registro de neuropatía; no se corrige inventando números ni eliminando filas. Los binarios descargados se verifican contra los SHA-256 publicados [5].</p>
+</section>
+<section id="archivos-que-utilizará" class="level2">
+<h2 class="anchored" data-anchor-id="archivos-que-utilizará">Archivos que utilizará</h2>
+<p>Cada registro necesita un archivo binario y su cabecera. El paquete incluye los seis archivos, el listado oficial de hashes y una nota de atribución. Si trabaja solo con el QMD, el módulo <code>datos.py</code> los descarga desde PhysioNet al ejecutarse.</p>
+<p>El lector se limita deliberadamente a <strong>estos archivos de un canal, formato WFDB 16</strong>. No es un lector general de todos los formatos WFDB. Rechaza cambios de formato, ganancia, frecuencia, longitud o integridad.</p>
+</section>
+</section>
+<section id="de-la-lesión-al-indicador-de-ingeniería" class="level1">
+<h1>De la lesión al indicador de ingeniería</h1>
+<section id="qué-mide-el-electrodo" class="level2">
+<h2 class="anchored" data-anchor-id="qué-mide-el-electrodo">Qué mide el electrodo</h2>
+<p>Una unidad motora agrupa una motoneurona y las fibras musculares que inerva. La EMG registra contribuciones de potenciales de acción cercanos al electrodo. Un modelo conceptual es</p>
+<p><span class="math display">\[x(t)=\sum_{k=1}^{K}\sum_j a_k h_k(t-t_{kj})+\eta(t),\]</span></p>
+<p>donde <span class="math inline">\(h_k\)</span> es la forma del potencial observado de la unidad <span class="math inline">\(k\)</span>, <span class="math inline">\(t_{kj}\)</span> sus instantes de descarga, <span class="math inline">\(a_k\)</span> recoge la geometría y conducción, y <span class="math inline">\(\eta\)</span> representa ruido y otras contribuciones. El electrodo intramuscular observa un volumen diferente del de la EMG superficial. Sus amplitudes y morfologías no se intercambian directamente.</p>
+<p>En una lesión de raíz que afecte axones motores puede alterarse el conjunto de unidades activables. En procesos crónicos puede existir reinervación colateral y remodelación de unidades. Estos fenómenos pueden modificar la morfología y el patrón de interferencia, pero su evaluación exige contexto, esfuerzo y muestreo muscular adecuados. Un estudio de simulación de unidades reinervadas muestra precisamente que las propiedades observadas dependen de la organización de fibras y de la técnica de registro [6].</p>
+</section>
+<section id="separar-tres-niveles-de-evidencia" class="level2">
+<h2 class="anchored" data-anchor-id="separar-tres-niveles-de-evidencia">Separar tres niveles de evidencia</h2>
+<p><strong>Fenómeno fisiológico:</strong> pérdida o remodelación de unidades motoras. <strong>Hallazgo electrofisiológico:</strong> cambios en morfología o reclutamiento evaluados por un especialista. <strong>Descriptor computacional:</strong> un número calculado sobre una ventana de señal. Pasar del tercer nivel al primero requiere una validación que este dataset no proporciona.</p>
+<p>El tutorial construye descriptores exploratorios útiles para organizar la revisión. No estima número de unidades motoras, grado de denervación, porcentaje de recuperación ni duración de un potencial aislado.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Pregunta fisiológica</th>
+<th style="text-align: left;">Medida implementada</th>
+<th style="text-align: left;">Límite de interpretación</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">¿Cómo varía la amplitud eléctrica del segmento?</td>
+<td style="text-align: left;">RMS de la EMG filtrada y centrada</td>
+<td style="text-align: left;">También cambia con esfuerzo y posición del electrodo</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">¿Qué excursión de amplitud contiene la ventana?</td>
+<td style="text-align: left;">Máximo menos mínimo</td>
+<td style="text-align: left;">No equivale a amplitud de una unidad aislada</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">¿Predominan excursiones puntuales frente al nivel medio?</td>
+<td style="text-align: left;">Factor de cresta</td>
+<td style="text-align: left;">Un artefacto también puede elevarlo</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">¿Dónde se distribuye la potencia en la banda analizada?</td>
+<td style="text-align: left;">Frecuencia mediana de 20–1000 Hz</td>
+<td style="text-align: left;">No es frecuencia de descarga ni diagnóstico de neuropatía</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="qué-requeriría-un-indicador-más-específico" class="level2">
+<h2 class="anchored" data-anchor-id="qué-requeriría-un-indicador-más-específico">Qué requeriría un indicador más específico</h2>
+<p>Para cuantificar duración, fases o amplitud de potenciales de unidad motora se necesitarían eventos aislados o descompuestos, límites de inicio y final validados y revisión experta. La anchura de cualquier pico de la mezcla no cumple esa condición. Para estudiar reclutamiento se necesita relacionar actividad con el nivel de activación o fuerza; contar picos no cuenta unidades.</p>
+<p><strong>Pregunta de verificación.</strong> Si el RMS aumenta mientras cambia el esfuerzo, ¿se puede atribuir el cambio a reinervación? Identifique el factor de confusión y qué medición adicional haría falta antes de formular esa conclusión.</p>
+</section>
+</section>
+<section id="diseño-matemático-y-temporal" class="level1">
+<h1>Diseño matemático y temporal</h1>
+<section id="preprocesamiento-declarado" class="level2">
+<h2 class="anchored" data-anchor-id="preprocesamiento-declarado">Preprocesamiento declarado</h2>
+<p>El original permanece disponible para inspección. La rama analítica aplica un pasa banda Butterworth de 20–1000 Hz con orden de diseño 4 y secciones de segundo orden. La banda es una <strong>decisión docente</strong>, no un estándar diagnóstico ni un sustituto del registro original. Limitar el extremo superior elimina información que podría ser relevante para morfología de potenciales; por eso no se usa la salida para medir unidades aisladas.</p>
+<p>El filtrado bidireccional <code>sosfiltfilt</code> utiliza muestras futuras: es offline. La transformación pasa banda y la aplicación en dos sentidos modifican el orden y la respuesta efectivos; no se describe como un filtro causal de cuarto orden. Se filtra el registro continuo y después se recortan ventanas. El ejemplo excluye 0.25 s por extremo; este margen es una precaución de diseño que debe verificarse cuando cambien filtros o datos.</p>
+<p>No se rectifica antes de estimar el espectro. Aquí interesa el contenido espectral de la EMG, no una frecuencia lenta de temblor. Tampoco se aplica notch sin evidencia de interferencia y sin documentar su efecto.</p>
+</section>
+<section id="amplitud-y-carácter-impulsivo" class="level2">
+<h2 class="anchored" data-anchor-id="amplitud-y-carácter-impulsivo">Amplitud y carácter impulsivo</h2>
+<p>Sea <span class="math inline">\(y[n]\)</span> la señal filtrada dentro de una ventana de <span class="math inline">\(N\)</span> muestras. Defina <span class="math inline">\(z[n]=y[n]-\bar y\)</span> para retirar su media. Las medidas son</p>
+<p><span class="math display">\[\mathrm{RMS}=\sqrt{\frac{1}{N}\sum_{n=0}^{N-1}z[n]^2},\]</span></p>
+<p><span class="math display">\[A_{pp}=\max_n z[n]-\min_n z[n],\qquad
+C=\frac{\max_n|z[n]|}{\mathrm{RMS}}.\]</span></p>
+<p>RMS y <span class="math inline">\(A_{pp}\)</span> se expresan en microvoltios. <span class="math inline">\(C\)</span> es adimensional y se deja no disponible si el denominador es prácticamente nulo. El pico a pico es sensible a extremos; al alargar la ventana aumenta la posibilidad de incluir un pico grande. Por eso no deben compararse ventanas de duración diferente sin reconocer ese efecto.</p>
+<p>Si todas las amplitudes se multiplican por dos, RMS y <span class="math inline">\(A_{pp}\)</span> se duplican, mientras <span class="math inline">\(C\)</span> permanece igual. Esta propiedad permite verificar el código usando el registro real, sin fabricar pacientes ni asumir un resultado clínico.</p>
+</section>
+<section id="espectro-y-frecuencia-mediana" class="level2">
+<h2 class="anchored" data-anchor-id="espectro-y-frecuencia-mediana">Espectro y frecuencia mediana</h2>
+<p>Se estima la densidad espectral <span class="math inline">\(S_z(f)\)</span> con Welch sobre segmentos Hann de 0.25 s y solapamiento del 50 %. En 4000 Hz, cada segmento contiene 1000 muestras, por lo que la separación entre bins es 4 Hz [7].</p>
+<p>La frecuencia mediana restringida satisface</p>
+<p><span class="math display">\[\int_{20}^{f_{med}}S_z(f)\,df
+=\frac{1}{2}\int_{20}^{1000}S_z(f)\,df.\]</span></p>
+<p>La implementación integra por trapecios e interpola el punto de mitad de potencia. La PSD tiene unidades de <span class="math inline">\(\mu V^2/Hz\)</span>. La interpolación no mejora la resolución física del estimador; imprimir muchos decimales no aporta precisión biológica.</p>
+<p><span class="math inline">\(f_{med}\)</span> puede cambiar por morfología, mezcla de unidades, filtros o ruido. Un descenso no demuestra fatiga en este protocolo y una diferencia entre registros no establece gravedad. No hay fuerza, velocidad de conducción ni anotaciones suficientes para identificar el mecanismo solo a partir de esa cifra.</p>
+</section>
+<section id="escalas-temporales" class="level2">
+<h2 class="anchored" data-anchor-id="escalas-temporales">Escalas temporales</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Escala</th>
+<th style="text-align: left;">Configuración</th>
+<th style="text-align: left;">Justificación</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Intervalo elegido</td>
+<td style="text-align: left;">Inicialmente 0.25–5.25 s</td>
+<td style="text-align: left;">Delimita la región que se inspeccionará</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ventana analítica</td>
+<td style="text-align: left;">0.5, 1 o 2 s</td>
+<td style="text-align: left;">Compromiso entre estabilidad y localización</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Paso</td>
+<td style="text-align: left;">Mitad de la ventana</td>
+<td style="text-align: left;">Tendencia más densa, con dependencia entre puntos</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Welch</td>
+<td style="text-align: left;">0.25 s, solapamiento 0.125 s</td>
+<td style="text-align: left;">Grilla de 4 Hz; varios promedios por ventana</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Inspección de morfología</td>
+<td style="text-align: left;">Zoom temporal del gráfico</td>
+<td style="text-align: left;">Revisar eventos sin asignarles identidad automática</td>
+</tr>
+</tbody>
+</table>
+<p>Una ventana de 1 s tiene 4000 muestras y siete segmentos Welch solapados; no son siete observaciones independientes. Los límites son <span class="math inline">\([i,j)\)</span>: incluyen <span class="math inline">\(i\)</span> y excluyen <span class="math inline">\(j\)</span>. El centro temporal etiqueta el punto de la tendencia. Una transición brusca o un artefacto dentro de la ventana limita su interpretación, aunque la fórmula produzca un número.</p>
+</section>
+</section>
+<section id="preparar-el-proyecto-y-descargar-los-datos" class="level1">
+<h1>Preparar el proyecto y descargar los datos</h1>
+<section id="entorno-reproducible" class="level2">
+<h2 class="anchored" data-anchor-id="entorno-reproducible">Entorno reproducible</h2>
+<p>Use Python 3.11 o 3.12, uv y Quarto CLI. En una carpeta nueva:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> init <span class="at">--python</span> 3.11</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> add numpy scipy pandas streamlit plotly</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> lock</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Copie los bloques de las secciones de código en los archivos indicados. Los fragmentos de un mismo archivo se concatenan en orden, separados por una línea en blanco. El paquete completo ya contiene esos archivos y los datos originales verificados.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python datos.py</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python verificar.py</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run streamlit run app.py</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>datos.py</code> obtiene los archivos que falten y comprueba sus hashes. Una copia presente con hash incorrecto causa un error; no se procesa ni se reemplaza silenciosamente. Con los archivos del paquete, el análisis funciona sin conexión.</p>
+<p>Para crear el PDF:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> install tinytex</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render tutorial-dashboard-emg.qmd <span class="at">--to</span> pdf</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La primera orden solo es necesaria si falta una distribución TeX. El QMD contiene su estilo y todo el código; los bloques se imprimen, no se ejecutan al compilar. La composición no requiere descargar el dataset. La aplicación sí necesita los módulos y los archivos, o conexión para obtenerlos.</p>
+</section>
+<section id="responsabilidad-de-cada-módulo" class="level2">
+<h2 class="anchored" data-anchor-id="responsabilidad-de-cada-módulo">Responsabilidad de cada módulo</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Archivo</th>
+<th style="text-align: left;">Función</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>datos.py</code></td>
+<td style="text-align: left;">Descargar, verificar, calibrar y describir los registros</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>motor.py</code></td>
+<td style="text-align: left;">Filtrar y calcular indicadores sin depender de la interfaz</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>app.py</code></td>
+<td style="text-align: left;">Gestionar selecciones, figuras, revisión y exportación</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>verificar.py</code></td>
+<td style="text-align: left;">Comprobar integridad y propiedades del cálculo</td>
+</tr>
+</tbody>
+</table>
+<p>Conserve <code>pyproject.toml</code> y <code>uv.lock</code>. Al compartir, incluya también la atribución del dataset. Cada exportación identifica registro, hash, parámetros e intervalo para que un tercero pueda reproducir el resultado.</p>
+</section>
+</section>
+<section id="implementar-el-acceso-al-dataset" class="level1">
+<h1>Implementar el acceso al dataset</h1>
+<section id="fuente-y-hashes-publicados" class="level2">
+<h2 class="anchored" data-anchor-id="fuente-y-hashes-publicados">Fuente y hashes publicados</h2>
+<p>Cree <code>datos.py</code>. Este bloque fija la versión y el conjunto de archivos autorizado. Los hashes provienen del listado del repositorio, no de una copia local asumida correcta.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">"""Acceso a EMGDB 1.0.0. Lector limitado a sus archivos WFDB 16."""</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> urllib.request <span class="im">import</span> urlopen</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> hashlib</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>BASE <span class="op">=</span> <span class="st">'https://physionet.org/files/emgdb/1.0.0/'</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>DOI <span class="op">=</span> <span class="st">'https://doi.org/10.13026/C24S3D'</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>CARPETA <span class="op">=</span> Path(<span class="va">__file__</span>).resolve().parent <span class="op">/</span> <span class="st">'datos'</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>ETIQUETAS <span class="op">=</span> {</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'emg_neuropathy'</span>: <span class="st">'Neuropatía por radiculopatía L5'</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'emg_healthy'</span>: <span class="st">'Sin historia de enfermedad neuromuscular'</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'emg_myopathy'</span>: <span class="st">'Miopatía por polimiositis'</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Valores publicados en SHA256SUMS.txt de EMGDB 1.0.0.</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>HASHES <span class="op">=</span> {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a> <span class="st">'emg_healthy.dat'</span>:</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a> <span class="st">'4990f34f0ffb314f6ce70c1d2089b7ce41fa96d19fcd9fb334815ca5033966fd'</span>,</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a> <span class="st">'emg_healthy.hea'</span>:</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a> <span class="st">'61221ce33e167d246ec2ea8984ce2f25882b32b4d90bd7ef785c7b56ef95bac5'</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a> <span class="st">'emg_myopathy.dat'</span>:</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a> <span class="st">'2c310a0f61843a5a5e906d413b6ff7f51370a91e516344af511c7fe6da9eaf7f'</span>,</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a> <span class="st">'emg_myopathy.hea'</span>:</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a> <span class="st">'752093a1e3af87cd87e39f553b8725133f57a75413661208e5d93c8d2c60e73b'</span>,</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a> <span class="st">'emg_neuropathy.dat'</span>:</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a> <span class="st">'108c6c71d3792f3dba645539bd9241119fb4c6a3a0f3e515399694b072375dd5'</span>,</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a> <span class="st">'emg_neuropathy.hea'</span>:</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a> <span class="st">'a424c80b6a5cc5733456f0848c2650321cac3658d9b02b845e08b619b2807ce0'</span>,</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="descargar-y-verificar-antes-de-interpretar" class="level2">
+<h2 class="anchored" data-anchor-id="descargar-y-verificar-antes-de-interpretar">Descargar y verificar antes de interpretar</h2>
+<p>Añada esta función. Primero comprueba si existe una copia local; en caso contrario descarga. Solo escribe una descarga que coincide con el hash publicado. No se omite la comprobación para hacer desaparecer un error.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> asegurar(nombre):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> nombre <span class="kw">not</span> <span class="kw">in</span> HASHES:</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Archivo fuera del dataset permitido.'</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    ruta <span class="op">=</span> CARPETA <span class="op">/</span> nombre</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    CARPETA.mkdir(exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ruta.exists():</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        contenido <span class="op">=</span> ruta.read_bytes()</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> urlopen(BASE <span class="op">+</span> nombre, timeout<span class="op">=</span><span class="dv">60</span>) <span class="im">as</span> respuesta:</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>            contenido <span class="op">=</span> respuesta.read()</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    real <span class="op">=</span> hashlib.sha256(contenido).hexdigest()</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> real <span class="op">!=</span> HASHES[nombre]:</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f'Integridad incorrecta: </span><span class="sc">{</span>nombre<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> ruta.exists():</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        ruta.write_bytes(contenido)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> contenido</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="leer-cuentas-digitales-y-obtener-microvoltios" class="level2">
+<h2 class="anchored" data-anchor-id="leer-cuentas-digitales-y-obtener-microvoltios">Leer cuentas digitales y obtener microvoltios</h2>
+<p>Para estos archivos, WFDB 16 representa enteros con signo de 16 bits en orden little-endian. La cabecera especifica la ganancia y el cero. La conversión es</p>
+<p><span class="math display">\[x_{\mu V}[n]=\frac{d[n]-d_0}{G}\,1000,
+\qquad G=10000\ \text{cuentas/mV}.\]</span></p>
+<p>Cada cuenta representa 0.1 <span class="math inline">\(\mu V\)</span> en esta calibración. El tiempo se reconstruye como <span class="math inline">\(t[n]=n/f_s\)</span>. Este origen en cero es una convención de análisis; no es una fecha de adquisición. Añada:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cargar(registro):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> registro <span class="kw">not</span> <span class="kw">in</span> ETIQUETAS:</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Registro desconocido.'</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    texto <span class="op">=</span> asegurar(registro <span class="op">+</span> <span class="st">'.hea'</span>).decode(<span class="st">'ascii'</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    lineas <span class="op">=</span> texto.splitlines()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    cabecera, canal <span class="op">=</span> lineas[<span class="dv">0</span>].split(), lineas[<span class="dv">1</span>].split()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> cabecera[<span class="dv">1</span>] <span class="op">!=</span> <span class="st">'1'</span> <span class="kw">or</span> canal[<span class="dv">1</span>] <span class="op">!=</span> <span class="st">'16'</span>:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Este lector requiere un canal WFDB 16.'</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    fs, n <span class="op">=</span> <span class="bu">float</span>(cabecera[<span class="dv">2</span>]), <span class="bu">int</span>(cabecera[<span class="dv">3</span>])</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> fs <span class="op">!=</span> <span class="dv">4000</span> <span class="kw">or</span> canal[<span class="dv">2</span>].lower() <span class="op">!=</span> <span class="st">'10000/mv'</span>:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Muestreo o ganancia inesperados.'</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    contenido <span class="op">=</span> asegurar(registro <span class="op">+</span> <span class="st">'.dat'</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    cuentas <span class="op">=</span> np.frombuffer(contenido, dtype<span class="op">=</span><span class="st">'&lt;i2'</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(cuentas) <span class="op">!=</span> n <span class="kw">or</span> np.<span class="bu">any</span>(cuentas <span class="op">==</span> <span class="op">-</span><span class="dv">32768</span>):</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Longitud incorrecta o muestras faltantes.'</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    cero <span class="op">=</span> <span class="bu">int</span>(canal[<span class="dv">4</span>])</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> (cuentas.astype(<span class="bu">float</span>) <span class="op">-</span> cero) <span class="op">/</span> <span class="dv">10000</span> <span class="op">*</span> <span class="dv">1000</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> np.arange(n) <span class="op">/</span> fs</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    meta <span class="op">=</span> <span class="bu">dict</span>(registro<span class="op">=</span>registro, etiqueta<span class="op">=</span>ETIQUETAS[registro],</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                fs_hz<span class="op">=</span>fs, n<span class="op">=</span>n, duracion_s<span class="op">=</span>n<span class="op">/</span>fs, unidades<span class="op">=</span><span class="st">'uV'</span>,</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                modalidad<span class="op">=</span><span class="st">'EMG intramuscular'</span>, musculo<span class="op">=</span><span class="st">'Tibial anterior'</span>,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>                doi<span class="op">=</span>DOI, licencia<span class="op">=</span><span class="st">'ODC-By 1.0'</span>,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                sha256_dat<span class="op">=</span>HASHES[registro <span class="op">+</span> <span class="st">'.dat'</span>],</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>                sha256_hea<span class="op">=</span>HASHES[registro <span class="op">+</span> <span class="st">'.hea'</span>])</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> t, x, meta</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">'__main__'</span>:</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> registro <span class="kw">in</span> ETIQUETAS:</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        _, _, meta <span class="op">=</span> cargar(registro)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(registro, meta[<span class="st">'n'</span>], meta[<span class="st">'duracion_s'</span>])</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Ejecutar <code>datos.py</code> debe confirmar las longitudes y duraciones de la tabla del dataset. <strong>No</strong> interprete las dos columnas de un archivo de texto como dos músculos: una puede ser tiempo y la otra señal. Esta versión evita esa ambigüedad leyendo la cabecera y el binario.</p>
+</section>
+</section>
+<section id="implementar-los-indicadores" class="level1">
+<h1>Implementar los indicadores</h1>
+<section id="validar-y-filtrar" class="level2">
+<h2 class="anchored" data-anchor-id="validar-y-filtrar">Validar y filtrar</h2>
+<p>Cree <code>motor.py</code> con este bloque. Se rechazan entradas no finitas y canales completamente planos. Esto no detecta todos los artefactos: es una primera condición de entrada.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">"""Descriptores exploratorios; no clasificador de enfermedad."""</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> signal</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.integrate <span class="im">import</span> cumulative_trapezoid</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> preparar(x, fs):</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> np.asarray(x, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> x.ndim <span class="op">!=</span> <span class="dv">1</span> <span class="kw">or</span> <span class="kw">not</span> np.isfinite(x).<span class="bu">all</span>():</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Se requiere un vector finito.'</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> fs <span class="op">!=</span> <span class="dv">4000</span> <span class="kw">or</span> <span class="bu">len</span>(x) <span class="op">&lt;</span> <span class="dv">2</span><span class="op">*</span>fs:</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Se requieren 4000 Hz y al menos 2 s.'</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> np.ptp(x) <span class="op">&lt;</span> <span class="fl">1e-9</span>:</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Canal plano: no interpretable.'</span>)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    sos <span class="op">=</span> signal.butter(<span class="dv">4</span>, [<span class="dv">20</span>, <span class="dv">1000</span>], fs<span class="op">=</span>fs,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                        btype<span class="op">=</span><span class="st">'bandpass'</span>, output<span class="op">=</span><span class="st">'sos'</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> signal.sosfiltfilt(sos, x)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="una-función-para-una-ventana" class="level2">
+<h2 class="anchored" data-anchor-id="una-función-para-una-ventana">Una función para una ventana</h2>
+<p>Añada el bloque siguiente. La misma función alimenta tarjetas, tendencias y verificaciones; así se evita calcular una fórmula diferente para cada componente del tablero.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> medir(y, fs):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> np.asarray(y, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> y.ndim <span class="op">!=</span> <span class="dv">1</span> <span class="kw">or</span> <span class="bu">len</span>(y) <span class="op">&lt;</span> <span class="bu">int</span>(<span class="fl">0.5</span><span class="op">*</span>fs):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Ventana demasiado corta.'</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> np.isfinite(y).<span class="bu">all</span>():</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Ventana con valores no finitos.'</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> y <span class="op">-</span> np.mean(y)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    rms <span class="op">=</span> <span class="bu">float</span>(np.sqrt(np.mean(z<span class="op">*</span>z)))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    f, p <span class="op">=</span> signal.welch(z, fs<span class="op">=</span>fs, window<span class="op">=</span><span class="st">'hann'</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                        nperseg<span class="op">=</span><span class="bu">int</span>(<span class="fl">0.25</span><span class="op">*</span>fs),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                        noverlap<span class="op">=</span><span class="bu">int</span>(<span class="fl">0.125</span><span class="op">*</span>fs),</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                        detrend<span class="op">=</span><span class="st">'constant'</span>, scaling<span class="op">=</span><span class="st">'density'</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> (f <span class="op">&gt;=</span> <span class="dv">20</span>) <span class="op">&amp;</span> (f <span class="op">&lt;=</span> <span class="dv">1000</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    fb, pb <span class="op">=</span> f[m], p[m]</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    acumulada <span class="op">=</span> cumulative_trapezoid(pb, fb, initial<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> acumulada[<span class="op">-</span><span class="dv">1</span>] <span class="op">&lt;=</span> <span class="fl">1e-12</span>:</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        mediana <span class="op">=</span> np.nan</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        mediana <span class="op">=</span> <span class="bu">float</span>(np.interp(acumulada[<span class="op">-</span><span class="dv">1</span>]<span class="op">/</span><span class="dv">2</span>, acumulada, fb))</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    metricas <span class="op">=</span> <span class="bu">dict</span>(rms_uv<span class="op">=</span>rms, pico_pico_uv<span class="op">=</span><span class="bu">float</span>(np.ptp(z)),</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>                   cresta<span class="op">=</span><span class="bu">float</span>(np.<span class="bu">max</span>(np.<span class="bu">abs</span>(z))<span class="op">/</span>rms)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                   <span class="cf">if</span> rms <span class="op">&gt;</span> <span class="fl">1e-9</span> <span class="cf">else</span> np.nan,</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>                   fmed_20_1000_hz<span class="op">=</span>mediana)</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> metricas, f, p</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Un <code>NaN</code> de frecuencia mediana indica potencia insuficiente para definirla según la tolerancia numérica, no ausencia de enfermedad. No reemplace automáticamente ese valor por cero.</p>
+</section>
+<section id="recorrer-intervalos-sin-perder-sus-límites" class="level2">
+<h2 class="anchored" data-anchor-id="recorrer-intervalos-sin-perder-sus-límites">Recorrer intervalos sin perder sus límites</h2>
+<p>Complete el módulo con <code>ventanas</code>. Convertir a índices enteros evita discrepancias debidas a comparaciones flotantes en los límites. Toda fila conserva inicio, final y centro temporal.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ventanas(y, fs, inicio, fin, W):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Índices enteros: intervalos [i, j), sin ambigüedad de redondeo.</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    N <span class="op">=</span> <span class="bu">round</span>(W<span class="op">*</span>fs)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    paso <span class="op">=</span> N<span class="op">//</span><span class="dv">2</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    i0, i1 <span class="op">=</span> <span class="bu">round</span>(inicio<span class="op">*</span>fs), <span class="bu">round</span>(fin<span class="op">*</span>fs)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> (<span class="dv">0</span> <span class="op">&lt;=</span> i0 <span class="op">&lt;</span> i1 <span class="op">&lt;=</span> <span class="bu">len</span>(y)) <span class="kw">or</span> i1<span class="op">-</span>i0 <span class="op">&lt;</span> N:</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">'Intervalo insuficiente o fuera del registro.'</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> []</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(i0, i1<span class="op">-</span>N<span class="op">+</span><span class="dv">1</span>, paso):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        j <span class="op">=</span> i<span class="op">+</span>N</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        valores, _, _ <span class="op">=</span> medir(y[i:j], fs)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        rows.append(<span class="bu">dict</span>(i<span class="op">=</span>i, j<span class="op">=</span>j, inicio_s<span class="op">=</span>i<span class="op">/</span>fs, fin_s<span class="op">=</span>j<span class="op">/</span>fs,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                         centro_s<span class="op">=</span>(i<span class="op">+</span>j)<span class="op">/</span>(<span class="dv">2</span><span class="op">*</span>fs), <span class="op">**</span>valores))</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pd.DataFrame(rows)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Actividad breve.</strong> Use el mismo intervalo con ventanas de 0.5 y 2 s. Explique por qué cambian la cantidad de puntos y su estabilidad. No seleccione la ventana solo porque produce una curva visualmente más suave.</p>
+</section>
+</section>
+<section id="construir-el-dashboard" class="level1">
+<h1>Construir el dashboard</h1>
+<section id="diseñar-para-la-lectura-clínica" class="level2">
+<h2 class="anchored" data-anchor-id="diseñar-para-la-lectura-clínica">Diseñar para la lectura clínica</h2>
+<p>La interfaz muestra primero fuente y etiqueta, después la señal y finalmente los indicadores. El médico debe poder inspeccionar la evidencia que produjo cada cifra. Los colores distinguen original y filtrada, sin codificar severidad.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Componente</th>
+<th style="text-align: left;">Pregunta que resuelve</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Selector de registro</td>
+<td style="text-align: left;">¿Qué ejemplo clínico estoy observando?</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Intervalo y ventana</td>
+<td style="text-align: left;">¿Qué muestras entran en el cálculo?</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Original y filtrada</td>
+<td style="text-align: left;">¿El procesamiento conserva lo que quiero estudiar?</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tarjetas</td>
+<td style="text-align: left;">¿Qué describen amplitud, extremos y espectro?</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Detalle y PSD</td>
+<td style="text-align: left;">¿Qué evidencia explica las tarjetas?</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tendencia</td>
+<td style="text-align: left;">¿Cómo varía el descriptor dentro del registro?</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Exportación</td>
+<td style="text-align: left;">¿Puedo repetir exactamente este análisis?</td>
+</tr>
+</tbody>
+</table>
+<p>El prototipo muestra todas las muestras del intervalo: evita que una reducción visual arbitraria oculte extremos. Para archivos muy grandes sería necesario otro diseño de visualización; reducir puntos en pantalla nunca debe alterar los datos usados en las métricas.</p>
+</section>
+<section id="cargar-y-mostrar-el-contexto" class="level2">
+<h2 class="anchored" data-anchor-id="cargar-y-mostrar-el-contexto">Cargar y mostrar el contexto</h2>
+<p>Cree <code>app.py</code> con el siguiente bloque. La selección inicial es el registro de neuropatía. La etiqueta se toma de metadatos; no se presenta como salida de un clasificador.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.graph_objects <span class="im">as</span> go</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> streamlit <span class="im">as</span> st</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datos <span class="im">import</span> cargar, ETIQUETAS</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> motor <span class="im">import</span> preparar, medir, ventanas</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>st.set_page_config(page_title<span class="op">=</span><span class="st">'EMGDB | Dashboard'</span>, layout<span class="op">=</span><span class="st">'wide'</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>st.title(<span class="st">'Dashboard de EMG y radiculopatía L5'</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>st.caption(<span class="st">'Dataset abierto EMGDB 1.0.0 | Análisis retrospectivo docente'</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>st.info(<span class="st">'Tres personas distintas. No son visitas de un mismo paciente.'</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>registro <span class="op">=</span> st.sidebar.selectbox(<span class="st">'Registro'</span>, <span class="bu">list</span>(ETIQUETAS),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>                               format_func<span class="op">=</span>ETIQUETAS.get)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    t, x, meta <span class="op">=</span> cargar(registro)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    fs <span class="op">=</span> meta[<span class="st">'fs_hz'</span>]</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> preparar(x, fs)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> exc:</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    st.error(<span class="ss">f'No se pudo cargar o procesar: </span><span class="sc">{</span>exc<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    st.stop()</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>st.caption(<span class="ss">f"</span><span class="sc">{</span>registro<span class="sc">}</span><span class="ss"> | </span><span class="sc">{</span>meta[<span class="st">'modalidad'</span>]<span class="sc">}</span><span class="ss"> | "</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>           <span class="ss">f"</span><span class="sc">{</span>meta[<span class="st">'musculo'</span>]<span class="sc">}</span><span class="ss"> | </span><span class="sc">{</span>fs<span class="sc">:.0f}</span><span class="ss"> Hz | </span><span class="sc">{</span><span class="bu">len</span>(x)<span class="op">/</span>fs<span class="sc">:.4f}</span><span class="ss"> s"</span>)</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>st.markdown(<span class="st">'[Fuente y licencia](https://physionet.org/content/emgdb/1.0.0/)'</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="elegir-intervalo-y-revisar-calidad" class="level2">
+<h2 class="anchored" data-anchor-id="elegir-intervalo-y-revisar-calidad">Elegir intervalo y revisar calidad</h2>
+<p>Añada este bloque. La confirmación visual se reinicia al cambiar el registro o los límites. La anotación describe el segmento y las dudas de calidad. Es responsabilidad del usuario no atribuir significado fisiológico a artefactos; el programa no incluye un detector validado de ellos.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Descarte de 0.25 s en cada extremo del registro ya filtrado.</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>a, b <span class="op">=</span> st.sidebar.slider(<span class="st">'Intervalo de análisis (s)'</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="fl">0.25</span>, <span class="bu">float</span>(<span class="bu">len</span>(x)<span class="op">/</span>fs<span class="op">-</span><span class="fl">0.25</span>), (<span class="fl">0.25</span>, <span class="fl">5.25</span>), step<span class="op">=</span><span class="fl">0.25</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    key<span class="op">=</span><span class="st">'intervalo_'</span> <span class="op">+</span> registro)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>W <span class="op">=</span> st.sidebar.selectbox(<span class="st">'Duración de ventana (s)'</span>, [<span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>], index<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>st.sidebar.caption(<span class="st">'Paso = W/2. Banda 20–1000 Hz. Welch 0.25 s.'</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>nota <span class="op">=</span> st.sidebar.text_area(<span class="st">'Anotación de calidad'</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                           key<span class="op">=</span><span class="st">'nota_'</span> <span class="op">+</span> registro)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>revisado <span class="op">=</span> st.sidebar.checkbox(<span class="st">'Inspeccioné el intervalo seleccionado'</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                              key<span class="op">=</span><span class="ss">f'revision_</span><span class="sc">{</span>registro<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> b<span class="op">-</span>a <span class="op">&lt;</span> W:</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    st.error(<span class="st">'Seleccione un intervalo al menos igual a la ventana.'</span>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    st.stop()</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure()</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>i0, i1 <span class="op">=</span> <span class="bu">round</span>(a<span class="op">*</span>fs), <span class="bu">round</span>(b<span class="op">*</span>fs)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scattergl(x<span class="op">=</span>t[i0:i1], y<span class="op">=</span>x[i0:i1], name<span class="op">=</span><span class="st">'Original'</span>))</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>fig.add_trace(go.Scattergl(x<span class="op">=</span>t[i0:i1], y<span class="op">=</span>y[i0:i1], name<span class="op">=</span><span class="st">'Filtrada'</span>))</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>fig.update_layout(title<span class="op">=</span><span class="st">'Control de calidad: todas las muestras del intervalo'</span>,</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>                  xaxis_title<span class="op">=</span><span class="st">'Tiempo (s)'</span>, yaxis_title<span class="op">=</span><span class="st">'EMG (µV)'</span>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>st.plotly_chart(fig, width<span class="op">=</span><span class="st">'stretch'</span>)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>st.caption(<span class="st">'Use zoom para inspeccionar eventos. La revisión visual '</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>           <span class="st">'no sustituye anotaciones expertas ni detecta todo artefacto.'</span>)</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> revisado:</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    st.warning(<span class="st">'Revise original y filtrada antes de habilitar indicadores.'</span>)</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    st.stop()</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="vincular-tarjetas-y-ventana-activa" class="level2">
+<h2 class="anchored" data-anchor-id="vincular-tarjetas-y-ventana-activa">Vincular tarjetas y ventana activa</h2>
+<p>El índice seleccionado determina las cuatro tarjetas, el detalle temporal y la PSD. Cada cifra corresponde al mismo intervalo. El pico a pico se rotula explícitamente como medida de ventana.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> ventanas(y, fs, a, b, W)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>seleccion <span class="op">=</span> st.select_slider(<span class="st">'Ventana activa'</span>, options<span class="op">=</span><span class="bu">list</span>(res.index),</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    format_func<span class="op">=</span><span class="kw">lambda</span> k: <span class="ss">f"[</span><span class="sc">{</span>res<span class="sc">.</span>loc[k,<span class="st">'inicio_s'</span>]<span class="sc">:.3f}</span><span class="ss">, "</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                         <span class="ss">f"</span><span class="sc">{</span>res<span class="sc">.</span>loc[k,<span class="st">'fin_s'</span>]<span class="sc">:.3f}</span><span class="ss">) s"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> res.loc[seleccion]</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>i, j <span class="op">=</span> <span class="bu">int</span>(r.i), <span class="bu">int</span>(r.j)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>valores, f, p <span class="op">=</span> medir(y[i:j], fs)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col, clave, titulo <span class="kw">in</span> <span class="bu">zip</span>(st.columns(<span class="dv">4</span>), valores,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    [<span class="st">'RMS (µV)'</span>, <span class="st">'Pico a pico de ventana (µV)'</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>     <span class="st">'Factor de cresta'</span>, <span class="st">'Frecuencia mediana 20–1000 Hz'</span>]):</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    col.metric(titulo, <span class="ss">f'</span><span class="sc">{</span>valores[clave]<span class="sc">:.2f}</span><span class="ss">'</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>st.caption(<span class="st">'Descriptores de la señal; no puntajes de gravedad ni medidas '</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>           <span class="st">'automáticas de una unidad motora aislada.'</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure(go.Scatter(x<span class="op">=</span>t[i:j], y<span class="op">=</span>y[i:j], name<span class="op">=</span><span class="st">'Ventana activa'</span>))</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>fig.update_layout(title<span class="op">=</span><span class="st">'Detalle temporal sin reducción de muestras'</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>                  xaxis_title<span class="op">=</span><span class="st">'Tiempo (s)'</span>, yaxis_title<span class="op">=</span><span class="st">'EMG filtrada (µV)'</span>)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>st.plotly_chart(fig, width<span class="op">=</span><span class="st">'stretch'</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure(go.Scatter(x<span class="op">=</span>f, y<span class="op">=</span>p))</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>fig.update_layout(title<span class="op">=</span><span class="st">'PSD de la EMG filtrada y centrada'</span>,</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>                  xaxis_title<span class="op">=</span><span class="st">'Frecuencia (Hz)'</span>, yaxis_title<span class="op">=</span><span class="st">'PSD (µV²/Hz)'</span>,</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>                  xaxis_range<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1200</span>])</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>st.plotly_chart(fig, width<span class="op">=</span><span class="st">'stretch'</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="tendencias-y-exportación" class="level2">
+<h2 class="anchored" data-anchor-id="tendencias-y-exportación">Tendencias y exportación</h2>
+<p>Complete <code>app.py</code>. El CSV guarda los indicadores y el identificador del registro. El JSON conserva la configuración y la anotación. Ambos deben mantenerse juntos.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>variable <span class="op">=</span> st.selectbox(<span class="st">'Indicador de tendencia'</span>, <span class="bu">list</span>(valores))</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> go.Figure(go.Scatter(x<span class="op">=</span>res.centro_s, y<span class="op">=</span>res[variable],</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                          mode<span class="op">=</span><span class="st">'lines+markers'</span>))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>fig.update_layout(title<span class="op">=</span><span class="st">'Evolución dentro del registro'</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                  xaxis_title<span class="op">=</span><span class="st">'Centro de ventana (s)'</span>, yaxis_title<span class="op">=</span>variable)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>st.plotly_chart(fig, width<span class="op">=</span><span class="st">'stretch'</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>st.caption(<span class="st">'Solapamiento 50 %. Los puntos no son réplicas independientes.'</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>meta.update(banda_hz<span class="op">=</span>[<span class="dv">20</span>,<span class="dv">1000</span>], filtro<span class="op">=</span><span class="st">'Butterworth SOS bidireccional'</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>            orden_diseno<span class="op">=</span><span class="dv">4</span>, borde_s<span class="op">=</span><span class="fl">0.25</span>, ventana_s<span class="op">=</span>W, paso_s<span class="op">=</span>W<span class="op">/</span><span class="dv">2</span>,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>            welch_s<span class="op">=</span><span class="fl">0.25</span>, solapamiento_welch_s<span class="op">=</span><span class="fl">0.125</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>            intervalo_s<span class="op">=</span>[i0<span class="op">/</span>fs,i1<span class="op">/</span>fs], nota_calidad<span class="op">=</span>nota,</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>            inspeccion_visual<span class="op">=</span><span class="va">True</span>, version_pipeline<span class="op">=</span><span class="st">'2.0'</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>res[<span class="st">'registro'</span>] <span class="op">=</span> registro</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>res[<span class="st">'sha256_dat'</span>] <span class="op">=</span> meta[<span class="st">'sha256_dat'</span>]</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>st.download_button(<span class="st">'Indicadores CSV'</span>, res.to_csv(index<span class="op">=</span><span class="va">False</span>).encode(),</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>                   registro <span class="op">+</span> <span class="st">'_indicadores.csv'</span>, <span class="st">'text/csv'</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>st.download_button(<span class="st">'Parámetros JSON'</span>,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>                   json.dumps(meta, ensure_ascii<span class="op">=</span><span class="va">False</span>, indent<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>                   registro <span class="op">+</span> <span class="st">'_parametros.json'</span>, <span class="st">'application/json'</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Streamlit vuelve a ejecutar el script cuando cambia un control. Para estos registros pequeños, releer y verificar es aceptable. Una futura caché debe usar el contenido o hash junto con los parámetros; no debe reutilizar resultados de otro archivo [8].</p>
+</section>
+</section>
+<section id="comprobar-el-resultado-con-datos-reales" class="level1">
+<h1>Comprobar el resultado con datos reales</h1>
+<section id="verificación-automática" class="level2">
+<h2 class="anchored" data-anchor-id="verificación-automática">Verificación automática</h2>
+<p>Guarde este bloque como <code>verificar.py</code>. Todas las comprobaciones parten de los archivos clínicos abiertos. La transformación de amplitud es una prueba algebraica sobre el mismo segmento, no una nueva observación ni un paciente artificial.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datos <span class="im">import</span> cargar, ETIQUETAS</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> motor <span class="im">import</span> preparar, medir, ventanas</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>esperadas <span class="op">=</span> <span class="bu">dict</span>(emg_healthy<span class="op">=</span><span class="dv">50860</span>, emg_myopathy<span class="op">=</span><span class="dv">110337</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>                 emg_neuropathy<span class="op">=</span><span class="dv">147858</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> registro <span class="kw">in</span> ETIQUETAS:</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    t, x, meta <span class="op">=</span> cargar(registro)  <span class="co"># Incluye SHA-256 de DAT y HEA.</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    fs <span class="op">=</span> meta[<span class="st">'fs_hz'</span>]</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(x) <span class="op">==</span> esperadas[registro]</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.allclose(np.diff(t), <span class="dv">1</span><span class="op">/</span>fs)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> preparar(x, fs)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    tabla <span class="op">=</span> ventanas(y, fs, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">1</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(tabla) <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    m, _, _ <span class="op">=</span> medir(y[<span class="dv">4000</span>:<span class="dv">8000</span>], fs)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    doble, _, _ <span class="op">=</span> medir(<span class="dv">2</span><span class="op">*</span>y[<span class="dv">4000</span>:<span class="dv">8000</span>], fs)</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.isclose(doble[<span class="st">'rms_uv'</span>], <span class="dv">2</span><span class="op">*</span>m[<span class="st">'rms_uv'</span>])</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.isclose(doble[<span class="st">'pico_pico_uv'</span>], <span class="dv">2</span><span class="op">*</span>m[<span class="st">'pico_pico_uv'</span>])</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.isclose(doble[<span class="st">'cresta'</span>], m[<span class="st">'cresta'</span>])</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> np.isclose(doble[<span class="st">'fmed_20_1000_hz'</span>], m[<span class="st">'fmed_20_1000_hz'</span>])</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(registro, <span class="st">'OK'</span>, meta[<span class="st">'n'</span>], meta[<span class="st">'duracion_s'</span>])</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Calibración independiente de la primera muestra del registro L5.</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>_, x, _ <span class="op">=</span> cargar(<span class="st">'emg_neuropathy'</span>)</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> np.isclose(x[<span class="dv">0</span>], <span class="fl">90.0</span>)</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>x[<span class="dv">10</span>] <span class="op">=</span> np.nan</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>    preparar(x, <span class="dv">4000</span>)</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ValueError</span>:</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">AssertionError</span>(<span class="st">'Se aceptó un valor no finito.'</span>)</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'Verificaciones superadas con los tres registros reales.'</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>La prueba de 90 <span class="math inline">\(\mu V\)</span> corresponde a la primera cuenta calibrada del archivo de neuropatía. Sirve para detectar errores de unidades. El éxito del script demuestra las propiedades verificadas, no validez clínica ni ausencia de todos los errores posibles.</p>
+</section>
+<section id="recorrido-del-usuario" class="level2">
+<h2 class="anchored" data-anchor-id="recorrido-del-usuario">Recorrido del usuario</h2>
+<ol type="1">
+<li>Ejecute la descarga o utilice los originales del paquete. Confirme que los hashes pasan.</li>
+<li>Abra el dashboard y conserve <strong>Neuropatía por radiculopatía L5</strong> como registro activo.</li>
+<li>Use el intervalo inicial. Acerque el gráfico y compare original y filtrada. Anote una observación de calidad.</li>
+<li>Habilite indicadores. Desplace la ventana activa y confirme que detalle, PSD y tarjetas corresponden a sus límites.</li>
+<li>Cambie la tendencia entre RMS, pico a pico, cresta y frecuencia mediana. Explique por qué no representan lo mismo.</li>
+<li>Repita con W de 0.5 y 2 s. Mantenga el intervalo para aislar el efecto de la ventana.</li>
+<li>Descargue CSV y JSON. Recalcule una fila usando <code>medir</code> y sus índices <code>i</code>, <code>j</code>.</li>
+<li>Abra los otros registros para contrastar ejemplos. Identifique al menos dos razones por las que una diferencia entre ellos no demuestra progresión clínica.</li>
+</ol>
+</section>
+<section id="pruebas-negativas-y-criterios-de-aceptación" class="level2">
+<h2 class="anchored" data-anchor-id="pruebas-negativas-y-criterios-de-aceptación">Pruebas negativas y criterios de aceptación</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Perturbación</th>
+<th style="text-align: left;">Respuesta exigida</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Binario cambiado o incompleto</td>
+<td style="text-align: left;">Bloqueo por SHA-256</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cabecera o ganancia inesperada</td>
+<td style="text-align: left;">Error antes de interpretar unidades</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Dato no finito en procesamiento</td>
+<td style="text-align: left;">Rechazo</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Canal completamente plano</td>
+<td style="text-align: left;">Sin indicadores interpretables</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Intervalo más corto que W</td>
+<td style="text-align: left;">Mensaje para corregir selección</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Multiplicar amplitud por dos</td>
+<td style="text-align: left;">RMS y pico a pico duplicados; cresta y mediana invariantes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cambio de registro</td>
+<td style="text-align: left;">Etiqueta, señal y contexto actualizados; revisión pendiente</td>
+</tr>
+</tbody>
+</table>
+<p>No se considera fallo que los tres registros no se ordenen por una supuesta escala de gravedad. No existe esa escala en el diseño. Ajustar filtros o ventanas hasta obtener un orden deseado sería un sesgo de análisis.</p>
+</section>
+</section>
+<section id="interpretación-extensión-y-evaluación" class="level1">
+<h1>Interpretación, extensión y evaluación</h1>
+<section id="de-la-tendencia-a-la-afirmación" class="level2">
+<h2 class="anchored" data-anchor-id="de-la-tendencia-a-la-afirmación">De la tendencia a la afirmación</h2>
+<p>Una conclusión defendible describe <strong>archivo, intervalo, parámetros y resultado calculado</strong>. Por ejemplo: “El RMS varía entre ventanas del registro seleccionado; el patrón debe revisarse junto con la señal y la anotación de calidad”. Añada cifras solo después de ejecutar el análisis.</p>
+<p>No escriba “la neuropatía empeora” porque el RMS aumente, ni “hay menos unidades motoras” porque crezca el factor de cresta. Las métricas no identifican de forma única el mecanismo fisiológico. El esfuerzo, la geometría del registro, la interferencia y el procesamiento pueden producir cambios similares.</p>
+<p>La comparación de tres personas sirve para explorar ejemplos. Dividir cada registro en muchas ventanas no aumenta el número de pacientes. Entrenar y evaluar un clasificador repartiendo al azar ventanas de estas mismas personas induciría dependencia y no justificaría generalización clínica.</p>
+</section>
+<section id="qué-falta-para-monitoreo-longitudinal" class="level2">
+<h2 class="anchored" data-anchor-id="qué-falta-para-monitoreo-longitudinal">Qué falta para monitoreo longitudinal</h2>
+<p>El requerimiento médico de comparar visitas necesita datos nuevos con identificadores seudónimos estables, fecha o número de visita, músculo, lado, modalidad, calibración, tarea, nivel de activación y evaluación clínica de referencia. Este dataset no proporciona esa estructura longitudinal.</p>
+<p>Como extensión de diseño, proponga una tabla <code>persona</code>, <code>visita</code>, <code>registro</code>, <code>musculo</code>, <code>lado</code>, <code>tarea</code>, <code>calibracion</code>, <code>configuracion</code>, <code>evaluacion_clinica</code>. Programe una verificación de compatibilidad antes de comparar. No rellene visitas inventadas con ventanas del mismo archivo.</p>
+<p>El tutorial analiza registros ya obtenidos. La adquisición intramuscular corresponde al personal clínico especializado y no forma parte de la práctica de programación.</p>
+</section>
+<section id="preguntas-para-la-exposición" class="level2">
+<h2 class="anchored" data-anchor-id="preguntas-para-la-exposición">Preguntas para la exposición</h2>
+<ol type="1">
+<li>¿Qué cambia al pasar de EMG superficial a intramuscular?</li>
+<li>¿Cómo se convierte una cuenta digital en microvoltios y dónde se verifica la ganancia?</li>
+<li>¿Cómo conecta la radiculopatía con cambios potenciales de unidades motoras, sin convertir un descriptor en diagnóstico?</li>
+<li>¿Por qué el pico a pico de ventana no es la amplitud de un potencial aislado?</li>
+<li>¿Qué diferencia hay entre ventana analítica, paso y segmento Welch?</li>
+<li>¿Qué información se pierde con el filtro de 1000 Hz? ¿Por qué se conserva el original?</li>
+<li>¿Por qué una frecuencia mediana diferente no demuestra fatiga o gravedad?</li>
+<li>¿Por qué las ventanas de tres personas no permiten validar seguimiento longitudinal?</li>
+</ol>
+</section>
+<section id="rúbrica-sugerida" class="level2">
+<h2 class="anchored" data-anchor-id="rúbrica-sugerida">Rúbrica sugerida</h2>
+<p>Seis criterios, con nivel de 0 a 3: <strong>3</strong>, correcto y justificado; <strong>2</strong>, correcto pero parcialmente justificado; <strong>1</strong>, incompleto o con errores relevantes; <strong>0</strong>, ausente o incorrecto. El puntaje es <span class="math inline">\(\sum_i w_iL_i/3\)</span> sobre 100.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Criterio</th>
+<th style="text-align: right;">Peso</th>
+<th style="text-align: left;">Evidencia exigida para nivel 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Fisiología e interpretación</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">Conecta lesión, señal y descriptor, explicando los límites</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dataset y trazabilidad</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: left;">Licencia, versión, hashes y unidades verificadas</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Procesamiento</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">Justifica banda, filtrado y escalas temporales</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Indicadores y verificación</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">Fórmulas coherentes y pruebas sobre datos reales</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Visualización</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: left;">Selecciones consistentes y evidencia asociada a cada cifra</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Reproducibilidad y comunicación</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">Ejecución documentada, exportación y exposición clara</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="referencias-y-atribución" class="level1">
+<h1>Referencias y atribución</h1>
+<p>[1] PhysioNet. <em>Examples of Electromyograms</em>, versión 1.0.0 (2009). Datos facilitados por Seward Rutkove. DOI: <a href="https://doi.org/10.13026/C24S3D">10.13026/C24S3D</a>. <a href="https://physionet.org/content/emgdb/1.0.0/">Dataset</a> y <a href="https://physionet.org/content/emgdb/view-license/1.0.0/">licencia ODC-By 1.0</a>.</p>
+<p>[2] PhysioNet. <a href="https://physionet.org/files/emgdb/1.0.0/emg_neuropathy.hea">Cabecera del registro de neuropatía</a>. Fuente de muestreo, calibración y etiqueta clínica.</p>
+<p>[3] PhysioNet. <a href="https://physionet.org/files/emgdb/1.0.0/emg_healthy.hea">Cabecera del registro sin historia de enfermedad neuromuscular</a>.</p>
+<p>[4] PhysioNet. <a href="https://physionet.org/files/emgdb/1.0.0/emg_myopathy.hea">Cabecera del registro de miopatía</a>.</p>
+<p>[5] PhysioNet. <a href="https://physionet.org/files/emgdb/1.0.0/SHA256SUMS.txt">SHA256SUMS de EMGDB 1.0.0</a>. Base de las comprobaciones de integridad.</p>
+<p>[6] Nandedkar, S. D., Sanders, D. B. y Stålberg, E. V. (1988). <em>EMG of reinnervated motor units: a simulation study</em>. Electroencephalography and Clinical Neurophysiology, 70(2), 177–184. DOI: <a href="https://doi.org/10.1016/0013-4694(88)90117-4">10.1016/0013-4694(88)90117-4</a>. Referencia sobre relación entre organización de unidades y medición; no valida los indicadores de este prototipo.</p>
+<p>[7] SciPy. Documentación oficial de <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html">Welch</a> y <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfiltfilt.html">filtrado SOS bidireccional</a>.</p>
+<p>[8] Streamlit. <a href="https://docs.streamlit.io/develop/concepts/architecture">Modelo de ejecución</a> y <a href="https://docs.streamlit.io/develop/api-reference/charts/st.plotly_chart">gráficos Plotly</a>.</p>
+<p>[9] Quarto. <a href="https://quarto.org/docs/output-formats/pdf-basics.html">PDF Basics</a>.</p>
+<p>[10] Escuela Colombiana de Ingeniería Julio Garavito. <em>Señales Bioeléctricas y Visualización Interactiva</em>. Microcurrículo adjunto, sin vigencia diligenciada. Referencia curricular, no fuente de criterios diagnósticos.</p>
+<p><strong>Cambios y atribución del producto derivado.</strong> Se conservaron los archivos de origen; el software convierte cuentas a microvoltios, filtra y calcula descriptores. Las bandas, ventanas, tolerancias y diseño de interfaz son decisiones docentes de esta guía. Los autores del dataset no avalan esta implementación. No se produjeron resultados longitudinales ni nuevos diagnósticos.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
