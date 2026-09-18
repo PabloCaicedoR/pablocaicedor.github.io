@@ -109,6 +109,7 @@
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
 
 \usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
 \usepackage{calc} % for calculating minipage widths
 % Correct order of tables after \paragraph or \subparagraph
 \usepackage{etoolbox}
@@ -170,13 +171,13 @@
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \ifLuaTeX
-\usepackage[bidi=basic]{babel}
+\usepackage[bidi=basic,shorthands=off]{babel}
 \else
-\usepackage[bidi=default]{babel}
+\usepackage[bidi=default,shorthands=off]{babel}
 \fi
-% get rid of language-specific shorthands (see #6817):
-\let\LanguageShortHands\languageshorthands
-\def\languageshorthands#1{}
+\ifLuaTeX
+  \usepackage{selnolig} % disable illegal ligatures
+\fi
 
 
 \setlength{\emergencystretch}{3em} % prevent overfull lines
@@ -364,7 +365,7 @@
 \makeatletter
 \makeatother
 \makeatletter
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[frame hidden, interior hidden, enhanced, sharp corners, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, breakable]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, breakable, enhanced, frame hidden, interior hidden, sharp corners]}{\end{tcolorbox}}\fi
 \makeatother
 \usepackage{bookmark}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
@@ -391,18 +392,17 @@
 \subtitle{Monitoreo de alteraciones neuromusculares post-ictus con datos
 abiertos de PhysioNet}
 \author{Señales Bioeléctricas y Visualización Interactiva}
-\date{2026-09-16}
+\date{2026-09-18}
 \begin{document}
 \maketitle
 
 \renewcommand*\contentsname{Tabla de contenidos}
 {
-\hypersetup{linkcolor=}
 \setcounter{tocdepth}{2}
 \tableofcontents
 }
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-note-color}{\faInfo}\hspace{0.5em}{Solicitud clínica}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-note-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-note-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-note-color!10!white, colframe=quarto-callout-note-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-note-color}{\faInfo}\hspace{0.5em}{Solicitud clínica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Un médico fisiatra solicita una herramienta para
 \textbf{monitorear la actividad muscular de personas con antecedente de ictus isquémico},
@@ -503,7 +503,7 @@ Para este tutorial nos interesan cuatro manifestaciones funcionales:
   documentadas}.
 \end{itemize}
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-warning-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-warning-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 La sEMG \textbf{no mide fuerza directamente}. La amplitud depende, entre
 otros factores, del reclutamiento de unidades motoras, la posición del
@@ -517,6 +517,7 @@ fuerza.
 \section{1.2 Cadena fisiología →
 ingeniería}\label{cadena-fisiologuxeda-ingenieruxeda}
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
@@ -546,6 +547,7 @@ artefacto de baja frecuencia, datos faltantes \\
 Interfaz & ¿Puede el clínico comprenderlo? & Trazado + indicadores +
 contexto + advertencias \\
 \end{longtable}
+}
 
 \chapter{2. Dataset: PhysioNet CVES}\label{dataset-physionet-cves}
 
@@ -589,7 +591,7 @@ participante con ictus, con lateralidad derecha del evento, hemiparesia
 izquierda, NIHSS 10 y mRS 3 en la tabla de participantes. Un registro
 asociado es \texttt{s0205-05080904}.
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-warning-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-warning-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Los nombres \texttt{emg\_0}, \texttt{emg\_1}, etc. no identifican por sí
 mismos el músculo ni la lateralidad. Por tanto, el tutorial
@@ -638,9 +640,9 @@ pierda el contexto clínico.
 \end{Highlighting}
 \end{Shaded}
 
-\subsection{Información clínica del
-participante}\label{informaciuxf3n-cluxednica-del-participante}
+Los metadatos observados son:
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
@@ -689,6 +691,7 @@ participante. \\
 \texttt{Series} de Pandas. \textbf{No corresponde a una variable
 clínica}. \\
 \end{longtable}
+}
 
 A continuación se inspecciona el encabezado del registro sin descargar
 el archivo completo:
@@ -720,7 +723,7 @@ El estudiante debe verificar tres cosas antes de procesar:
   lista de canales disponibles.
 \end{enumerate}
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-important-color}{\faExclamation}\hspace{0.5em}{Punto de verificación}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-important-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-important-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-important-color!10!white, colframe=quarto-callout-important-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-important-color}{\faExclamation}\hspace{0.5em}{Punto de verificación}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Si el encabezado no contiene canales EMG o la unidad no es
 interpretable, el pipeline debe detenerse. Un dashboard no corrige un
@@ -932,7 +935,7 @@ RMS es conveniente para resumir magnitud local.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-tip-color}{\faLightbulb}\hspace{0.5em}{Decisión de ingeniería}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-tip-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-tip-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-tip-color}{\faLightbulb}\hspace{0.5em}{Decisión de ingeniería}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 No aplique el notch de 60 Hz automáticamente. Primero observe el
 espectro o el indicador de ruido. El filtrado excesivo puede modificar
@@ -1043,7 +1046,7 @@ puede ser compatible con mayor capacidad de activación/reclutamiento
 durante una tarea comparable, pero \textbf{no demuestra por sí solo
 recuperación neurológica ni aumento de fuerza}.
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-warning-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-warning-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 El RMS entre visitas solo es interpretable si se controla el músculo
 registrado, posición de electrodos, preparación de piel, ganancia,
@@ -1083,7 +1086,7 @@ rehabilitación (\citeproc{ref-zhu2020}{Zhu et~al. 2020}). Por tanto, una
 reducción de \(D_{MDF}\), bajo un protocolo repetido y controlado, puede
 considerarse compatible con convergencia del comportamiento espectral.
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-warning-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-warning-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-warning-color!10!white, colframe=quarto-callout-warning-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-warning-color}{\faExclamationTriangle}\hspace{0.5em}{Advertencia metodológica}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 CVES es un estudio transversal y el registro de 24 h de EMG corresponde
 al día 1 (\citeproc{ref-physionet_cves}{Novak 2018}). Además, los
@@ -1254,7 +1257,7 @@ El cálculo longitudinal puede escribirse así:
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tcolorbox}[enhanced jigsaw, toprule=.15mm, arc=.35mm, titlerule=0mm, bottomrule=.15mm, coltitle=black, opacityback=0, title=\textcolor{quarto-callout-tip-color}{\faLightbulb}\hspace{0.5em}{Decisión de ingeniería}, opacitybacktitle=0.6, breakable, bottomtitle=1mm, leftrule=.75mm, left=2mm, colback=white, colbacktitle=quarto-callout-tip-color!10!white, rightrule=.15mm, toptitle=1mm, colframe=quarto-callout-tip-color-frame]
+\begin{tcolorbox}[enhanced jigsaw, arc=.35mm, bottomrule=.15mm, bottomtitle=1mm, breakable, colback=white, colbacktitle=quarto-callout-tip-color!10!white, colframe=quarto-callout-tip-color-frame, coltitle=black, left=2mm, leftrule=.75mm, opacityback=0, opacitybacktitle=0.6, rightrule=.15mm, title=\textcolor{quarto-callout-tip-color}{\faLightbulb}\hspace{0.5em}{Decisión de ingeniería}, titlerule=0mm, toprule=.15mm, toptitle=1mm]
 
 Para el dashboard longitudinal, la visualización recomendada es una
 serie temporal por visita con dos paneles separados:
@@ -1270,6 +1273,7 @@ fisiológica}\label{tabla-de-trazabilidad-fisioluxf3gica}
 El dashboard debe mostrar únicamente métricas con una cadena de
 interpretación explícita.
 
+{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
@@ -1308,6 +1312,7 @@ No es indicador clínico \\
 Baja frecuencia & Artefacto lento/movimiento & Ninguna; es calidad de
 señal & Movimiento real y artefacto pueden coexistir \\
 \end{longtable}
+}
 
 \chapter{10. Diseño del dashboard}\label{diseuxf1o-del-dashboard}
 
@@ -1561,8 +1566,8 @@ La arquitectura desarrollada aquí puede ampliarse posteriormente con:
 
 \chapter{Referencias}\label{referencias}
 
-\phantomsection\label{refs}
-\begin{CSLReferences}{1}{0}
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{1}{1}
 \bibitem[\citeproctext]{ref-munoznovoa2022}
 Muñoz-Novoa, Maria, Morten B. Kristoffersen, Katharina S. Sunnerhagen,
 Annelie Naber, Margit Alt Murphy, y Max Ortiz-Catalan. 2022. {«Upper
@@ -1571,22 +1576,21 @@ Review and Meta-Analysis»}. \emph{Frontiers in Human Neuroscience} 16:
 897870. \url{https://doi.org/10.3389/fnhum.2022.897870}.
 
 \bibitem[\citeproctext]{ref-physionet_cves}
-Novak, Vera. 2018. {«Cerebral Vasoregulation in Elderly with Stroke»}.
-PhysioNet, version 1.0.0. \url{https://doi.org/10.13026/C2DW96}.
+Novak, Vera. 2018. \emph{Cerebral Vasoregulation in Elderly with
+Stroke}. PhysioNet, version 1.0.0.
+\url{https://doi.org/10.13026/C2DW96}.
 
 \bibitem[\citeproctext]{ref-novak2010}
-Novak, Vera, Kun Hu, Laura Desrochers, Peter Novak, Louis Caplan, Lewis
-Lipsitz, y Magdy Selim. 2010. {«Cerebral flow velocities during daily
-activities depend on blood pressure in patients with chronic ischemic
-infarctions»}. \emph{Stroke} 41 (1): 61-66.
+Novak, Vera, Kun Hu, Laura Desrochers, et~al. 2010. {«Cerebral flow
+velocities during daily activities depend on blood pressure in patients
+with chronic ischemic infarctions»}. \emph{Stroke} 41 (1): 61-66.
 \url{https://doi.org/10.1161/STROKEAHA.109.565556}.
 
 \bibitem[\citeproctext]{ref-wang2025}
-Wang, Yong, Lingling Zhong, Minxia Jin, Dantong Liao, Adam J. Privitera,
-Arnold Y. L. Wong, Gabriel C. H. Fong, Shi-Chun Bao, y Rui Sun. 2025.
-{«Assessing stroke-induced abnormal muscle coactivation in the upper
-limb using the surface EMG co-contraction Index: A systematic review»}.
-\emph{Journal of Electromyography and Kinesiology} 81: 102985.
+Wang, Yong, Lingling Zhong, Minxia Jin, et~al. 2025. {«Assessing
+stroke-induced abnormal muscle coactivation in the upper limb using the
+surface EMG co-contraction Index: A systematic review»}. \emph{Journal
+of Electromyography and Kinesiology} 81: 102985.
 \url{https://doi.org/10.1016/j.jelekin.2025.102985}.
 
 \bibitem[\citeproctext]{ref-zhu2020}

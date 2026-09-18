@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<link href="../../recursos/imagenes/generales/bioforja_icon.svg" rel="icon" type="image/svg+xml">
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.9.38">
+
+  <meta name="author" content="Señales Bioeléctricas y Visualización Interactiva">
+  <title>BioForja – Principios fisiológicos del ictus y relación con sEMG</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/reveal.css">
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+    /* CSS for citations */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+    }
+    .hanging-indent div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }  </style>
+  <link rel="stylesheet" href="../../site_libs/revealjs/dist/theme/quarto-7b2c9a1e2a3fd0f5bfa69b788c348831.css">
+  <link rel="stylesheet" href="estilos_reveal.css">
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+  <link href="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-chalkboard/font-awesome/css/all.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/reveal-chalkboard/style.css" rel="stylesheet">
+  <link href="../../site_libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Principios fisiológicos del ictus y relación con sEMG</h1>
+  <p class="subtitle">De la lesión vascular cerebral a los indicadores neuromusculares</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Señales Bioeléctricas y Visualización Interactiva 
+</div>
+</div>
+</div>
+
+</section>
+<section id="propósito-de-la-presentación" class="slide level2">
+<h2>Propósito de la presentación</h2>
+<p>Esta presentación explica los fundamentos fisiológicos del <strong>ictus</strong> seleccionado en el tutorial de dashboards sEMG.</p>
+<p>El énfasis no está en diagnosticar el ictus con electromiografía. El énfasis está en comprender cómo una lesión cerebral vascular modifica el control motor y cómo la <strong>sEMG</strong> puede ayudar a observar la expresión neuromuscular de esa lesión.</p>
+<div class="block-note">
+<p><strong>Idea central:</strong> el ictus ocurre en el cerebro; la sEMG se mide en músculo. La conexión fisiológica es el sistema de control motor descendente.</p>
+</div>
+<aside class="notes">
+<p>Abrir dejando clara la frontera metodológica: sEMG no reemplaza neuroimagen ni valoración neurológica. Sirve para cuantificar actividad muscular, coordinación y cambios funcionales durante recuperación.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="objetivos-de-aprendizaje" class="slide level2">
+<h2>Objetivos de aprendizaje</h2>
+<p>Al finalizar, el estudiante debe poder:</p>
+<ol type="1">
+<li>Explicar qué es un ictus y diferenciar ictus isquémico, hemorrágico y ataque isquémico transitorio.</li>
+<li>Relacionar lesión cerebral, vía corticoespinal, hemiparesia y alteraciones de activación muscular.</li>
+<li>Identificar causas, factores de riesgo y consecuencias clínicas relevantes.</li>
+<li>Reconocer escalas y procedimientos usados por profesionales de la salud.</li>
+<li>Justificar qué puede y qué no puede inferirse desde sEMG.</li>
+<li>Proponer indicadores sEMG útiles para seguimiento neuromuscular post-ictus.</li>
+</ol>
+</section>
+<section id="caso-de-motivación-clínica" class="slide level2">
+<h2>Caso de motivación clínica</h2>
+<p>Un médico rehabilitador solicita un tablero para seguimiento de una paciente con antecedente de ictus isquémico.</p>
+<p>El objetivo clínico no es confirmar el diagnóstico, sino responder preguntas funcionales:</p>
+<ul>
+<li>¿Existe actividad muscular residual en el lado comprometido?</li>
+<li>¿La activación aparece durante los intentos de movimiento?</li>
+<li>¿La activación cambia entre sesiones de rehabilitación?</li>
+<li>¿Hay coactivación excesiva entre músculos que deberían alternarse?</li>
+<li>¿Los indicadores de sEMG son coherentes con la valoración clínica?</li>
+</ul>
+</section>
+<section id="enfermedad-seleccionada" class="slide level2">
+<h2>Enfermedad seleccionada</h2>
+<p><strong>Ictus</strong> o <strong>accidente cerebrovascular</strong>: evento neurológico agudo causado por alteración del flujo sanguíneo cerebral.</p>
+<p>Puede producir déficit focal súbito en:</p>
+<ul>
+<li>fuerza muscular;</li>
+<li>lenguaje;</li>
+<li>sensibilidad;</li>
+<li>visión;</li>
+<li>coordinación;</li>
+<li>marcha;</li>
+<li>estado de conciencia.</li>
+</ul>
+<p>Los signos clínicos de alarma incluyen debilidad súbita de cara, brazo o pierna, alteración del habla, trastornos visuales y dificultad súbita para caminar, entre otros <span class="citation" data-cites="ninds_know_stroke">(<a href="#/referencias" role="doc-biblioref" onclick="">National Institute of Neurological Disorders and Stroke 2026</a>)</span>.</p>
+</section>
+<section id="tipos-principales-de-ictus" class="slide level2">
+<h2>Tipos principales de ictus</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tipo</th>
+<th>Mecanismo primario</th>
+<th>Comentario clínico</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Isquémico</strong></td>
+<td>Obstrucción arterial</td>
+<td>Disminuye el aporte de oxígeno y glucosa al tejido cerebral.</td>
+</tr>
+<tr class="even">
+<td><strong>Hemorrágico</strong></td>
+<td>Ruptura vascular</td>
+<td>Produce sangrado, presión local y daño tisular.</td>
+</tr>
+<tr class="odd">
+<td><strong>Ataque isquémico transitorio</strong></td>
+<td>Obstrucción reversible o breve</td>
+<td>Síntomas transitorios; indica riesgo vascular aumentado.</td>
+</tr>
+</tbody>
+</table>
+<p>Se usará como contexto principal el <strong>ictus isquémico</strong> y la recuperación motora post-ictus.</p>
+</section>
+<section id="ictus-como-problema-vascular-y-neurológico" class="slide level2">
+<h2>Ictus como problema vascular y neurológico</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A[Factor&lt;br&gt;vascular] --&gt; B[Alteración del&lt;br&gt;flujo cerebral]
+  B --&gt; C[Déficit energético]
+  C --&gt; D[Falla de función&lt;br&gt;neuronal]
+  D --&gt; E[Daño en&lt;br&gt;redes motoras]
+  E --&gt; F[Alteración del&lt;br&gt;comando descendente]
+  F --&gt; G[Patrón sEMG&lt;br&gt;modificado]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="block-critical">
+<p>La sEMG no mide la lesión cerebral. Mide la consecuencia periférica del control neural alterado sobre el músculo.</p>
+</div>
+</section>
+<section id="fisiología-básica-del-flujo-cerebral" class="slide level2">
+<h2>Fisiología básica del flujo cerebral</h2>
+<p>El encéfalo requiere perfusión continua para sostener metabolismo neuronal.</p>
+<p>Cuando una arteria cerebral se ocluye:</p>
+<ul>
+<li>disminuye el suministro de oxígeno;</li>
+<li>se reduce la producción de ATP;</li>
+<li>falla el mantenimiento de gradientes iónicos;</li>
+<li>se altera la excitabilidad neuronal;</li>
+<li>puede aparecer lesión irreversible si la hipoperfusión persiste.</li>
+</ul>
+<p>En ictus isquémico, la evaluación y tratamiento temprano se orientan a preservar tejido viable y reducir discapacidad <span class="citation" data-cites="powers2019acute_ischemic_stroke">(<a href="#/referencias" role="doc-biblioref" onclick="">Powers et&nbsp;al. 2019</a>)</span>.</p>
+</section>
+<section id="núcleo-isquémico-y-penumbra" class="slide level2">
+<h2>Núcleo isquémico y penumbra</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+  A[Oclusión arterial] --&gt; B[Zona con perfusión muy baja]
+  A --&gt; C[Zona con perfusión reducida]
+  B --&gt; D[Núcleo isquémico]
+  C --&gt; E[Penumbra isquémica]
+  D --&gt; F[Daño estructural mayor]
+  E --&gt; G[Tejido potencialmente recuperable]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p><strong>Interpretación:</strong> la penumbra es fisiológicamente importante porque todavía puede contener neuronas disfuncionales pero no completamente perdidas.</p>
+</section>
+<section id="la-cascada-isquémica" class="slide level2">
+<h2>La cascada isquémica</h2>
+<p>Cuando baja la perfusión cerebral, se desencadena una secuencia fisiopatológica:</p>
+<ol type="1">
+<li>déficit energético;</li>
+<li>despolarización anómala;</li>
+<li>exceso de glutamato;</li>
+<li>entrada de calcio;</li>
+<li>estrés oxidativo;</li>
+<li>inflamación;</li>
+<li>muerte celular.</li>
+</ol>
+<div class="block-note">
+<p>Para ingeniería biomédica, esto importa porque la lesión no solo “apaga” una región: altera redes, sincronización y vías motoras.</p>
+</div>
+</section>
+<section id="zonas-cerebrales-relevantes-para-movimiento" class="slide level2">
+<h2>Zonas cerebrales relevantes para movimiento</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Estructura</th>
+<th>Función motora relevante</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Corteza motora primaria</td>
+<td>Ejecución voluntaria del movimiento.</td>
+</tr>
+<tr class="even">
+<td>Corteza premotora</td>
+<td>Planeación y selección de acciones.</td>
+</tr>
+<tr class="odd">
+<td>Área motora suplementaria</td>
+<td>Secuencias motoras y coordinación bilateral.</td>
+</tr>
+<tr class="even">
+<td>Cápsula interna</td>
+<td>Paso compacto de fibras descendentes.</td>
+</tr>
+<tr class="odd">
+<td>Tronco encefálico</td>
+<td>Vías motoras alternativas y reflejos posturales.</td>
+</tr>
+<tr class="even">
+<td>Cerebelo</td>
+<td>Coordinación y ajuste fino.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="vía-corticoespinal" class="slide level2">
+<h2>Vía corticoespinal</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+  A[Corteza&lt;br&gt;motora] --&gt; B[Corona&lt;br&gt;radiata]
+  B --&gt; C[Cápsula&lt;br&gt;interna]
+  C --&gt; D[Tronco&lt;br&gt;encefálico]
+  D --&gt; E[Decusación&lt;br&gt;piramidal]
+  E --&gt; F[Médula&lt;br&gt;espinal&lt;br&gt;contralateral]
+  F --&gt; G[Motoneurona&lt;br&gt;alfa]
+  G --&gt; H[Unidad motora]
+  H --&gt; I[Señal sEMG]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>La vía corticoespinal conecta intención motora cortical con activación de unidades motoras periféricas.</p>
+</section>
+<section id="contralateralidad-motora" class="slide level2">
+<h2>Contralateralidad motora</h2>
+<p>La mayoría de fibras corticoespinales cruzan en la decusación piramidal.</p>
+<p>Por eso, una lesión en el hemisferio derecho puede manifestarse como déficit motor izquierdo.</p>
+<div class="block-warning">
+<p>No asuma que <code>Stroke Side = RIGHT</code> significa lado corporal derecho afectado. Puede indicar hemisferio cerebral lesionado. La variable debe verificarse antes de construir indicadores de lateralidad.</p>
+</div>
+</section>
+<section id="por-qué-aparece-hemiparesia" class="slide level2">
+<h2>¿Por qué aparece hemiparesia?</h2>
+<p>La <strong>hemiparesia</strong> es debilidad parcial de un hemicuerpo.</p>
+<p>En ictus, puede aparecer por:</p>
+<ul>
+<li>interrupción parcial de comandos descendentes;</li>
+<li>reducción del reclutamiento de unidades motoras;</li>
+<li>mala sincronización entre músculos;</li>
+<li>control postural insuficiente;</li>
+<li>dependencia de vías motoras alternativas menos selectivas;</li>
+<li>desuso y cambios periféricos secundarios.</li>
+</ul>
+</section>
+<section id="no-todo-es-cerebro-músculo-post-ictus" class="slide level2">
+<h2>No todo es cerebro: músculo post-ictus</h2>
+<p>Después del ictus también pueden aparecer cambios periféricos:</p>
+<ul>
+<li>pérdida de masa muscular por desuso;</li>
+<li>alteración de composición de fibras;</li>
+<li>reducción de capacidad oxidativa;</li>
+<li>fatiga temprana;</li>
+<li>cambios en rigidez y propiedades mecánicas;</li>
+<li>menor coordinación durante tareas funcionales.</li>
+</ul>
+<div class="block-note">
+<p>La sEMG observa actividad eléctrica muscular, pero esa actividad está influida por piel, grasa subcutánea, colocación de electrodos, crosstalk, fatiga y geometría muscular.</p>
+</div>
+</section>
+<section id="causas-y-factores-de-riesgo" class="slide level2">
+<h2>Causas y factores de riesgo</h2>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Categoría</th>
+<th>Ejemplos</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Vasculares</td>
+<td>Hipertensión, aterosclerosis, enfermedad carotídea.</td>
+</tr>
+<tr class="even">
+<td>Cardíacas</td>
+<td>Fibrilación auricular, tromboembolismo cardiogénico.</td>
+</tr>
+<tr class="odd">
+<td>Metabólicas</td>
+<td>Diabetes, dislipidemia.</td>
+</tr>
+<tr class="even">
+<td>Conductuales</td>
+<td>Tabaquismo, sedentarismo, dieta no saludable.</td>
+</tr>
+<tr class="odd">
+<td>Hematológicas</td>
+<td>Estados protrombóticos.</td>
+</tr>
+<tr class="even">
+<td>Edad y antecedentes</td>
+<td>Edad avanzada, ictus previo, TIA.</td>
+</tr>
+</tbody>
+</table>
+<p>No todos los factores son modificables. La prevención secundaria exige control clínico individualizado.</p>
+</section>
+<section id="causas-enfoque-mecanístico" class="slide level2">
+<h2>Causas: enfoque mecanístico</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A[Aterosclerosis] --&gt; D[Oclusión arterial]
+  B[Émbolo cardíaco] --&gt; D
+  C[Pequeño vaso] --&gt; D
+  D --&gt; E[Isquemia cerebral]
+  E --&gt; F[Déficit neurológico]
+  G[Ruptura vascular] --&gt; H[Hemorragia]
+  H --&gt; F
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>El mismo síntoma motor puede originarse en mecanismos vasculares diferentes. Por eso la valoración médica no se basa solo en la exploración motora.</p>
+</section>
+<section id="consecuencias-neurológicas" class="slide level2">
+<h2>Consecuencias neurológicas</h2>
+<p>Las consecuencias dependen de la localización y extensión de la lesión.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Dominio</th>
+<th>Manifestaciones posibles</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Motor</td>
+<td>Hemiparesia, pérdida de destreza, alteración de marcha.</td>
+</tr>
+<tr class="even">
+<td>Sensitivo</td>
+<td>Hipoestesia, propiocepción alterada.</td>
+</tr>
+<tr class="odd">
+<td>Lenguaje</td>
+<td>Afasia, disartria.</td>
+</tr>
+<tr class="even">
+<td>Cognitivo</td>
+<td>Negligencia, atención reducida, alteración ejecutiva.</td>
+</tr>
+<tr class="odd">
+<td>Visual</td>
+<td>Hemianopsia, diplopía.</td>
+</tr>
+<tr class="even">
+<td>Deglución</td>
+<td>Disfagia y riesgo de aspiración.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="consecuencias-funcionales" class="slide level2">
+<h2>Consecuencias funcionales</h2>
+<p>Una lesión relativamente pequeña puede producir gran impacto funcional si compromete vías motoras críticas.</p>
+<p>Consecuencias típicas:</p>
+<ul>
+<li>dependencia para actividades de la vida diaria;</li>
+<li>disminución de velocidad y seguridad de marcha;</li>
+<li>pérdida de independencia para agarre y manipulación;</li>
+<li>riesgo de caídas;</li>
+<li>dolor de hombro y complicaciones ortopédicas;</li>
+<li>reducción de participación social.</li>
+</ul>
+<p>La rehabilitación adulta post-ictus se centra en recuperar función, prevenir complicaciones y adaptar el entorno <span class="citation" data-cites="winstein2016stroke_rehab">(<a href="#/referencias" role="doc-biblioref" onclick="">Winstein et&nbsp;al. 2016</a>)</span>.</p>
+</section>
+<section id="valoración-profesional-fase-aguda" class="slide level2">
+<h2>Valoración profesional: fase aguda</h2>
+<p>En urgencias, el profesional de salud combina:</p>
+<ol type="1">
+<li>historia clínica y tiempo de inicio;</li>
+<li>examen neurológico focal;</li>
+<li>escalas de severidad;</li>
+<li>neuroimagen;</li>
+<li>evaluación vascular y cardíaca;</li>
+<li>laboratorio según contexto;</li>
+<li>decisión terapéutica dependiente de ventana temporal y tipo de ictus.</li>
+</ol>
+<div class="block-critical">
+<p>El diagnóstico de ictus exige valoración médica. La sEMG no identifica oclusión arterial, hemorragia ni tejido cerebral comprometido.</p>
+</div>
+</section>
+<section id="nihss" class="slide level2">
+<h2>NIHSS</h2>
+<p>La <strong>NIH Stroke Scale</strong> cuantifica severidad neurológica.</p>
+<p>Evalúa componentes como:</p>
+<ul>
+<li>conciencia;</li>
+<li>mirada;</li>
+<li>campos visuales;</li>
+<li>paresia facial;</li>
+<li>fuerza de brazos y piernas;</li>
+<li>coordinación;</li>
+<li>sensibilidad;</li>
+<li>lenguaje;</li>
+<li>disartria;</li>
+<li>negligencia.</li>
+</ul>
+<p>Puntajes más altos indican mayor déficit neurológico.</p>
+</section>
+<section id="mrs" class="slide level2">
+<h2>mRS</h2>
+<p>La <strong>modified Rankin Scale</strong> mide discapacidad global o dependencia funcional.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Puntaje</th>
+<th>Interpretación general</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>Sin síntomas.</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Síntomas sin discapacidad significativa.</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>Discapacidad leve, independiente.</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>Discapacidad moderada; requiere algo de ayuda.</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>Discapacidad moderadamente grave.</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>Discapacidad grave.</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>Muerte.</td>
+</tr>
+</tbody>
+</table>
+<p>mRS no mide actividad muscular específica. Resume impacto funcional global.</p>
+</section>
+<section id="valoración-motora-y-funcional" class="slide level2">
+<h2>Valoración motora y funcional</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Instrumento</th>
+<th>Qué valora</th>
+<th>Utilidad para sEMG</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>MRC / MMT</td>
+<td>Fuerza manual ordinal</td>
+<td>Comparar fuerza clínica con activación muscular.</td>
+</tr>
+<tr class="even">
+<td>Fugl-Meyer</td>
+<td>Recuperación sensoriomotora post-ictus</td>
+<td>Relacionar patrones sEMG con control motor.</td>
+</tr>
+<tr class="odd">
+<td>Barthel Index</td>
+<td>Independencia en actividades diarias</td>
+<td>Contextualizar impacto funcional.</td>
+</tr>
+<tr class="even">
+<td>10 Meter Walk Test</td>
+<td>Velocidad de marcha</td>
+<td>Relacionar activación muscular con marcha.</td>
+</tr>
+<tr class="odd">
+<td>6 Minute Walk Test</td>
+<td>Capacidad funcional</td>
+<td>Explorar fatiga y resistencia.</td>
+</tr>
+<tr class="even">
+<td>Box and Block / ARAT</td>
+<td>Función de miembro superior</td>
+<td>Relacionar activación con destreza.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="neuroimagen-y-estudios-complementarios" class="slide level2">
+<h2>Neuroimagen y estudios complementarios</h2>
+<p>La valoración profesional puede incluir:</p>
+<ul>
+<li>tomografía computarizada;</li>
+<li>resonancia magnética;</li>
+<li>angiografía por TC o RM;</li>
+<li>Doppler carotídeo;</li>
+<li>electrocardiograma;</li>
+<li>monitoreo cardíaco;</li>
+<li>ecocardiografía;</li>
+<li>laboratorio para factores de riesgo.</li>
+</ul>
+<p>La sEMG no compite con estas técnicas. Se ubica en la fase de evaluación funcional y seguimiento neuromuscular.</p>
+</section>
+<section id="dónde-entra-la-semg" class="slide level2">
+<h2>¿Dónde entra la sEMG?</h2>
+<p>La sEMG registra actividad eléctrica asociada a la activación de unidades motoras superficiales.</p>
+<p>En post-ictus puede aportar información sobre:</p>
+<ul>
+<li>presencia de activación residual;</li>
+<li>intensidad relativa de activación;</li>
+<li>duración de contracciones;</li>
+<li>sincronización entre músculos;</li>
+<li>coactivación agonista-antagonista;</li>
+<li>fatiga o desplazamientos espectrales;</li>
+<li>respuesta a terapia y biofeedback.</li>
+</ul>
+</section>
+<section id="del-cerebro-al-electrodo" class="slide level2">
+<h2>Del cerebro al electrodo</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A[Lesión cerebral] --&gt; B[Comando motor alterado]
+  B --&gt; C[Motoneuronas espinales]
+  C --&gt; D[Unidades motoras]
+  D --&gt; E[Potenciales de acción musculares]
+  E --&gt; F[Volumen conductor]
+  F --&gt; G[Electrodos sEMG]
+  G --&gt; H[Procesamiento]
+  H --&gt; I[Indicadores]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>La sEMG captura una señal periférica que conserva huellas indirectas de control neural.</p>
+</section>
+<section id="qué-mide-realmente-la-semg" class="slide level2">
+<h2>Qué mide realmente la sEMG</h2>
+<p>La sEMG mide una suma espacial y temporal de potenciales de acción de fibras musculares.</p>
+<p>Depende de:</p>
+<ul>
+<li>reclutamiento de unidades motoras;</li>
+<li>frecuencia de disparo;</li>
+<li>sincronización;</li>
+<li>conducción de volumen;</li>
+<li>geometría electrodo-músculo;</li>
+<li>impedancia piel-electrodo;</li>
+<li>interferencia eléctrica;</li>
+<li>movimiento y crosstalk.</li>
+</ul>
+<div class="block-warning">
+<p>Más RMS no significa automáticamente más fuerza. La amplitud sEMG requiere normalización, control experimental y contexto fisiológico.</p>
+</div>
+</section>
+<section id="señal-semg-esperada-post-ictus" class="slide level2">
+<h2>Señal sEMG esperada post-ictus</h2>
+<p>En un sujeto post-ictus, pueden observarse patrones como:</p>
+<ul>
+<li>baja activación durante intento voluntario;</li>
+<li>activación tardía;</li>
+<li>activación sostenida no funcional;</li>
+<li>coactivación de antagonistas;</li>
+<li>asimetría entre lados;</li>
+<li>menor selectividad muscular;</li>
+<li>variabilidad elevada entre repeticiones.</li>
+</ul>
+<p>Estos patrones son interpretables solo si se conoce tarea, músculo, lateralidad y etapa de recuperación.</p>
+</section>
+<section id="semg-y-actividad-residual-invisible" class="slide level2">
+<h2>sEMG y actividad residual invisible</h2>
+<p>La literatura sobre uso clínico de sEMG post-ictus destaca que puede revelar actividad muscular incluso cuando la observación clínica detecta poco o ningún movimiento <span class="citation" data-cites="steele2020emg_after_stroke">(<a href="#/referencias" role="doc-biblioref" onclick="">Steele et&nbsp;al. 2020</a>)</span>.</p>
+<p>Esto es relevante porque:</p>
+<ul>
+<li>el músculo puede estar eléctricamente activo aunque no produzca movimiento observable;</li>
+<li>la activación residual puede orientar ejercicios;</li>
+<li>el biofeedback puede reforzar intención motora;</li>
+<li>los indicadores longitudinales pueden apoyar seguimiento.</li>
+</ul>
+</section>
+<section id="indicadores-semg-mapa-fisiología-ingeniería" class="slide level2">
+<h2>Indicadores sEMG: mapa fisiología-ingeniería</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Pregunta fisiológica</th>
+<th>Indicador sEMG</th>
+<th>Interpretación cautelosa</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>¿Hay activación?</td>
+<td>RMS / envolvente</td>
+<td>Magnitud eléctrica relativa.</td>
+</tr>
+<tr class="even">
+<td>¿Cuánto tiempo activa?</td>
+<td>% tiempo activo</td>
+<td>Persistencia o participación muscular.</td>
+</tr>
+<tr class="odd">
+<td>¿Cuándo activa?</td>
+<td>latencia / onset</td>
+<td>Coordinación temporal.</td>
+</tr>
+<tr class="even">
+<td>¿Activa antagonistas?</td>
+<td>coactivación</td>
+<td>Selectividad motora reducida.</td>
+</tr>
+<tr class="odd">
+<td>¿Cambia el espectro?</td>
+<td>MDF / MNF</td>
+<td>Fatiga, reclutamiento o cambios de conducción.</td>
+</tr>
+<tr class="even">
+<td>¿Se aproxima al lado sano?</td>
+<td>asimetría relativa</td>
+<td>Seguimiento entre sesiones.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="indicador-1-rms-activo" class="slide level2">
+<h2>Indicador 1: RMS activo</h2>
+<p>El RMS en ventanas cortas resume amplitud efectiva de la señal.</p>
+<p><span class="math display">
+RMS_i = \sqrt{\frac{1}{N}\sum_{n=1}^{N}x_i[n]^2}
+</span></p>
+<p>Para seguimiento post-ictus conviene usar <strong>RMS activo</strong>, calculado solo en ventanas que superan un umbral de actividad.</p>
+<p><span class="math display">
+RMS_{act} = \operatorname{mediana}\{RMS_i : RMS_i &gt; T\}
+</span></p>
+</section>
+<section id="indicador-2-cambio-longitudinal-de-activación" class="slide level2">
+<h2>Indicador 2: cambio longitudinal de activación</h2>
+<p>Si existe una sesión basal comparable:</p>
+<p><span class="math display">
+\Delta RMS_{rel,k}=100\frac{RMS_{act,k}-RMS_{act,0}}{RMS_{act,0}}
+</span></p>
+<p>Puede sugerir cambios de activación neuromuscular durante rehabilitación.</p>
+<div class="block-critical">
+<p>No debe interpretarse como “porcentaje de recuperación del ictus”. Es cambio relativo de amplitud sEMG bajo condiciones experimentales definidas.</p>
+</div>
+</section>
+<section id="indicador-3-mdf" class="slide level2">
+<h2>Indicador 3: MDF</h2>
+<p>La frecuencia mediana divide la potencia espectral en dos mitades.</p>
+<p><span class="math display">
+\int_{f_L}^{MDF} P(f)df=\frac{1}{2}\int_{f_L}^{f_H}P(f)df
+</span></p>
+<p>En la práctica, se estima la PSD con Welch y luego se calcula MDF.</p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A[sEMG filtrada] --&gt; B[Ventanas]
+  B --&gt; C[Welch]
+  C --&gt; D[PSD]
+  D --&gt; E[MDF]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section>
+<section id="indicador-4-distancia-mdf-al-lado-contralateral" class="slide level2">
+<h2>Indicador 4: distancia MDF al lado contralateral</h2>
+<p>Cuando se dispone de músculos homólogos correctamente identificados:</p>
+<p><span class="math display">
+D_{MDF,k}=100\frac{|MDF_{parético,k}-MDF_{contra,k}|}{MDF_{contra,k}}
+</span></p>
+<p>Interpretación:</p>
+<ul>
+<li>valores altos: diferencia espectral entre lados;</li>
+<li>valores decrecientes: posible convergencia hacia referencia contralateral;</li>
+<li>valores aislados: no tienen significado clínico suficiente.</li>
+</ul>
+</section>
+<section id="indicador-5-coactivación-agonista-antagonista" class="slide level2">
+<h2>Indicador 5: coactivación agonista-antagonista</h2>
+<p>La coactivación puede indicar reducción de selectividad motora.</p>
+<p>Una forma simple:</p>
+<p><span class="math display">
+CCI = \frac{2\int \min(E_{ago}(t),E_{ant}(t))dt}{\int E_{ago}(t)dt + \int E_{ant}(t)dt}
+</span></p>
+<p>donde <span class="math inline">E(t)</span> es la envolvente sEMG.</p>
+<div class="block-warning">
+<p>Este indicador exige conocer qué canal corresponde a agonista y antagonista. No debe calcularse si el dataset no identifica músculos.</p>
+</div>
+</section>
+<section id="indicador-6-latencia-de-activación" class="slide level2">
+<h2>Indicador 6: latencia de activación</h2>
+<p>El inicio de activación se estima cuando la envolvente supera un umbral robusto:</p>
+<p><span class="math display">
+t_{on}=\min\{t : E(t)&gt;T \;\text{durante}\; d_{min}\}
+</span></p>
+<p>En tareas repetidas, latencias más estables pueden sugerir mejor control temporal.</p>
+<p>Pero dependen de:</p>
+<ul>
+<li>instrucción de tarea;</li>
+<li>fatiga;</li>
+<li>atención;</li>
+<li>ruido;</li>
+<li>ubicación de electrodos;</li>
+<li>sincronización con eventos cinemáticos.</li>
+</ul>
+</section>
+<section id="arquitectura-conceptual-del-seguimiento" class="slide level2">
+<h2>Arquitectura conceptual del seguimiento</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+  A[Valoración clínica] --&gt; E[Interpretación integrada]
+  B[sEMG] --&gt; C[Preprocesamiento]
+  C --&gt; D[Indicadores]
+  D --&gt; E
+  F[Contexto de tarea] --&gt; E
+  G[Neuroimagen / historia clínica] --&gt; E
+  E --&gt; H[Decisión terapéutica]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>La sEMG tiene valor cuando se integra con la valoración clínica, no cuando se interpreta en aislamiento.</p>
+</section>
+<section id="dataset-del-tutorial-cves-physionet" class="slide level2">
+<h2>Dataset del tutorial: CVES PhysioNet</h2>
+<p>El tutorial usa <strong>Cerebral Vasoregulation in Elderly with Stroke</strong>, disponible en PhysioNet <span class="citation" data-cites="physionet_cves_2018">(<a href="#/referencias" role="doc-biblioref" onclick="">Novak y Hajjar 2018</a>)</span>.</p>
+<p>Características relevantes:</p>
+<ul>
+<li>datos multimodales;</li>
+<li>grupo con ictus y grupo control;</li>
+<li>registros de EMG de larga duración;</li>
+<li>utilidad docente para cargar, filtrar, segmentar y visualizar sEMG.</li>
+</ul>
+<div class="block-warning">
+<p>CVES es útil para enseñar procesamiento y dashboard. No permite, por sí solo, demostrar recuperación longitudinal individual si no hay sesiones repetidas comparables.</p>
+</div>
+</section>
+<section id="advertencia-sobre-lateralidad-en-cves" class="slide level2">
+<h2>Advertencia sobre lateralidad en CVES</h2>
+<p>Si aparece un registro como:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a></a>Stroke Side = RIGHT</span>
+<span id="cb1-2"><a></a>Symptoms    = L hemiparesis</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<p>la interpretación correcta puede ser:</p>
+<ul>
+<li>lesión del hemisferio derecho;</li>
+<li>manifestación motora izquierda por control contralateral.</li>
+</ul>
+<p>Antes de crear indicadores de asimetría, debe verificarse la definición operativa de <code>Stroke Side</code>.</p>
+</section>
+<section id="relación-entre-escalas-clínicas-y-semg" class="slide level2">
+<h2>Relación entre escalas clínicas y sEMG</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Escala clínica</th>
+<th>Nivel de medición</th>
+<th>Relación con sEMG</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NIHSS</td>
+<td>Déficit neurológico agudo</td>
+<td>Contextualiza severidad, no reemplaza señal muscular.</td>
+</tr>
+<tr class="even">
+<td>mRS</td>
+<td>Dependencia funcional global</td>
+<td>Relaciona actividad muscular con impacto en vida diaria.</td>
+</tr>
+<tr class="odd">
+<td>Fugl-Meyer</td>
+<td>Control sensoriomotor</td>
+<td>Puede correlacionarse con patrones de activación.</td>
+</tr>
+<tr class="even">
+<td>MMT/MRC</td>
+<td>Fuerza clínica ordinal</td>
+<td>Puede contrastarse con RMS y activación residual.</td>
+</tr>
+<tr class="odd">
+<td>Pruebas de marcha</td>
+<td>Desempeño funcional</td>
+<td>Puede integrarse con sEMG de miembros inferiores.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="qué-puede-aportar-un-dashboard-semg" class="slide level2">
+<h2>Qué puede aportar un dashboard sEMG</h2>
+<p>Un dashboard clínico-docente debería permitir:</p>
+<ul>
+<li>inspección de señal cruda y filtrada;</li>
+<li>visualización de envolvente;</li>
+<li>detección de episodios activos;</li>
+<li>comparación entre lados o sesiones;</li>
+<li>visualización de PSD y MDF;</li>
+<li>reporte de calidad de señal;</li>
+<li>advertencias metodológicas;</li>
+<li>relación con variables clínicas.</li>
+</ul>
+</section>
+<section id="qué-no-debe-afirmar-el-dashboard" class="slide level2">
+<h2>Qué no debe afirmar el dashboard</h2>
+<p>El dashboard no debe afirmar:</p>
+<ul>
+<li>“diagnóstico de ictus”;</li>
+<li>“porcentaje de recuperación cerebral”;</li>
+<li>“fuerza muscular absoluta” sin calibración;</li>
+<li>“lado parético” sin verificar lateralidad;</li>
+<li>“mejoría clínica” sin escala externa;</li>
+<li>“pronóstico” sin validación longitudinal.</li>
+</ul>
+<div class="block-critical">
+<p>La visualización puede ser técnicamente correcta y clínicamente engañosa si no explicita sus supuestos.</p>
+</div>
+</section>
+<section id="de-fisiología-a-diseño-del-dashboard" class="slide level2">
+<h2>De fisiología a diseño del dashboard</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A[Hemiparesia] --&gt; B[Pregunta clínica]
+  B --&gt; C[Músculo / tarea]
+  C --&gt; D[sEMG]
+  D --&gt; E[Preprocesamiento]
+  E --&gt; F[Indicadores]
+  F --&gt; G[Visualización]
+  G --&gt; H[Interpretación]
+  H --&gt; I[Plan de rehabilitación]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>El dashboard no comienza en Plotly. Comienza en una pregunta clínica formulada desde fisiología.</p>
+</section>
+<section id="preguntas-de-diseño-para-el-estudiante" class="slide level2">
+<h2>Preguntas de diseño para el estudiante</h2>
+<p>Antes de programar, responda:</p>
+<ol type="1">
+<li>¿Qué función motora se quiere observar?</li>
+<li>¿Qué músculo o canal representa esa función?</li>
+<li>¿Cuál es el lado comprometido y cómo fue definido?</li>
+<li>¿Cuál es la tarea: reposo, contracción, marcha, agarre o actividad diaria?</li>
+<li>¿Qué indicador responde a la pregunta clínica?</li>
+<li>¿Qué escala clínica servirá como referencia externa?</li>
+<li>¿Qué condición de calidad invalida la señal?</li>
+</ol>
+</section>
+<section id="ejemplo-de-trazabilidad-fisiológica" class="slide level2">
+<h2>Ejemplo de trazabilidad fisiológica</h2>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Elemento</th>
+<th>Decisión técnica</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Lesión cerebral derecha</td>
+<td>Revisar posible hemiparesia izquierda.</td>
+</tr>
+<tr class="even">
+<td>Debilidad de miembro superior</td>
+<td>Analizar activación de canales sEMG relevantes.</td>
+</tr>
+<tr class="odd">
+<td>Activación residual</td>
+<td>RMS activo y episodios por minuto.</td>
+</tr>
+<tr class="even">
+<td>Control temporal</td>
+<td>latencia y duración de activación.</td>
+</tr>
+<tr class="odd">
+<td>Fatiga o cambio espectral</td>
+<td>PSD por Welch y MDF.</td>
+</tr>
+<tr class="even">
+<td>Función clínica</td>
+<td>Comparar con Fugl-Meyer, MRC, mRS o prueba funcional.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="error-frecuente-1" class="slide level2">
+<h2>Error frecuente 1</h2>
+<p><strong>Error:</strong> usar RMS como sinónimo de fuerza.</p>
+<p><strong>Corrección:</strong> RMS representa amplitud eléctrica de la sEMG bajo condiciones específicas.</p>
+<p>Para aproximarse a fuerza se requeriría:</p>
+<ul>
+<li>tarea controlada;</li>
+<li>calibración;</li>
+<li>normalización;</li>
+<li>control de postura;</li>
+<li>control de fatiga;</li>
+<li>idealmente medición mecánica simultánea.</li>
+</ul>
+</section>
+<section id="error-frecuente-2" class="slide level2">
+<h2>Error frecuente 2</h2>
+<p><strong>Error:</strong> interpretar una sola medición como evolución.</p>
+<p><strong>Corrección:</strong> evolución requiere mediciones repetidas comparables.</p>
+<p>Debe mantenerse constante:</p>
+<ul>
+<li>músculo;</li>
+<li>colocación de electrodos;</li>
+<li>tarea;</li>
+<li>postura;</li>
+<li>ganancia;</li>
+<li>frecuencia de muestreo;</li>
+<li>preprocesamiento;</li>
+<li>criterio de umbral.</li>
+</ul>
+</section>
+<section id="error-frecuente-3" class="slide level2">
+<h2>Error frecuente 3</h2>
+<p><strong>Error:</strong> calcular coactivación sin saber qué músculo corresponde a cada canal.</p>
+<p><strong>Corrección:</strong> la coactivación agonista-antagonista exige identificación anatómica.</p>
+<p>Si el dataset solo reporta <code>emg_0</code>, <code>emg_1</code>, etc., se puede enseñar procesamiento, pero no inferir pares musculares sin metadatos.</p>
+</section>
+<section id="actividad-en-clase" class="slide level2">
+<h2>Actividad en clase</h2>
+<p>Para un sujeto post-ictus con <code>NIHSS = 10</code>, <code>mRS = 3</code>, <code>Stroke Side = RIGHT</code> y <code>Symptoms = L hemiparesis</code>, proponga:</p>
+<ol type="1">
+<li>una hipótesis fisiológica;</li>
+<li>dos indicadores sEMG;</li>
+<li>una escala clínica externa;</li>
+<li>una visualización para el dashboard;</li>
+<li>una advertencia metodológica obligatoria.</li>
+</ol>
+</section>
+<section id="respuesta-esperada-nivel-mínimo" class="slide level2">
+<h2>Respuesta esperada: nivel mínimo</h2>
+<p>Una respuesta aceptable debe decir que:</p>
+<ul>
+<li>la lesión derecha puede explicar hemiparesia izquierda por control contralateral;</li>
+<li>NIHSS y mRS contextualizan severidad y discapacidad;</li>
+<li>RMS activo y MDF pueden describir actividad neuromuscular;</li>
+<li>sEMG no diagnostica ictus;</li>
+<li>no se debe inferir lateralidad muscular sin metadatos;</li>
+<li>la evolución exige mediciones longitudinales.</li>
+</ul>
+</section>
+<section id="cierre-conceptual" class="slide level2">
+<h2>Cierre conceptual</h2>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TB
+  A[Ictus] --&gt; B[Lesión cerebral focal]
+  B --&gt; C[Control motor alterado]
+  C --&gt; D[Hemiparesia / coordinación anómala]
+  D --&gt; E[Actividad muscular modificada]
+  E --&gt; F[sEMG]
+  F --&gt; G[Indicadores de ingeniería]
+  G --&gt; H[Interpretación clínica integrada]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div class="block-note">
+<p>La ingeniería aporta medición objetiva; la fisiología aporta significado; la clínica aporta criterio de decisión.</p>
+</div>
+</section>
+<section id="mensaje-final" class="slide level2">
+<h2>Mensaje final</h2>
+<p>La sEMG permite observar la <strong>expresión neuromuscular</strong> de la lesión post-ictus.</p>
+<p>No reemplaza la valoración médica ni la neuroimagen.</p>
+<p>Su valor está en:</p>
+<ul>
+<li>cuantificar activación residual;</li>
+<li>objetivar cambios entre sesiones;</li>
+<li>apoyar biofeedback;</li>
+<li>integrar señales con escalas clínicas;</li>
+<li>construir dashboards interpretables y trazables.</li>
+</ul>
+</section>
+<section id="referencias" class="slide level2 smaller scrollable">
+<h2>Referencias</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-ninds_know_stroke" class="csl-entry" role="listitem">
+National Institute of Neurological Disorders and Stroke. 2026. <em>Know Stroke</em>. <a href="https://www.ninds.nih.gov/health-information/public-education/know-stroke">https://www.ninds.nih.gov/health-information/public-education/know-stroke</a>.
+</div>
+<div id="ref-physionet_cves_2018" class="csl-entry" role="listitem">
+Novak, Vera, y Ihab Hajjar. 2018. <em>Cerebral Vasoregulation in Elderly with Stroke, Version 1.0.0</em>. PhysioNet. <a href="https://doi.org/10.13026/C2DW96">https://doi.org/10.13026/C2DW96</a>.
+</div>
+<div id="ref-powers2019acute_ischemic_stroke" class="csl-entry" role="listitem">
+Powers, William J., Alejandro A. Rabinstein, Teri Ackerson, et&nbsp;al. 2019. <span>«Guidelines for the Early Management of Patients With Acute Ischemic Stroke: 2019 Update»</span>. <em>Stroke</em> 50 (12): e344-418. <a href="https://doi.org/10.1161/STR.0000000000000211">https://doi.org/10.1161/STR.0000000000000211</a>.
+</div>
+<div id="ref-steele2020emg_after_stroke" class="csl-entry" role="listitem">
+Steele, Katherine M., Christina Papazian, y Heather A. Feldner. 2020. <span>«Muscle Activity After Stroke: Perspectives on Deploying Surface Electromyography in Acute Care»</span>. <em>Frontiers in Neurology</em> 11: 576757. <a href="https://doi.org/10.3389/fneur.2020.576757">https://doi.org/10.3389/fneur.2020.576757</a>.
+</div>
+<div id="ref-winstein2016stroke_rehab" class="csl-entry" role="listitem">
+Winstein, Carolee J., Joel Stein, Ross Arena, et&nbsp;al. 2016. <span>«Guidelines for Adult Stroke Rehabilitation and Recovery»</span>. <em>Stroke</em> 47 (6): e98-169. <a href="https://doi.org/10.1161/STR.0000000000000098">https://doi.org/10.1161/STR.0000000000000098</a>.
+</div>
+</div>
+
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="../../site_libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="../../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="../../site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="../../site_libs/revealjs/plugin/reveal-chalkboard/plugin.js"></script>
+  <script src="../../site_libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="../../site_libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="../../site_libs/revealjs/plugin/search/search.js"></script>
+  <script src="../../site_libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': false,
+'previewLinksAuto': true,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleChalkboard(event)\"><kbd>b</kbd> Toggle Chalkboard</a></li>\n<li class=\"slide-tool-item\" data-item=\"6\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleNotesCanvas(event)\"><kbd>c</kbd> Toggle Notes Canvas</a></li>\n<li class=\"slide-tool-item\" data-item=\"7\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.downloadDrawings(event)\"><kbd>d</kbd> Download Drawings</a></li>\n<li class=\"slide-tool-item\" data-item=\"8\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'chalkboard': {"buttons":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'fade',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1600,
+
+        height: 900,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 7.0e-2,
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, RevealChalkboard, QuartoSupport,
+
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copiado");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copiado");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+          const outerScaffold = trigger.parentElement.cloneNode(true);
+          const codeEl = outerScaffold.querySelector('code');
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
