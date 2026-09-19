@@ -30350,5 +30350,194 @@
     "title": "Guía del Estudiante",
     "section": "10.4 Hoja de observación rápida",
     "text": "10.4 Hoja de observación rápida\n\n\n\nVerificación\nSí\nParcial\nNo\nObservación\n\n\n\n\nProblema, usuario y límite clínico\n\n\n\n\n\n\nECG, \\(f_s\\), canal y unidad\n\n\n\n\n\n\nSelección de tres registros\n\n\n\n\n\n\nDOI, licencia, versión y hashes\n\n\n\n\n\n\nAnotaciones .atr trazables\n\n\n\n\n\n\nCalidad visible\n\n\n\n\n\n\nECG físico/procesado y QRS\n\n\n\n\n\n\nRR y transición de ritmo\n\n\n\n\n\n\nCronología y carga anotada\n\n\n\n\n\n\nComparación FA/no-FA equivalente\n\n\n\n\n\n\nCinco funciones\n\n\n\n\n\n\nEstados inválidos útiles\n\n\n\n\n\n\nCálculo sobre datos completos\n\n\n\n\n\n\nCopia sin .venv\n\n\n\n\n\n\nuv sync --locked\n\n\n\n\n\n\nRuff, pruebas y reproducción\n\n\n\n\n\n\nApp inicia en equipo externo\n\n\n\n\n\n\nInforme y Beamer compilan\n\n\n\n\n\n\nTerminología y límites correctos"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "",
+    "text": "¿Qué cambia —matemática, computacional y metodológicamente— cuando pasamos de una regresión logística a una red neuronal para clasificar indicadores de diabetes?\nEste taller continúa el trabajo previo sobre modelos, función de pérdida y descenso de gradiente. La regresión logística se utilizará como línea base y no como un modelo que deba ser descartado. La red neuronal se justificará únicamente si aprende relaciones no lineales que mejoran de forma consistente el desempeño fuera de muestra."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#pregunta-orientadora",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#pregunta-orientadora",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "",
+    "text": "¿Qué cambia —matemática, computacional y metodológicamente— cuando pasamos de una regresión logística a una red neuronal para clasificar indicadores de diabetes?"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#ruta-sugerida-para-la-sesión",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#ruta-sugerida-para-la-sesión",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "1.1 1.1 Ruta sugerida para la sesión",
+    "text": "1.1 1.1 Ruta sugerida para la sesión\n\n\n\nBloque\nActividad\nTiempo orientativo\n\n\n\n\n1\nProblema, datos y auditoría\n25 min\n\n\n2\nPartición y análisis exploratorio\n35 min\n\n\n3\nRegresión logística como línea base\n35 min\n\n\n4\nRed neuronal desde la logística\n45 min\n\n\n5\nComparación, umbral y discusión\n40 min\n\n\n\nLa duración aproximada es de tres horas. Los puntos marcados como Checkpoint permiten pausar la ejecución y pedir predicciones a los estudiantes antes de mostrar el resultado."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#crear-un-proyecto-reproducible-con-uv",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#crear-un-proyecto-reproducible-con-uv",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "3.1 3.1 Crear un proyecto reproducible con uv",
+    "text": "3.1 3.1 Crear un proyecto reproducible con uv\nEjecutar una sola vez en la terminal, dentro de una carpeta nueva:\n#| eval: false\nuv init --python 3.12\nuv add pandas numpy matplotlib seaborn scikit-learn jupyter\nuv run quarto render Taller_Redes_Neuronales_desde_Regresion_Logistica.qmd\nSi el proyecto ya dispone de un entorno configurado, basta con instalar las dependencias faltantes y ejecutar quarto render."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#importaciones-y-configuración",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#importaciones-y-configuración",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "3.2 3.2 Importaciones y configuración",
+    "text": "3.2 3.2 Importaciones y configuración\n\nfrom pathlib import Path\nfrom urllib.request import urlretrieve\nfrom zipfile import ZipFile\nimport warnings\n\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nfrom sklearn.base import clone\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.exceptions import ConvergenceWarning\nfrom sklearn.inspection import permutation_importance\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import (\n    accuracy_score,\n    average_precision_score,\n    balanced_accuracy_score,\n    classification_report,\n    confusion_matrix,\n    f1_score,\n    log_loss,\n    precision_recall_curve,\n    precision_score,\n    recall_score,\n    roc_auc_score,\n    roc_curve,\n)\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.neural_network import MLPClassifier\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\n\nSEED = 42\nnp.random.seed(SEED)\nwarnings.filterwarnings(\"ignore\", category=ConvergenceWarning)\n\nsns.set_theme(style=\"whitegrid\", context=\"notebook\", palette=\"colorblind\")\npd.set_option(\"display.max_columns\", 30)\n\n\n\n\n\n\n\nNotaDecisión reproducible\n\n\n\nLa semilla fija permite repetir la partición y la inicialización del MLP. No elimina la variabilidad del proceso; solamente permite estudiarla de forma controlada."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#descarga-automática-desde-kaggle",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#descarga-automática-desde-kaggle",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "4.1 4.1 Descarga automática desde Kaggle",
+    "text": "4.1 4.1 Descarga automática desde Kaggle\nEl siguiente bloque usa el punto de descarga pública de Kaggle y guarda una copia local. Si el archivo ya existe, no vuelve a descargarlo.\n\nDATA_DIR = Path(\"data\")\nDATA_DIR.mkdir(exist_ok=True)\n\ncsv_name = \"diabetes_binary_health_indicators_BRFSS2015.csv\"\ncsv_path = DATA_DIR / csv_name\nzip_path = DATA_DIR / \"diabetes-health-indicators-dataset.zip\"\n\ndownload_url = (\n    \"https://www.kaggle.com/api/v1/datasets/download/\"\n    \"alexteboul/diabetes-health-indicators-dataset\"\n)\n\nif not csv_path.exists():\n    print(\"Descargando el dataset desde Kaggle...\")\n    urlretrieve(download_url, zip_path)\n    with ZipFile(zip_path) as archive:\n        archive.extract(csv_name, DATA_DIR)\n\ndf_full = pd.read_csv(csv_path)\ndf = df_full.sample(n=50_000, random_state=SEED).reset_index(drop=True)\n\nprint(f\"Archivo completo: {df_full.shape[0]} filas × {df_full.shape[1]} columnas\")\nprint(f\"Submuestra de trabajo: {df.shape[0]} filas × {df.shape[1]} columnas\")\ndf.head()\n\nDescargando el dataset desde Kaggle...\nArchivo completo: 253680 filas × 22 columnas\nSubmuestra de trabajo: 50000 filas × 22 columnas\n\n\n\n\n\n\n\n\n\nDiabetes_binary\nHighBP\nHighChol\nCholCheck\nBMI\nSmoker\nStroke\nHeartDiseaseorAttack\nPhysActivity\nFruits\nVeggies\nHvyAlcoholConsump\nAnyHealthcare\nNoDocbcCost\nGenHlth\nMentHlth\nPhysHlth\nDiffWalk\nSex\nAge\nEducation\nIncome\n\n\n\n\n0\n0.0\n0.0\n0.0\n1.0\n21.0\n0.0\n0.0\n0.0\n0.0\n1.0\n1.0\n0.0\n1.0\n0.0\n3.0\n3.0\n7.0\n0.0\n0.0\n7.0\n4.0\n2.0\n\n\n1\n0.0\n1.0\n1.0\n1.0\n28.0\n0.0\n0.0\n0.0\n1.0\n1.0\n1.0\n0.0\n1.0\n0.0\n3.0\n0.0\n0.0\n0.0\n0.0\n13.0\n6.0\n6.0\n\n\n2\n0.0\n0.0\n0.0\n1.0\n24.0\n0.0\n0.0\n0.0\n1.0\n1.0\n1.0\n0.0\n1.0\n0.0\n1.0\n0.0\n0.0\n0.0\n1.0\n1.0\n4.0\n7.0\n\n\n3\n0.0\n0.0\n0.0\n1.0\n27.0\n1.0\n0.0\n0.0\n1.0\n0.0\n1.0\n1.0\n1.0\n0.0\n2.0\n3.0\n0.0\n0.0\n1.0\n2.0\n4.0\n7.0\n\n\n4\n0.0\n0.0\n1.0\n1.0\n31.0\n1.0\n0.0\n0.0\n0.0\n1.0\n1.0\n0.0\n1.0\n1.0\n4.0\n27.0\n27.0\n1.0\n0.0\n8.0\n3.0\n2.0\n\n\n\n\n\n\n\n\nPlan B para una clase sin internet: descargue previamente diabetes_binary_health_indicators_BRFSS2015.csv desde la página de Kaggle y guárdelo en la carpeta data/. El mismo código continuará desde pd.read_csv(csv_path)."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#contrato-mínimo-de-datos",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#contrato-mínimo-de-datos",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "4.2 4.2 Contrato mínimo de datos",
+    "text": "4.2 4.2 Contrato mínimo de datos\nAntes de graficar o modelar, se comprueba que la tabla tenga la estructura esperada.\n\nTARGET_ORIGINAL = \"Diabetes_binary\"\nEXPECTED_ROWS = 50_000\nEXPECTED_FEATURES = 21\n\nassert TARGET_ORIGINAL in df.columns, \"No se encontró la variable objetivo.\"\nassert df.shape[0] == EXPECTED_ROWS, \"Cambió el tamaño de la submuestra.\"\nassert df.shape[1] - 1 == EXPECTED_FEATURES, \"Cambió el número de predictores.\"\nassert set(df[TARGET_ORIGINAL].unique()) == {0.0, 1.0}\n\naudit = pd.Series({\n    \"filas\": len(df),\n    \"predictores\": df.shape[1] - 1,\n    \"valores_faltantes\": int(df.isna().sum().sum()),\n    \"filas_duplicadas\": int(df.duplicated().sum()),\n    \"clases\": df[TARGET_ORIGINAL].nunique(),\n})\naudit.to_frame(\"resultado\")\n\n\n\n\n\n\n\n\nresultado\n\n\n\n\nfilas\n50000\n\n\npredictores\n21\n\n\nvalores_faltantes\n0\n\n\nfilas_duplicadas\n2027\n\n\nclases\n2\n\n\n\n\n\n\n\n\nCheckpoint 1. ¿Una fila duplicada es necesariamente un error? No. Dos registros pueden coincidir en todas las variables medidas. Eliminarlos de forma automática exige justificar que sean duplicados administrativos y no observaciones independientes."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#definición-explícita-del-objetivo-binario",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#definición-explícita-del-objetivo-binario",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "4.3 4.3 Definición explícita del objetivo binario",
+    "text": "4.3 4.3 Definición explícita del objetivo binario\n\ndata = df.copy()\ndata[\"diabetes\"] = data[TARGET_ORIGINAL].astype(int)\ndata = data.drop(columns=TARGET_ORIGINAL)\n\ntarget = \"diabetes\"\nfeatures = [column for column in data.columns if column != target]\n\nclass_table = (\n    data[target]\n    .value_counts()\n    .sort_index()\n    .rename(index={0: \"Sin diabetes\", 1: \"Prediabetes o diabetes\"})\n    .to_frame(\"n\")\n)\nclass_table[\"porcentaje\"] = 100 * class_table[\"n\"] / class_table[\"n\"].sum()\nclass_table.round(2)\n\n\n\n\n\n\n\n\nn\nporcentaje\n\n\ndiabetes\n\n\n\n\n\n\nSin diabetes\n43096\n86.19\n\n\nPrediabetes o diabetes\n6904\n13.81"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribución-de-la-clase-en-entrenamiento",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribución-de-la-clase-en-entrenamiento",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "6.1 6.1 Distribución de la clase en entrenamiento",
+    "text": "6.1 6.1 Distribución de la clase en entrenamiento\n\nfig, ax = plt.subplots(figsize=(6.5, 4))\ncounts = y_train.value_counts().sort_index()\nsns.barplot(\n    x=[\"Sin diabetes\", \"Prediabetes o diabetes\"],\n    y=counts.values,\n    ax=ax,\n)\nax.set(xlabel=\"Clase\", ylabel=\"Número de registros\")\nfor i, value in enumerate(counts.values):\n    ax.text(i, value + 15, f\"{value}\\n({value / counts.sum():.1%})\", ha=\"center\")\nplt.tight_layout()\nplt.show()\n\n\n\n\nDistribución del objetivo binario en el conjunto de entrenamiento.\n\n\n\n\nLectura esperada: existe desbalance. Por tanto, la exactitud (accuracy) no debe ser la única métrica. Se reportarán sensibilidad, especificidad, F1, exactitud balanceada, ROC-AUC y AP."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribuciones-de-variables-seleccionadas",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribuciones-de-variables-seleccionadas",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "6.2 6.2 Distribuciones de variables seleccionadas",
+    "text": "6.2 6.2 Distribuciones de variables seleccionadas\n\nselected_features = [\n    \"BMI\",\n    \"GenHlth\",\n    \"MentHlth\",\n    \"PhysHlth\",\n    \"Age\",\n    \"Income\",\n]\n\nlong_train = train_df.melt(\n    id_vars=target,\n    value_vars=selected_features,\n    var_name=\"variable\",\n    value_name=\"valor\",\n)\nlong_train[\"clase\"] = long_train[target].map({\n    0: \"Sin diabetes\",\n    1: \"Prediabetes o diabetes\",\n})\n\ng = sns.displot(\n    data=long_train,\n    x=\"valor\",\n    hue=\"clase\",\n    col=\"variable\",\n    col_wrap=2,\n    kind=\"hist\",\n    stat=\"density\",\n    common_norm=False,\n    element=\"step\",\n    fill=False,\n    height=2.6,\n    facet_kws={\"sharex\": False, \"sharey\": False},\n)\ng.set_titles(\"{col_name}\")\ng.set_axis_labels(\"Valor\", \"Densidad\")\nplt.show()\n\n\n\n\nDistribuciones de seis indicadores en el conjunto de entrenamiento."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#asociación-monotónica-y-redundancia",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#asociación-monotónica-y-redundancia",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "6.3 6.3 Asociación monotónica y redundancia",
+    "text": "6.3 6.3 Asociación monotónica y redundancia\nLa correlación no demuestra causalidad ni garantiza valor predictivo. Aquí se usa para reconocer asociaciones y posibles redundancias.\n\ncorr = train_df.corr(method=\"spearman\")\ntop_features = (\n    corr[target]\n    .drop(target)\n    .abs()\n    .sort_values(ascending=False)\n    .head(10)\n    .index\n)\n\nfig, ax = plt.subplots(figsize=(10, 7))\nsns.heatmap(\n    train_df[list(top_features) + [target]].corr(method=\"spearman\"),\n    cmap=\"vlag\",\n    center=0,\n    vmin=-1,\n    vmax=1,\n    square=True,\n    ax=ax,\n)\nax.set_title(\"Variables más asociadas con el objetivo\")\nplt.tight_layout()\nplt.show()\n\n\n\n\nCorrelación de Spearman entre las variables con mayor asociación absoluta con el objetivo.\n\n\n\n\n\nCheckpoint 2. Si dos variables están correlacionadas, ¿una red neuronal resolverá automáticamente la redundancia? No necesariamente. La red puede distribuir peso entre ambas, pero esto no elimina la redundancia ni garantiza una representación estable o interpretable."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#una-neurona-de-salida-es-una-regresión-logística",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#una-neurona-de-salida-es-una-regresión-logística",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "7.1 7.1 Una neurona de salida es una regresión logística",
+    "text": "7.1 7.1 Una neurona de salida es una regresión logística\nLa regresión logística calcula una combinación lineal y aplica una sigmoide:\n\\[\nz = \\mathbf{w}^{\\top}\\mathbf{x}+b,\n\\qquad\n\\hat p = \\sigma(z)=\\frac{1}{1+e^{-z}}.\n\\]\nPara una observación, la pérdida binaria es:\n\\[\n\\mathcal{L}(y,\\hat p)\n=-[y\\log(\\hat p)+(1-y)\\log(1-\\hat p)].\n\\]\nUn MLP conserva la misma salida probabilística, pero antes aprende nuevas representaciones:\n\\[\n\\mathbf{h}^{(1)}=\\operatorname{ReLU}(\\mathbf{W}^{(1)}\\mathbf{x}+\\mathbf{b}^{(1)}),\n\\]\n\\[\n\\mathbf{h}^{(2)}=\\operatorname{ReLU}(\\mathbf{W}^{(2)}\\mathbf{h}^{(1)}+\\mathbf{b}^{(2)}),\n\\]\n\\[\n\\hat p=\\sigma(\\mathbf{w}^{(3)\\top}\\mathbf{h}^{(2)}+b^{(3)}).\n\\]\nLa diferencia central no es la función de salida: es la inclusión de capas ocultas y activaciones no lineales."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#por-qué-hace-falta-una-activación-no-lineal",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#por-qué-hace-falta-una-activación-no-lineal",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "7.2 7.2 ¿Por qué hace falta una activación no lineal?",
+    "text": "7.2 7.2 ¿Por qué hace falta una activación no lineal?\nSi se apilan transformaciones lineales sin activación:\n\\[\n\\mathbf{W}^{(2)}(\\mathbf{W}^{(1)}\\mathbf{x}+\\mathbf{b}^{(1)})+\\mathbf{b}^{(2)}\n=\\mathbf{W}^{*}\\mathbf{x}+\\mathbf{b}^{*}.\n\\]\nPor tanto, muchas capas lineales siguen siendo una sola transformación lineal. ReLU introduce la no linealidad necesaria para construir fronteras de decisión más flexibles."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#del-descenso-de-gradiente-a-la-retropropagación",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#del-descenso-de-gradiente-a-la-retropropagación",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "7.3 7.3 Del descenso de gradiente a la retropropagación",
+    "text": "7.3 7.3 Del descenso de gradiente a la retropropagación\nLa regla general ya conocida permanece:\n\\[\n\\theta_{t+1}=\\theta_t-\\alpha\\nabla_{\\theta}J(\\theta_t).\n\\]\nEn una red, \\(\\theta\\) contiene todos los pesos y sesgos. La retropropagación aplica la regla de la cadena para calcular eficientemente los gradientes desde la pérdida hasta cada capa. El optimizador utiliza esos gradientes para actualizar los parámetros."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#qué-aprendió-el-modelo-lineal",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#qué-aprendió-el-modelo-lineal",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "9.1 9.1 ¿Qué aprendió el modelo lineal?",
+    "text": "9.1 9.1 ¿Qué aprendió el modelo lineal?\nComo los predictores fueron estandarizados, la magnitud de los coeficientes permite una comparación descriptiva dentro del modelo. No debe interpretarse como efecto causal.\n\ncoeficients = pd.Series(\n    logistic_model.named_steps[\"model\"].coef_[0],\n    index=numeric_features,\n).sort_values()\n\nfig, ax = plt.subplots(figsize=(9, 7))\ncolors = [\"#2b8cbe\" if value &lt; 0 else \"#d95f0e\" for value in coeficients]\ncoeficients.plot.barh(ax=ax, color=colors)\nax.axvline(0, color=\"black\", linewidth=1)\nax.set(xlabel=\"Coeficiente sobre variable estandarizada\", ylabel=\"\")\nplt.tight_layout()\nplt.show()\n\n\n\n\nCoeficientes estandarizados de la regresión logística."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curva-de-aprendizaje-de-la-red",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curva-de-aprendizaje-de-la-red",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "10.1 10.1 Curva de aprendizaje de la red",
+    "text": "10.1 10.1 Curva de aprendizaje de la red\n\ntrained_mlp = mlp_model.named_steps[\"model\"]\n\nfig, ax = plt.subplots(figsize=(7.5, 4.5))\nax.plot(trained_mlp.loss_curve_, color=\"#6a3d9a\", linewidth=2)\nax.set(\n    xlabel=\"Época\",\n    ylabel=\"Entropía cruzada\",\n    title=f\"MLP: {trained_mlp.n_iter_} épocas ejecutadas\",\n)\nplt.tight_layout()\nplt.show()\n\n\n\n\nEvolución de la pérdida de entrenamiento del MLP.\n\n\n\n\nUna pérdida decreciente confirma optimización sobre entrenamiento; no demuestra generalización. Esta última se evalúa con datos no utilizados para ajustar los parámetros."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#cuántos-parámetros-tiene-cada-modelo",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#cuántos-parámetros-tiene-cada-modelo",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "10.2 10.2 ¿Cuántos parámetros tiene cada modelo?",
+    "text": "10.2 10.2 ¿Cuántos parámetros tiene cada modelo?\n\nlogistic_parameters = (\n    logistic_model.named_steps[\"model\"].coef_.size\n    + logistic_model.named_steps[\"model\"].intercept_.size\n)\n\nmlp_parameters = sum(\n    weights.size for weights in trained_mlp.coefs_\n) + sum(\n    biases.size for biases in trained_mlp.intercepts_\n)\n\npd.DataFrame({\n    \"modelo\": [\"Regresión logística\", \"MLP (8, 4)\"],\n    \"parámetros_entrenables\": [logistic_parameters, mlp_parameters],\n    \"razón_frente_logística\": [1, mlp_parameters / logistic_parameters],\n}).round(2)\n\n\n\n\n\n\n\n\nmodelo\nparámetros_entrenables\nrazón_frente_logística\n\n\n\n\n0\nRegresión logística\n22\n1.00\n\n\n1\nMLP (8, 4)\n217\n9.86"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#propagación-hacia-adelante-paso-a-paso",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#propagación-hacia-adelante-paso-a-paso",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "10.3 10.3 Propagación hacia adelante, paso a paso",
+    "text": "10.3 10.3 Propagación hacia adelante, paso a paso\nEl siguiente bloque toma una observación de prueba y reproduce manualmente el cálculo interno de la red ya entrenada. Es una comprobación directa de la ecuación matricial, no un segundo modelo.\n\nx0 = X_test.iloc[[0]]\nx0_scaled = mlp_model.named_steps[\"preprocess\"].transform(x0)\n\nW1, W2, W3 = trained_mlp.coefs_\nb1, b2, b3 = trained_mlp.intercepts_\n\nz1 = x0_scaled @ W1 + b1\nh1 = np.maximum(0, z1)          # ReLU\n\nz2 = h1 @ W2 + b2\nh2 = np.maximum(0, z2)          # ReLU\n\nz3 = h2 @ W3 + b3\np_manual = 1 / (1 + np.exp(-z3.item()))\np_sklearn = mlp_model.predict_proba(x0)[0, 1]\n\npd.DataFrame({\n    \"cálculo\": [\"Forward manual\", \"predict_proba\"],\n    \"probabilidad_clase_positiva\": [p_manual, p_sklearn],\n}).round(8)\n\n\n\n\n\n\n\n\ncálculo\nprobabilidad_clase_positiva\n\n\n\n\n0\nForward manual\n0.011437\n\n\n1\npredict_proba\n0.011437\n\n\n\n\n\n\n\n\npd.DataFrame({\n    \"parámetro\": [\"W1\", \"b1\", \"W2\", \"b2\", \"W3\", \"b3\"],\n    \"forma\": [\n        str(W1.shape),\n        str(b1.shape),\n        str(W2.shape),\n        str(b2.shape),\n        str(W3.shape),\n        str(b3.shape),\n    ],\n})\n\n\n\n\n\n\n\n\nparámetro\nforma\n\n\n\n\n0\nW1\n(21, 8)\n\n\n1\nb1\n(8,)\n\n\n2\nW2\n(8, 4)\n\n\n3\nb2\n(4,)\n\n\n4\nW3\n(4, 1)\n\n\n5\nb3\n(1,)\n\n\n\n\n\n\n\nLa coincidencia numérica confirma que la API encapsula las mismas operaciones estudiadas: transformación lineal, activación no lineal y salida sigmoidal.\n\nCheckpoint 3. ¿Más parámetros implican mejor modelo? No. Aumentan la capacidad de representación, pero también el riesgo de sobreajuste, la variabilidad y el costo de explicación y validación."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#función-común-de-métricas",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#función-común-de-métricas",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "11.1 11.1 Función común de métricas",
+    "text": "11.1 11.1 Función común de métricas\n\ndef classification_metrics(y_true, probability, threshold=0.50):\n    prediction = (probability &gt;= threshold).astype(int)\n    tn, fp, fn, tp = confusion_matrix(y_true, prediction).ravel()\n    return {\n        \"Accuracy\": accuracy_score(y_true, prediction),\n        \"Balanced accuracy\": balanced_accuracy_score(y_true, prediction),\n        \"Precision\": precision_score(y_true, prediction, zero_division=0),\n        \"Sensitivity\": recall_score(y_true, prediction),\n        \"Specificity\": tn / (tn + fp),\n        \"F1\": f1_score(y_true, prediction),\n        \"ROC-AUC\": roc_auc_score(y_true, probability),\n        \"Average precision\": average_precision_score(y_true, probability),\n        \"Log loss\": log_loss(y_true, probability),\n    }\n\nresults = pd.DataFrame({\n    \"Regresión logística\": classification_metrics(y_test, logistic_prob),\n    \"MLP (8, 4)\": classification_metrics(y_test, mlp_prob),\n}).T\n\nresults.round(3)\n\n\n\n\n\n\n\n\nAccuracy\nBalanced accuracy\nPrecision\nSensitivity\nSpecificity\nF1\nROC-AUC\nAverage precision\nLog loss\n\n\n\n\nRegresión logística\n0.864\n0.566\n0.521\n0.155\n0.977\n0.239\n0.825\n0.400\n0.317\n\n\nMLP (8, 4)\n0.867\n0.558\n0.577\n0.130\n0.985\n0.213\n0.829\n0.417\n0.312"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matrices-de-confusión",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matrices-de-confusión",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "11.2 11.2 Matrices de confusión",
+    "text": "11.2 11.2 Matrices de confusión\n\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\n\nfor ax, name, prediction in zip(\n    axes,\n    [\"Regresión logística\", \"MLP (8, 4)\"],\n    [logistic_pred, mlp_pred],\n):\n    matrix = confusion_matrix(y_test, prediction)\n    sns.heatmap(\n        matrix,\n        annot=True,\n        fmt=\"d\",\n        cmap=\"Blues\",\n        cbar=False,\n        xticklabels=[\"Sin diabetes\", \"Diabetes\"],\n        yticklabels=[\"Sin diabetes\", \"Diabetes\"],\n        ax=ax,\n    )\n    ax.set(title=name, xlabel=\"Predicción\", ylabel=\"Valor real\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nMatrices de confusión con umbral de decisión 0.50."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-roc-y-precisiónsensibilidad",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-roc-y-precisiónsensibilidad",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "11.3 11.3 Curvas ROC y precisión–sensibilidad",
+    "text": "11.3 11.3 Curvas ROC y precisión–sensibilidad\n\nmodel_probabilities = {\n    \"Regresión logística\": logistic_prob,\n    \"MLP (8, 4)\": mlp_prob,\n}\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4.5))\n\nfor name, probability in model_probabilities.items():\n    fpr, tpr, _ = roc_curve(y_test, probability)\n    precision, recall, _ = precision_recall_curve(y_test, probability)\n\n    axes[0].plot(\n        fpr,\n        tpr,\n        linewidth=2,\n        label=f\"{name} (AUC={roc_auc_score(y_test, probability):.3f})\",\n    )\n    axes[1].plot(\n        recall,\n        precision,\n        linewidth=2,\n        label=(\n            f\"{name} \"\n            f\"(AP={average_precision_score(y_test, probability):.3f})\"\n        ),\n    )\n\naxes[0].plot([0, 1], [0, 1], \"--\", color=\"gray\")\naxes[0].set(xlabel=\"1 − especificidad\", ylabel=\"Sensibilidad\", title=\"Curva ROC\")\naxes[1].axhline(y_train.mean(), linestyle=\"--\", color=\"gray\", label=\"Prevalencia train\")\naxes[1].set(xlabel=\"Sensibilidad\", ylabel=\"Precisión\", title=\"Curva precisión–sensibilidad\")\n\nfor ax in axes:\n    ax.legend(fontsize=8)\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nCurvas ROC y precisión–sensibilidad en el conjunto de prueba.\n\n\n\n\n\n\n\n\n\n\nTipCómo leer las curvas\n\n\n\nROC-AUC mide discriminación a través de todos los umbrales. La curva precisión–sensibilidad suele ser más informativa cuando la clase positiva es menos frecuente. Ninguna de las dos selecciona por sí sola el umbral clínico."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matriz-de-comparación-conceptual",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matriz-de-comparación-conceptual",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "15.1 15.1 Matriz de comparación conceptual",
+    "text": "15.1 15.1 Matriz de comparación conceptual\n\n\n\n\n\n\n\n\nCriterio\nRegresión logística\nMLP\n\n\n\n\nFrontera\nLineal en el espacio transformado\nNo lineal\n\n\nSalida binaria\nSigmoide\nSigmoide\n\n\nPérdida\nEntropía cruzada\nEntropía cruzada\n\n\nOptimización\nMétodos basados en gradiente\nRetropropagación + optimizador\n\n\nInterpretación\nCoeficientes y odds ratios\nRequiere métodos posteriores\n\n\nCapacidad\nMenor\nMayor\n\n\nRiesgo de sobreajuste\nMenor, no nulo\nMayor\n\n\nNecesidad de datos\nModerada\nUsualmente mayor"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-1-ablación-de-la-no-linealidad",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-1-ablación-de-la-no-linealidad",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "16.1 Reto 1 — Ablación de la no linealidad",
+    "text": "16.1 Reto 1 — Ablación de la no linealidad\nCambie activation=\"relu\" por activation=\"identity\". Mantenga todo lo demás constante y explique por qué el comportamiento se aproxima al de un modelo lineal, aunque la optimización no sea idéntica."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-2-capacidad-y-sobreajuste",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-2-capacidad-y-sobreajuste",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "16.2 Reto 2 — Capacidad y sobreajuste",
+    "text": "16.2 Reto 2 — Capacidad y sobreajuste\nCompare las arquitecturas (4,), (8, 4) y (64, 32, 16). Registre el número de parámetros, la pérdida final y las métricas de prueba. No seleccione una arquitectura usando únicamente accuracy."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-3-repetibilidad",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-3-repetibilidad",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "16.3 Reto 3 — Repetibilidad",
+    "text": "16.3 Reto 3 — Repetibilidad\nEjecute el MLP con cinco semillas diferentes. Reporte media y desviación estándar de la exactitud balanceada. Explique por qué un solo ajuste no caracteriza completamente a una red neuronal."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-4-formulación-multiclase",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-4-formulación-multiclase",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "16.4 Reto 4 — Formulación multiclase",
+    "text": "16.4 Reto 4 — Formulación multiclase\nUtilice el archivo diabetes_012_health_indicators_BRFSS2015.csv, que separa ausencia de diabetes, prediabetes y diabetes. Compare regresión logística multinomial frente a MLP. Use F1 macro y matrices de confusión; no reduzca la evaluación a exactitud global."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#información-de-sesión",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#información-de-sesión",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "19.1 Información de sesión",
+    "text": "19.1 Información de sesión\n\nimport sklearn\nimport sys\n\npd.DataFrame({\n    \"componente\": [\"Python\", \"NumPy\", \"pandas\", \"scikit-learn\"],\n    \"versión\": [\n        sys.version.split()[0],\n        np.__version__,\n        pd.__version__,\n        sklearn.__version__,\n    ],\n})\n\n\n\n\n\n\n\n\ncomponente\nversión\n\n\n\n\n0\nPython\n3.13.14\n\n\n1\nNumPy\n2.4.1\n\n\n2\npandas\n2.3.3\n\n\n3\nscikit-learn\n1.8.0"
   }
 ]

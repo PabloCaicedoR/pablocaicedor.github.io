@@ -1,0 +1,1003 @@
+---
+title: "De la regresión logística a las redes neuronales"
+subtitle: "Taller de programación en vivo con indicadores de diabetes"
+author: "Ph.D. Pablo Eduardo Caicedo R."
+date: last-modified
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    code-line-numbers: true
+    code-overflow: wrap
+    df-print: paged
+    embed-resources: true
+    smooth-scroll: true
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: false
+jupyter: python3
+---
+
+<style>
+.hero {
+  padding: 1.2rem 1.4rem;
+  margin: 1rem 0 1.5rem 0;
+  border-left: 6px solid #146c43;
+  background: linear-gradient(90deg, #edf8f3 0%, #ffffff 100%);
+  border-radius: 0.4rem;
+}
+.checkpoint {
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0;
+  border: 1px solid #b8daff;
+  background: #f2f8ff;
+  border-radius: 0.4rem;
+}
+.small-note {font-size: 0.92rem; color: #4b5563;}
+</style>
+
+::: {.hero}
+## Pregunta orientadora
+
+**¿Qué cambia —matemática, computacional y metodológicamente— cuando pasamos de una regresión logística a una red neuronal para clasificar indicadores de diabetes?**
+:::
+
+Este taller continúa el trabajo previo sobre modelos, función de pérdida y descenso de gradiente. La regresión logística se utilizará como **línea base** y no como un modelo que deba ser descartado. La red neuronal se justificará únicamente si aprende relaciones no lineales que mejoran de forma consistente el desempeño fuera de muestra.
+
+::: {.callout-important title="Precisión terminológica"}
+Aunque conserva la palabra *regresión*, la **regresión logística es un clasificador probabilístico** cuando la variable objetivo es binaria. En este taller se comparan dos clasificadores: regresión logística y perceptrón multicapa (MLP).
+:::
+
+# 1. Resultados de aprendizaje
+
+Al finalizar el taller, el estudiante podrá:
+
+1. relacionar una neurona artificial con el modelo de regresión logística;
+2. construir un flujo reproducible de clasificación binaria sin fuga de información;
+3. entrenar una regresión logística y una red neuronal bajo condiciones comparables;
+4. evaluar ambos modelos con métricas coherentes con el desbalance de clases;
+5. argumentar cuándo la complejidad adicional de una red neuronal está justificada.
+
+## 1.1 Ruta sugerida para la sesión
+
+| Bloque | Actividad | Tiempo orientativo |
+|---|---|---:|
+| 1 | Problema, datos y auditoría | 25 min |
+| 2 | Partición y análisis exploratorio | 35 min |
+| 3 | Regresión logística como línea base | 35 min |
+| 4 | Red neuronal desde la logística | 45 min |
+| 5 | Comparación, umbral y discusión | 40 min |
+
+La duración aproximada es de tres horas. Los puntos marcados como **Checkpoint** permiten pausar la ejecución y pedir predicciones a los estudiantes antes de mostrar el resultado.
+
+# 2. Caso de estudio y fuente de datos
+
+Se utilizará el conjunto **Diabetes Health Indicators Dataset**, publicado en Kaggle por Alex Teboul. Los datos proceden de la encuesta BRFSS 2015 e incluyen 21 indicadores de salud y una variable objetivo binaria. Para que la ejecución en vivo sea ágil, se tomará una submuestra reproducible de 50 000 registros del archivo completo.
+
+- Fuente: <https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset>
+- Licencia declarada en Kaggle: **CC0: Public Domain**.
+- Archivo: `diabetes_binary_health_indicators_BRFSS2015.csv`.
+- Unidad de análisis: persona encuestada.
+
+La variable objetivo está codificada como:
+
+$$
+y =
+\begin{cases}
+0, & \text{sin diabetes} \\
+1, & \text{prediabetes o diabetes}
+\end{cases}
+$$
+
+::: {.callout-warning title="Alcance del ejemplo"}
+El ejercicio es didáctico. Una predicción del modelo **no constituye diagnóstico**, no reemplaza la evaluación clínica y no demuestra utilidad clínica externa. Además, la clase positiva combina prediabetes y diabetes; esta agrupación facilita la clasificación binaria, pero pierde información clínica.
+:::
+
+# 3. Preparación del entorno
+
+## 3.1 Crear un proyecto reproducible con `uv`
+
+Ejecutar una sola vez en la terminal, dentro de una carpeta nueva:
+
+```{bash}
+#| eval: false
+uv init --python 3.12
+uv add pandas numpy matplotlib seaborn scikit-learn jupyter
+uv run quarto render Taller_Redes_Neuronales_desde_Regresion_Logistica.qmd
+```
+
+Si el proyecto ya dispone de un entorno configurado, basta con instalar las dependencias faltantes y ejecutar `quarto render`.
+
+## 3.2 Importaciones y configuración
+
+```{python}
+#| label: configuracion
+#| output: false
+
+from pathlib import Path
+from urllib.request import urlretrieve
+from zipfile import ZipFile
+import warnings
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.base import clone
+from sklearn.compose import ColumnTransformer
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.inspection import permutation_importance
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    precision_recall_curve,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+SEED = 42
+np.random.seed(SEED)
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+sns.set_theme(style="whitegrid", context="notebook", palette="colorblind")
+pd.set_option("display.max_columns", 30)
+```
+
+::: {.callout-note title="Decisión reproducible"}
+La semilla fija permite repetir la partición y la inicialización del MLP. No elimina la variabilidad del proceso; solamente permite estudiarla de forma controlada.
+:::
+
+# 4. Adquisición y auditoría de los datos
+
+## 4.1 Descarga automática desde Kaggle
+
+El siguiente bloque usa el punto de descarga pública de Kaggle y guarda una copia local. Si el archivo ya existe, no vuelve a descargarlo.
+
+```{python}
+#| label: descarga-kaggle
+
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
+
+csv_name = "diabetes_binary_health_indicators_BRFSS2015.csv"
+csv_path = DATA_DIR / csv_name
+zip_path = DATA_DIR / "diabetes-health-indicators-dataset.zip"
+
+download_url = (
+    "https://www.kaggle.com/api/v1/datasets/download/"
+    "alexteboul/diabetes-health-indicators-dataset"
+)
+
+if not csv_path.exists():
+    print("Descargando el dataset desde Kaggle...")
+    urlretrieve(download_url, zip_path)
+    with ZipFile(zip_path) as archive:
+        archive.extract(csv_name, DATA_DIR)
+
+df_full = pd.read_csv(csv_path)
+df = df_full.sample(n=50_000, random_state=SEED).reset_index(drop=True)
+
+print(f"Archivo completo: {df_full.shape[0]} filas × {df_full.shape[1]} columnas")
+print(f"Submuestra de trabajo: {df.shape[0]} filas × {df.shape[1]} columnas")
+df.head()
+```
+
+> **Plan B para una clase sin internet:** descargue previamente `diabetes_binary_health_indicators_BRFSS2015.csv` desde la página de Kaggle y guárdelo en la carpeta `data/`. El mismo código continuará desde `pd.read_csv(csv_path)`.
+
+## 4.2 Contrato mínimo de datos
+
+Antes de graficar o modelar, se comprueba que la tabla tenga la estructura esperada.
+
+```{python}
+#| label: contrato-datos
+
+TARGET_ORIGINAL = "Diabetes_binary"
+EXPECTED_ROWS = 50_000
+EXPECTED_FEATURES = 21
+
+assert TARGET_ORIGINAL in df.columns, "No se encontró la variable objetivo."
+assert df.shape[0] == EXPECTED_ROWS, "Cambió el tamaño de la submuestra."
+assert df.shape[1] - 1 == EXPECTED_FEATURES, "Cambió el número de predictores."
+assert set(df[TARGET_ORIGINAL].unique()) == {0.0, 1.0}
+
+audit = pd.Series({
+    "filas": len(df),
+    "predictores": df.shape[1] - 1,
+    "valores_faltantes": int(df.isna().sum().sum()),
+    "filas_duplicadas": int(df.duplicated().sum()),
+    "clases": df[TARGET_ORIGINAL].nunique(),
+})
+audit.to_frame("resultado")
+```
+
+::: {.checkpoint}
+**Checkpoint 1.** ¿Una fila duplicada es necesariamente un error? No. Dos registros pueden coincidir en todas las variables medidas. Eliminarlos de forma automática exige justificar que sean duplicados administrativos y no observaciones independientes.
+:::
+
+## 4.3 Definición explícita del objetivo binario
+
+```{python}
+#| label: objetivo-binario
+
+data = df.copy()
+data["diabetes"] = data[TARGET_ORIGINAL].astype(int)
+data = data.drop(columns=TARGET_ORIGINAL)
+
+target = "diabetes"
+features = [column for column in data.columns if column != target]
+
+class_table = (
+    data[target]
+    .value_counts()
+    .sort_index()
+    .rename(index={0: "Sin diabetes", 1: "Prediabetes o diabetes"})
+    .to_frame("n")
+)
+class_table["porcentaje"] = 100 * class_table["n"] / class_table["n"].sum()
+class_table.round(2)
+```
+
+# 5. Separar antes de explorar en profundidad
+
+La muestra de prueba representa datos no observados. Por ello se separa **antes** de tomar decisiones guiadas por distribuciones, correlaciones o resultados de modelado.
+
+```{python}
+#| label: particion
+
+train_df, test_df = train_test_split(
+    data,
+    test_size=0.20,
+    random_state=SEED,
+    stratify=data[target],
+)
+
+X_train = train_df[features]
+y_train = train_df[target]
+X_test = test_df[features]
+y_test = test_df[target]
+
+split_summary = pd.DataFrame({
+    "conjunto": ["Entrenamiento", "Prueba"],
+    "n": [len(train_df), len(test_df)],
+    "proporcion_clase_positiva": [y_train.mean(), y_test.mean()],
+})
+split_summary.round(3)
+```
+
+::: {.callout-important title="Principio de no fuga"}
+El escalador se ajustará exclusivamente con `X_train`. El conjunto de prueba no se usa para escoger variables, arquitectura, tasa de aprendizaje ni umbral. Mirar repetidamente el desempeño de prueba para modificar el modelo convierte la prueba en validación.
+:::
+
+# 6. Análisis exploratorio de datos
+
+## 6.1 Distribución de la clase en entrenamiento
+
+```{python}
+#| label: eda-clase
+#| fig-cap: "Distribución del objetivo binario en el conjunto de entrenamiento."
+
+fig, ax = plt.subplots(figsize=(6.5, 4))
+counts = y_train.value_counts().sort_index()
+sns.barplot(
+    x=["Sin diabetes", "Prediabetes o diabetes"],
+    y=counts.values,
+    ax=ax,
+)
+ax.set(xlabel="Clase", ylabel="Número de registros")
+for i, value in enumerate(counts.values):
+    ax.text(i, value + 15, f"{value}\n({value / counts.sum():.1%})", ha="center")
+plt.tight_layout()
+plt.show()
+```
+
+**Lectura esperada:** existe desbalance. Por tanto, la exactitud (*accuracy*) no debe ser la única métrica. Se reportarán sensibilidad, especificidad, F1, exactitud balanceada, ROC-AUC y AP.
+
+## 6.2 Distribuciones de variables seleccionadas
+
+```{python}
+#| label: eda-distribuciones
+#| fig-cap: "Distribuciones de seis indicadores en el conjunto de entrenamiento."
+
+selected_features = [
+    "BMI",
+    "GenHlth",
+    "MentHlth",
+    "PhysHlth",
+    "Age",
+    "Income",
+]
+
+long_train = train_df.melt(
+    id_vars=target,
+    value_vars=selected_features,
+    var_name="variable",
+    value_name="valor",
+)
+long_train["clase"] = long_train[target].map({
+    0: "Sin diabetes",
+    1: "Prediabetes o diabetes",
+})
+
+g = sns.displot(
+    data=long_train,
+    x="valor",
+    hue="clase",
+    col="variable",
+    col_wrap=2,
+    kind="hist",
+    stat="density",
+    common_norm=False,
+    element="step",
+    fill=False,
+    height=2.6,
+    facet_kws={"sharex": False, "sharey": False},
+)
+g.set_titles("{col_name}")
+g.set_axis_labels("Valor", "Densidad")
+plt.show()
+```
+
+## 6.3 Asociación monotónica y redundancia
+
+La correlación no demuestra causalidad ni garantiza valor predictivo. Aquí se usa para reconocer asociaciones y posibles redundancias.
+
+```{python}
+#| label: eda-correlacion
+#| fig-cap: "Correlación de Spearman entre las variables con mayor asociación absoluta con el objetivo."
+
+corr = train_df.corr(method="spearman")
+top_features = (
+    corr[target]
+    .drop(target)
+    .abs()
+    .sort_values(ascending=False)
+    .head(10)
+    .index
+)
+
+fig, ax = plt.subplots(figsize=(10, 7))
+sns.heatmap(
+    train_df[list(top_features) + [target]].corr(method="spearman"),
+    cmap="vlag",
+    center=0,
+    vmin=-1,
+    vmax=1,
+    square=True,
+    ax=ax,
+)
+ax.set_title("Variables más asociadas con el objetivo")
+plt.tight_layout()
+plt.show()
+```
+
+::: {.checkpoint}
+**Checkpoint 2.** Si dos variables están correlacionadas, ¿una red neuronal resolverá automáticamente la redundancia? No necesariamente. La red puede distribuir peso entre ambas, pero esto no elimina la redundancia ni garantiza una representación estable o interpretable.
+:::
+
+# 7. Puente matemático: de la logística al MLP
+
+## 7.1 Una neurona de salida es una regresión logística
+
+La regresión logística calcula una combinación lineal y aplica una sigmoide:
+
+$$
+z = \mathbf{w}^{\top}\mathbf{x}+b,
+\qquad
+\hat p = \sigma(z)=\frac{1}{1+e^{-z}}.
+$$
+
+Para una observación, la pérdida binaria es:
+
+$$
+\mathcal{L}(y,\hat p)
+=-[y\log(\hat p)+(1-y)\log(1-\hat p)].
+$$
+
+Un MLP conserva la misma salida probabilística, pero antes aprende nuevas representaciones:
+
+$$
+\mathbf{h}^{(1)}=\operatorname{ReLU}(\mathbf{W}^{(1)}\mathbf{x}+\mathbf{b}^{(1)}),
+$$
+
+$$
+\mathbf{h}^{(2)}=\operatorname{ReLU}(\mathbf{W}^{(2)}\mathbf{h}^{(1)}+\mathbf{b}^{(2)}),
+$$
+
+$$
+\hat p=\sigma(\mathbf{w}^{(3)\top}\mathbf{h}^{(2)}+b^{(3)}).
+$$
+
+La diferencia central no es la función de salida: es la inclusión de capas ocultas y activaciones no lineales.
+
+## 7.2 ¿Por qué hace falta una activación no lineal?
+
+Si se apilan transformaciones lineales sin activación:
+
+$$
+\mathbf{W}^{(2)}(\mathbf{W}^{(1)}\mathbf{x}+\mathbf{b}^{(1)})+\mathbf{b}^{(2)}
+=\mathbf{W}^{*}\mathbf{x}+\mathbf{b}^{*}.
+$$
+
+Por tanto, muchas capas lineales siguen siendo una sola transformación lineal. ReLU introduce la no linealidad necesaria para construir fronteras de decisión más flexibles.
+
+## 7.3 Del descenso de gradiente a la retropropagación
+
+La regla general ya conocida permanece:
+
+$$
+\theta_{t+1}=\theta_t-\alpha\nabla_{\theta}J(\theta_t).
+$$
+
+En una red, $\theta$ contiene todos los pesos y sesgos. La **retropropagación** aplica la regla de la cadena para calcular eficientemente los gradientes desde la pérdida hasta cada capa. El optimizador utiliza esos gradientes para actualizar los parámetros.
+
+# 8. Preprocesamiento común
+
+Todas las variables son numéricas. Se estandarizan porque tanto la regresión logística regularizada como el MLP son sensibles a la escala.
+
+```{python}
+#| label: preprocesamiento
+
+numeric_features = features
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("numeric", StandardScaler(), numeric_features),
+    ],
+    remainder="drop",
+    verbose_feature_names_out=False,
+)
+```
+
+::: {.callout-note title="Por qué se usa un Pipeline"}
+El `Pipeline` ajusta el escalador dentro del conjunto de entrenamiento y aplica exactamente la misma transformación a prueba. Esto hace explícito el orden del flujo y reduce el riesgo de fuga de información.
+:::
+
+# 9. Modelo 1: regresión logística
+
+La regresión logística representa el **modelo mínimo defendible** para esta comparación: es probabilística, regularizada, rápida y ofrece coeficientes inspeccionables.
+
+```{python}
+#| label: modelo-logistico
+
+logistic_model = Pipeline(steps=[
+    ("preprocess", clone(preprocessor)),
+    ("model", LogisticRegression(
+        C=1.0,
+        max_iter=2000,
+        random_state=SEED,
+    )),
+])
+
+logistic_model.fit(X_train, y_train)
+
+logistic_prob = logistic_model.predict_proba(X_test)[:, 1]
+logistic_pred = (logistic_prob >= 0.50).astype(int)
+
+print(classification_report(
+    y_test,
+    logistic_pred,
+    target_names=["Sin diabetes", "Prediabetes o diabetes"],
+    digits=3,
+))
+```
+
+## 9.1 ¿Qué aprendió el modelo lineal?
+
+Como los predictores fueron estandarizados, la magnitud de los coeficientes permite una comparación descriptiva dentro del modelo. No debe interpretarse como efecto causal.
+
+```{python}
+#| label: coeficientes-logistica
+#| fig-cap: "Coeficientes estandarizados de la regresión logística."
+
+coeficients = pd.Series(
+    logistic_model.named_steps["model"].coef_[0],
+    index=numeric_features,
+).sort_values()
+
+fig, ax = plt.subplots(figsize=(9, 7))
+colors = ["#2b8cbe" if value < 0 else "#d95f0e" for value in coeficients]
+coeficients.plot.barh(ax=ax, color=colors)
+ax.axvline(0, color="black", linewidth=1)
+ax.set(xlabel="Coeficiente sobre variable estandarizada", ylabel="")
+plt.tight_layout()
+plt.show()
+```
+
+# 10. Modelo 2: red neuronal MLP
+
+Se propone una arquitectura deliberadamente pequeña:
+
+$$21\;\text{entradas}\rightarrow 8\;\text{neuronas}\rightarrow
+4\;\text{neuronas}\rightarrow 1\;\text{salida}.$$
+
+La red usa ReLU en las capas ocultas, sigmoide en la salida binaria, entropía cruzada como pérdida y Adam para optimización. `early_stopping=True` reserva internamente una fracción del entrenamiento para detener el ajuste cuando deja de mejorar.
+
+```{python}
+#| label: modelo-mlp
+
+mlp_model = Pipeline(steps=[
+    ("preprocess", clone(preprocessor)),
+    ("model", MLPClassifier(
+        hidden_layer_sizes=(8, 4),
+        activation="relu",
+        solver="adam",
+        alpha=1e-3,
+        learning_rate_init=1e-3,
+        batch_size=32,
+        max_iter=1000,
+        early_stopping=True,
+        validation_fraction=0.15,
+        n_iter_no_change=30,
+        random_state=SEED,
+    )),
+])
+
+mlp_model.fit(X_train, y_train)
+
+mlp_prob = mlp_model.predict_proba(X_test)[:, 1]
+mlp_pred = (mlp_prob >= 0.50).astype(int)
+
+print(classification_report(
+    y_test,
+    mlp_pred,
+    target_names=["Sin diabetes", "Prediabetes o diabetes"],
+    digits=3,
+))
+```
+
+## 10.1 Curva de aprendizaje de la red
+
+```{python}
+#| label: curva-perdida-mlp
+#| fig-cap: "Evolución de la pérdida de entrenamiento del MLP."
+
+trained_mlp = mlp_model.named_steps["model"]
+
+fig, ax = plt.subplots(figsize=(7.5, 4.5))
+ax.plot(trained_mlp.loss_curve_, color="#6a3d9a", linewidth=2)
+ax.set(
+    xlabel="Época",
+    ylabel="Entropía cruzada",
+    title=f"MLP: {trained_mlp.n_iter_} épocas ejecutadas",
+)
+plt.tight_layout()
+plt.show()
+```
+
+Una pérdida decreciente confirma optimización sobre entrenamiento; **no demuestra generalización**. Esta última se evalúa con datos no utilizados para ajustar los parámetros.
+
+## 10.2 ¿Cuántos parámetros tiene cada modelo?
+
+```{python}
+#| label: numero-parametros
+
+logistic_parameters = (
+    logistic_model.named_steps["model"].coef_.size
+    + logistic_model.named_steps["model"].intercept_.size
+)
+
+mlp_parameters = sum(
+    weights.size for weights in trained_mlp.coefs_
+) + sum(
+    biases.size for biases in trained_mlp.intercepts_
+)
+
+pd.DataFrame({
+    "modelo": ["Regresión logística", "MLP (8, 4)"],
+    "parámetros_entrenables": [logistic_parameters, mlp_parameters],
+    "razón_frente_logística": [1, mlp_parameters / logistic_parameters],
+}).round(2)
+```
+
+## 10.3 Propagación hacia adelante, paso a paso
+
+El siguiente bloque toma una observación de prueba y reproduce manualmente el cálculo interno de la red ya entrenada. Es una comprobación directa de la ecuación matricial, no un segundo modelo.
+
+```{python}
+#| label: forward-manual
+
+x0 = X_test.iloc[[0]]
+x0_scaled = mlp_model.named_steps["preprocess"].transform(x0)
+
+W1, W2, W3 = trained_mlp.coefs_
+b1, b2, b3 = trained_mlp.intercepts_
+
+z1 = x0_scaled @ W1 + b1
+h1 = np.maximum(0, z1)          # ReLU
+
+z2 = h1 @ W2 + b2
+h2 = np.maximum(0, z2)          # ReLU
+
+z3 = h2 @ W3 + b3
+p_manual = 1 / (1 + np.exp(-z3.item()))
+p_sklearn = mlp_model.predict_proba(x0)[0, 1]
+
+pd.DataFrame({
+    "cálculo": ["Forward manual", "predict_proba"],
+    "probabilidad_clase_positiva": [p_manual, p_sklearn],
+}).round(8)
+```
+
+```{python}
+#| label: formas-matrices
+
+pd.DataFrame({
+    "parámetro": ["W1", "b1", "W2", "b2", "W3", "b3"],
+    "forma": [
+        str(W1.shape),
+        str(b1.shape),
+        str(W2.shape),
+        str(b2.shape),
+        str(W3.shape),
+        str(b3.shape),
+    ],
+})
+```
+
+La coincidencia numérica confirma que la API encapsula las mismas operaciones estudiadas: transformación lineal, activación no lineal y salida sigmoidal.
+
+::: {.checkpoint}
+**Checkpoint 3.** ¿Más parámetros implican mejor modelo? No. Aumentan la capacidad de representación, pero también el riesgo de sobreajuste, la variabilidad y el costo de explicación y validación.
+:::
+
+# 11. Evaluación comparable
+
+## 11.1 Función común de métricas
+
+```{python}
+#| label: funcion-metricas
+
+def classification_metrics(y_true, probability, threshold=0.50):
+    prediction = (probability >= threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true, prediction).ravel()
+    return {
+        "Accuracy": accuracy_score(y_true, prediction),
+        "Balanced accuracy": balanced_accuracy_score(y_true, prediction),
+        "Precision": precision_score(y_true, prediction, zero_division=0),
+        "Sensitivity": recall_score(y_true, prediction),
+        "Specificity": tn / (tn + fp),
+        "F1": f1_score(y_true, prediction),
+        "ROC-AUC": roc_auc_score(y_true, probability),
+        "Average precision": average_precision_score(y_true, probability),
+        "Log loss": log_loss(y_true, probability),
+    }
+
+results = pd.DataFrame({
+    "Regresión logística": classification_metrics(y_test, logistic_prob),
+    "MLP (8, 4)": classification_metrics(y_test, mlp_prob),
+}).T
+
+results.round(3)
+```
+
+## 11.2 Matrices de confusión
+
+```{python}
+#| label: matrices-confusion
+#| fig-cap: "Matrices de confusión con umbral de decisión 0.50."
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+for ax, name, prediction in zip(
+    axes,
+    ["Regresión logística", "MLP (8, 4)"],
+    [logistic_pred, mlp_pred],
+):
+    matrix = confusion_matrix(y_test, prediction)
+    sns.heatmap(
+        matrix,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        cbar=False,
+        xticklabels=["Sin diabetes", "Diabetes"],
+        yticklabels=["Sin diabetes", "Diabetes"],
+        ax=ax,
+    )
+    ax.set(title=name, xlabel="Predicción", ylabel="Valor real")
+
+plt.tight_layout()
+plt.show()
+```
+
+## 11.3 Curvas ROC y precisión–sensibilidad
+
+```{python}
+#| label: curvas-roc-pr
+#| fig-cap: "Curvas ROC y precisión–sensibilidad en el conjunto de prueba."
+
+model_probabilities = {
+    "Regresión logística": logistic_prob,
+    "MLP (8, 4)": mlp_prob,
+}
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+
+for name, probability in model_probabilities.items():
+    fpr, tpr, _ = roc_curve(y_test, probability)
+    precision, recall, _ = precision_recall_curve(y_test, probability)
+
+    axes[0].plot(
+        fpr,
+        tpr,
+        linewidth=2,
+        label=f"{name} (AUC={roc_auc_score(y_test, probability):.3f})",
+    )
+    axes[1].plot(
+        recall,
+        precision,
+        linewidth=2,
+        label=(
+            f"{name} "
+            f"(AP={average_precision_score(y_test, probability):.3f})"
+        ),
+    )
+
+axes[0].plot([0, 1], [0, 1], "--", color="gray")
+axes[0].set(xlabel="1 − especificidad", ylabel="Sensibilidad", title="Curva ROC")
+axes[1].axhline(y_train.mean(), linestyle="--", color="gray", label="Prevalencia train")
+axes[1].set(xlabel="Sensibilidad", ylabel="Precisión", title="Curva precisión–sensibilidad")
+
+for ax in axes:
+    ax.legend(fontsize=8)
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip title="Cómo leer las curvas"}
+ROC-AUC mide discriminación a través de todos los umbrales. La curva precisión–sensibilidad suele ser más informativa cuando la clase positiva es menos frecuente. Ninguna de las dos selecciona por sí sola el umbral clínico.
+:::
+
+# 12. El umbral también es una decisión del modelo
+
+El valor 0.50 es una convención, no una ley. Si el costo de omitir un caso positivo es alto, puede priorizarse sensibilidad a costa de más falsos positivos. Esta decisión requiere contexto clínico y no debe optimizarse sobre prueba.
+
+```{python}
+#| label: sensibilidad-umbral
+#| fig-cap: "Efecto descriptivo del umbral sobre sensibilidad y especificidad del MLP."
+
+thresholds = np.linspace(0.05, 0.95, 19)
+threshold_rows = []
+
+for threshold_value in thresholds:
+    metrics = classification_metrics(
+        y_test,
+        mlp_prob,
+        threshold=threshold_value,
+    )
+    threshold_rows.append({
+        "umbral": threshold_value,
+        "Sensibilidad": metrics["Sensitivity"],
+        "Especificidad": metrics["Specificity"],
+    })
+
+threshold_df = pd.DataFrame(threshold_rows)
+
+fig, ax = plt.subplots(figsize=(8, 4.5))
+ax.plot(
+    threshold_df["umbral"],
+    threshold_df["Sensibilidad"],
+    marker="o",
+    label="Sensibilidad",
+)
+ax.plot(
+    threshold_df["umbral"],
+    threshold_df["Especificidad"],
+    marker="s",
+    label="Especificidad",
+)
+ax.set(xlabel="Umbral", ylabel="Métrica", ylim=(0, 1.03))
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-warning title="Uso correcto de esta figura"}
+La figura es pedagógica y descriptiva. En un desarrollo real, el umbral se elegiría con validación interna y costos explícitos; después se evaluaría una sola vez en prueba.
+:::
+
+# 13. Interpretación comparable
+
+Los coeficientes de la logística y los pesos internos del MLP no tienen la misma interpretación. Para comparar ambos bajo una medida común se usa importancia por permutación sobre prueba. La medida estima cuánto disminuye la exactitud balanceada cuando se rompe la información de una variable.
+
+```{python}
+#| label: importancia-permutacion
+#| fig-cap: "Importancia por permutación de las diez variables principales en cada modelo."
+
+importance_frames = []
+
+for name, fitted_model in {
+    "Regresión logística": logistic_model,
+    "MLP (8, 4)": mlp_model,
+}.items():
+    importance = permutation_importance(
+        fitted_model,
+        X_test,
+        y_test,
+        scoring="balanced_accuracy",
+        n_repeats=15,
+        random_state=SEED,
+        n_jobs=-1,
+    )
+    frame = pd.DataFrame({
+        "variable": features,
+        "importancia": importance.importances_mean,
+        "modelo": name,
+    }).nlargest(10, "importancia")
+    importance_frames.append(frame)
+
+importance_df = pd.concat(importance_frames, ignore_index=True)
+
+g = sns.catplot(
+    data=importance_df,
+    x="importancia",
+    y="variable",
+    col="modelo",
+    kind="bar",
+    sharey=False,
+    height=5,
+    aspect=0.9,
+)
+g.set_axis_labels("Caída en exactitud balanceada", "")
+g.set_titles("{col_name}")
+plt.show()
+```
+
+::: {.callout-important title="Límite interpretativo"}
+La importancia por permutación describe dependencia predictiva del modelo en esta muestra. No identifica mecanismos fisiológicos, no estima causalidad y puede repartir la importancia entre variables correlacionadas.
+:::
+
+# 14. ¿Dónde discrepan los modelos?
+
+```{python}
+#| label: desacuerdos
+
+comparison = X_test.copy()
+comparison["real"] = y_test
+comparison["p_logistica"] = logistic_prob
+comparison["p_mlp"] = mlp_prob
+comparison["pred_logistica"] = logistic_pred
+comparison["pred_mlp"] = mlp_pred
+comparison["diferencia_probabilidad"] = (
+    comparison["p_mlp"] - comparison["p_logistica"]
+).abs()
+
+disagreements = comparison.query("pred_logistica != pred_mlp")
+
+print(f"Casos con decisiones distintas: {len(disagreements)} de {len(comparison)}")
+disagreements[
+    ["real", "p_logistica", "p_mlp", "diferencia_probabilidad"]
+].sort_values("diferencia_probabilidad", ascending=False).head(10).round(3)
+```
+
+Los desacuerdos son más útiles para discutir que una sola cifra agregada. Permiten preguntar si la red está capturando una estructura no lineal plausible o si está reaccionando a patrones inestables.
+
+# 15. Conclusión basada en evidencia
+
+Ejecutar la siguiente regla didáctica después de revisar la tabla de métricas:
+
+```{python}
+#| label: conclusion-automatica
+
+delta_balanced_accuracy = (
+    results.loc["MLP (8, 4)", "Balanced accuracy"]
+    - results.loc["Regresión logística", "Balanced accuracy"]
+)
+delta_auc = (
+    results.loc["MLP (8, 4)", "ROC-AUC"]
+    - results.loc["Regresión logística", "ROC-AUC"]
+)
+
+print(f"Δ exactitud balanceada (MLP − logística): {delta_balanced_accuracy:+.3f}")
+print(f"Δ ROC-AUC (MLP − logística): {delta_auc:+.3f}")
+
+if delta_balanced_accuracy > 0.02 and delta_auc > 0.01:
+    print("La mejora observada justifica estudiar la red con validación más rigurosa.")
+else:
+    print("La evidencia actual no basta para preferir la red sobre la línea base.")
+```
+
+Esta regla no es un criterio universal. Su función es impedir la conclusión vaga “la red es mejor” cuando la diferencia es mínima o depende de una única métrica.
+
+## 15.1 Matriz de comparación conceptual
+
+| Criterio | Regresión logística | MLP |
+|---|---|---|
+| Frontera | Lineal en el espacio transformado | No lineal |
+| Salida binaria | Sigmoide | Sigmoide |
+| Pérdida | Entropía cruzada | Entropía cruzada |
+| Optimización | Métodos basados en gradiente | Retropropagación + optimizador |
+| Interpretación | Coeficientes y *odds ratios* | Requiere métodos posteriores |
+| Capacidad | Menor | Mayor |
+| Riesgo de sobreajuste | Menor, no nulo | Mayor |
+| Necesidad de datos | Moderada | Usualmente mayor |
+
+# 16. Retos de programación en vivo
+
+## Reto 1 — Ablación de la no linealidad
+
+Cambie `activation="relu"` por `activation="identity"`. Mantenga todo lo demás constante y explique por qué el comportamiento se aproxima al de un modelo lineal, aunque la optimización no sea idéntica.
+
+## Reto 2 — Capacidad y sobreajuste
+
+Compare las arquitecturas `(4,)`, `(8, 4)` y `(64, 32, 16)`. Registre el número de parámetros, la pérdida final y las métricas de prueba. No seleccione una arquitectura usando únicamente `accuracy`.
+
+## Reto 3 — Repetibilidad
+
+Ejecute el MLP con cinco semillas diferentes. Reporte media y desviación estándar de la exactitud balanceada. Explique por qué un solo ajuste no caracteriza completamente a una red neuronal.
+
+## Reto 4 — Formulación multiclase
+
+Utilice el archivo `diabetes_012_health_indicators_BRFSS2015.csv`, que separa ausencia de diabetes, prediabetes y diabetes. Compare regresión logística multinomial frente a MLP. Use F1 macro y matrices de confusión; no reduzca la evaluación a exactitud global.
+
+# 17. Preguntas para cierre y exposición
+
+1. ¿En qué sentido una neurona de salida binaria reproduce la regresión logística?
+2. ¿Qué función cumplen las capas ocultas y la activación ReLU?
+3. ¿Por qué el escalador debe ajustarse solo con entrenamiento?
+4. ¿Qué indica la entropía cruzada y por qué es apropiada para una salida probabilística?
+5. ¿Qué evidencia concreta justificaría preferir el MLP?
+6. ¿Por qué ROC-AUC, sensibilidad y especificidad pueden conducir a conclusiones distintas?
+7. ¿Qué información clínica se pierde al unir prediabetes y diabetes?
+8. ¿Qué validaciones faltan antes de considerar un uso clínico?
+
+# 18. Lista de verificación
+
+- [ ] Se verificó la fuente y licencia del dataset.
+- [ ] La variable objetivo se definió de forma explícita.
+- [ ] La partición se realizó antes del EDA guiado y del modelado.
+- [ ] El escalado se ajustó únicamente con entrenamiento.
+- [ ] Ambos modelos usaron la misma partición y las mismas variables.
+- [ ] Se reportaron métricas sensibles al desbalance.
+- [ ] La mayor complejidad del MLP se contrastó con una línea base.
+- [ ] Las conclusiones separan predicción, explicación y causalidad.
+- [ ] El ejemplo se presentó como ejercicio didáctico, no como herramienta diagnóstica.
+
+# 19. Referencias y documentación
+
+- Kaggle. *Diabetes Health Indicators Dataset*. <https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset>
+- Scikit-learn. `LogisticRegression`. <https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html>
+- Scikit-learn. `MLPClassifier`. <https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html>
+- Scikit-learn. *Common pitfalls and recommended practices*. <https://scikit-learn.org/stable/common_pitfalls.html>
+
+## Información de sesión
+
+```{python}
+#| label: versiones
+
+import sklearn
+import sys
+
+pd.DataFrame({
+    "componente": ["Python", "NumPy", "pandas", "scikit-learn"],
+    "versión": [
+        sys.version.split()[0],
+        np.__version__,
+        pd.__version__,
+        sklearn.__version__,
+    ],
+})
+```
