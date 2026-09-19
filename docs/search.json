@@ -30356,21 +30356,21 @@
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html",
     "title": "De la regresión logística a las redes neuronales",
     "section": "",
-    "text": "¿Qué cambia —matemática, computacional y metodológicamente— cuando pasamos de una regresión logística a una red neuronal para clasificar indicadores de diabetes?\nEste taller continúa el trabajo previo sobre modelos, función de pérdida y descenso de gradiente. La regresión logística se utilizará como línea base y no como un modelo que deba ser descartado. La red neuronal se justificará únicamente si aprende relaciones no lineales que mejoran de forma consistente el desempeño fuera de muestra."
+    "text": "¿Qué cambia —matemática, computacional y metodológicamente— cuando una regresión logística se extiende a una red neuronal entrenada con PyTorch sobre GPU?\nEste taller continúa el trabajo previo sobre regresión logística, entropía cruzada y descenso de gradiente. La regresión logística se reconstruirá como una red de una sola capa lineal. Después se incorporarán capas ocultas y activaciones no lineales para obtener un perceptrón multicapa (MLP)."
   },
   {
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#pregunta-orientadora",
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#pregunta-orientadora",
     "title": "De la regresión logística a las redes neuronales",
     "section": "",
-    "text": "¿Qué cambia —matemática, computacional y metodológicamente— cuando pasamos de una regresión logística a una red neuronal para clasificar indicadores de diabetes?"
+    "text": "¿Qué cambia —matemática, computacional y metodológicamente— cuando una regresión logística se extiende a una red neuronal entrenada con PyTorch sobre GPU?"
   },
   {
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#ruta-sugerida-para-la-sesión",
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#ruta-sugerida-para-la-sesión",
     "title": "De la regresión logística a las redes neuronales",
     "section": "1.1 1.1 Ruta sugerida para la sesión",
-    "text": "1.1 1.1 Ruta sugerida para la sesión\n\n\n\nBloque\nActividad\nTiempo orientativo\n\n\n\n\n1\nProblema, datos y auditoría\n25 min\n\n\n2\nPartición y análisis exploratorio\n35 min\n\n\n3\nRegresión logística como línea base\n35 min\n\n\n4\nRed neuronal desde la logística\n45 min\n\n\n5\nComparación, umbral y discusión\n40 min\n\n\n\nLa duración aproximada es de tres horas. Los puntos marcados como Checkpoint permiten pausar la ejecución y pedir predicciones a los estudiantes antes de mostrar el resultado."
+    "text": "1.1 1.1 Ruta sugerida para la sesión\n\n\n\nBloque\nActividad\nTiempo orientativo\n\n\n\n\n1\nProblema, datos y auditoría\n25 min\n\n\n2\nPartición, EDA y tensores\n40 min\n\n\n3\nRegresión logística en PyTorch\n40 min\n\n\n4\nMLP, GPU y retropropagación\n50 min\n\n\n5\nComparación y discusión\n35 min"
   },
   {
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#crear-un-proyecto-reproducible-con-uv",
@@ -30391,7 +30391,7 @@
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#descarga-automática-desde-kaggle",
     "title": "De la regresión logística a las redes neuronales",
     "section": "4.1 4.1 Descarga automática desde Kaggle",
-    "text": "4.1 4.1 Descarga automática desde Kaggle\nEl siguiente bloque usa el punto de descarga pública de Kaggle y guarda una copia local. Si el archivo ya existe, no vuelve a descargarlo.\n\nDATA_DIR = Path(\"data\")\nDATA_DIR.mkdir(exist_ok=True)\n\ncsv_name = \"diabetes_binary_health_indicators_BRFSS2015.csv\"\ncsv_path = DATA_DIR / csv_name\nzip_path = DATA_DIR / \"diabetes-health-indicators-dataset.zip\"\n\ndownload_url = (\n    \"https://www.kaggle.com/api/v1/datasets/download/\"\n    \"alexteboul/diabetes-health-indicators-dataset\"\n)\n\nif not csv_path.exists():\n    print(\"Descargando el dataset desde Kaggle...\")\n    urlretrieve(download_url, zip_path)\n    with ZipFile(zip_path) as archive:\n        archive.extract(csv_name, DATA_DIR)\n\ndf_full = pd.read_csv(csv_path)\ndf = df_full.sample(n=50_000, random_state=SEED).reset_index(drop=True)\n\nprint(f\"Archivo completo: {df_full.shape[0]} filas × {df_full.shape[1]} columnas\")\nprint(f\"Submuestra de trabajo: {df.shape[0]} filas × {df.shape[1]} columnas\")\ndf.head()\n\nDescargando el dataset desde Kaggle...\nArchivo completo: 253680 filas × 22 columnas\nSubmuestra de trabajo: 50000 filas × 22 columnas\n\n\n\n\n\n\n\n\n\nDiabetes_binary\nHighBP\nHighChol\nCholCheck\nBMI\nSmoker\nStroke\nHeartDiseaseorAttack\nPhysActivity\nFruits\nVeggies\nHvyAlcoholConsump\nAnyHealthcare\nNoDocbcCost\nGenHlth\nMentHlth\nPhysHlth\nDiffWalk\nSex\nAge\nEducation\nIncome\n\n\n\n\n0\n0.0\n0.0\n0.0\n1.0\n21.0\n0.0\n0.0\n0.0\n0.0\n1.0\n1.0\n0.0\n1.0\n0.0\n3.0\n3.0\n7.0\n0.0\n0.0\n7.0\n4.0\n2.0\n\n\n1\n0.0\n1.0\n1.0\n1.0\n28.0\n0.0\n0.0\n0.0\n1.0\n1.0\n1.0\n0.0\n1.0\n0.0\n3.0\n0.0\n0.0\n0.0\n0.0\n13.0\n6.0\n6.0\n\n\n2\n0.0\n0.0\n0.0\n1.0\n24.0\n0.0\n0.0\n0.0\n1.0\n1.0\n1.0\n0.0\n1.0\n0.0\n1.0\n0.0\n0.0\n0.0\n1.0\n1.0\n4.0\n7.0\n\n\n3\n0.0\n0.0\n0.0\n1.0\n27.0\n1.0\n0.0\n0.0\n1.0\n0.0\n1.0\n1.0\n1.0\n0.0\n2.0\n3.0\n0.0\n0.0\n1.0\n2.0\n4.0\n7.0\n\n\n4\n0.0\n0.0\n1.0\n1.0\n31.0\n1.0\n0.0\n0.0\n0.0\n1.0\n1.0\n0.0\n1.0\n1.0\n4.0\n27.0\n27.0\n1.0\n0.0\n8.0\n3.0\n2.0\n\n\n\n\n\n\n\n\nPlan B para una clase sin internet: descargue previamente diabetes_binary_health_indicators_BRFSS2015.csv desde la página de Kaggle y guárdelo en la carpeta data/. El mismo código continuará desde pd.read_csv(csv_path)."
+    "text": "4.1 4.1 Descarga automática desde Kaggle\n\nDATA_DIR = Path(\"data\")\nDATA_DIR.mkdir(exist_ok=True)\n\ncsv_name = \"diabetes_binary_health_indicators_BRFSS2015.csv\"\ncsv_path = DATA_DIR / csv_name\nzip_path = DATA_DIR / \"diabetes-health-indicators-dataset.zip\"\n\ndownload_url = (\n    \"https://www.kaggle.com/api/v1/datasets/download/\"\n    \"alexteboul/diabetes-health-indicators-dataset\"\n)\n\nif not csv_path.exists():\n    print(\"Descargando el dataset desde Kaggle...\")\n    urlretrieve(download_url, zip_path)\n    with ZipFile(zip_path) as archive:\n        archive.extract(csv_name, DATA_DIR)\n\ndf_full = pd.read_csv(csv_path)\ndf = df_full.sample(n=50_000, random_state=SEED).reset_index(drop=True)\n\nprint(f\"Archivo completo: {df_full.shape[0]} filas × {df_full.shape[1]} columnas\")\nprint(f\"Submuestra: {df.shape[0]} filas × {df.shape[1]} columnas\")\ndf.head()\n\nArchivo completo: 253680 filas × 22 columnas\nSubmuestra: 50000 filas × 22 columnas\n\n\n\n\n\n\n\n\n\nDiabetes_binary\nHighBP\nHighChol\nCholCheck\nBMI\nSmoker\nStroke\nHeartDiseaseorAttack\nPhysActivity\nFruits\nVeggies\nHvyAlcoholConsump\nAnyHealthcare\nNoDocbcCost\nGenHlth\nMentHlth\nPhysHlth\nDiffWalk\nSex\nAge\nEducation\nIncome\n\n\n\n\n0\n0.0\n0.0\n0.0\n1.0\n21.0\n0.0\n0.0\n0.0\n0.0\n1.0\n1.0\n0.0\n1.0\n0.0\n3.0\n3.0\n7.0\n0.0\n0.0\n7.0\n4.0\n2.0\n\n\n1\n0.0\n1.0\n1.0\n1.0\n28.0\n0.0\n0.0\n0.0\n1.0\n1.0\n1.0\n0.0\n1.0\n0.0\n3.0\n0.0\n0.0\n0.0\n0.0\n13.0\n6.0\n6.0\n\n\n2\n0.0\n0.0\n0.0\n1.0\n24.0\n0.0\n0.0\n0.0\n1.0\n1.0\n1.0\n0.0\n1.0\n0.0\n1.0\n0.0\n0.0\n0.0\n1.0\n1.0\n4.0\n7.0\n\n\n3\n0.0\n0.0\n0.0\n1.0\n27.0\n1.0\n0.0\n0.0\n1.0\n0.0\n1.0\n1.0\n1.0\n0.0\n2.0\n3.0\n0.0\n0.0\n1.0\n2.0\n4.0\n7.0\n\n\n4\n0.0\n0.0\n1.0\n1.0\n31.0\n1.0\n0.0\n0.0\n0.0\n1.0\n1.0\n0.0\n1.0\n1.0\n4.0\n27.0\n27.0\n1.0\n0.0\n8.0\n3.0\n2.0\n\n\n\n\n\n\n\n\nPlan B: descargue previamente el CSV desde Kaggle y guárdelo en data/."
   },
   {
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#contrato-mínimo-de-datos",
@@ -30488,15 +30488,15 @@
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matrices-de-confusión",
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matrices-de-confusión",
     "title": "De la regresión logística a las redes neuronales",
-    "section": "11.2 11.2 Matrices de confusión",
-    "text": "11.2 11.2 Matrices de confusión\n\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\n\nfor ax, name, prediction in zip(\n    axes,\n    [\"Regresión logística\", \"MLP (8, 4)\"],\n    [logistic_pred, mlp_pred],\n):\n    matrix = confusion_matrix(y_test, prediction)\n    sns.heatmap(\n        matrix,\n        annot=True,\n        fmt=\"d\",\n        cmap=\"Blues\",\n        cbar=False,\n        xticklabels=[\"Sin diabetes\", \"Diabetes\"],\n        yticklabels=[\"Sin diabetes\", \"Diabetes\"],\n        ax=ax,\n    )\n    ax.set(title=name, xlabel=\"Predicción\", ylabel=\"Valor real\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nMatrices de confusión con umbral de decisión 0.50."
+    "section": "14.3 14.3 Matrices de confusión",
+    "text": "14.3 14.3 Matrices de confusión\n\nfig, axes = plt.subplots(1, 2, figsize=(10, 4))\n\nfor ax, name in zip(axes, results.index):\n    row = results.loc[name]\n    matrix = np.array([[row[\"TN\"], row[\"FP\"]], [row[\"FN\"], row[\"TP\"]]])\n    sns.heatmap(\n        matrix.astype(int),\n        annot=True,\n        fmt=\"d\",\n        cmap=\"Blues\",\n        cbar=False,\n        xticklabels=[\"Sin diabetes\", \"Diabetes\"],\n        yticklabels=[\"Sin diabetes\", \"Diabetes\"],\n        ax=ax,\n    )\n    ax.set(title=name, xlabel=\"Predicción\", ylabel=\"Valor real\")\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nMatrices de confusión con umbral 0.50."
   },
   {
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-roc-y-precisiónsensibilidad",
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-roc-y-precisiónsensibilidad",
     "title": "De la regresión logística a las redes neuronales",
-    "section": "11.3 11.3 Curvas ROC y precisión–sensibilidad",
-    "text": "11.3 11.3 Curvas ROC y precisión–sensibilidad\n\nmodel_probabilities = {\n    \"Regresión logística\": logistic_prob,\n    \"MLP (8, 4)\": mlp_prob,\n}\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4.5))\n\nfor name, probability in model_probabilities.items():\n    fpr, tpr, _ = roc_curve(y_test, probability)\n    precision, recall, _ = precision_recall_curve(y_test, probability)\n\n    axes[0].plot(\n        fpr,\n        tpr,\n        linewidth=2,\n        label=f\"{name} (AUC={roc_auc_score(y_test, probability):.3f})\",\n    )\n    axes[1].plot(\n        recall,\n        precision,\n        linewidth=2,\n        label=(\n            f\"{name} \"\n            f\"(AP={average_precision_score(y_test, probability):.3f})\"\n        ),\n    )\n\naxes[0].plot([0, 1], [0, 1], \"--\", color=\"gray\")\naxes[0].set(xlabel=\"1 − especificidad\", ylabel=\"Sensibilidad\", title=\"Curva ROC\")\naxes[1].axhline(y_train.mean(), linestyle=\"--\", color=\"gray\", label=\"Prevalencia train\")\naxes[1].set(xlabel=\"Sensibilidad\", ylabel=\"Precisión\", title=\"Curva precisión–sensibilidad\")\n\nfor ax in axes:\n    ax.legend(fontsize=8)\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nCurvas ROC y precisión–sensibilidad en el conjunto de prueba.\n\n\n\n\n\n\n\n\n\n\nTipCómo leer las curvas\n\n\n\nROC-AUC mide discriminación a través de todos los umbrales. La curva precisión–sensibilidad suele ser más informativa cuando la clase positiva es menos frecuente. Ninguna de las dos selecciona por sí sola el umbral clínico."
+    "section": "14.4 14.4 Curvas ROC y precisión–sensibilidad",
+    "text": "14.4 14.4 Curvas ROC y precisión–sensibilidad\n\nmodel_probabilities = {\n    \"Regresión logística\": logistic_prob,\n    \"MLP (8, 4)\": mlp_prob,\n}\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4.5))\n\nfor name, probability in model_probabilities.items():\n    curves = binary_curves(y_test, probability)\n    axes[0].plot(\n        curves[\"fpr\"],\n        curves[\"tpr\"],\n        linewidth=2,\n        label=f\"{name} (AUC={curves['roc_auc']:.3f})\",\n    )\n    axes[1].plot(\n        curves[\"recall_curve\"],\n        curves[\"precision_curve\"],\n        linewidth=2,\n        label=f\"{name} (AP={curves['average_precision']:.3f})\",\n    )\n\naxes[0].plot([0, 1], [0, 1], \"--\", color=\"gray\")\naxes[0].set(xlabel=\"1 − especificidad\", ylabel=\"Sensibilidad\", title=\"ROC\")\naxes[1].axhline(y_test.mean(), linestyle=\"--\", color=\"gray\", label=\"Prevalencia\")\naxes[1].set(xlabel=\"Sensibilidad\", ylabel=\"Precisión\", title=\"Precisión–sensibilidad\")\n\nfor ax in axes:\n    ax.legend(fontsize=8)\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nCurvas ROC y precisión–sensibilidad en prueba."
   },
   {
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#matriz-de-comparación-conceptual",
@@ -30537,7 +30537,210 @@
     "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#información-de-sesión",
     "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#información-de-sesión",
     "title": "De la regresión logística a las redes neuronales",
-    "section": "19.1 Información de sesión",
-    "text": "19.1 Información de sesión\n\nimport sklearn\nimport sys\n\npd.DataFrame({\n    \"componente\": [\"Python\", \"NumPy\", \"pandas\", \"scikit-learn\"],\n    \"versión\": [\n        sys.version.split()[0],\n        np.__version__,\n        pd.__version__,\n        sklearn.__version__,\n    ],\n})\n\n\n\n\n\n\n\n\ncomponente\nversión\n\n\n\n\n0\nPython\n3.13.14\n\n\n1\nNumPy\n2.4.1\n\n\n2\npandas\n2.3.3\n\n\n3\nscikit-learn\n1.8.0"
+    "section": "21.1 Información de sesión",
+    "text": "21.1 Información de sesión\n\npd.DataFrame({\n    \"componente\": [\"Python\", \"NumPy\", \"pandas\", \"PyTorch\", \"CUDA\"],\n    \"versión\": [\n        sys.version.split()[0],\n        np.__version__,\n        pd.__version__,\n        torch.__version__,\n        torch.version.cuda or \"No disponible\",\n    ],\n})\n\n\n\n\n\n\n\n\ncomponente\nversión\n\n\n\n\n0\nPython\n3.13.14\n\n\n1\nNumPy\n2.4.1\n\n\n2\npandas\n2.3.3\n\n\n3\nPyTorch\n2.14.0+cu130\n\n\n4\nCUDA\n13.0"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#crear-el-proyecto-con-uv",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#crear-el-proyecto-con-uv",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "3.1 3.1 Crear el proyecto con uv",
+    "text": "3.1 3.1 Crear el proyecto con uv\nPyTorch publica compilaciones diferentes según el sistema operativo y la plataforma de cómputo. Antes de instalar, compruebe el controlador NVIDIA:\n#| eval: false\nnvidia-smi\nPara Linux con una GPU NVIDIA compatible con CUDA 12.8:\n#| eval: false\nuv init --python 3.12\nuv add pandas numpy matplotlib seaborn jupyter\nuv pip install torch --index-url https://download.pytorch.org/whl/cu128\nuv run quarto render Taller_Redes_Neuronales_desde_Regresion_Logistica.qmd\nSi el equipo requiere otra versión de CUDA o CPU, obtenga el comando correspondiente en el selector oficial: https://pytorch.org/get-started/locally/.\n\n\n\n\n\n\nNotaGPU no significa automáticamente menor tiempo\n\n\n\nEste es un dataset tabular pequeño. La GPU permite enseñar el flujo correcto y escalar a modelos mayores, pero la transferencia de datos y el lanzamiento de kernels pueden hacer que una CPU moderna sea igual o más rápida en este ejemplo."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#importaciones-y-reproducibilidad",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#importaciones-y-reproducibilidad",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "3.2 3.2 Importaciones y reproducibilidad",
+    "text": "3.2 3.2 Importaciones y reproducibilidad\n\nfrom pathlib import Path\nfrom urllib.request import urlretrieve\nfrom zipfile import ZipFile\nfrom copy import deepcopy\nimport random\nimport sys\n\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nimport torch\nfrom torch import nn\nfrom torch.utils.data import DataLoader, TensorDataset\n\nSEED = 42\nrandom.seed(SEED)\nnp.random.seed(SEED)\ntorch.manual_seed(SEED)\n\nif torch.cuda.is_available():\n    torch.cuda.manual_seed_all(SEED)\n\ntorch.backends.cudnn.deterministic = True\ntorch.backends.cudnn.benchmark = False\n\nsns.set_theme(style=\"whitegrid\", context=\"notebook\", palette=\"colorblind\")\npd.set_option(\"display.max_columns\", 30)"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#selección-explícita-del-dispositivo",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#selección-explícita-del-dispositivo",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "3.3 3.3 Selección explícita del dispositivo",
+    "text": "3.3 3.3 Selección explícita del dispositivo\n\nUSE_CUDA = torch.cuda.is_available()\nDEVICE = torch.device(\"cuda\" if USE_CUDA else \"cpu\")\n\ndevice_info = {\n    \"PyTorch\": torch.__version__,\n    \"CUDA disponible\": USE_CUDA,\n    \"CUDA de PyTorch\": torch.version.cuda,\n    \"dispositivo\": str(DEVICE),\n}\n\nif USE_CUDA:\n    device_info[\"GPU\"] = torch.cuda.get_device_name(0)\n    device_info[\"VRAM_GB\"] = round(\n        torch.cuda.get_device_properties(0).total_memory / 1024**3,\n        2,\n    )\n\npd.Series(device_info, name=\"valor\").to_frame()\n\n\n\n\n\n\n\n\nvalor\n\n\n\n\nPyTorch\n2.14.0+cu130\n\n\nCUDA disponible\nTrue\n\n\nCUDA de PyTorch\n13.0\n\n\ndispositivo\ncuda\n\n\nGPU\nNVIDIA GeForce RTX 4070 Laptop GPU\n\n\nVRAM_GB\n7.65\n\n\n\n\n\n\n\n\n\n\n\n\n\nImportanteComprobación obligatoria\n\n\n\nEl mensaje dispositivo = cuda confirma que el entrenamiento usará GPU. Si aparece cpu, el código seguirá funcionando, pero debe revisarse la instalación de PyTorch, el controlador NVIDIA y la compatibilidad de la GPU."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#contrato-mínimo",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#contrato-mínimo",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "4.2 4.2 Contrato mínimo",
+    "text": "4.2 4.2 Contrato mínimo\n\nTARGET_ORIGINAL = \"Diabetes_binary\"\nEXPECTED_ROWS = 50_000\nEXPECTED_FEATURES = 21\n\nassert TARGET_ORIGINAL in df.columns\nassert df.shape[0] == EXPECTED_ROWS\nassert df.shape[1] - 1 == EXPECTED_FEATURES\nassert set(df[TARGET_ORIGINAL].unique()) == {0.0, 1.0}\n\naudit = pd.Series({\n    \"filas\": len(df),\n    \"predictores\": df.shape[1] - 1,\n    \"valores_faltantes\": int(df.isna().sum().sum()),\n    \"filas_duplicadas\": int(df.duplicated().sum()),\n    \"clases\": df[TARGET_ORIGINAL].nunique(),\n})\naudit.to_frame(\"resultado\")\n\n\n\n\n\n\n\n\nresultado\n\n\n\n\nfilas\n50000\n\n\npredictores\n21\n\n\nvalores_faltantes\n0\n\n\nfilas_duplicadas\n2027\n\n\nclases\n2\n\n\n\n\n\n\n\n\nCheckpoint 1. Una fila repetida no es necesariamente un error. Como muchas variables son discretas, dos personas pueden compartir el mismo vector de respuestas. Eliminar duplicados exige demostrar que corresponden al mismo registro administrativo."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#objetivo-y-predictores",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#objetivo-y-predictores",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "4.3 4.3 Objetivo y predictores",
+    "text": "4.3 4.3 Objetivo y predictores\n\ndata = df.rename(columns={TARGET_ORIGINAL: \"diabetes\"}).copy()\ndata[\"diabetes\"] = data[\"diabetes\"].astype(np.float32)\n\ntarget = \"diabetes\"\nfeatures = [column for column in data.columns if column != target]\n\nclass_table = (\n    data[target]\n    .value_counts()\n    .sort_index()\n    .rename(index={0.0: \"Sin diabetes\", 1.0: \"Prediabetes o diabetes\"})\n    .to_frame(\"n\")\n)\nclass_table[\"porcentaje\"] = 100 * class_table[\"n\"] / class_table[\"n\"].sum()\nclass_table.round(2)\n\n\n\n\n\n\n\n\nn\nporcentaje\n\n\ndiabetes\n\n\n\n\n\n\nSin diabetes\n43096\n86.19\n\n\nPrediabetes o diabetes\n6904\n13.81"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribución-de-la-clase",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribución-de-la-clase",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "6.1 6.1 Distribución de la clase",
+    "text": "6.1 6.1 Distribución de la clase\n\ncounts = train_df[target].value_counts().sort_index()\n\nfig, ax = plt.subplots(figsize=(7, 4))\nsns.barplot(\n    x=[\"Sin diabetes\", \"Prediabetes o diabetes\"],\n    y=counts.values,\n    ax=ax,\n)\nax.set(xlabel=\"Clase\", ylabel=\"Número de registros\")\nfor i, value in enumerate(counts.values):\n    ax.text(i, value + 150, f\"{value}\\n({value / counts.sum():.1%})\", ha=\"center\")\nplt.tight_layout()\nplt.show()\n\n\n\n\nDistribución del objetivo en entrenamiento.\n\n\n\n\nLa clase positiva es minoritaria. Se usará ponderación en la función de pérdida y se reportarán métricas que separan el comportamiento de ambas clases."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribuciones-seleccionadas",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#distribuciones-seleccionadas",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "6.2 6.2 Distribuciones seleccionadas",
+    "text": "6.2 6.2 Distribuciones seleccionadas\n\nselected_features = [\"BMI\", \"GenHlth\", \"MentHlth\", \"PhysHlth\", \"Age\", \"Income\"]\n\nlong_train = train_df.melt(\n    id_vars=target,\n    value_vars=selected_features,\n    var_name=\"variable\",\n    value_name=\"valor\",\n)\nlong_train[\"clase\"] = long_train[target].map({\n    0.0: \"Sin diabetes\",\n    1.0: \"Prediabetes o diabetes\",\n})\n\ng = sns.displot(\n    data=long_train,\n    x=\"valor\",\n    hue=\"clase\",\n    col=\"variable\",\n    col_wrap=2,\n    kind=\"hist\",\n    stat=\"density\",\n    common_norm=False,\n    element=\"step\",\n    fill=False,\n    height=2.6,\n    facet_kws={\"sharex\": False, \"sharey\": False},\n)\ng.set_titles(\"{col_name}\")\ng.set_axis_labels(\"Valor\", \"Densidad\")\nplt.show()\n\n\n\n\nDistribuciones de seis indicadores en entrenamiento."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#asociación-monotónica",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#asociación-monotónica",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "6.3 6.3 Asociación monotónica",
+    "text": "6.3 6.3 Asociación monotónica\n\ncorr = train_df.corr(method=\"spearman\")\ntop_features = (\n    corr[target]\n    .drop(target)\n    .abs()\n    .sort_values(ascending=False)\n    .head(10)\n    .index\n)\n\nfig, ax = plt.subplots(figsize=(10, 7))\nsns.heatmap(\n    train_df[list(top_features) + [target]].corr(method=\"spearman\"),\n    cmap=\"vlag\",\n    center=0,\n    vmin=-1,\n    vmax=1,\n    square=True,\n    ax=ax,\n)\nax.set_title(\"Variables más asociadas con el objetivo\")\nplt.tight_layout()\nplt.show()\n\n\n\n\nCorrelación de Spearman para las variables más asociadas con el objetivo."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#estandarización-ajustada-solo-con-entrenamiento",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#estandarización-ajustada-solo-con-entrenamiento",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "7.1 7.1 Estandarización ajustada solo con entrenamiento",
+    "text": "7.1 7.1 Estandarización ajustada solo con entrenamiento\n\nX_train_cpu = torch.tensor(\n    train_df[features].to_numpy(dtype=np.float32),\n    dtype=torch.float32,\n)\ny_train_cpu = torch.tensor(\n    train_df[target].to_numpy(dtype=np.float32),\n    dtype=torch.float32,\n).unsqueeze(1)\n\nX_val_cpu = torch.tensor(val_df[features].to_numpy(dtype=np.float32))\ny_val_cpu = torch.tensor(val_df[target].to_numpy(dtype=np.float32)).unsqueeze(1)\n\nX_test_cpu = torch.tensor(test_df[features].to_numpy(dtype=np.float32))\ny_test_cpu = torch.tensor(test_df[target].to_numpy(dtype=np.float32)).unsqueeze(1)\n\nfeature_mean = X_train_cpu.mean(dim=0, keepdim=True)\nfeature_std = X_train_cpu.std(dim=0, keepdim=True).clamp_min(1e-6)\n\nX_train_cpu = (X_train_cpu - feature_mean) / feature_std\nX_val_cpu = (X_val_cpu - feature_mean) / feature_std\nX_test_cpu = (X_test_cpu - feature_mean) / feature_std\n\nprint(\"X_train:\", tuple(X_train_cpu.shape))\nprint(\"y_train:\", tuple(y_train_cpu.shape))\n\nX_train: (34000, 21)\ny_train: (34000, 1)\n\n\n\n\n\n\n\n\nImportantePrincipio de no fuga\n\n\n\nLa media y la desviación estándar se calculan exclusivamente con entrenamiento. Validación y prueba reciben la transformación ya ajustada."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#dataloader-y-transferencia-eficiente",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#dataloader-y-transferencia-eficiente",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "7.2 7.2 DataLoader y transferencia eficiente",
+    "text": "7.2 7.2 DataLoader y transferencia eficiente\n\nBATCH_SIZE = 512\n\ntrain_dataset = TensorDataset(X_train_cpu, y_train_cpu)\nval_dataset = TensorDataset(X_val_cpu, y_val_cpu)\n\ntrain_generator = torch.Generator().manual_seed(SEED)\n\ntrain_loader = DataLoader(\n    train_dataset,\n    batch_size=BATCH_SIZE,\n    shuffle=True,\n    generator=train_generator,\n    pin_memory=USE_CUDA,\n    num_workers=0,\n)\n\nval_loader = DataLoader(\n    val_dataset,\n    batch_size=2048,\n    shuffle=False,\n    pin_memory=USE_CUDA,\n    num_workers=0,\n)\n\npin_memory=True puede acelerar la transferencia CPU→GPU. Se activa únicamente cuando CUDA está disponible."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#regresión-logística-como-una-neurona",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#regresión-logística-como-una-neurona",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "8.1 8.1 Regresión logística como una neurona",
+    "text": "8.1 8.1 Regresión logística como una neurona\nLa capa lineal entrega un logit:\n\\[\nz=\\mathbf{w}^{\\top}\\mathbf{x}+b.\n\\]\nLa probabilidad se obtiene con:\n\\[\n\\hat p=\\sigma(z)=\\frac{1}{1+e^{-z}}.\n\\]\nDurante el entrenamiento se usará BCEWithLogitsLoss, que combina sigmoide y entropía cruzada de forma numéricamente estable. Por ello, el método forward() debe retornar logits, no probabilidades."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#mlp",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#mlp",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "8.2 8.2 MLP",
+    "text": "8.2 8.2 MLP\n\\[\n\\mathbf{h}^{(1)}=\\operatorname{ReLU}(\\mathbf{W}^{(1)}\\mathbf{x}+\\mathbf{b}^{(1)}),\n\\]\n\\[\n\\mathbf{h}^{(2)}=\\operatorname{ReLU}(\\mathbf{W}^{(2)}\\mathbf{h}^{(1)}+\\mathbf{b}^{(2)}),\n\\]\n\\[\nz=\\mathbf{w}^{(3)\\top}\\mathbf{h}^{(2)}+b^{(3)}.\n\\]\nLa red conserva la misma salida logística, pero incorpora representaciones no lineales antes del logit final."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#regresión-logística-en-pytorch",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#regresión-logística-en-pytorch",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "9.1 9.1 Regresión logística en PyTorch",
+    "text": "9.1 9.1 Regresión logística en PyTorch\n\nclass LogisticRegressionTorch(nn.Module):\n    def __init__(self, n_features):\n        super().__init__()\n        self.linear = nn.Linear(n_features, 1)\n\n    def forward(self, x):\n        return self.linear(x)"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#red-neuronal-mlp",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#red-neuronal-mlp",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "9.2 9.2 Red neuronal MLP",
+    "text": "9.2 9.2 Red neuronal MLP\n\nclass MLPTorch(nn.Module):\n    def __init__(self, n_features):\n        super().__init__()\n        self.network = nn.Sequential(\n            nn.Linear(n_features, 8),\n            nn.ReLU(),\n            nn.Linear(8, 4),\n            nn.ReLU(),\n            nn.Linear(4, 1),\n        )\n\n    def forward(self, x):\n        return self.network(x)\n\n\nlogistic_model = LogisticRegressionTorch(len(features)).to(DEVICE)\nmlp_model = MLPTorch(len(features)).to(DEVICE)\n\nprint(\"REGRESIÓN LOGÍSTICA\\n\", logistic_model)\nprint(\"\\nMLP\\n\", mlp_model)\n\nREGRESIÓN LOGÍSTICA\n LogisticRegressionTorch(\n  (linear): Linear(in_features=21, out_features=1, bias=True)\n)\n\nMLP\n MLPTorch(\n  (network): Sequential(\n    (0): Linear(in_features=21, out_features=8, bias=True)\n    (1): ReLU()\n    (2): Linear(in_features=8, out_features=4, bias=True)\n    (3): ReLU()\n    (4): Linear(in_features=4, out_features=1, bias=True)\n  )\n)"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#número-de-parámetros",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#número-de-parámetros",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "9.3 9.3 Número de parámetros",
+    "text": "9.3 9.3 Número de parámetros\n\ndef count_parameters(model):\n    return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)\n\n\npd.DataFrame({\n    \"modelo\": [\"Regresión logística\", \"MLP (8, 4)\"],\n    \"parámetros entrenables\": [\n        count_parameters(logistic_model),\n        count_parameters(mlp_model),\n    ],\n})\n\n\n\n\n\n\n\n\nmodelo\nparámetros entrenables\n\n\n\n\n0\nRegresión logística\n22\n\n\n1\nMLP (8, 4)\n217"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#una-época",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#una-época",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "11.1 11.1 Una época",
+    "text": "11.1 11.1 Una época\n\ndef train_one_epoch(model, loader, optimizer, criterion, device):\n    model.train()\n    total_loss = 0.0\n    total_items = 0\n\n    for X_batch, y_batch in loader:\n        X_batch = X_batch.to(device, non_blocking=True)\n        y_batch = y_batch.to(device, non_blocking=True)\n\n        optimizer.zero_grad(set_to_none=True)\n        logits = model(X_batch)\n        loss = criterion(logits, y_batch)\n        loss.backward()\n        optimizer.step()\n\n        total_loss += loss.item() * X_batch.size(0)\n        total_items += X_batch.size(0)\n\n    return total_loss / total_items\n\n\n@torch.inference_mode()\ndef evaluate_loss(model, loader, criterion, device):\n    model.eval()\n    total_loss = 0.0\n    total_items = 0\n\n    for X_batch, y_batch in loader:\n        X_batch = X_batch.to(device, non_blocking=True)\n        y_batch = y_batch.to(device, non_blocking=True)\n        loss = criterion(model(X_batch), y_batch)\n        total_loss += loss.item() * X_batch.size(0)\n        total_items += X_batch.size(0)\n\n    return total_loss / total_items\n\nLa secuencia crítica es:\n\nzero_grad() elimina gradientes de la iteración anterior;\nmodel(X_batch) ejecuta la propagación hacia adelante;\nloss.backward() calcula gradientes mediante retropropagación;\noptimizer.step() actualiza los parámetros."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#entrenamiento-completo-con-parada-temprana",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#entrenamiento-completo-con-parada-temprana",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "11.2 11.2 Entrenamiento completo con parada temprana",
+    "text": "11.2 11.2 Entrenamiento completo con parada temprana\n\ndef fit_model(\n    model,\n    train_loader,\n    val_loader,\n    criterion,\n    device,\n    learning_rate=1e-3,\n    max_epochs=200,\n    patience=20,\n):\n    optimizer = torch.optim.Adam(\n        model.parameters(),\n        lr=learning_rate,\n        weight_decay=1e-3,\n    )\n\n    history = {\"train_loss\": [], \"val_loss\": []}\n    best_state = deepcopy(model.state_dict())\n    best_val_loss = np.inf\n    epochs_without_improvement = 0\n\n    for epoch in range(1, max_epochs + 1):\n        train_loss = train_one_epoch(\n            model, train_loader, optimizer, criterion, device\n        )\n        val_loss = evaluate_loss(model, val_loader, criterion, device)\n\n        history[\"train_loss\"].append(train_loss)\n        history[\"val_loss\"].append(val_loss)\n\n        if val_loss &lt; best_val_loss - 1e-5:\n            best_val_loss = val_loss\n            best_state = deepcopy(model.state_dict())\n            epochs_without_improvement = 0\n        else:\n            epochs_without_improvement += 1\n\n        if epoch == 1 or epoch % 20 == 0:\n            print(\n                f\"Época {epoch:03d} | \"\n                f\"train={train_loss:.4f} | val={val_loss:.4f}\"\n            )\n\n        if epochs_without_improvement &gt;= patience:\n            print(f\"Parada temprana en época {epoch}.\")\n            break\n\n    model.load_state_dict(best_state)\n    return history"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#regresión-logística",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#regresión-logística",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "12.1 12.1 Regresión logística",
+    "text": "12.1 12.1 Regresión logística\n\ntorch.manual_seed(SEED)\nlogistic_model = LogisticRegressionTorch(len(features)).to(DEVICE)\n\nhistory_logistic = fit_model(\n    logistic_model,\n    train_loader,\n    val_loader,\n    loss_function,\n    DEVICE,\n    learning_rate=3e-3,\n    max_epochs=200,\n    patience=20,\n)\n\nÉpoca 001 | train=1.0012 | val=0.9448\nÉpoca 020 | train=0.8789 | val=0.8884\nParada temprana en época 38."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#mlp-1",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#mlp-1",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "12.2 12.2 MLP",
+    "text": "12.2 12.2 MLP\n\ntorch.manual_seed(SEED)\nmlp_model = MLPTorch(len(features)).to(DEVICE)\n\nhistory_mlp = fit_model(\n    mlp_model,\n    train_loader,\n    val_loader,\n    loss_function,\n    DEVICE,\n    learning_rate=1e-3,\n    max_epochs=300,\n    patience=25,\n)\n\nÉpoca 001 | train=1.1546 | val=1.0959\nÉpoca 020 | train=0.8572 | val=0.8793\nÉpoca 040 | train=0.8527 | val=0.8794\nParada temprana en época 56."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-de-aprendizaje",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-de-aprendizaje",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "12.3 12.3 Curvas de aprendizaje",
+    "text": "12.3 12.3 Curvas de aprendizaje\n\nfig, axes = plt.subplots(1, 2, figsize=(12, 4.5))\n\nfor ax, name, history in zip(\n    axes,\n    [\"Regresión logística\", \"MLP (8, 4)\"],\n    [history_logistic, history_mlp],\n):\n    ax.plot(history[\"train_loss\"], label=\"Entrenamiento\")\n    ax.plot(history[\"val_loss\"], label=\"Validación\")\n    ax.set(title=name, xlabel=\"Época\", ylabel=\"BCE ponderada\")\n    ax.legend()\n\nplt.tight_layout()\nplt.show()\n\n\n\n\nPérdida ponderada durante entrenamiento y validación.\n\n\n\n\n\nCheckpoint 2. Una pérdida decreciente en entrenamiento confirma optimización, no generalización. La separación entre entrenamiento y validación permite identificar deterioro fuera de muestra."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#de-logits-a-probabilidades",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#de-logits-a-probabilidades",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "13.1 13.1 De logits a probabilidades",
+    "text": "13.1 13.1 De logits a probabilidades\n\n@torch.inference_mode()\ndef predict_probabilities(model, X_cpu, device, batch_size=4096):\n    model.eval()\n    probabilities = []\n\n    loader = DataLoader(\n        TensorDataset(X_cpu),\n        batch_size=batch_size,\n        shuffle=False,\n        pin_memory=USE_CUDA,\n    )\n\n    for (X_batch,) in loader:\n        X_batch = X_batch.to(device, non_blocking=True)\n        probability = torch.sigmoid(model(X_batch))\n        probabilities.append(probability.cpu())\n\n    return torch.cat(probabilities).squeeze(1).numpy()\n\n\ny_test = y_test_cpu.squeeze(1).numpy().astype(int)\nlogistic_prob = predict_probabilities(logistic_model, X_test_cpu, DEVICE)\nmlp_prob = predict_probabilities(mlp_model, X_test_cpu, DEVICE)"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#forward-manual-del-mlp",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#forward-manual-del-mlp",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "13.2 13.2 Forward manual del MLP",
+    "text": "13.2 13.2 Forward manual del MLP\n\nx0 = X_test_cpu[0].to(DEVICE)\n\nW1 = mlp_model.network[0].weight\nb1 = mlp_model.network[0].bias\nW2 = mlp_model.network[2].weight\nb2 = mlp_model.network[2].bias\nW3 = mlp_model.network[4].weight\nb3 = mlp_model.network[4].bias\n\nwith torch.inference_mode():\n    h1 = torch.relu(W1 @ x0 + b1)\n    h2 = torch.relu(W2 @ h1 + b2)\n    logit_manual = W3 @ h2 + b3\n    probability_manual = torch.sigmoid(logit_manual).item()\n    probability_model = torch.sigmoid(mlp_model(x0.unsqueeze(0))).item()\n\npd.DataFrame({\n    \"cálculo\": [\"Forward manual\", \"model(x)\"],\n    \"probabilidad positiva\": [probability_manual, probability_model],\n}).round(8)\n\n\n\n\n\n\n\n\ncálculo\nprobabilidad positiva\n\n\n\n\n0\nForward manual\n0.175149\n\n\n1\nmodel(x)\n0.175149\n\n\n\n\n\n\n\nLa coincidencia confirma que PyTorch ejecuta las mismas operaciones matriciales descritas por las ecuaciones."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-y-áreas",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#curvas-y-áreas",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "14.1 14.1 Curvas y áreas",
+    "text": "14.1 14.1 Curvas y áreas\n\ndef binary_curves(y_true, probability):\n    order = np.argsort(-probability, kind=\"stable\")\n    y_sorted = y_true[order]\n\n    tp = np.cumsum(y_sorted == 1)\n    fp = np.cumsum(y_sorted == 0)\n    positives = max((y_true == 1).sum(), 1)\n    negatives = max((y_true == 0).sum(), 1)\n\n    tpr = np.r_[0.0, tp / positives]\n    fpr = np.r_[0.0, fp / negatives]\n\n    recall = np.r_[0.0, tp / positives]\n    precision = np.r_[1.0, tp / np.maximum(tp + fp, 1)]\n\n    roc_auc = np.trapezoid(tpr, fpr)\n    average_precision = np.sum(np.diff(recall) * precision[1:])\n\n    return {\n        \"fpr\": fpr,\n        \"tpr\": tpr,\n        \"precision_curve\": precision,\n        \"recall_curve\": recall,\n        \"roc_auc\": roc_auc,\n        \"average_precision\": average_precision,\n    }\n\n\ndef classification_metrics(y_true, probability, threshold=0.50):\n    prediction = (probability &gt;= threshold).astype(int)\n\n    tn = int(((y_true == 0) & (prediction == 0)).sum())\n    fp = int(((y_true == 0) & (prediction == 1)).sum())\n    fn = int(((y_true == 1) & (prediction == 0)).sum())\n    tp = int(((y_true == 1) & (prediction == 1)).sum())\n\n    sensitivity = tp / max(tp + fn, 1)\n    specificity = tn / max(tn + fp, 1)\n    precision = tp / max(tp + fp, 1)\n    f1 = 2 * precision * sensitivity / max(precision + sensitivity, 1e-12)\n    accuracy = (tp + tn) / len(y_true)\n\n    probability_clipped = np.clip(probability, 1e-7, 1 - 1e-7)\n    logloss = -np.mean(\n        y_true * np.log(probability_clipped)\n        + (1 - y_true) * np.log(1 - probability_clipped)\n    )\n\n    curves = binary_curves(y_true, probability)\n\n    return {\n        \"Accuracy\": accuracy,\n        \"Balanced accuracy\": (sensitivity + specificity) / 2,\n        \"Precision\": precision,\n        \"Sensitivity\": sensitivity,\n        \"Specificity\": specificity,\n        \"F1\": f1,\n        \"ROC-AUC\": curves[\"roc_auc\"],\n        \"Average precision\": curves[\"average_precision\"],\n        \"Log loss\": logloss,\n        \"TN\": tn,\n        \"FP\": fp,\n        \"FN\": fn,\n        \"TP\": tp,\n    }"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#tabla-comparativa",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#tabla-comparativa",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "14.2 14.2 Tabla comparativa",
+    "text": "14.2 14.2 Tabla comparativa\n\nresults = pd.DataFrame({\n    \"Regresión logística\": classification_metrics(y_test, logistic_prob),\n    \"MLP (8, 4)\": classification_metrics(y_test, mlp_prob),\n}).T\n\nresults[[\n    \"Accuracy\",\n    \"Balanced accuracy\",\n    \"Precision\",\n    \"Sensitivity\",\n    \"Specificity\",\n    \"F1\",\n    \"ROC-AUC\",\n    \"Average precision\",\n    \"Log loss\",\n]].round(3)\n\n\n\n\n\n\n\n\nAccuracy\nBalanced accuracy\nPrecision\nSensitivity\nSpecificity\nF1\nROC-AUC\nAverage precision\nLog loss\n\n\n\n\nRegresión logística\n0.730\n0.757\n0.312\n0.795\n0.720\n0.449\n0.830\n0.401\n0.530\n\n\nMLP (8, 4)\n0.704\n0.759\n0.297\n0.835\n0.683\n0.438\n0.834\n0.422\n0.523"
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-1-verificar-el-gradiente",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-1-verificar-el-gradiente",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "18.1 Reto 1 — Verificar el gradiente",
+    "text": "18.1 Reto 1 — Verificar el gradiente\nAntes de optimizer.step(), inspeccione model.linear.weight.grad en la regresión logística. Explique por qué el gradiente aparece solamente después de loss.backward()."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-2-ablación-de-no-linealidad",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-2-ablación-de-no-linealidad",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "18.2 Reto 2 — Ablación de no linealidad",
+    "text": "18.2 Reto 2 — Ablación de no linealidad\nSustituya nn.ReLU() por nn.Identity(). Explique por qué varias capas lineales consecutivas siguen representando una transformación lineal."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-3-capacidad",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-3-capacidad",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "18.3 Reto 3 — Capacidad",
+    "text": "18.3 Reto 3 — Capacidad\nCompare (4,), (8, 4) y (64, 32, 16). Registre parámetros, épocas, pérdida y métricas. No seleccione arquitectura usando únicamente accuracy."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-4-cpu-frente-a-gpu",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-4-cpu-frente-a-gpu",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "18.4 Reto 4 — CPU frente a GPU",
+    "text": "18.4 Reto 4 — CPU frente a GPU\nEntrene el mismo MLP con DEVICE=torch.device(\"cpu\") y con CUDA. Sincronice con torch.cuda.synchronize() antes y después de medir. Explique por qué la GPU puede no ser más rápida para una red pequeña."
+  },
+  {
+    "objectID": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-5-formulación-multiclase",
+    "href": "laboratorios/ASIM/Taller_Redes_Neuronales_desde_Regresion_Logistica.html#reto-5-formulación-multiclase",
+    "title": "De la regresión logística a las redes neuronales",
+    "section": "18.5 Reto 5 — Formulación multiclase",
+    "text": "18.5 Reto 5 — Formulación multiclase\nUse diabetes_012_health_indicators_BRFSS2015.csv, cambie la salida a tres logits y utilice nn.CrossEntropyLoss. Reporte F1 macro y matriz de confusión."
   }
 ]
