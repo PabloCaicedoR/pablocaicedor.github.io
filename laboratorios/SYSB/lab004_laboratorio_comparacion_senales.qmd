@@ -1,0 +1,863 @@
+---
+title: "Laboratorio: análisis exploratorio y comparación de dos señales"
+subtitle: "De la pregunta fisiológica a una comparación técnicamente válida"
+author: "Ph.D. Pablo Eduardo Caicedo R."
+date: last-modified
+lang: es
+format:
+  html:
+    theme: ../../recursos/estilos/bioforja-laboratorios.scss
+    toc: false
+    toc-location: body
+    toc-depth: 3
+    number-sections: true
+    code-fold: show
+    code-summary: "Mostrar/ocultar código"
+    code-copy: true
+    code-overflow: wrap
+    embed-resources: true
+    fig-responsive: true
+    df-print: paged
+execute:
+  enabled: true
+  echo: true
+  warning: false
+  error: true
+  freeze: auto
+---
+
+::: {.callout-important title="Pregunta rectora"}
+¿Qué características temporales, estadísticas y espectrales cambian entre dos registros del **mismo tipo de señal**, obtenidos en **dos contextos distintos**, y cuáles de esas diferencias pueden interpretarse desde la fisiología y el proceso de adquisición?
+:::
+
+## Información general
+
+| Elemento | Descripción |
+|---|---|
+| Modalidad | Trabajo en grupos con sustentación |
+| Duración sugerida | 6 horas: 1 h de diseño, 4 h de análisis y 1 h de síntesis |
+| Lenguaje | Python 3.11 o superior |
+| Producto | Archivo `.qmd`, HTML reproducible y sustentación breve |
+| Datos | Una señal por contexto, con metadatos y procedencia verificable |
+| Regla de comparación | Misma variable fisiológica, unidad, canal o localización anatómica comparable |
+
+### Resultados de aprendizaje
+
+Al terminar el laboratorio, el estudiante podrá:
+
+1. formular una pregunta comparativa que conecte señal, contexto y mecanismo fisiológico;
+2. auditar la calidad y la comparabilidad de dos registros;
+3. realizar análisis exploratorio en los dominios del tiempo y de la frecuencia;
+4. seleccionar características coherentes con la señal elegida;
+5. diferenciar una comparación descriptiva entre registros de una comparación punto a punto;
+6. argumentar conclusiones sin confundir diferencias observadas con evidencia poblacional o clínica.
+
+::: {.callout-note title="Alineación con la asignatura"}
+La práctica integra mediciones temporales, segmentación, normalización, interpretación biomédica, transformada discreta de Fourier, densidad espectral de potencia, método de Welch y señales no estacionarias. Estos contenidos corresponden a la Parte I del programa de **Sistemas y Señales Biomédicos** y a los capítulos 1, 2, 3 y 10 del texto guía de Semmlow.
+:::
+
+## 1. Antes de programar: diseñar la comparación
+
+### 1.1 Definir señal y contextos
+
+Complete la siguiente ficha antes de abrir los archivos.
+
+| Campo | Contexto A | Contexto B |
+|---|---|---|
+| Tipo de señal |  |  |
+| Fenómeno fisiológico |  |  |
+| Contexto o condición |  |  |
+| Participante / fuente |  |  |
+| Canal y localización |  |  |
+| Unidad de amplitud |  |  |
+| Frecuencia de muestreo |  |  |
+| Duración útil |  |  |
+| Equipo / sensor |  |  |
+| Preprocesamiento previo |  |  |
+
+Escriba una pregunta con esta forma:
+
+> ¿Cómo cambia **[característica medible]** de **[tipo de señal]** entre **[contexto A]** y **[contexto B]**, y qué mecanismo fisiológico o de adquisición podría explicar el cambio?
+
+Formule además:
+
+- una hipótesis fisiológica;
+- una explicación alternativa asociada con sensor, protocolo, artefactos o procesamiento;
+- una predicción observable en tiempo, amplitud o frecuencia.
+
+### 1.2 Decidir qué significa “comparar”
+
+| Situación | Pregunta válida | Herramientas principales |
+|---|---|---|
+| Registros independientes | ¿Cambian sus distribuciones, descriptores o contenido espectral? | Resúmenes, ventanas, histogramas, PSD de Welch, características específicas |
+| Registros simultáneos o alineables | ¿Qué tan similares son y existe retardo? | Correlación cruzada, error, coherencia, comparación morfológica |
+| Mismo evento repetido | ¿Cambia la forma o amplitud del evento? | Detección, alineación por evento, promedio de ciclos y dispersión |
+
+::: {.callout-warning title="Límite de inferencia"}
+Con un único registro por contexto se describe **lo observado en esos dos registros**. Dividirlos en ventanas no crea participantes independientes: usar esas ventanas en una prueba de hipótesis como si fueran sujetos constituye **pseudorreplicación**. No se permiten afirmaciones de eficacia, diagnóstico ni generalización poblacional.
+:::
+
+### 1.3 Criterios mínimos de comparabilidad
+
+Antes de continuar, verifique:
+
+- [ ] ambos archivos representan la misma magnitud fisiológica;
+- [ ] las unidades son iguales o se conoce una conversión válida;
+- [ ] canal, derivación, músculo, eje o localización son equivalentes;
+- [ ] se conocen frecuencia de muestreo y duración;
+- [ ] las condiciones de adquisición no introducen una confusión obvia;
+- [ ] cualquier filtrado, rectificación o normalización previa está documentado;
+- [ ] los registros tienen consentimiento/licencia y están anonimizados.
+
+Si no se cumplen los tres primeros criterios, **no compare amplitudes directamente**.
+
+## 2. Selección del análisis según la señal
+
+No existe un EDA universal. La señal determina qué evento, banda, ventana y descriptor tienen sentido.
+
+| Señal | Inspección temporal | Características posibles | Análisis frecuencial | Precaución principal |
+|---|---|---|---|---|
+| ECG | línea base, complejos y artefactos | intervalos RR, frecuencia cardiaca, amplitud y duración de eventos | PSD de RR o segmentos; interferencia de red | no interpretar morfología sin derivación y calibración comparables |
+| sEMG | reposo, ráfagas, saturación | RMS, MAV, iEMG, cruces por cero con umbral, duración de activación | frecuencia mediana y media, potencia por bandas | la amplitud depende de electrodo, músculo y contracción |
+| EEG | deriva, parpadeos, actividad transitoria | media, varianza, RMS, entropía espectral | potencia absoluta/relativa por bandas | bandas y referencias deben justificarse; vigilar volumen conductor |
+| PPG | pulsos, línea base, movimiento | intervalo entre pulsos, amplitud AC, variabilidad | tasa de pulso y modulación de baja frecuencia | contacto, perfusión y movimiento alteran la amplitud |
+| Respiración | ciclos, apneas del registro, deriva | frecuencia respiratoria, amplitud, duración inspiratoria/espiratoria | pico respiratorio y variabilidad | sensor y posición modifican escala y forma |
+| Acelerometría / marcha | impactos, ciclos y ejes | cadencia, intervalos de paso, RMS, magnitud vectorial | potencia de cadencia y armónicos | orientación, lado corporal y velocidad deben controlarse |
+
+**Tarea 1.** Seleccione de tres a cinco características. Para cada una, escriba: definición, unidad, relación fisiológica, supuesto y posible factor de confusión.
+
+## 3. Preparar el proyecto reproducible
+
+Estructura sugerida:
+
+```text
+comparacion-senales/
+├── laboratorio_comparacion_senales.qmd
+├── bioforja-laboratorios.scss
+├── datos/
+│   ├── contexto_A.csv
+│   └── contexto_B.csv
+├── resultados/
+└── README.md
+```
+
+Con `uv`, un entorno mínimo puede crearse así:
+
+```bash
+uv init
+uv add numpy pandas scipy matplotlib seaborn jupyter
+uv run quarto preview laboratorio_comparacion_senales.qmd
+```
+
+Cada CSV debe contener, como mínimo, una columna de tiempo y una de amplitud:
+
+```csv
+tiempo,amplitud
+0.000,0.014
+0.004,0.018
+0.008,0.011
+```
+
+::: {.callout-tip title="Si no existe columna de tiempo"}
+Puede reconstruirse como $t[n]=n/f_s$, pero el valor de $f_s$ debe proceder de los metadatos, no de una suposición visual.
+:::
+
+## 4. Configuración del análisis
+
+Modifique solamente este bloque al iniciar. El modo demostración genera señales matemáticas reproducibles para comprobar que el documento funciona; **no representa una bioseñal real ni puede usarse en el informe**.
+
+```{python}
+#| label: configuracion
+#| message: false
+
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import signal, stats
+
+sns.set_theme(style="whitegrid", context="notebook")
+PALETA = {"Contexto A": "#278b8c", "Contexto B": "#e76f51"}
+SEMILLA = 2027
+
+MODO_DEMOSTRACION = True  # Cambiar a False para analizar los datos del grupo.
+
+CONFIG = {
+    "archivo_A": Path("datos/contexto_A.csv"),
+    "archivo_B": Path("datos/contexto_B.csv"),
+    "contexto_A": "Contexto A",
+    "contexto_B": "Contexto B",
+    "columna_tiempo": "tiempo",
+    "columna_senal": "amplitud",
+    "unidad": "u.a.",
+    "fs_A": None,  # Hz; obligatorio si el archivo no tiene tiempo.
+    "fs_B": None,
+    "frecuencia_min": 0.0,  # Hz para gráficos de PSD.
+    "frecuencia_max": 40.0,
+    "ventana_s": 4.0,
+    "solapamiento": 0.50,
+}
+```
+
+## 5. Carga y auditoría de los datos
+
+### 5.1 Funciones de carga
+
+```{python}
+#| label: funciones-carga
+
+def crear_demostracion(fs: float = 250.0, duracion_s: float = 60.0):
+    """Genera dos señales matemáticas; no simula una fisiología específica."""
+    rng = np.random.default_rng(SEMILLA)
+    t = np.arange(0, duracion_s, 1 / fs)
+    envolvente_A = 1.0 + 0.15 * np.sin(2 * np.pi * 0.08 * t)
+    envolvente_B = 1.0 + 0.30 * np.sin(2 * np.pi * 0.05 * t)
+    x_A = envolvente_A * (
+        0.75 * np.sin(2 * np.pi * 8.0 * t)
+        + 0.25 * np.sin(2 * np.pi * 18.0 * t + 0.3)
+    ) + 0.18 * rng.standard_normal(t.size)
+    x_B = envolvente_B * (
+        0.55 * np.sin(2 * np.pi * 10.0 * t + 0.5)
+        + 0.38 * np.sin(2 * np.pi * 22.0 * t)
+    ) + 0.24 * rng.standard_normal(t.size)
+    return (
+        pd.DataFrame({"tiempo": t, "amplitud": x_A}),
+        pd.DataFrame({"tiempo": t, "amplitud": x_B}),
+    )
+
+
+def cargar_csv(ruta: Path, col_t: str, col_x: str, fs_declarada=None):
+    df = pd.read_csv(ruta)
+    if col_x not in df.columns:
+        raise ValueError(f"No existe la columna de señal '{col_x}' en {ruta}.")
+    df[col_x] = pd.to_numeric(df[col_x], errors="coerce")
+
+    if col_t in df.columns:
+        df[col_t] = pd.to_numeric(df[col_t], errors="coerce")
+    elif fs_declarada is not None and fs_declarada > 0:
+        df[col_t] = np.arange(len(df), dtype=float) / float(fs_declarada)
+    else:
+        raise ValueError("Falta la columna de tiempo y no se declaró una fs válida.")
+
+    return df[[col_t, col_x]].copy()
+
+
+if MODO_DEMOSTRACION:
+    A, B = crear_demostracion()
+else:
+    A = cargar_csv(
+        CONFIG["archivo_A"], CONFIG["columna_tiempo"],
+        CONFIG["columna_senal"], CONFIG["fs_A"]
+    )
+    B = cargar_csv(
+        CONFIG["archivo_B"], CONFIG["columna_tiempo"],
+        CONFIG["columna_senal"], CONFIG["fs_B"]
+    )
+
+A["contexto"] = CONFIG["contexto_A"]
+B["contexto"] = CONFIG["contexto_B"]
+```
+
+### 5.2 Integridad, muestreo y valores faltantes
+
+```{python}
+#| label: auditoria
+
+def auditar(df: pd.DataFrame, nombre: str, col_t: str, col_x: str):
+    t = df[col_t].to_numpy(dtype=float)
+    x = df[col_x].to_numpy(dtype=float)
+    validos = np.isfinite(t) & np.isfinite(x)
+    dt = np.diff(t[np.isfinite(t)])
+    dt_pos = dt[dt > 0]
+
+    fs_est = 1 / np.median(dt_pos) if dt_pos.size else np.nan
+    jitter = (
+        100 * np.std(dt_pos, ddof=1) / np.mean(dt_pos)
+        if dt_pos.size > 1 else np.nan
+    )
+    return {
+        "contexto": nombre,
+        "muestras": len(df),
+        "faltantes_o_no_finitos": int((~validos).sum()),
+        "tiempo_duplicado": int(pd.Series(t).duplicated().sum()),
+        "tiempo_no_creciente": int(np.sum(dt <= 0)),
+        "duracion_s": float(np.nanmax(t) - np.nanmin(t)),
+        "fs_estimada_Hz": fs_est,
+        "jitter_dt_pct": jitter,
+        "min": float(np.nanmin(x)),
+        "max": float(np.nanmax(x)),
+    }
+
+
+auditoria = pd.DataFrame([
+    auditar(A, CONFIG["contexto_A"], CONFIG["columna_tiempo"], CONFIG["columna_senal"]),
+    auditar(B, CONFIG["contexto_B"], CONFIG["columna_tiempo"], CONFIG["columna_senal"]),
+])
+auditoria.round(4)
+```
+
+Interprete la tabla. Un `jitter_dt_pct` alto indica muestreo irregular; en ese caso, la FFT o Welch estándar no deben aplicarse sin una estrategia explícita de remuestreo o un método para datos irregulares.
+
+**Tarea 2.** Documente cualquier descarte, interpolación o corrección. Nunca elimine valores solo porque “se ven extraños”.
+
+```{python}
+#| label: limpieza-minima
+
+def limpieza_minima(df, col_t, col_x):
+    limpio = df[[col_t, col_x, "contexto"]].copy()
+    limpio = limpio.replace([np.inf, -np.inf], np.nan).dropna()
+    limpio = limpio.drop_duplicates(subset=col_t, keep="first")
+    limpio = limpio.sort_values(col_t).reset_index(drop=True)
+    if not limpio[col_t].is_monotonic_increasing:
+        raise ValueError("El tiempo debe ser estrictamente creciente.")
+    return limpio
+
+
+A = limpieza_minima(A, CONFIG["columna_tiempo"], CONFIG["columna_senal"])
+B = limpieza_minima(B, CONFIG["columna_tiempo"], CONFIG["columna_senal"])
+
+fs_A = 1 / np.median(np.diff(A[CONFIG["columna_tiempo"]]))
+fs_B = 1 / np.median(np.diff(B[CONFIG["columna_tiempo"]]))
+print(f"fs estimada A: {fs_A:.3f} Hz | fs estimada B: {fs_B:.3f} Hz")
+```
+
+## 6. EDA en el dominio del tiempo
+
+### 6.1 Primero: observar el registro completo
+
+```{python}
+#| label: figura-registros
+#| fig-cap: "Registros completos. La superposición visual no implica comparabilidad punto a punto."
+#| fig-width: 10
+#| fig-height: 5
+
+fig, axes = plt.subplots(2, 1, sharex=False, figsize=(10, 5), constrained_layout=True)
+for ax, df, nombre in zip(
+    axes, [A, B], [CONFIG["contexto_A"], CONFIG["contexto_B"]]
+):
+    ax.plot(
+        df[CONFIG["columna_tiempo"]], df[CONFIG["columna_senal"]],
+        lw=0.8, color=PALETA[nombre]
+    )
+    ax.set(title=nombre, ylabel=CONFIG["unidad"])
+axes[-1].set_xlabel("Tiempo [s]")
+plt.show()
+```
+
+Busque: deriva, saturación, tramos planos, impulsos, cambios de varianza, eventos, transitorios y diferencias de duración.
+
+### 6.2 Distribución y estadística robusta
+
+Para una señal $x[n]$ de $N$ muestras:
+
+$$
+\bar{x}=\frac{1}{N}\sum_{n=0}^{N-1}x[n], \qquad
+x_{\mathrm{RMS}}=\sqrt{\frac{1}{N}\sum_{n=0}^{N-1}x^2[n]}.
+$$
+
+La mediana y el rango intercuartílico (IQR) son menos sensibles a artefactos extremos que la media y la desviación estándar.
+
+```{python}
+#| label: resumen-temporal
+
+def resumen_temporal(df, nombre, col_x):
+    x = df[col_x].to_numpy(dtype=float)
+    q1, mediana, q3 = np.quantile(x, [0.25, 0.50, 0.75])
+    return {
+        "contexto": nombre,
+        "media": np.mean(x),
+        "mediana": mediana,
+        "desv_est": np.std(x, ddof=1),
+        "IQR": q3 - q1,
+        "RMS": np.sqrt(np.mean(x**2)),
+        "MAV": np.mean(np.abs(x)),
+        "asimetria": stats.skew(x, bias=False),
+        "curtosis_exceso": stats.kurtosis(x, fisher=True, bias=False),
+    }
+
+
+resumen = pd.DataFrame([
+    resumen_temporal(A, CONFIG["contexto_A"], CONFIG["columna_senal"]),
+    resumen_temporal(B, CONFIG["contexto_B"], CONFIG["columna_senal"]),
+]).set_index("contexto")
+resumen.round(4)
+```
+
+```{python}
+#| label: distribuciones
+#| fig-cap: "Distribuciones de amplitud. La forma depende del fenómeno, del ruido y del preprocesamiento."
+#| fig-width: 10
+#| fig-height: 4
+
+datos_largos = pd.concat([A, B], ignore_index=True)
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), constrained_layout=True)
+sns.histplot(
+    data=datos_largos, x=CONFIG["columna_senal"], hue="contexto",
+    stat="density", common_norm=False, element="step", fill=False,
+    palette=PALETA, ax=axes[0]
+)
+sns.boxplot(
+    data=datos_largos, x="contexto", y=CONFIG["columna_senal"],
+    hue="contexto", palette=PALETA, legend=False, ax=axes[1]
+)
+axes[0].set_xlabel(f"Amplitud [{CONFIG['unidad']}]")
+axes[1].set(xlabel="", ylabel=f"Amplitud [{CONFIG['unidad']}]")
+plt.show()
+```
+
+::: {.callout-warning title="Normalizar no siempre es corregir"}
+Estandarizar cada registro por separado elimina diferencias de media y escala. Es útil para comparar **forma**, pero invalida una pregunta sobre diferencias de amplitud. Conserve siempre la señal en unidades físicas y justifique cualquier versión normalizada.
+:::
+
+### 6.3 Artefactos candidatos, no “datos malos” automáticos
+
+El puntaje robusto
+
+$$z_r[n]=0.6745\,\frac{x[n]-\operatorname{mediana}(x)}{\operatorname{MAD}(x)}$$
+
+sirve para **marcar candidatos** extremos. No prueba que una muestra sea artefacto.
+
+```{python}
+#| label: artefactos-candidatos
+
+def mascara_extremos_robusta(x, umbral=6.0):
+    x = np.asarray(x, dtype=float)
+    med = np.median(x)
+    mad = np.median(np.abs(x - med))
+    if mad == 0:
+        return np.zeros(x.shape, dtype=bool)
+    z_robusto = 0.6745 * (x - med) / mad
+    return np.abs(z_robusto) > umbral
+
+
+for df, nombre in [(A, CONFIG["contexto_A"]), (B, CONFIG["contexto_B"])]:
+    m = mascara_extremos_robusta(df[CONFIG["columna_senal"]])
+    print(f"{nombre}: {m.sum()} candidatos ({100*m.mean():.3f} %)")
+```
+
+### 6.4 Variación temporal y estacionariedad local
+
+Una señal débilmente estacionaria mantiene aproximadamente constantes su media y autocovarianza. En bioseñales es frecuente trabajar con segmentos **localmente estacionarios**.
+
+```{python}
+#| label: funciones-ventanas
+
+def extraer_ventanas(x, fs, duracion_s, solapamiento=0.5):
+    x = np.asarray(x, dtype=float)
+    n = max(8, int(round(duracion_s * fs)))
+    paso = max(1, int(round(n * (1 - solapamiento))))
+    if len(x) < n:
+        raise ValueError("El registro es más corto que la ventana seleccionada.")
+    inicios = np.arange(0, len(x) - n + 1, paso)
+    return np.stack([x[i:i+n] for i in inicios]), inicios
+
+
+def rasgos_genericos_por_ventana(df, nombre, fs, col_x, ventana_s, solapamiento):
+    ventanas, inicios = extraer_ventanas(
+        df[col_x].to_numpy(), fs, ventana_s, solapamiento
+    )
+    return pd.DataFrame({
+        "contexto": nombre,
+        "tiempo_centro_s": (inicios + ventanas.shape[1] / 2) / fs,
+        "media": ventanas.mean(axis=1),
+        "desv_est": ventanas.std(axis=1, ddof=1),
+        "RMS": np.sqrt(np.mean(ventanas**2, axis=1)),
+        "MAV": np.mean(np.abs(ventanas), axis=1),
+    })
+
+
+rasgos_A = rasgos_genericos_por_ventana(
+    A, CONFIG["contexto_A"], fs_A, CONFIG["columna_senal"],
+    CONFIG["ventana_s"], CONFIG["solapamiento"]
+)
+rasgos_B = rasgos_genericos_por_ventana(
+    B, CONFIG["contexto_B"], fs_B, CONFIG["columna_senal"],
+    CONFIG["ventana_s"], CONFIG["solapamiento"]
+)
+rasgos_ventanas = pd.concat([rasgos_A, rasgos_B], ignore_index=True)
+```
+
+```{python}
+#| label: figura-estacionariedad
+#| fig-cap: "Media y RMS por ventana. Cambios sistemáticos sugieren no estacionariedad local."
+#| fig-width: 10
+#| fig-height: 6
+
+fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=False, constrained_layout=True)
+for contexto, grupo in rasgos_ventanas.groupby("contexto"):
+    axes[0].plot(grupo["tiempo_centro_s"], grupo["media"],
+                 label=contexto, color=PALETA[contexto])
+    axes[1].plot(grupo["tiempo_centro_s"], grupo["RMS"],
+                 label=contexto, color=PALETA[contexto])
+axes[0].set(ylabel="Media", title="Evolución de descriptores locales")
+axes[1].set(xlabel="Tiempo [s]", ylabel="RMS")
+for ax in axes:
+    ax.legend()
+plt.show()
+```
+
+**Tarea 3.** Justifique el tamaño y el solapamiento de la ventana mediante el compromiso entre resolución temporal, estabilidad del estimador y fenómeno fisiológico. No copie `4 s` sin argumentarlo.
+
+## 7. EDA en el dominio de la frecuencia
+
+### 7.1 Densidad espectral de potencia mediante Welch
+
+Welch divide el registro en segmentos, calcula periodogramas modificados y los promedia. El tamaño de segmento determina la resolución aproximada $\Delta f=f_s/N_{\text{seg}}$.
+
+```{python}
+#| label: funciones-psd
+
+def calcular_psd(x, fs, duracion_segmento_s=4.0, solapamiento=0.5):
+    x = np.asarray(x, dtype=float)
+    nperseg = min(len(x), max(16, int(round(duracion_segmento_s * fs))))
+    noverlap = int(round(nperseg * solapamiento))
+    f, pxx = signal.welch(
+        x, fs=fs, window="hann", nperseg=nperseg,
+        noverlap=noverlap, detrend="constant", scaling="density"
+    )
+    return f, pxx
+
+
+f_A, P_A = calcular_psd(
+    A[CONFIG["columna_senal"]], fs_A,
+    CONFIG["ventana_s"], CONFIG["solapamiento"]
+)
+f_B, P_B = calcular_psd(
+    B[CONFIG["columna_senal"]], fs_B,
+    CONFIG["ventana_s"], CONFIG["solapamiento"]
+)
+```
+
+```{python}
+#| label: figura-psd
+#| fig-cap: "PSD de Welch. Deben compararse sobre el mismo intervalo de frecuencias."
+#| fig-width: 10
+#| fig-height: 4.5
+
+fig, ax = plt.subplots(figsize=(10, 4.5))
+eps = np.finfo(float).tiny
+ax.plot(f_A, 10*np.log10(P_A + eps), color=PALETA[CONFIG["contexto_A"]],
+        label=CONFIG["contexto_A"])
+ax.plot(f_B, 10*np.log10(P_B + eps), color=PALETA[CONFIG["contexto_B"]],
+        label=CONFIG["contexto_B"])
+limite_nyquist = min(fs_A, fs_B) / 2
+ax.set_xlim(CONFIG["frecuencia_min"], min(CONFIG["frecuencia_max"], limite_nyquist))
+ax.set(xlabel="Frecuencia [Hz]", ylabel="PSD [dB/unidad²/Hz]",
+       title="Contenido espectral")
+ax.legend()
+plt.show()
+```
+
+### 7.2 Descriptores espectrales
+
+```{python}
+#| label: rasgos-espectrales
+
+def potencia_banda(f, pxx, f_low, f_high):
+    m = (f >= f_low) & (f <= f_high)
+    if m.sum() < 2:
+        return np.nan
+    return np.trapezoid(pxx[m], f[m])
+
+
+def frecuencia_mediana(f, pxx, f_low=0.0, f_high=None):
+    if f_high is None:
+        f_high = f.max()
+    m = (f >= f_low) & (f <= f_high)
+    ff, pp = f[m], pxx[m]
+    if ff.size < 2 or np.sum(pp) <= 0:
+        return np.nan
+    energia_acum = np.cumsum((pp[:-1] + pp[1:]) * np.diff(ff) / 2)
+    mitad = energia_acum[-1] / 2
+    return ff[1:][np.searchsorted(energia_acum, mitad)]
+
+
+def resumen_espectral(f, pxx, nombre, fmin, fmax):
+    m = (f >= fmin) & (f <= fmax)
+    ff, pp = f[m], pxx[m]
+    if ff.size < 2:
+        raise ValueError("El intervalo espectral seleccionado no contiene suficientes puntos.")
+    potencia = np.trapezoid(pp, ff)
+    p_norm = pp / pp.sum() if pp.sum() > 0 else np.full_like(pp, np.nan)
+    entropia = -np.nansum(p_norm * np.log2(p_norm + np.finfo(float).eps))
+    entropia_norm = entropia / np.log2(len(pp))
+    return {
+        "contexto": nombre,
+        "potencia_intervalo": potencia,
+        "frecuencia_pico_Hz": ff[np.argmax(pp)],
+        "frecuencia_mediana_Hz": frecuencia_mediana(f, pxx, fmin, fmax),
+        "entropia_espectral_norm": entropia_norm,
+    }
+
+
+fmax_comun = min(CONFIG["frecuencia_max"], fs_A/2, fs_B/2)
+tabla_espectral = pd.DataFrame([
+    resumen_espectral(f_A, P_A, CONFIG["contexto_A"],
+                      CONFIG["frecuencia_min"], fmax_comun),
+    resumen_espectral(f_B, P_B, CONFIG["contexto_B"],
+                      CONFIG["frecuencia_min"], fmax_comun),
+]).set_index("contexto")
+tabla_espectral.round(4)
+```
+
+**Tarea 4.** Reemplace el intervalo genérico por bandas justificadas para su señal. Si usa potencia relativa, declare con respecto a qué potencia total se normalizó.
+
+::: {.callout-important title="No confundir pico espectral con frecuencia fisiológica"}
+El máximo de la PSD puede corresponder a deriva, movimiento, interferencia de red, armónicos o al patrón repetitivo del protocolo. Su interpretación requiere metadatos y una hipótesis fisiológica.
+:::
+
+## 8. Comparación descriptiva entre contextos
+
+### 8.1 Comparar magnitudes sin ocultar la escala
+
+Para un descriptor positivo $g$, puede informarse el cambio absoluto
+$\Delta g=g_B-g_A$ y el cambio relativo $100(g_B-g_A)/g_A$. El cambio relativo es inestable si $g_A$ es cercano a cero.
+
+```{python}
+#| label: comparacion-global
+
+def tabla_cambios(tabla):
+    if tabla.shape[0] != 2:
+        raise ValueError("La tabla debe contener exactamente dos contextos.")
+    a = tabla.iloc[0]
+    b = tabla.iloc[1]
+    salida = pd.DataFrame({"A": a, "B": b})
+    salida["cambio_absoluto_B-A"] = salida["B"] - salida["A"]
+    salida["cambio_relativo_pct"] = np.where(
+        np.abs(salida["A"]) > np.finfo(float).eps,
+        100 * salida["cambio_absoluto_B-A"] / np.abs(salida["A"]),
+        np.nan,
+    )
+    return salida
+
+
+tabla_cambios(resumen[["mediana", "IQR", "RMS", "MAV"]]).round(4)
+```
+
+### 8.2 Variabilidad dentro de cada registro
+
+```{python}
+#| label: comparar-ventanas
+#| fig-cap: "Variabilidad de RMS entre ventanas. Las ventanas describen cada registro; no son réplicas biológicas independientes."
+#| fig-width: 9
+#| fig-height: 4.5
+
+fig, ax = plt.subplots(figsize=(9, 4.5))
+sns.boxplot(
+    data=rasgos_ventanas, x="contexto", y="RMS", hue="contexto",
+    palette=PALETA, legend=False, ax=ax
+)
+sns.stripplot(
+    data=rasgos_ventanas, x="contexto", y="RMS",
+    color="#173b4d", alpha=0.45, size=3, ax=ax
+)
+ax.set(xlabel="", ylabel="RMS", title="RMS por ventana")
+plt.show()
+```
+
+Resuma los descriptores por ventanas usando mediana e IQR. No aplique automáticamente una prueba *t*, Mann-Whitney ni ANOVA: el solapamiento induce dependencia y las ventanas pertenecen al mismo registro.
+
+```{python}
+#| label: resumen-ventanas
+
+rasgos_ventanas.groupby("contexto")[["media", "desv_est", "RMS", "MAV"]].agg(
+    ["median", lambda s: s.quantile(0.75) - s.quantile(0.25)]
+).round(4)
+```
+
+## 9. Ruta opcional: señales simultáneas o alineables
+
+Use esta sección **solo** si ambos registros corresponden al mismo fenómeno temporal o a eventos homólogos. Una correlación baja entre registros independientes no tiene una interpretación útil.
+
+### 9.1 Armonizar la grilla temporal
+
+La interpolación siguiente crea una grilla común en la región de solapamiento. Si implica reducir $f_s$, debe existir filtrado antialias antes del remuestreo.
+
+```{python}
+#| label: alineacion
+
+def alinear_por_interpolacion(A, B, col_t, col_x, fs_objetivo=None):
+    inicio = max(A[col_t].min(), B[col_t].min())
+    fin = min(A[col_t].max(), B[col_t].max())
+    if fin <= inicio:
+        raise ValueError("Los registros no comparten intervalo temporal.")
+    fs_a = 1 / np.median(np.diff(A[col_t]))
+    fs_b = 1 / np.median(np.diff(B[col_t]))
+    fs = min(fs_a, fs_b) if fs_objetivo is None else float(fs_objetivo)
+    t = np.arange(inicio, fin, 1/fs)
+    xa = np.interp(t, A[col_t], A[col_x])
+    xb = np.interp(t, B[col_t], B[col_x])
+    return t, xa, xb, fs
+
+
+t_comun, x_A_comun, x_B_comun, fs_comun = alinear_por_interpolacion(
+    A, B, CONFIG["columna_tiempo"], CONFIG["columna_senal"]
+)
+```
+
+### 9.2 Correlación, retardo y error
+
+El coeficiente de Pearson mide asociación lineal sin retardo. La correlación cruzada normalizada permite buscar el desfase que maximiza la similitud:
+
+$$
+r_{xy}[k]=\frac{1}{N}\sum_n z_x[n]z_y[n+k].
+$$
+
+```{python}
+#| label: comparacion-punto-punto
+
+def estandarizar(x):
+    x = np.asarray(x, dtype=float)
+    sd = x.std(ddof=0)
+    if sd == 0:
+        raise ValueError("No se puede estandarizar una señal constante.")
+    return (x - x.mean()) / sd
+
+
+z_A = estandarizar(x_A_comun)
+z_B = estandarizar(x_B_comun)
+corr = signal.correlate(z_B, z_A, mode="full", method="fft") / len(z_A)
+lags = signal.correlation_lags(len(z_B), len(z_A), mode="full")
+k_max = lags[np.argmax(np.abs(corr))]
+retardo_s = k_max / fs_comun
+
+metricas_punto = pd.Series({
+    "Pearson_sin_retardo": np.corrcoef(x_A_comun, x_B_comun)[0, 1],
+    "MAE_unidades_originales": np.mean(np.abs(x_B_comun - x_A_comun)),
+    "RMSE_unidades_originales": np.sqrt(np.mean((x_B_comun - x_A_comun)**2)),
+    "retardo_max_abs_corr_s": retardo_s,
+    "max_abs_corr_normalizada": np.max(np.abs(corr)),
+})
+metricas_punto.round(4)
+```
+
+```{python}
+#| label: figura-correlacion
+#| fig-cap: "Correlación cruzada normalizada. Un máximo no demuestra causalidad."
+#| fig-width: 9
+#| fig-height: 4
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(lags / fs_comun, corr, color="#278b8c")
+ax.axvline(retardo_s, color="#e76f51", ls="--", label=f"máximo: {retardo_s:.3f} s")
+ax.set(xlabel="Retardo [s]", ylabel="Correlación normalizada",
+       title="B respecto de A")
+ax.legend()
+plt.show()
+```
+
+### 9.3 Coherencia
+
+La coherencia estima asociación lineal por frecuencia. Requiere señales simultáneas, muestreo compatible y suficiente duración. No implica causalidad.
+
+```{python}
+#| label: coherencia
+#| fig-cap: "Coherencia entre señales alineadas. Interpretar solo en frecuencias con contenido y calidad suficientes."
+#| fig-width: 9
+#| fig-height: 4
+
+nperseg = min(len(x_A_comun), max(32, int(CONFIG["ventana_s"] * fs_comun)))
+f_coh, Cxy = signal.coherence(
+    x_A_comun, x_B_comun, fs=fs_comun, nperseg=nperseg,
+    noverlap=int(CONFIG["solapamiento"] * nperseg)
+)
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.plot(f_coh, Cxy, color="#278b8c")
+ax.set_xlim(CONFIG["frecuencia_min"], min(fmax_comun, fs_comun/2))
+ax.set_ylim(0, 1)
+ax.set(xlabel="Frecuencia [Hz]", ylabel="Coherencia",
+       title="Asociación lineal dependiente de la frecuencia")
+plt.show()
+```
+
+## 10. Preprocesamiento: justificar antes de aplicar
+
+No se entrega una cadena de filtrado automática porque un filtro válido para EEG puede destruir ECG, PPG o sEMG. Proponga su cadena con esta tabla:
+
+| Operación | Problema que corrige | Parámetros | Evidencia antes/después | Riesgo de distorsión |
+|---|---|---|---|---|
+| Eliminación de tendencia |  |  |  |  |
+| Filtro pasaaltas |  |  |  |  |
+| Filtro pasabajas |  |  |  |  |
+| Rechazo de red |  |  |  |  |
+| Rectificación |  |  |  |  |
+| Normalización |  |  |  |  |
+| Segmentación por evento |  |  |  |  |
+
+::: {.callout-caution title="Tres errores frecuentes"}
+1. Filtrar porque “así se hace” sin mostrar el problema en el registro.
+2. Usar `filtfilt` y describir el resultado como procesamiento en tiempo real; `filtfilt` es no causal.
+3. comparar PSD calculadas con parámetros, unidades o bandas distintas.
+:::
+
+## 11. Construir una conclusión defendible
+
+La conclusión debe contener cuatro niveles claramente separados:
+
+1. **Hallazgo:** qué descriptor cambió y cuánto cambió.
+2. **Evidencia:** tabla o figura exacta que respalda el hallazgo.
+3. **Interpretación:** mecanismo fisiológico compatible con el cambio.
+4. **Límite:** explicación alternativa, artefacto o restricción del diseño.
+
+Plantilla:
+
+> En los registros analizados, **[descriptor]** fue **[valor A]** en A y **[valor B]** en B. La diferencia se observa en **[figura/tabla]** y es compatible con **[mecanismo]**. Sin embargo, **[confusor o limitación]** impide atribuir el cambio exclusivamente al contexto. Se requerirían **[réplicas, sujetos, control o anotaciones]** para evaluar la generalización.
+
+### Lista de control de calidad
+
+- [ ] La pregunta y la hipótesis son explícitas.
+- [ ] Los metadatos permiten reproducir la selección de señales.
+- [ ] Las unidades y escalas aparecen en todos los ejes.
+- [ ] La frecuencia de muestreo se verificó.
+- [ ] Cada decisión de preprocesamiento tiene justificación.
+- [ ] Las ventanas tienen duración y solapamiento documentados.
+- [ ] La PSD usa parámetros comparables.
+- [ ] Los rasgos seleccionados corresponden al tipo de señal.
+- [ ] No se presentan ventanas como sujetos independientes.
+- [ ] La interpretación diferencia fisiología, adquisición y artefactos.
+
+## 12. Entregables
+
+Cada grupo entregará:
+
+1. archivo fuente `.qmd` ejecutable;
+2. documento HTML autocontenido;
+3. archivos o enlace verificable a los datos, respetando su licencia;
+4. tabla de metadatos y decisiones de preprocesamiento;
+5. máximo cinco figuras principales, cada una con mensaje e interpretación;
+6. conclusión con hallazgo, evidencia, interpretación y límite;
+7. sustentación de 8 minutos y 4 minutos de preguntas.
+
+El código debe ejecutarse de principio a fin. Una figura sin unidades, una métrica sin definición o una decisión sin justificación se considera evidencia incompleta.
+
+## 13. Rúbrica de evaluación
+
+| Criterio | Excelente | Adecuado | Insuficiente | Peso |
+|---|---|---|---|---:|
+| Pregunta y comparabilidad | Pregunta mecanística; variables, unidades y condiciones son comparables | Pregunta clara con alguna limitación menor | Contextos o señales no son comparables | 15 % |
+| Auditoría y reproducibilidad | Metadatos completos; carga, limpieza y decisiones reproducibles | Flujo ejecutable con documentación parcial | Cambios manuales, datos opacos o errores de ejecución | 15 % |
+| EDA temporal | Describe forma, distribución, artefactos y variación local con interpretación | Incluye descriptores y gráficos básicos correctos | Enumera métricas sin relacionarlas con la señal | 15 % |
+| EDA espectral | Welch, bandas, resolución y unidades están justificadas | PSD correcta con justificación parcial | FFT/PSD mal escalada o interpretación de picos sin soporte | 15 % |
+| Comparación e interpretación biomédica | Integra magnitud, variabilidad, fisiología, adquisición y límites | Compara correctamente, pero integra parcialmente los mecanismos | Confunde correlación, diferencia e inferencia causal/clínica | 25 % |
+| Comunicación y sustentación | Figuras legibles; argumentos precisos; todos dominan el método | Presentación comprensible con vacíos menores | Resultados no defendibles o participación desigual | 15 % |
+
+## 14. Preguntas para la sustentación
+
+1. ¿Qué condición haría inválida la comparación de amplitudes?
+2. ¿Por qué eligieron esa duración de ventana?
+3. ¿Qué diferencia existe entre comparar registros y comparar sujetos?
+4. ¿Cómo verificaron que un pico espectral no fuera interferencia o artefacto?
+5. ¿Qué información se pierde al normalizar cada señal por separado?
+6. ¿Qué resultado contradijo o debilitó su hipótesis inicial?
+7. ¿Qué dato adicional cambiaría más su interpretación?
+
+## Referencias
+
+- Semmlow, J. L. (2018). *Circuits, Signals, and Systems for Bioengineers: A MATLAB-Based Introduction* (3.ª ed.). Academic Press. Cap. 1: panorama y bioseñales; cap. 2: mediciones temporales y correlación; cap. 3: análisis frecuencial; cap. 10: estacionariedad y no estacionariedad. [DOI del capítulo 2](https://doi.org/10.1016/B978-0-12-809395-5.00002-3) y [DOI del capítulo 3](https://doi.org/10.1016/B978-0-12-809395-5.00003-5).
+- Programa de Ingeniería Biomédica. *Sistemas y Señales Biomédicos SYSB: Programa de la asignatura*. Apartados “Temas”, “Resultados de aprendizaje esperados” y “Programación de actividades por sesión”.
+
+::: {.callout-note title="Cierre"}
+Una comparación técnicamente sólida no consiste en acumular métricas. Consiste en demostrar que los registros son comparables, seleccionar descriptores ligados a una pregunta fisiológica y reconocer qué conclusiones permite —y cuáles no permite— el diseño disponible.
+:::
