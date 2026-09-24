@@ -1,0 +1,520 @@
+---
+title: "Laboratorio: análisis exploratorio de imágenes del proyecto"
+subtitle: "De la pregunta biomédica a una tabla de características para modelado"
+description: "Guía del estudiante · Procesado de Señales e Imágenes Médicas <br>Ingeniería Biomédica"
+author: "Ph.D. Pablo Eduardo Caicedo R."
+lang: es
+date: "2026-09-23"
+format:
+  html:
+    theme: ../../recursos/estilos/bioforja-laboratorios.scss
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    embed-resources: true
+    code-copy: true
+    code-overflow: wrap
+    fig-cap-location: bottom
+execute:
+  enabled: false
+---
+
+# Propósito y producto final
+
+**Pregunta central:** ¿qué información de las imágenes permite representar el fenómeno de su proyecto y construir variables pertinentes para el modelo que responderá su pregunta de investigación?
+
+Cada equipo realizará un análisis exploratorio de imágenes —EDA, por *exploratory data analysis*— vinculado con sus objetivos. El resultado será una **tabla de características trazable**, acompañada de un diccionario de variables y de las decisiones que justifican su utilización en el modelado posterior.
+
+El laboratorio termina con los datos preparados y un plan de modelado. **No exige entrenar el modelo final.** Una tabla exportada no demuestra que el problema esté resuelto: es necesario justificar qué representa cada fila, qué información contienen sus columnas y cómo se evaluará posteriormente el modelo.
+
+| Aspecto | Condición de trabajo |
+|---|---|
+| Programa y asignatura | Ingeniería Biomédica · PSIM |
+| Organización | Equipos de tres estudiantes; se conserva el proyecto semestral |
+| Insumos | Imágenes del proyecto, objetivos vigentes, metadatos y referencias de las etiquetas |
+| Datos compartidos | Banco común de verificación, formado con aportes de todos los equipos |
+| Duración propuesta | 6 horas de trabajo, con entorno, datos y banco común preparados previamente |
+| Evaluación | Artefactos reproducibles y sustentación de 12 minutos, más hasta 5 minutos de verificación |
+| Entregable central | `data/processed/features.csv`, regenerable desde las imágenes y los registros fuente |
+
+## Resultados de aprendizaje
+
+Al finalizar, el equipo podrá:
+
+1. Traducir un objetivo biomédico a una unidad de análisis, una salida esperada y un conjunto de características candidatas.
+2. Auditar la calidad, procedencia, distribución y comparabilidad de las imágenes.
+3. Seleccionar análisis visuales y numéricos según la tarea de modelado.
+4. Justificar el preprocesamiento y la extracción de características con evidencia del proyecto.
+5. Construir y validar una tabla que separe predictores, etiquetas, identificadores y variables de control.
+6. Reproducir el proceso en otro computador y explicar sus límites.
+
+# Condiciones heredadas del laboratorio de Python
+
+Esta actividad amplía el proyecto construido con la [guía de Python científico legible y reproducible](https://pablocaicedor.github.io/laboratorios/PythonLanguage/Laboratorio_00_Python_Cientifico_Reproducible_Guia_Estudiante.html). Aunque su dirección contiene “Laboratorio_00”, la página consultada se titula “Laboratorio 01”.
+
+Se mantienen Python 3.13 administrado con `uv`, dependencias declaradas y bloqueadas, instalación en el perfil del usuario, separación entre fuentes y resultados, rutas con `pathlib`, funciones documentadas, pruebas y Ruff. Se conserva el comando único de reproducción y su verificación en un computador diferente, sin transferir `.venv` ni modificar `uv.lock` manualmente.
+
+El informe estudiantil se entrega en **LaTeX** y la presentación en **LaTeX Beamer**, ambos con fuente y PDF compilados mediante `latexmk`. La presentación tendrá máximo cinco diapositivas, incluida la portada. La guía actual se distribuye en Quarto; esto no modifica el formato de entrega estudiantil de la actividad base.
+
+Los nuevos requisitos —banco compartido, contrato de imágenes, EDA por tarea y tabla de características— se desarrollan a continuación. Las imágenes originales permanecen intactas y las decisiones se registran antes de generar los derivados correspondientes.
+
+# Datos propios y datos comunes entre equipos
+
+## Dos conjuntos con funciones diferentes
+
+| Conjunto | Contenido | Uso obligatorio | Límite |
+|---|---|---|---|
+| **Cohorte del proyecto** | Imágenes seleccionadas para responder la pregunta de cada equipo | EDA del proyecto y tabla para modelado | Debe corresponder a su población, modalidad y objetivo |
+| **Banco común del curso** | Las mismas imágenes de verificación para todos los equipos | Auditar lectura, metadatos y descriptores básicos; contrastar resultados entre implementaciones | No se combina automáticamente como una población de entrenamiento |
+
+**Todos los equipos utilizarán la misma versión del banco común.** Compartir únicamente nombres de columnas no cumple este requisito: deben procesar exactamente los mismos archivos de verificación. La tabla para modelado de cada proyecto puede tener predictores y etiquetas diferentes.
+
+## Construcción del banco antes de la sesión
+
+1. Cada equipo aporta **tres imágenes de su proyecto**, obtenidas preferiblemente de unidades independientes: una representativa, una con variación de adquisición y una con un problema de calidad real. Si no existe alguno de estos casos, aporta otra imagen y documenta la razón. No se introducen alteraciones artificiales para presentarlas como defectos originales.
+2. Se comparten únicamente imágenes que puedan circular en el curso. Se eliminan identificadores personales, incluidos los visibles dentro de la imagen, manteniendo la información técnica necesaria. Si no es posible compartirlas, el docente acuerda imágenes equivalentes del mismo proyecto con autorización de uso; no se distribuyen las restringidas.
+3. Se entrega cada imagen con identificador global, procedencia, modalidad, tipo de dato, canales, escala de intensidad y espaciamiento cuando esté disponible. Los identificadores de paciente son seudónimos, nunca documentos de identidad.
+4. El docente o responsable designado consolida una versión única: `banco_comun_v1`. El manifiesto contiene los archivos aceptados y su SHA-256. Con $G$ equipos habrá hasta $3G$ imágenes, descontando duplicados justificados.
+5. Se acuerdan el protocolo de lectura y las tolerancias del cotejo. Todos conservan esos parámetros. Para datos 3D se proporciona una vista 2D de verificación con corte y orientación documentados, además de su vínculo al volumen fuente.
+6. Cada equipo procesa **todo el banco** y entrega `results/common_features.csv`. Otro equipo compara resultados sobre los mismos `image_id` y registra las discrepancias.
+
+El banco procede del conjunto de desarrollo. Ningún paciente aportado al banco puede quedar en la prueba reservada del proyecto que lo aportó: todos habrán podido inspeccionar sus imágenes.
+
+## Comparación común obligatoria
+
+Para cada imagen se contrastan: hash del archivo compartido, dimensiones, número de canales, tipo numérico, cantidad de valores no finitos, mínimo, máximo, media y desviación estándar poblacional. En imágenes multicanal se calculan estadísticas **por canal**, sin conversión automática a gris. Se declara si se trabaja con valores almacenados o físicamente calibrados; ambos equipos deben usar la misma representación.
+
+Las dimensiones, conteos e identificadores deben coincidir exactamente. Para estadísticas de punto flotante puede adoptarse `rtol=1e-6` y `atol=1e-8`, siempre que sean apropiados para la escala utilizada. Las tolerancias se acuerdan antes de comparar. En entradas no finitas se registra el fallo y las estadísticas quedan ausentes; no se sustituyen por cero.
+
+Las diferencias se resuelven revisando calibración, canal, orientación, precisión numérica o decodificación. **No se decide cuál resultado es correcto por mayoría.** El banco verifica consistencia; las pruebas con resultados conocidos verifican exactitud. No se comparan como equivalentes intensidades de modalidades distintas.
+
+# Fase 1. Del objetivo al contrato de datos — 75 minutos
+
+## Formular la decisión de modelado — 20 minutos
+
+Complete esta ficha antes de construir gráficos. Use los objetivos aprobados del proyecto.
+
+| Campo | Pregunta que debe responder el equipo |
+|---|---|
+| Problema | ¿Qué necesidad concreta se intenta resolver? |
+| Objetivo | ¿Qué resultado medible debe producir el proyecto? |
+| Población y adquisición | ¿De dónde provienen las imágenes y qué condiciones representan? |
+| Unidad de análisis | ¿Una fila representa un paciente, volumen, imagen, región, objeto o píxel? |
+| Unidad independiente | ¿Qué unidades pueden considerarse separadas para particionar y evaluar? |
+| Entrada disponible | ¿Qué imágenes y metadatos existirían al aplicar el sistema a un caso nuevo? |
+| Salida $y$ | ¿Clase, medida continua, máscara, coordenadas o una medición calculada? |
+| Referencia | ¿Quién produjo la etiqueta o medición, cómo y con qué limitaciones? |
+| Modelo previsto | ¿Qué familia de método corresponde a la salida requerida? |
+| Evaluación futura | ¿Qué métrica responde al objetivo y cuál será la referencia de comparación? |
+
+**Ejemplo de razonamiento:** si el objetivo es estimar una medida continua a partir de textura, se necesitan valores de referencia con unidades y análisis de asociación característica–medida. Un conteo de clases no responde por sí solo a ese objetivo. Si se pretende segmentar una estructura, la salida es espacial: una etiqueta global por imagen no sustituye la máscara de referencia.
+
+Cuando el proyecto mantenga la restricción a modelos sencillos, se prevé regresión logística para clasificación y regresión polinómica multivariable para una salida continua. Ambas pertenecen al aprendizaje supervisado; no deben describirse como “ausencia de machine learning”. Para segmentación o cuantificación directa se pueden plantear métodos clásicos coherentes con PSIM.
+
+## Inventariar y auditar — 35 minutos
+
+Construya `data/metadata/manifest.csv`, con una fila por imagen o volumen fuente. Las máscaras y recortes derivados se vinculan mediante identificadores, sin duplicar arbitrariamente registros fuente.
+
+| Campo | Significado y regla |
+|---|---|
+| `image_id` | Identificador único global; usar prefijo de conjunto/equipo |
+| `subject_id` | Unidad independiente; si se desconoce, declararlo y no inventar independencia |
+| `study_id` | Estudio o sesión cuando exista |
+| `relative_path` | Ruta relativa al proyecto |
+| `dataset_id`, `dataset_version` | Procedencia y versión verificables |
+| `modality`, `site_id` | Modalidad y centro/equipo de adquisición cuando estén disponibles |
+| `sha256` | Hash calculado sobre los bytes del archivo original |
+| `height`, `width`, `depth`, `channels` | Dimensiones con convención de ejes declarada; `depth=1` para 2D |
+| `dtype`, `intensity_unit` | Tipo almacenado y unidad de intensidad; no inferirla por apariencia |
+| `spacing_y_mm`, `spacing_x_mm`, `spacing_z_mm` | Espaciamiento conocido; ausente si no existe o no aplica |
+| `target`, `target_source` | Etiqueta o medida de referencia, si corresponde, y su procedencia |
+| `mask_path` | Máscara de referencia, si existe; papel explícito de anotación |
+| `quality_status`, `quality_reason` | Aceptada, revisar o excluida, con razón |
+| `split` | `train`, `validation` o `test`, según el protocolo adoptado |
+
+**La ausencia es información:** utilice campo vacío para un valor desconocido y explique la convención. Cero no significa “sin dato”. No se fabrican etiquetas, espaciamientos ni identificadores de paciente.
+
+Registre y cuantifique:
+
+- Archivos leídos, ilegibles, duplicados y excluidos; imágenes, estudios y pacientes únicos.
+- Resoluciones, canales, profundidad de bits y rangos. `uint16` no demuestra que el sensor haya utilizado 16 bits efectivos.
+- Etiquetas faltantes o contradictorias, máscaras vacías y desalineación espacial.
+- Variaciones de iluminación, desenfoque, ruido, orientación, recortes, marcas y bordes añadidos.
+- Correspondencia entre modalidad, centro, protocolo y variable objetivo; un centro que coincide con una clase puede introducir una asociación espuria.
+
+Los hashes detectan igualdad de archivos; no detectan por sí solos imágenes equivalentes con otra compresión o metadatos. Revise también duplicados visuales y derivados de una misma fuente. Preserve el registro de exclusiones.
+
+### Lectura según el formato
+
+En DICOM, distinga valores almacenados de valores calibrados y de la visualización mediante ventana. Verifique transformación de modalidad, unidades, fotometría y espaciamiento cuando correspondan. No convierta indiscriminadamente a 8 bits. En NIfTI o volúmenes, verifique ejes, orientación y metadatos espaciales. En RGB, documente el orden de canales; si convierte a gris, justifique qué información de color se pierde.
+
+## Definir y congelar la partición — 20 minutos
+
+Después de resolver identidad y duplicados, separe por paciente o por la unidad independiente apropiada. Todos sus cortes, regiones, sesiones relacionadas y aumentos permanecen en una misma partición, salvo que un objetivo longitudinal requiera otro diseño explícito.
+
+La inspección inicial de integridad abarca los archivos necesarios para detectar errores y duplicados. **El EDA orientado a seleccionar variables, transformaciones y parámetros se realiza solo sobre entrenamiento.** La validación se reserva para decisiones de modelado posterior y la prueba permanece cerrada. Si el proyecto ya define una partición oficial, respétela.
+
+Como propuesta didáctica puede utilizarse 70/15/15 por unidades independientes, si el tamaño lo permite. No es una proporción universal. Con pocos sujetos, plantee validación cruzada por grupos y explique la incertidumbre; no fuerce subconjuntos sin representación suficiente. En clasificación, la estratificación debe respetar simultáneamente los grupos, cuando sea factible.
+
+Guarde `data/metadata/splits.csv`, la semilla y el criterio. Los parámetros aprendidos —imputación, escalamiento, selección de variables o balanceo— se ajustarán exclusivamente dentro de los datos de entrenamiento de cada partición de validación. Generar predictores con una transformación fija no autoriza a inspeccionar la prueba para cambiarla.
+
+**Evidencia de fase 1:** ficha del problema, manifiesto, inventario de exclusiones y partición trazable.
+
+# Fase 2. EDA de imágenes y características — 165 minutos
+
+## Exploración común y visual — 40 minutos
+
+Primero ejecute el protocolo del banco compartido y registre su comparación. Después explore la cohorte de entrenamiento del proyecto.
+
+Construya una galería reproducible de 6–12 imágenes, o todas si dispone de menos, mediante una regla de muestreo registrada. Incluya variabilidad de la salida y de la adquisición. No seleccione solo ejemplos de apariencia favorable.
+
+Para cada panel indique identificador, representación, escala de intensidad y región considerada. Use escalas comparables cuando las unidades lo permitan. Si la visualización utiliza ventanas diferentes, indíquelo. La barra espacial se agrega solo cuando existe calibración.
+
+Compare al menos:
+
+1. Distribución de dimensiones y espaciamientos, además de conteos por sujeto y adquisición.
+2. Histogramas de intensidad con límites y número de intervalos declarados; en color, por canal o espacio seleccionado.
+3. Medidas por imagen o región: mediana, rango intercuartílico, media y desviación estándar.
+4. Ejemplos aceptados y casos que requieren revisión, con razones técnicas.
+
+Los píxeles vecinos no son observaciones independientes. Millones de píxeles no equivalen a millones de pacientes. El histograma conjunto de todos los píxeles puede quedar dominado por imágenes grandes o por el fondo: acompáñelo con resúmenes por unidad de análisis.
+
+## Elegir la ruta según la salida — 45 minutos
+
+Realice la ruta principal de su proyecto; si combina tareas, identifique las entradas y salidas de cada etapa.
+
+| Tarea | EDA obligatorio en entrenamiento | Estructura para modelado | Evaluación futura sugerida |
+|---|---|---|---|
+| Clasificación | Conteo de clases por sujeto; faltantes; distribución y solapamiento de características por clase; relación clase–centro | Una fila por unidad clasificada; `target` categórico | Matriz de confusión, sensibilidad/especificidad cuando procedan, macro-F1 o exactitud balanceada |
+| Regresión | Distribución, rango y unidades de $y$; características frente a $y$; posibles relaciones no lineales; extremos y cobertura | Una fila por unidad con medida de referencia continua | MAE/RMSE en la unidad de $y$; $R^2$ como complemento |
+| Segmentación | Disponibilidad y calidad de máscaras; tamaño de estructuras; contraste región–fondo; ejemplos de superposición; desbalance espacial | Fila por píxel/parche si habrá clasificación local; tabla por imagen/objeto si el método es clásico | Dice/IoU y, si corresponde, error de contorno con unidades |
+| Detección o conteo | Distribución de objetos por imagen; tamaños; casos sin objetos; solapamientos y anotaciones | Fila por candidato/objeto con vínculo a la imagen; catálogo separado que conserve imágenes sin objetos | Métricas de detección con criterio espacial explícito; MAE para conteo |
+| Cuantificación directa | Escala, repetibilidad, sensibilidad a la ROI y comparación con referencia independiente | Fila por objeto, imagen o sujeto, con medidas y referencia | Error absoluto, sesgo y análisis de acuerdo cuando sean pertinentes |
+
+En regresión puede calcular asociaciones de Pearson o Spearman, justificando cuál resume mejor el patrón. Una correlación pequeña no descarta una relación no lineal y una asociación alta no demuestra causalidad. La regresión polinómica no requiere normalidad de cada predictor; explore rangos, redundancia y soporte de los datos antes de proponer grados altos.
+
+En clasificación se describe el desbalance **antes** de cualquier corrección. Ponderación o remuestreo son decisiones futuras, aplicadas solo a entrenamiento. No aumente imágenes antes de particionar.
+
+En segmentación, una máscara de referencia puede definir $y$, pero no puede utilizarse para calcular predictores que no estarán disponibles en una imagen nueva. Si la tarea supone una ROI manual proporcionada por un operador, declare expresamente esa entrada y su alcance. Calcular el área de una máscara y usar esa misma área como objetivo sería circular, no una estimación independiente.
+
+## Justificar preprocesamiento y extracción — 50 minutos
+
+No aplique una cadena de técnicas por el solo hecho de que estén disponibles. Para cada familia de PSIM indique **aplicar, comparar o no pertinente**, y explique la decisión. Implemente al menos una comparación de transformación pertinente y conserve el caso sin esa transformación como referencia.
+
+| Familia vinculada con el curso | Pregunta exploratoria | Parámetros que deben quedar registrados |
+|---|---|---|
+| Muestreo, cuantización y color | ¿Resolución, rango o canales representan la información requerida? | Tamaño, espaciamiento, profundidad efectiva conocida, canal y conversión |
+| Intensidad e histogramas | ¿Existe variación de adquisición que dificulta comparar casos? | Rango, cuantización, transformación y población usada para estimarla |
+| Vecindarios, filtros y gradiente | ¿Ruido o bordes afectan el descriptor? | Filtro, tamaño, sigma, tratamiento de bordes y unidades |
+| Umbralización y morfología | ¿Puede delimitarse una región coherente con la tarea? | Umbral/método, conectividad y elemento estructurante |
+| Fourier 2D | ¿Hay patrones periódicos o diferencias de escala espacial relevantes? | Centrado, ventana, frecuencias, bandas y normalización |
+| Wavelets 2D | ¿Los detalles a distintas escalas aportan información útil? | Familia, niveles, extensión de bordes y subbandas |
+
+Las diapositivas de wavelets aportan fundamentos multirresolución y ejemplos 1D. Si utiliza imágenes, debe implementar la transformación 2D apropiada y declarar ejes y subbandas; no tratar una imagen aplanada como equivalente espacial.
+
+### Precauciones que afectan la interpretación
+
+- **Normalización por imagen:** puede borrar diferencias absolutas útiles. Diferencie ajuste para mostrar una imagen de transformación aplicada para medirla.
+- **Ecualización:** altera la distribución; no se adopta automáticamente antes de comparar intensidades o texturas.
+- **Cambio de tamaño:** altera escala, bordes y textura. Si hay espaciamiento, utilícelo para definir la resolución física objetivo. Las máscaras requieren interpolación que conserve etiquetas, habitualmente vecino más cercano.
+- **Regiones:** medir textura sobre fondo negro agregado a una ROI introduce un borde artificial. Declare cómo trata la máscara y los pares válidos de píxeles.
+- **Máscaras vacías:** no producen área de tejido válida ni estadísticas de ROI. Marque ausencia y causa; no genere valores aparentes.
+- **Unidades espaciales:** sin espaciamiento se reporta píxel, píxel² o ciclos/píxel. No se inventan milímetros.
+- **Frecuencias 2D:** con espaciamiento $\Delta x$, $f_x$ se expresa en ciclos/mm; sin él, en ciclos/píxel. El límite de Nyquist corresponde a cada eje. Para espaciamiento anisótropo construya cada eje con su propio valor antes de calcular la distancia radial.
+- **Wavelets:** la energía de detalles depende de normalización, familia, tamaño y bordes; no es automáticamente comparable entre protocolos distintos.
+
+Para la comparación elegida, mantenga constantes imagen, ROI y escala de visualización. Muestre original, transformación y cambio en al menos dos características. Evalúe varias imágenes de entrenamiento —por ejemplo, cinco si existen— y concluya qué gana o pierde el objetivo del proyecto. No use PSNR/SSIM como prueba de mejora si no existe una referencia adecuada; una imagen más suave no necesariamente contiene información más útil.
+
+## Formular características candidatas — 30 minutos
+
+Construya primero una matriz **objetivo → propiedad observable → descriptor → uso previsto**. Proponga de 4 a 8 predictores iniciales de al menos dos familias, salvo que la simplicidad del objetivo justifique menos. El rango es didáctico; no demuestra suficiencia estadística. No agregue variables irrelevantes para cumplir una cuota.
+
+| Familia | Ejemplos | Condición de interpretación |
+|---|---|---|
+| Intensidad | Mediana, percentiles, rango intercuartílico, desviación | Escala y región comparables |
+| Distribución | Entropía del histograma | Intervalos y rango de cuantización fijos/documentados |
+| Forma | Área, razón de ejes, solidez | Máscara válida, definición de objeto y escala |
+| Textura | Contraste/homogeneidad GLCM, estadísticas locales | Niveles de gris, distancias, ángulos y pares válidos |
+| Bordes | Magnitud media de gradiente, densidad de borde | Escala, operador y umbral comparables |
+| Frecuencia | Fracción de energía en bandas | Tratamiento de DC, bandas, ventana y denominador explícitos |
+| Multirresolución | Energía por subbanda wavelet | Misma familia, niveles y normalización |
+
+Para valores $x_i$ de una ROI con $N$ píxeles, la media y la desviación descriptiva poblacional son:
+
+$$
+\mu=\frac{1}{N}\sum_{i=1}^{N}x_i,
+\qquad
+\sigma=\sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i-\mu)^2}.
+$$
+
+Aquí se usa `ddof=0` para describir todos los valores de la región. Esta convención no convierte los píxeles en observaciones independientes. El rango intercuartílico es $Q_{0.75}-Q_{0.25}$.
+
+Para probabilidades de histograma $p_k$, la entropía es:
+
+$$
+H=-\sum_{k:p_k>0} p_k\log_2 p_k.
+$$
+
+Depende de la discretización: cambiar los intervalos cambia el descriptor. Si el área de una máscara tiene $N_{\mathrm{ROI}}$ píxeles y el espaciamiento es conocido:
+
+$$
+A=N_{\mathrm{ROI}}\,\Delta x\,\Delta y.
+$$
+
+El resultado se expresa en mm² cuando ambos espaciamientos están en mm/píxel. Sin esos metadatos, conserve `area_px2`.
+
+Cada descriptor debe tener una hipótesis vinculada con el problema, un procedimiento reproducible y una limitación. **Hipótesis no equivale a hallazgo confirmado.**
+
+**Evidencia de fase 2:** galería, gráficos correspondientes a la tarea, comparación de procesamiento, matriz de pertinencia y candidatos documentados.
+
+# Fase 3. Tabla de características y reproducción — 120 minutos
+
+## Construir la tabla — 45 minutos
+
+Genere `data/processed/features.csv` desde código. No copie valores manualmente. Cada fila representa exactamente la unidad definida en la fase 1; use `sample_id` como clave única. Si hay varias regiones por imagen, cada región tiene `roi_id` y `sample_id` propios.
+
+| Grupo de columnas | Ejemplos | ¿Se utiliza directamente como predictor? |
+|---|---|---|
+| Identidad y vínculo | `sample_id`, `image_id`, `subject_id`, `roi_id` | No |
+| Partición y procedencia | `split`, `dataset_id`, `source_sha256`, `config_id` | No |
+| Predictores | `intensity_median`, `intensity_iqr`, `texture_contrast`, `area_mm2` | Solo los seleccionados explícitamente |
+| Salida | `target` y su unidad/codificación en el diccionario | No; es $y$ |
+| Control de calidad | `quality_status`, `exclusion_reason`, `eligible_for_model` | No por defecto |
+
+La forma conceptual es:
+
+$$
+\underbrace{\text{identificadores y trazabilidad}}_{\text{control}}
+\quad+\quad
+\underbrace{x_1,\ldots,x_p}_{\mathbf{X}}
+\quad+\quad
+\underbrace{y}_{\text{salida, si aplica}}.
+$$
+
+**No seleccione predictores mediante “todas las columnas numéricas”.** Un código de paciente, una etiqueta codificada, un índice o una variable calculada después del resultado pueden parecer numéricos e introducir fuga de información.
+
+### Ajustes según la tarea
+
+- **Paciente con varias imágenes:** documente agregación —mediana, máximo u otra regla— para producir una fila por paciente si ese es el objetivo. La cantidad de imágenes por sujeto no debe confundirse con replicación independiente.
+- **Segmentación aprendida por píxel/parche:** `sample_id` identifica la localización; agregue coordenadas, `image_id` y `subject_id`. El objetivo proviene de la máscara de referencia; los predictores se calculan de la imagen disponible. Una muestra acotada de píxeles debe registrar la estrategia y conservar la partición por sujeto.
+- **Segmentación clásica:** la tabla contiene descriptores de entrada y medidas por imagen/objeto, mientras que la salida espacial se conserva como máscara vinculada. La tabla acompaña al método, no sustituye la máscara.
+- **Objetos/candidatos:** preserve un catálogo de imágenes, incluso si no se detectaron objetos. No suprima silenciosamente casos negativos.
+- **Sin referencia supervisada:** no invente `target`. Declare qué tarea sí permite la tabla y qué anotación falta para entrenar/evaluar el modelo previsto.
+
+### Diccionario obligatorio
+
+Genere `data/metadata/feature_dictionary.csv` con un registro por columna:
+
+| Campo | Contenido |
+|---|---|
+| `name`, `role`, `dtype` | Nombre, papel —ID/predictor/objetivo/control— y tipo |
+| `definition`, `unit` | Significado operacional y unidad |
+| `method`, `parameters` | Algoritmo, función o fórmula y parámetros |
+| `source`, `roi_definition` | Imagen/representación de origen y región |
+| `valid_range`, `missing_policy` | Rango justificable y manejo de ausencia |
+| `available_at_prediction` | Si estará disponible al aplicar el sistema |
+| `biomedical_rationale` | Relación esperada con el objetivo |
+
+En `config/model_input.json` declare una **lista explícita** de predictores, columna objetivo cuando corresponda, columna de agrupación, unidad de análisis y estrategia de validación. Este archivo constituye el acuerdo de entrada para el modelado posterior.
+
+### Base de cálculo que debe adaptar el equipo
+
+El siguiente ejemplo calcula cuatro descriptores sobre una imagen 2D y una ROI booleana. No carga DICOM/NIfTI, no convierte canales, no normaliza ni segmenta: esas decisiones pertenecen al proyecto. Valida las entradas para evitar resultados silenciosamente incorrectos.
+
+```python
+import numpy as np
+from numpy.typing import NDArray
+
+
+def summarize_roi(
+    image: NDArray[np.generic],
+    mask: NDArray[np.bool_],
+) -> dict[str, float]:
+    """Resume una ROI 2D en la escala de entrada; rechaza ROI inválidas."""
+    image = np.asarray(image)
+    mask = np.asarray(mask)
+    if image.ndim != 2 or image.shape != mask.shape:
+        raise ValueError("Se requieren imagen 2D y máscara de igual forma.")
+    if mask.dtype != np.bool_:
+        raise TypeError("La máscara debe ser booleana.")
+    if image.dtype.kind not in "uif":
+        raise TypeError("La imagen debe contener intensidades reales.")
+    values = image[mask].astype(np.float64)
+    if values.size == 0 or not np.isfinite(values).all():
+        raise ValueError("La ROI está vacía o contiene valores no finitos.")
+    q25, median, q75 = np.quantile(values, [0.25, 0.50, 0.75])
+    return {
+        "intensity_mean": float(values.mean()),
+        "intensity_std": float(values.std(ddof=0)),
+        "intensity_median": float(median),
+        "intensity_iqr": float(q75 - q25),
+    }
+```
+
+El equipo implementará el recorrido del manifiesto, la lectura por formato, las características específicas y el ensamblaje de filas. Las funciones de extracción no reciben `target`. Las etiquetas se incorporan al final mediante claves y una unión validada. Ordene por `sample_id` antes de exportar; en CSV use UTF-8, punto decimal, campo vacío para ausencia y `index=False`.
+
+## Auditar la tabla y decidir — 30 minutos
+
+Antes de declararla lista para modelado, verifique desde código:
+
+1. Claves únicas, correspondencia con el manifiesto y trazabilidad de todas las exclusiones. Los conteos deben reconciliarse con la unidad elegida.
+2. Predictores numéricos previstos, ausencia de infinitos y reporte de faltantes por variable y partición. Toda ausencia tiene una política; no se imputa automáticamente con cero.
+3. Ausencia de `target`, identificadores y variables no disponibles en predicción dentro de la lista de predictores.
+4. Ningún sujeto o grupo de duplicados cruza las particiones. Cuando falte identidad suficiente, declare la limitación; un hash diferente no prueba independencia.
+5. Variables constantes, casi constantes y redundantes **en entrenamiento**. Documente el criterio de casi constante antes de utilizarlo.
+6. Distribuciones y asociaciones pertinentes a la tarea; una matriz de correlación no reemplaza la exploración visual ni el análisis biomédico.
+7. Mismos nombres, definiciones y unidades para las características de todas las filas comparables.
+
+No elimine automáticamente variables por un umbral de correlación arbitrario. Proponga conservar, revisar o descartar cada candidato y justifique por objetivo, disponibilidad y redundancia. Cualquier selección basada en $y$ deberá repetirse dentro de la validación del modelo; el EDA de desarrollo no permite estimar el desempeño final.
+
+Entregue una tabla de decisiones con las columnas: `hallazgo`, `evidencia`, `decisión`, `efecto_esperado`, `limitación`. Incluya al menos cinco decisiones respaldadas por resultados reales, entre ellas una sobre calidad, una sobre escala/ROI, una sobre características y una sobre evaluación futura.
+
+## Reproducir y preparar la defensa — 45 minutos
+
+Amplíe la estructura del laboratorio base, sin reiniciar un repositorio o paquete que ya funcione:
+
+| Ubicación | Responsabilidad |
+|---|---|
+| `data/raw/` | Fuentes del proyecto sin modificación |
+| `data/common/` | Versión fija del banco compartido |
+| `data/metadata/` | Manifiestos, particiones y diccionario |
+| `data/processed/` | Tabla y derivados regenerables |
+| `config/` | Lectura, procesamiento, extracción y entrada al modelo |
+| `src/python_scientific/` | Funciones del paquete base; conservar su nombre real si es diferente |
+| `scripts/reproduce.py` | Coordina carga, auditoría, extracción y generación de productos |
+| `tests/` | Pruebas con imágenes pequeñas de resultado conocido y contratos de datos |
+| `figures/`, `results/` | Figuras, tablas de resumen, comparación común y trazabilidad |
+| `reports/`, `slides/`, `build/` | Fuentes LaTeX/Beamer y PDF compilados |
+
+En el entorno existente, declare únicamente las dependencias necesarias. Esta propuesta incorpora tablas y herramientas de imágenes; si alguna ya existe en `pyproject.toml`, revise la declaración antes de cambiarla:
+
+```bash
+uv add pandas scikit-image pillow
+```
+
+Agregue `pydicom`, `nibabel` o `PyWavelets` solo cuando el formato o la técnica del proyecto lo requieran. Mantenga Python 3.13 y las herramientas de calidad del proyecto base. Comparta el bloqueo actualizado y registre las nuevas dependencias. `latexmk` y la distribución TeX son herramientas externas a `uv.lock`.
+
+### Pruebas mínimas relevantes
+
+| Riesgo | Comprobación exigida |
+|---|---|
+| Estadística incorrecta | Arreglo conocido; imagen constante: desviación e IQR iguales a cero |
+| ROI inválida | Máscara vacía, forma incompatible, tipo incorrecto y no finitos |
+| Escala incorrecta | Área de máscara conocida; error o ausencia explícita si falta espaciamiento |
+| Correspondencia perdida | ID duplicado, etiqueta sin imagen y unión que multiplica filas |
+| Fuga entre conjuntos | Sujeto o duplicado compartido entre particiones |
+| Extracción no reproducible | Dos ejecuciones conservan claves y resultados dentro de tolerancia |
+
+Para `[0, 1, 2, 3]`, con la convención del ejemplo: media y mediana 1.5, desviación $\sqrt{1.25}$ e IQR 1.5. Utilice casos pequeños conocidos para verificar los cálculos; las imágenes sintéticas de prueba no reemplazan los datos del proyecto.
+
+### Secuencia pública de reconstrucción
+
+Desde la raíz del proyecto, en una copia sin `.venv`, ejecute las mismas órdenes en Linux o PowerShell:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+```
+
+El script crea las carpetas de salida faltantes y produce la tabla, el diccionario generado desde su especificación, gráficos, resumen numérico y tablas `.tex` que consumen los documentos. No se transcriben resultados a mano. La compilación conserva las condiciones del laboratorio base: recursos locales y sin `-shell-escape`.
+
+Registre versiones de Python, paquetes, `uv`, herramientas TeX, configuración, semilla, versión del banco y hashes de fuentes. El README debe explicar cómo obtener los datos cuando su tamaño o permisos impiden adjuntarlos. Para la reproducción externa, el computador evaluador debe tener acceso autorizado a los datos y las herramientas antes de iniciar.
+
+Ejecute dos veces. Compare `features.csv` ordenado y sus valores; marcas de tiempo o información de plataforma pueden variar y se registran por separado. El resultado no debe duplicar filas ni alterar originales.
+
+# Entrega y criterios de aceptación
+
+Entregue `equipo_XX_psim_eda_imagenes.zip` o el repositorio acordado, sin `.venv`, cachés ni datos restringidos.
+
+| Evidencia | Contenido mínimo verificable |
+|---|---|
+| `features.csv` | Tabla completa, trazable y con unidad de fila definida |
+| `feature_dictionary.csv` | Todas las columnas, papeles, unidades, métodos y ausencias |
+| `manifest.csv`, `splits.csv` | Fuentes, calidad y asignación por unidades independientes |
+| `common_features.csv` | Resultados sobre la misma versión del banco común |
+| Comparación entre equipos | IDs comparados, diferencias, tolerancias y correcciones |
+| Configuración de procesamiento y modelo | Parámetros y lista explícita de predictores |
+| Código, pruebas y entorno | Paquete, script, `pyproject.toml`, `uv.lock` y versión de Python |
+| Informe y presentación | Fuentes `.tex` y PDF; figuras/tablas calculadas |
+| README y bitácora | Comandos, contribuciones y resultado de reproducción externa |
+
+La tabla se considera **preparada para la etapa de modelado** cuando sus entradas están definidas, cada fila es rastreable, las exclusiones son explícitas y existe una política reproducible para faltantes y transformaciones. Los ajustes estadísticos dependientes de la muestra quedan dentro del futuro flujo de entrenamiento; no se entregan datos globalmente escalados o imputados usando la prueba.
+
+Si falta una referencia indispensable, la entrega debe identificarla como pendiente y explicar su efecto. Una tabla sin etiquetas no está lista para clasificación supervisada aunque sus predictores sean válidos.
+
+## Estructura del informe
+
+1. Problema, objetivos, unidad de análisis y tarea.
+2. Datos del proyecto y banco común: procedencia, calidad y partición.
+3. Métodos: lectura, escalas, regiones, EDA y extracción.
+4. Resultados: figuras, comparación de procesamiento y resumen de la tabla.
+5. Decisiones para el modelado y límites de interpretación.
+6. Reproducibilidad, pruebas y contribuciones.
+
+Incluya como mínimo una galería, un resumen de calidad, gráficos pertinentes a la tarea, una comparación de procesamiento y una vista resumida de la tabla. Cada figura debe apoyar una afirmación o decisión. Los gráficos llevarán nombres de variables, unidades cuando existan, tamaño de muestra y procedencia.
+
+# Sustentación y preguntas orientadoras
+
+Se conserva el formato de la guía base: tres integrantes, un expositor que puede ser seleccionado al inicio y dominio del proyecto completo por todos. El expositor presenta y responde durante la evaluación; los demás no completan sus respuestas ni operan el computador.
+
+| Diapositiva | Evidencia principal | Tiempo orientativo |
+|---|---|---|
+| 1. Portada y problema | Objetivo, unidad y salida requerida | 1 min |
+| 2. Datos y calidad | Cohorte, banco compartido, exclusiones y partición | 2 min |
+| 3. Hallazgos del EDA | Resultados que orientan la tarea y el procesamiento | 3 min |
+| 4. Características y tabla | Justificación de predictores, trazabilidad y esquema | 3 min |
+| 5. Reproducción y límites | Evidencia de ejecución y siguiente decisión de modelado | 3 min |
+
+Prepare respuestas a estas preguntas:
+
+1. ¿Qué representa una fila y por qué coincide con el objetivo del proyecto?
+2. ¿Cuántas unidades independientes tienen y por qué ese número difiere del número de imágenes o píxeles?
+3. ¿Qué verificaron con las mismas imágenes que usaron los otros equipos?
+4. ¿Qué diferencia entre implementaciones encontraron y cómo identificaron su causa?
+5. ¿Qué cambia en el EDA cuando la salida es continua, categórica o espacial?
+6. ¿Qué información puede perderse al normalizar, convertir a gris o redimensionar?
+7. ¿Qué descriptor responde a una hipótesis biomédica y qué evidencia limita esa interpretación?
+8. ¿Cómo cambia una medida de textura al modificar la cuantización o la escala espacial?
+9. ¿Qué unidad puede reportarse cuando falta espaciamiento y cuál sería injustificable?
+10. ¿Qué variable podría introducir fuga de información y por qué no estará disponible en un caso nuevo?
+11. ¿Cómo demostrarían que una máscara de referencia no entra indebidamente en los predictores?
+12. ¿Qué decisión cambia después de ver los datos y qué conjunto se utilizó para tomarla?
+13. ¿Qué ocurre si aparecen una ROI vacía, un ID duplicado o una etiqueta sin imagen?
+14. ¿Qué falta para que la tabla permita entrenar y evaluar el modelo previsto?
+15. ¿Qué comando reconstruye los resultados y qué prueba detectaría una alteración importante?
+
+Durante la verificación, el docente puede solicitar rastrear una fila hasta su imagen, regenerar una salida, mostrar el rechazo de una ROI inválida o explicar una diferencia con otro equipo.
+
+# Rúbrica de evaluación — seis criterios
+
+La calificación máxima es 100 puntos. Se asigna por criterio un nivel de 0 a 4. Los factores son: **4 → 100 %; 3 → 80 %; 2 → 60 %; 1 → 30 %; 0 → 0 %** del peso. Se adopta la orientación de la guía base: 75 % de evidencia observada en sustentación/demostración y 25 % en artefactos, distribuidos en la tabla.
+
+| Criterio | Peso (observado / artefacto) | 4 · Sólido | 3 · Adecuado | 2 · Básico | 1 · Insuficiente / 0 · Ausente |
+|---|---|---|---|---|---|
+| Alineación problema–EDA–modelado | 15 (15/0) | Conecta objetivos, unidad, salida y evaluación con decisiones justificadas | Conexión correcta con una omisión menor | Describe la tarea, pero el EDA responde solo parcialmente | Incoherencia entre objetivo y datos / no demuestra |
+| Calidad, procedencia y datos comunes | 15 (10/5) | Audita fuentes y sesgos; procesa el banco completo y resuelve diferencias | Auditoría y cotejo válidos con un detalle pendiente | Inventario parcial o comparación poco explicada | Ignora calidad o usa otro banco / sin evidencia |
+| Razonamiento exploratorio y procesamiento | 20 (15/5) | Usa análisis propios de la tarea, escalas correctas y comparación sustentada | Análisis pertinente con limitación menor | Figuras correctas con interpretación superficial | Transformaciones arbitrarias o inferencias inválidas / ausente |
+| Tabla y prevención de fuga de información | 25 (20/5) | Tabla trazable, diccionario completo, predictores disponibles y partición válida | Estructura utilizable con omisión menor que no compromete separación | Tabla parcial o decisiones de entrada poco claras | Mezcla objetivo/ID con predictores, cruza sujetos o no entrega tabla |
+| Reproducibilidad y pruebas | 15 (10/5) | Reconstruye entorno y productos; pruebas detectan fallos pertinentes | Reconstruye con corrección menor documentada | Flujo parcialmente automatizado | Requiere rutas personales, `.venv` transferida o resultados manuales / no ejecuta |
+| Defensa y comunicación científica | 10 (5/5) | Explica evidencia y límites; fuentes LaTeX/Beamer compilan y cumplen tiempo | Comunicación clara con detalle menor | Defensa descriptiva, documentos densos o trazabilidad débil | No relaciona código y resultados o faltan fuentes / ausente |
+| **Total** | **100 (75/25)** | | | | |
+
+Para aplicar la distribución, el docente puede asignar niveles separados a la evidencia observada y al artefacto de cada criterio y sumar sus contribuciones. No se puntúa por cantidad de gráficos o predictores. Las conclusiones negativas bien sustentadas —por ejemplo, una característica que no aporta— son resultados válidos.
+
+La fuga entre entrenamiento y prueba, la ausencia de una tabla trazable o el uso de etiquetas inventadas impiden declarar el conjunto listo para modelado. Se conserva el criterio de la guía base sobre reconstrucción: si no es posible sincronizar con `--locked` o se requiere transferir `.venv`, la evidencia de reconstrucción recibe cero y la nota queda limitada a 70/100 hasta corregir en el plazo docente.
+
+<!-- # Fuentes y correspondencia con PSIM
+
+- **Guía de reproducibilidad:** [Python científico legible y reproducible](https://pablocaicedor.github.io/laboratorios/PythonLanguage/Laboratorio_00_Python_Cientifico_Reproducible_Guia_Estudiante.html), versión web consultada el 23 de septiembre de 2026. Aporta las condiciones de entorno, calidad, comunicación y sustentación.
+- **`lect004_Intro_ImgProc.qmd`:** imagen digital, muestreo, cuantización, resolución y relaciones entre píxeles. Fundamenta la auditoría de representación y escala.
+- **`Lect005_Imag_Proc_001.qmd`:** transformaciones de intensidad, vecindarios, filtros, gradientes e histogramas. Fundamenta el EDA de intensidad y la comparación de procesamiento.
+- **`Lect006_Imag_Proc_002.qmd`:** umbralización, morfología y Fourier 2D. Fundamenta la exploración de regiones y frecuencias.
+- **`Lect007_Imag_Proc_003.qmd`:** filtros en frecuencia. Apoya el análisis de bandas cuando corresponde al objetivo.
+- **`Lect008_Wavelet.qmd`:** fundamentos multirresolución. Su extensión a imágenes exige formulación 2D explícita.
+
+Los contratos, la organización del banco común, el cronograma de seis horas y la rúbrica de seis criterios son propuestas específicas de este laboratorio. La sesión supone datos y herramientas disponibles; descargas extensas, nuevas anotaciones o instalación inicial requieren preparación previa. -->

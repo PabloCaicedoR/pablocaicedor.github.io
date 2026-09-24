@@ -1,0 +1,3513 @@
+---
+title: "Del sEMG al tablero clínico"
+subtitle: "Tutorial: dashboard interactivo del dataset CVES (ictus) con Streamlit, Plotly y uv"
+author: "Pablo Eduardo Caicedo Rodríguez"
+date: 2026-09-23
+lang: es
+description: "Señales Bioeléctricas y Visualización Interactiva (SBVI) · Capítulo 2: Electromiografía · Escuela Colombiana de Ingeniería Julio Garavito"
+format:
+  html:
+    theme: ../../recursos/estilos/bioforja-laboratorios.scss
+    css: estilo.css
+    toc: true
+    toc-location: left
+    toc-depth: 2
+    toc-title: "Contenido"
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    highlight-style: github
+    embed-resources: true
+    mermaid:
+      theme: neutral
+---
+
+```{=html}
+<figure class="hero-encabezado">
+<pre aria-label="Encabezado del registro s0164-06033004"><span class="l0">s0164-06033004 8 1000 31479330 09:01:42 30/03/2006</span>
+s0164-06033004.dat 16 1(0)/uV 16 0 -370 64304 0 ecg_0
+s0164-06033004.dat 16 1(0)/uV 16 0 -156 42075 0 ecg_1
+s0164-06033004.dat 16 1(0)/uV 16 0 2257 26341 0 sensor_0
+s0164-06033004.dat 16 1(0)/uV 16 0 2223 14970 0 sensor_1
+<span class="emg">s0164-06033004.dat 16 1(0)/uV 16 0 3 871 0 emg_0</span>
+<span class="emg">s0164-06033004.dat 16 1(0)/uV 16 0 4 50859 0 emg_1</span>
+s0164-06033004.dat 16 1(0)/uV 16 0 -270 62612 0 accelerometer_0
+s0164-06033004.dat 16 1(0)/uV 16 0 -235 50267 0 accelerometer_1</pre>
+<figcaption>Encabezado real de un registro de 24 h del dataset CVES: ocho canales a 1000 Hz, 31 479 330 muestras (8,7 h) a partir de las 09:01:42 del 30/03/2006. Las dos líneas resaltadas son los canales de sEMG que explorará el tablero.</figcaption>
+</figure>
+```
+
+::: {.ficha}
+**Asignatura:** Señales Bioeléctricas y Visualización Interactiva (SBVI) · **Semana sugerida:** 8, visualización interactiva de señales electromiográficas · **Resultados de aprendizaje:** RA2, RA3, RA4 y RA5 · **Prerrequisito:** Sistemas y Señales Biomédicos (SYSB) · **Datos:** *Cerebral Vasoregulation in Elderly with Stroke* (CVES) v1.0.0, PhysioNet · **Material de partida:** presentación *BioForja – Principios fisiológicos del ictus y relación con sEMG* · **Condiciones de trabajo:** guía *Laboratorio 0 – Python científico legible y reproducible*
+:::
+
+# Qué vamos a construir
+
+Este tutorial convierte el razonamiento de la presentación sobre ictus y sEMG en un **proyecto científico reproducible** que explora datos reales de personas mayores con y sin ictus isquémico: el dataset CVES de PhysioNet. El producto tiene cuatro caras que comparten el mismo código:
+
+1. un **tablero interactivo** (Streamlit + Plotly) para elegir participante, registro y segmento, revisar la calidad de cada canal y explorar amplitud, espectro, actividad y coactivación;
+2. un **script único de reproducción** que descarga una sola vez los segmentos de referencia, verifica su huella SHA-256 y regenera datos derivados, un resumen JSON, una tabla LaTeX y una figura;
+3. un **informe LaTeX** y una **presentación Beamer** que consumen esos productos sin copiar números a mano;
+4. un conjunto de **pruebas automáticas** que corren sin red sobre una réplica sintética del dataset.
+
+Todo se rige por las condiciones de la guía del *Laboratorio 0 – Python científico legible y reproducible*: uv sin permisos de administrador, Python 3.13 fijado, dependencias bloqueadas, estructura semestral de carpetas, rutas con `pathlib`, datos originales intocables, Ruff, pytest, `latexmk` y ensayo de reconstrucción en un equipo diferente.
+
+::: {.callout-note title="Relación con el microcurrículo"}
+El tablero cubre la semana 8 (señal cruda, filtrada y envolvente; análisis multicanal; espectrogramas; sincronización muscular), usa un repositorio abierto como exige RA3 y deja lista la base del proyecto integrador: el pipeline *carga → preprocesamiento → análisis exploratorio → visualización* de la metodología ABP del curso.
+:::
+
+# Condiciones heredadas del Laboratorio 0
+
+La guía del Laboratorio 0 define qué significa, en este curso, que un proyecto sea reproducible: otra persona debe poder identificar qué entra, qué transformaciones se aplican, qué sale y con qué versiones se ejecutó, y reconstruirlo en otro computador sin copiar el entorno ni editar rutas. La tabla muestra cómo se cumple cada condición en este proyecto.
+
+| Condición del Laboratorio 0 | Cómo se cumple aquí |
+|---|---|
+| uv y Python administrado, sin permisos de administrador | `uv python install 3.13`; `.python-version` fija 3.13 |
+| Dependencias con rangos y bloqueo exacto | `uv add` con cotas superiores; `uv.lock` versionado; `uv sync --locked` |
+| No se entrega `.venv` ni se usa `pip install` | `.gitignore` y protocolo de entrega |
+| Estructura semestral de carpetas | `data/raw`, `data/processed`, `src`, `scripts`, `tests`, `figures`, `results`, `reports`, `slides`, `build` |
+| Datos originales nunca sobrescritos | Archivos descargados se escriben en modo exclusivo; los segmentos se verifican con SHA-256 |
+| Resultados eliminables y regenerables | `uv run python scripts/reproduce.py`, idempotente |
+| Aleatoriedad con semilla explícita | El análisis no usa azar; las pruebas usan `SEMILLA = 2026` |
+| Rutas con `pathlib`, nunca absolutas | `configuracion.py` resuelve la raíz desde el archivo; los resultados guardan rutas relativas |
+| Figuras con ejes, unidades y leyenda | `figuras.py` (Matplotlib) y `graficas.py` (Plotly); prueba estructural de la figura |
+| Funciones pequeñas, tipadas, documentadas y con validación | Módulos de `src/ictus_semg/`; errores informativos con `ValueError` |
+| Pruebas y análisis estático | `uv run pytest`, `uv run ruff check .`, `uv run ruff format --check .` |
+| Informe y presentación desde fuentes `.tex` con `latexmk` | `reports/informe.tex` y `slides/presentacion.tex` (máximo cinco diapositivas) |
+| README como protocolo | Comandos exactos, ubicación de productos, supuestos y limitaciones |
+| Ensayo en un equipo diferente y manifiesto | Protocolo cronometrado y `scripts/delivery_manifest.py` |
+
+::: {.callout-important title="Diferencia con el Laboratorio 0"}
+En el Laboratorio 0 los datos son sintéticos y se generan con semilla. Aquí los datos son **reales y remotos**: la reproducibilidad exige además registrar la fuente, el rango exacto de bytes y la huella SHA-256 de lo descargado, y detener el análisis si el original cambia. La primera ejecución necesita internet; las siguientes, no.
+:::
+
+# Conocer el dataset antes de programar
+
+Un tablero es tan bueno como la comprensión de los datos que muestra. Antes de escribir una línea de código conviene saber qué contiene CVES, cómo está organizado y, sobre todo, **qué no documenta**.
+
+## El estudio
+
+CVES reúne datos multimodales de un estudio transversal sobre los efectos del ictus isquémico en la regulación del flujo sanguíneo cerebral. Según la página del dataset, compara 60 personas con ictus y 60 controles, con registros de varios días: Doppler transcraneal, presión arterial de 24 h, ondas de alta resolución durante tareas de movimiento, monitorización de 24 h de ECG, EMG y acelerometría, y marcha. El estudio no fue diseñado para analizar sEMG; eso es precisamente lo que hace interesante el ejercicio: trabajar con datos reales tal como vienen.
+
+| Carpeta en `data/` | Qué contiene | Formato |
+|---|---|---|
+| `24h-electromyography` | ECG, EMG y acelerometría ambulatoria de 24 h con el equipo ME6000, a 1000 Hz, y marcadores de eventos (`.marker`) | WFDB |
+| `sit-stand`, `sit-stand-balance`, `head-up-tilt` | Frecuencia cardíaca, presión, flujo cerebral y fuerza durante pruebas posturales | WFDB |
+| `transcranial-doppler` | Velocidad de flujo en tres arterias cerebrales | WFDB |
+| `walking` | Caminata de 12 minutos | WFDB y CSV |
+| `24h-bp` | Presión arterial ambulatoria | CSV |
+
+La carpeta `24h-electromyography` ocupa unos 98 GB de los más de 100 GB de datos abiertos. Cada registro pesa desde unos pocos kB hasta casi 900 MB. Por eso el tablero **no descarga registros completos**: lee rangos de bytes.
+
+::: {.callout-important title="Licencia y citas obligatorias"}
+Los archivos se distribuyen con la licencia Open Data Commons Attribution v1.0. Todo informe o tablero que use estos datos debe citar la publicación original (Novak et al., 2010, *Stroke*), el dataset (DOI [10.13026/C2DW96](https://doi.org/10.13026/C2DW96)) y la cita estándar de PhysioNet que indica la página del dataset. El tablero muestra la atribución en la pestaña de métricas, y `reproduce.py` la escribe en `results/summary.json`.
+:::
+
+## Anatomía de un encabezado WFDB
+
+Cada registro tiene un archivo de encabezado `.hea` (texto) y un archivo de datos `.dat` (binario). La primera línea del encabezado describe el registro; las siguientes, una señal cada una. Con el ejemplo de la portada:
+
+| Campo | Valor en `s0164-06033004` | Significado |
+|---|---|---|
+| nombre del registro | `s0164-06033004` | Sujeto `S0164`, fecha 06-03-30 y número de archivo |
+| número de señales | `8` | Canales multiplexados en el mismo `.dat` |
+| frecuencia de muestreo | `1000` | Hz |
+| número de muestras | `31479330` | Por canal: 31 479 330 / 1000 Hz ≈ 8,7 h |
+| hora y fecha de inicio | `09:01:42 30/03/2006` | Permite mostrar la hora de reloj |
+| formato | `16` | Entero de 16 bits con signo, little-endian |
+| ganancia(línea base)/unidades | `1(0)/uV` | Físico = (digital − 0) / 1, en µV |
+| resolución, cero del ADC, valor inicial, suma de verificación, tamaño de bloque | `16 0 3 871 0` | Metadatos del conversor y de integridad |
+| descripción | `emg_0` | Nombre del canal |
+
+Con ganancia 1 y línea base 0, el valor digital almacenado **es** el valor en µV. Una consecuencia práctica: los canales de acelerómetro también declaran µV, pero esa unidad es nominal y solo permite comparaciones relativas.
+
+## Los canales cambian de un registro a otro
+
+No todos los registros tienen los mismos canales. Tres encabezados reales ilustran la variedad:
+
+| Registro | Canales |
+|---|---|
+| `s0030-04051907` | `unknown_0` a `unknown_3`, `emg_0`, `emg_1`, `unknown_4` |
+| `s0164-06033004` | `ecg_0`, `ecg_1`, `sensor_0`, `sensor_1`, `emg_0`, `emg_1`, `accelerometer_0`, `accelerometer_1` |
+| `s0183-05042808` | `ecg_0`, `ecg_1`, `emg_0` a `emg_3`, `accelerometer_0` |
+
+La regla de diseño que se deriva es simple: **los canales se identifican por nombre, nunca por posición**, y el tablero debe funcionar con uno, dos o cuatro canales de EMG.
+
+## La información clínica
+
+`subjects.csv` tiene una fila por participante. El tablero usa pocas columnas: `subject_number` (por ejemplo `S0175`), `group` (STROKE o CONTROL), `age`, `gender`, `Stroke Side`, `NIHSS`, `MRS` y `Symptoms`. `Stroke Side` indica el **hemisferio** lesionado: en el archivo, `S0175` tiene `LEFT` y sus síntomas describen hemiparesia derecha. El tablero muestra además un «lado parético inferido» (contralateral al hemisferio), marcado explícitamente como inferencia.
+
+## Lo que el dataset no dice
+
+::: {.callout-warning title="Límites que condicionan toda interpretación"}
+Los metadatos públicos que se pueden leer en el navegador **no indican qué músculo ni qué lado registra cada canal `emg_*`**. El protocolo está en `full-study-protocol.docx` y `day1-day2-protocol.docx`, y los autores advierten que no darán soporte sobre la conversión de los datos. Además, el registro es **ambulatorio**: el minuto 60 de un participante puede ser una caminata y el de otro, una siesta. Por eso el tablero permite etiquetar canales como hipótesis, verifica la calidad antes de medir y presenta las comparaciones entre grupos como exploratorias.
+:::
+
+# Del fenómeno fisiológico a la variable del tablero
+
+Cada panel debe responder una pregunta fisiológica. La tabla conecta las alteraciones motoras tras un ictus, discutidas en la presentación, con lo que se puede medir en CVES y con la condición que tendría que cumplirse para interpretarlo.
+
+| Alteración tras el ictus | Manifestación esperable en sEMG | Métrica en el tablero | ¿Interpretable en CVES? |
+|---|---|---|---|
+| Paresia: menor reclutamiento y menor frecuencia de descarga | Menor amplitud en el lado afectado | RMS, MAV, razón RMS entre canales | Solo si dos canales son músculos homólogos de lados opuestos |
+| Menor actividad en la vida diaria | Menos tiempo con el músculo activo | Porcentaje de tiempo activo | Sí, comparando tramos equivalentes o jornadas completas |
+| Pérdida de la inhibición recíproca | Solapamiento de envolventes agonista-antagonista | Índice de coactivación | Solo si los canales son un par agonista-antagonista |
+| Cambios en fibras y conducción; fatiga | Desplazamiento espectral hacia bajas frecuencias | MNF, MDF y su pendiente | Solo en contracciones sostenidas |
+| Artefactos de registro | Offset, 60 Hz, deriva, saturación | Indicadores de calidad | Sí: es el primer paso obligatorio |
+
+::: {.callout-note title="Una lectura honesta de la tabla"}
+La última columna es parte del aprendizaje. Con datos reales, la pregunta «¿qué puedo afirmar con esto?» es tan importante como la pregunta «¿cómo lo calculo?». El tablero calcula todas las métricas, pero cada pestaña recuerda la condición que las hace interpretables.
+:::
+
+# Arquitectura del proyecto
+
+La decisión de diseño más importante es separar la **lógica científica** de la **orquestación** y de la **presentación**. La lógica vive en `src/ictus_semg/` y se prueba de forma aislada; los scripts de `scripts/` y el tablero `app.py` solo la llaman.
+
+```{mermaid}
+flowchart LR
+    P["PhysioNet<br/>(HTTP Range)"] --> A
+    A["cves.py<br/>encabezados · segmentos"] --> R["data/raw<br/>originales + SHA-256"]
+    R --> C["procesamiento.py<br/>filtros"]
+    C --> D["metricas.py<br/>calidad · RMS · MDF · actividad · CI"]
+    D --> X["reproduccion.py"]
+    X --> O["data/processed · results/<br/>summary.json · summary_table.tex"]
+    X --> F["figures/summary.png"]
+    O --> L["reports/ · slides/<br/>LaTeX y Beamer"]
+    F --> L
+    D --> T["app.py<br/>tablero Streamlit"]
+```
+
+```text
+ictus-semg/
+├── .python-version           # 3.13
+├── .gitignore
+├── README.md                 # protocolo de reconstrucción
+├── pyproject.toml            # rangos de dependencias
+├── uv.lock                   # resolución exacta (lo genera uv)
+├── app.py                    # tablero: único archivo que importa streamlit
+├── .streamlit/config.toml
+├── build/                    # PDF y auxiliares de LaTeX
+├── data/
+│   ├── raw/                  # originales de PhysioNet (+ README.md); no se sobrescriben
+│   └── processed/            # derivados regenerables
+├── figures/                  # summary.png (regenerable)
+├── reports/informe.tex
+├── results/                  # summary.json, summary_table.tex, entorno.txt, manifiesto, contribuciones
+├── scripts/                  # reproduce.py, environment_report.py, inventario_canales.py,
+│                             # cohorte.py, delivery_manifest.py
+├── slides/presentacion.tex
+├── src/ictus_semg/
+│   ├── configuracion.py      # rutas y decisiones metodológicas
+│   ├── cves.py               # acceso al dataset
+│   ├── anotaciones.py        # marcadores WFDB (formato MIT)
+│   ├── canales.py            # validación de la configuración de canales
+│   ├── procesamiento.py      # filtros
+│   ├── metricas.py           # calidad, estadística, espectro, actividad, coactivación
+│   ├── graficas.py           # figuras interactivas (Plotly)
+│   ├── figuras.py            # figura estática del informe (Matplotlib)
+│   ├── reproduccion.py       # flujo completo de reproducción
+│   └── cohorte.py            # métricas por lotes
+└── tests/                    # réplica sintética de CVES: sin red
+```
+
+| Ruta | Entrada | Transformación | Salida | ¿Regenerable? |
+|---|---|---|---|---|
+| `scripts/reproduce.py` | configuración y PhysioNet | orquesta el flujo | derivados, JSON, tabla, figura | sí |
+| `data/raw/` | PhysioNet | ninguna (copia verificada) | originales con SHA-256 | no: es la fuente |
+| `data/processed/` | segmentos originales | filtrado y envolvente | CSV por registro | sí |
+| `results/summary_table.tex` | `summary.json` | formato `booktabs` | tabla del informe | sí |
+| `reports/informe.tex` | tabla y figura | compilación `latexmk` | `build/reports/informe.pdf` | el PDF sí |
+| `app.py` | fuente de datos y controles | las mismas funciones de `src/` | vista interactiva | no guarda estado |
+
+# Entorno reproducible sin permisos de administrador
+
+Esta sección sigue la preparación del Laboratorio 0. Si su equipo ya la completó (uv, Python 3.13, `pdflatex`, `latexmk` y `beamer` disponibles), puede pasar directamente a «Crear el proyecto». Los diagnósticos de errores frecuentes (uv no reconocido, bloqueo desactualizado, MiKTeX privado, Strawberry Perl portable) están en la guía del Laboratorio 0.
+
+## Instalar uv y Python 3.13
+
+::: {.panel-tabset}
+
+### Windows (PowerShell) {.unnumbered}
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# cierre y abra PowerShell
+uv --version
+uv python install 3.13
+uv run --python 3.13 python -c "import sys; print(sys.version); print(sys.executable)"
+```
+
+### Linux {.unnumbered}
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"
+uv --version
+uv python install 3.13
+uv run --python 3.13 python -c "import sys; print(sys.version); print(sys.executable)"
+```
+
+:::
+
+Fijar 3.13 da un objetivo estable para todo el semestre; `uv.lock` aporta el segundo nivel de control al fijar las dependencias resueltas.
+
+## Crear el proyecto
+
+::: {.panel-tabset}
+
+### Windows (PowerShell) {.unnumbered}
+
+```powershell
+uv init --package --name ictus-semg --python 3.13 --vcs none ictus-semg
+Set-Location ictus-semg
+$carpetas = @("build/reports", "build/slides", "data/raw", "data/processed",
+              "figures", "reports", "results", "scripts", "slides", "tests", ".streamlit")
+$carpetas | ForEach-Object { New-Item -ItemType Directory -Path $_ -Force | Out-Null }
+New-Item -ItemType File -Path ".gitignore" -Force | Out-Null
+```
+
+### Linux {.unnumbered}
+
+```bash
+uv init --package --name ictus-semg --python 3.13 --vcs none ictus-semg
+cd ictus-semg
+mkdir -p build/{reports,slides} data/{raw,processed} figures reports results scripts slides tests .streamlit
+touch .gitignore
+```
+
+:::
+
+`uv init --package` crea los metadatos, `.python-version` y la distribución `src/`. Elimine el bloque `[project.scripts]` de `pyproject.toml`: el proyecto se ejecuta con scripts y con Streamlit, no como comando de consola.
+
+## Declarar dependencias con rangos
+
+```bash
+uv add "matplotlib>=3.9,<4" "numpy>=2,<3" "pandas>=2.2,<4" "plotly>=6,<7" "scipy>=1.14,<2" "streamlit>=1.50,<2"
+uv add --dev "pytest>=8.3,<10" "ruff>=0.12,<1" "wfdb>=4.1,<5"
+uv sync --locked
+```
+
+Cada dependencia tiene una razón: Matplotlib genera la figura estática del informe, Plotly y Streamlit el tablero, `wfdb` (solo en desarrollo) valida el lector propio en las pruebas. No se agrega nada «por si acaso». El `pyproject.toml` resultante:
+
+```{.toml filename="pyproject.toml"}
+[project]
+name = "ictus-semg"
+version = "0.3.0"
+description = "Tablero de sEMG del dataset CVES (PhysioNet) para SBVI: lectura WFDB, procesamiento reproducible y visualización"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "matplotlib>=3.9,<4",
+    "numpy>=2,<3",
+    "pandas>=2.2,<4",
+    "plotly>=6,<7",
+    "scipy>=1.14,<2",
+    "streamlit>=1.50,<2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3,<10",
+    "ruff>=0.12,<1",
+    "wfdb>=4.1,<5",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+```
+
+::: {.callout-warning title="Rango de Python"}
+`requires-python = ">=3.13,<3.14"` acepta cualquier corrección de la línea 3.13. Un rango como `">=3.13,<3.13"` es vacío y hace fallar la resolución.
+:::
+
+## Verificar el entorno
+
+```bash
+uv run python scripts/environment_report.py    # escribe results/entorno.txt
+uv tree
+```
+
+```{.python filename="scripts/environment_report.py"}
+"""Escribe results/entorno.txt con la versión de Python, la plataforma y las bibliotecas.
+
+    uv run python scripts/environment_report.py
+"""
+
+import platform
+import sys
+from importlib.metadata import version
+
+from ictus_semg.configuracion import DIR_RESULTADOS, RAIZ_PROYECTO
+
+PAQUETES = ("numpy", "scipy", "pandas", "matplotlib", "plotly", "streamlit")
+
+
+def main() -> None:
+    """Genera el reporte a partir del entorno activo (no se escribe a mano)."""
+    lineas = [f"Python: {sys.version}", f"Plataforma: {platform.platform()}"]
+    lineas += [f"{paquete}: {version(paquete)}" for paquete in PAQUETES]
+    ruta = DIR_RESULTADOS / "entorno.txt"
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    print("\n".join(lineas))
+    print(f"→ {ruta.relative_to(RAIZ_PROYECTO).as_posix()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Qué se versiona y qué no
+
+```{.gitignore filename=".gitignore"}
+# Entorno y cachés (se reconstruyen con uv sync --locked)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Derivados regenerables con scripts/reproduce.py
+data/processed/*
+!data/processed/.gitkeep
+
+# Auxiliares de LaTeX (los PDF finales en build/ sí se entregan)
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+```
+
+Se versionan `pyproject.toml`, `uv.lock`, `.python-version`, el código, las fuentes `.tex`, los originales de `data/raw` (pequeños y redistribuibles bajo ODC-By con atribución) y los PDF finales. No se versionan `.venv`, las cachés, los derivados de `data/processed` ni los auxiliares de LaTeX.
+
+```{.toml filename=".streamlit/config.toml"}
+[theme]
+base = "light"
+primaryColor = "#1F4E79"
+font = "sans serif"
+
+[server]
+headless = true
+runOnSave = true
+```
+
+# Módulo 0 · Configuración: rutas y decisiones en un solo lugar
+
+El Laboratorio 0 pide dos cosas que se resuelven en el mismo archivo: rutas construidas con `pathlib` a partir de la ubicación del código (no del directorio actual) y constantes visibles para cada decisión que controla el análisis. `configuracion.py` concentra ambas; cambiar un valor aquí cambia los resultados y debe declararse en el informe.
+
+```{.python filename="src/ictus_semg/configuracion.py"}
+"""Rutas y decisiones del proyecto en un solo lugar.
+
+Las rutas se resuelven a partir de este archivo, no del directorio actual, de
+modo que los scripts funcionan desde cualquier ubicación. Las constantes son
+decisiones metodológicas: cambiarlas cambia los resultados y debe declararse
+en el informe.
+"""
+
+from pathlib import Path
+
+# ----------------------------------------------------------------- rutas ----
+# src/ictus_semg/configuracion.py -> parents[0]=ictus_semg, [1]=src, [2]=raíz
+RAIZ_PROYECTO = Path(__file__).resolve().parents[2]
+DIR_DATOS_CRUDOS = RAIZ_PROYECTO / "data" / "raw"
+DIR_CVES = DIR_DATOS_CRUDOS / "cves"
+DIR_SEGMENTOS = DIR_CVES / "segmentos"
+DIR_DATOS_PROCESADOS = RAIZ_PROYECTO / "data" / "processed"
+DIR_RESULTADOS = RAIZ_PROYECTO / "results"
+DIR_FIGURAS = RAIZ_PROYECTO / "figures"
+
+# ---------------------------------------------------------------- dataset ---
+URL_CVES = "https://physionet.org/files/cves/1.0.0/"
+CARPETA_EMG = "data/24h-electromyography"
+CANALES_REQUERIDOS = frozenset({"emg_0", "emg_1"})
+
+# ---------------------------------------------------------- procesamiento ---
+BANDA_SEMG_HZ = (20.0, 450.0)
+ORDEN_FILTRO = 4
+FRECUENCIA_RED_HZ = 60.0  # CVES se registró en Boston (EE. UU.)
+FACTOR_CALIDAD_NOTCH = 30.0
+ARMONICOS_RED = 3
+CORTE_ENVOLVENTE_HZ = 8.0
+VENTANA_RMS_S = 0.2
+
+# --------------------------------------------------------------- métricas ---
+K_UMBRAL_ACTIVACION = 3.0
+DURACION_MIN_ACTIVACION_S = 0.1
+VENTANA_REPOSO_S = 1.0
+VENTANA_ESPECTRAL_S = 1.0
+FACTOR_ENERGIA_VENTANA = 4.0
+UMBRAL_CALIDAD_ESPECTRAL = 0.8
+
+# ----------------------------------------------------------- reproducción ---
+# Registro -> grupo según subjects.csv. S0175: STROKE, hemisferio izquierdo.
+REGISTROS_REFERENCIA = (
+    ("s0175-05030325", "STROKE"),
+    ("s0164-06033004", "CONTROL"),
+)
+INICIO_REFERENCIA_S = 3600.0
+DURACION_REFERENCIA_S = 60.0
+```
+
+::: {.callout-note title="Registros de referencia"}
+`S0175` pertenece al grupo STROKE en `subjects.csv` (hemisferio izquierdo, hemiparesia derecha) y `S0164` al grupo CONTROL. El encabezado de `s0164-06033004` fue verificado para este tutorial; el de `s0175-05030325` no. Si un registro no tuviera canales `emg_*`, `reproduce.py` se detiene con un mensaje que indica cambiarlo aquí; `scripts/inventario_canales.py` ayuda a elegir.
+:::
+
+# Módulo 1 · Acceso a CVES por rangos de bytes
+
+En el formato 16, las muestras de todos los canales se guardan **multiplexadas**: primero la muestra 0 de cada canal, luego la muestra 1 de cada canal, y así sucesivamente. Cada «trama» ocupa exactamente `2 × número de canales` bytes, así que la posición de cualquier instante se calcula con una multiplicación. Eso permite pedir a PhysioNet solo el tramo necesario con una cabecera HTTP `Range`.
+
+```{=html}
+<figure class="diagrama">
+<svg viewBox="0 0 720 190" role="img" aria-labelledby="titulo-rango">
+<title id="titulo-rango">Lectura por rango de un registro WFDB formato 16 multiplexado</title>
+<style>.t{font:13px "IBM Plex Sans",sans-serif;fill:#4A5A66} .c{font:11px "IBM Plex Sans",sans-serif;fill:#4A5A66;text-anchor:middle} .m{font:12px "IBM Plex Mono",monospace;fill:#1C2B36}</style>
+<text x="20" y="22" class="t">Archivo .dat: una trama por instante; cada canal ocupa 2 bytes (entero con signo, little-endian)</text>
+<rect x="20" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="31" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="42" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="53" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="64" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="75" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="86" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="97" y="58" width="10" height="26" fill="#EEF1F4"/><text x="64.0" y="100" class="c">trama 0</text><rect x="116" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="127" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="138" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="149" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="160" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="171" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="182" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="193" y="58" width="10" height="26" fill="#EEF1F4"/><text x="160.0" y="100" class="c">trama 1</text><text x="224" y="76" class="t">…</text><rect x="246" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="257" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="268" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="279" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="290" y="58" width="10" height="26" fill="#1F4E79"/><rect x="301" y="58" width="10" height="26" fill="#1F4E79"/><rect x="312" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="323" y="58" width="10" height="26" fill="#C9D6E2"/><text x="290.0" y="100" class="c">trama 60 000</text><rect x="342" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="353" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="364" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="375" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="386" y="58" width="10" height="26" fill="#1F4E79"/><rect x="397" y="58" width="10" height="26" fill="#1F4E79"/><rect x="408" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="419" y="58" width="10" height="26" fill="#C9D6E2"/><text x="386.0" y="100" class="c">trama 60 001</text><text x="450" y="76" class="t">…</text><rect x="472" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="483" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="494" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="505" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="516" y="58" width="10" height="26" fill="#1F4E79"/><rect x="527" y="58" width="10" height="26" fill="#1F4E79"/><rect x="538" y="58" width="10" height="26" fill="#C9D6E2"/><rect x="549" y="58" width="10" height="26" fill="#C9D6E2"/><text x="516.0" y="100" class="c">trama 119 999</text><rect x="568" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="579" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="590" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="601" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="612" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="623" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="634" y="58" width="10" height="26" fill="#EEF1F4"/><rect x="645" y="58" width="10" height="26" fill="#EEF1F4"/><text x="612.0" y="100" class="c">trama 120 000</text>
+<path d="M246 52 v-6 H560 v6" fill="none" stroke="#C0392B" stroke-width="1.5"/>
+<text x="403.0" y="40" class="c" style="fill:#C0392B">segmento pedido: 60 s desde el minuto 1</text>
+<text x="20" y="132" class="m">byte inicial = 60 000 tramas × 8 canales × 2 bytes = 960 000</text>
+<text x="20" y="152" class="m">bytes a leer = 60 000 × 16 = 960 000   →   Range: bytes=960000-1919999</text>
+<text x="20" y="178" class="t">En azul oscuro, emg_0 y emg_1 del registro s0164-06033004. Solo viaja por la red el tramo marcado.</text>
+</svg>
+</figure>
+```
+
+El módulo aplica la política de datos originales del Laboratorio 0 a una fuente remota:
+
+- todo archivo descargado (`RECORDS`, `subjects.csv`, encabezados, marcadores) se guarda en `data/raw/cves` con escritura exclusiva: si ya existe, se lee y **no se sobrescribe**;
+- cada segmento se guarda tal como llegó (`.bin`) junto a un `.json` con fuente, rango de bytes, muestras y SHA-256; en las ejecuciones siguientes se verifica la huella y, si no coincide, la lectura se detiene;
+- si el servidor responde con el archivo completo (HTTP 200) en lugar del rango (HTTP 206), la lectura se aborta;
+- solo se implementa el formato 16; otro formato produce un error explícito en lugar de datos incorrectos.
+
+```{.python filename="src/ictus_semg/cves.py"}
+"""Acceso al dataset CVES (PhysioNet) sin descargar registros completos.
+
+Los registros de ``data/24h-electromyography`` pesan desde pocos kB hasta casi
+900 MB. En el formato WFDB 16 las muestras están multiplexadas con un tamaño
+fijo por trama, así que cualquier segmento se obtiene pidiendo solo su rango de
+bytes: localmente con ``seek`` o en remoto con una petición HTTP ``Range``.
+
+Política de datos:
+- Todo archivo descargado se guarda en ``data/raw/cves`` y nunca se sobrescribe.
+- Cada segmento se guarda tal como llegó (``.bin``) junto a un ``.json`` con su
+  procedencia y su SHA-256; al reutilizarlo se verifica la huella.
+- Solo se implementa el formato 16; otros formatos producen un error explícito.
+"""
+
+import hashlib
+import io
+import json
+import re
+import urllib.request
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from ictus_semg.configuracion import CARPETA_EMG, DIR_CVES, DIR_SEGMENTOS, URL_CVES
+
+AGENTE = "ictus-semg/0.3 (curso SBVI; lectura parcial por rangos)"
+BYTES_POR_MUESTRA = 2
+LIMITE_ARCHIVO_PEQUENO = 1_000_000
+
+
+# ---------------------------------------------------------------- fuentes ---
+
+
+class FuenteLocal:
+    """Copia local del dataset con la misma estructura de carpetas que PhysioNet."""
+
+    def __init__(self, raiz: Path = DIR_CVES) -> None:
+        self.raiz = Path(raiz)
+
+    def descripcion(self) -> str:
+        return f"local:{self.raiz.name}"
+
+    def leer_texto(self, ruta: str) -> str:
+        return (self.raiz / ruta).read_text(encoding="utf-8", errors="replace")
+
+    def leer_bytes(self, ruta: str, inicio: int, n: int) -> bytes:
+        with open(self.raiz / ruta, "rb") as archivo:
+            archivo.seek(inicio)
+            return archivo.read(n)
+
+    def leer_archivo_pequeno(self, ruta: str, limite: int = LIMITE_ARCHIVO_PEQUENO) -> bytes:
+        archivo = self.raiz / ruta
+        if archivo.stat().st_size > limite:
+            raise ValueError(f"{ruta} supera {limite} bytes; use leer_bytes por rangos.")
+        return archivo.read_bytes()
+
+
+class FuentePhysioNet:
+    """Lectura remota desde physionet.org; los archivos pequeños se guardan en ``data/raw``."""
+
+    def __init__(self, url_base: str = URL_CVES, espejo: Path = DIR_CVES, timeout_s: float = 60.0) -> None:
+        self.url_base = url_base.rstrip("/") + "/"
+        self.espejo = Path(espejo)
+        self.timeout_s = timeout_s
+
+    def descripcion(self) -> str:
+        return f"physionet:{self.url_base}"
+
+    def _abrir(self, ruta: str, cabeceras: dict[str, str] | None = None):
+        peticion = urllib.request.Request(
+            self.url_base + ruta,
+            headers={"User-Agent": AGENTE, **(cabeceras or {})},
+        )
+        return urllib.request.urlopen(peticion, timeout=self.timeout_s)
+
+    def leer_archivo_pequeno(self, ruta: str, limite: int = LIMITE_ARCHIVO_PEQUENO) -> bytes:
+        """Descarga completa de archivos auxiliares; la copia local nunca se sobrescribe."""
+        local = self.espejo / ruta
+        if local.exists():
+            return local.read_bytes()
+        with self._abrir(ruta) as respuesta:
+            datos = respuesta.read(limite + 1)
+        if len(datos) > limite:
+            raise ValueError(f"{ruta} supera {limite} bytes; use leer_bytes por rangos.")
+        _escribir_sin_sobrescribir(local, datos)
+        return datos
+
+    def leer_texto(self, ruta: str) -> str:
+        return self.leer_archivo_pequeno(ruta).decode("utf-8", errors="replace")
+
+    def leer_bytes(self, ruta: str, inicio: int, n: int) -> bytes:
+        with self._abrir(ruta, {"Range": f"bytes={inicio}-{inicio + n - 1}"}) as respuesta:
+            if respuesta.status != 206:
+                # Un 200 significa que el servidor ignoró el rango y enviaría el
+                # archivo completo (cientos de MB): se aborta.
+                raise ConnectionError(f"El servidor no respetó el rango solicitado (HTTP {respuesta.status}).")
+            datos = respuesta.read()
+        if len(datos) != n:
+            raise ConnectionError(f"Se esperaban {n} bytes y llegaron {len(datos)}.")
+        return datos
+
+
+Fuente = FuenteLocal | FuentePhysioNet
+
+
+# ------------------------------------------------------------- encabezado ---
+
+
+@dataclass(frozen=True)
+class Senal:
+    archivo: str
+    formato: str
+    ganancia: float
+    linea_base: int
+    unidades: str
+    nombre: str
+
+
+@dataclass(frozen=True)
+class Encabezado:
+    registro: str
+    n_senales: int
+    fs_hz: float
+    n_muestras: int
+    inicio: datetime | None
+    senales: tuple[Senal, ...]
+
+    @property
+    def duracion_s(self) -> float:
+        return self.n_muestras / self.fs_hz
+
+    @property
+    def nombres(self) -> list[str]:
+        return [s.nombre for s in self.senales]
+
+    def canales(self, prefijo: str) -> list[str]:
+        """Nombres de canal que empiezan por ``prefijo`` (por ejemplo, ``"emg"``)."""
+        return [s.nombre for s in self.senales if s.nombre.lower().startswith(prefijo)]
+
+
+_GANANCIA = re.compile(r"^(?P<g>[-+\d.eE]+)(?:\((?P<b>[-\d]+)\))?(?:/(?P<u>\S+))?$")
+
+
+def parsear_encabezado(texto: str) -> Encabezado:
+    """Interpreta un archivo ``.hea`` de un solo segmento, como los de CVES."""
+    lineas = [ln.strip() for ln in texto.splitlines() if ln.strip() and not ln.startswith("#")]
+    if not lineas:
+        raise ValueError("El encabezado está vacío.")
+    campos = lineas[0].split()
+    registro, n_senales = campos[0], int(campos[1])
+    fs_hz = float(campos[2].split("/")[0])
+    if fs_hz <= 0:
+        raise ValueError("La frecuencia de muestreo del encabezado debe ser positiva.")
+    n_muestras = int(campos[3]) if len(campos) > 3 else 0
+    inicio = None
+    if len(campos) >= 6:
+        inicio = datetime.strptime(f"{campos[5]} {campos[4]}", "%d/%m/%Y %H:%M:%S")
+
+    senales = []
+    for linea in lineas[1 : 1 + n_senales]:
+        partes = linea.split()
+        m = _GANANCIA.match(partes[2]) if len(partes) > 2 else None
+        ganancia = float(m["g"]) if m else 200.0
+        linea_base = int(m["b"]) if m and m["b"] else 0
+        unidades = m["u"] if m and m["u"] else "mV"
+        nombre = " ".join(partes[8:]) if len(partes) > 8 else f"senal_{len(senales)}"
+        senales.append(Senal(partes[0], partes[1], ganancia or 200.0, linea_base, unidades, nombre))
+    return Encabezado(registro, n_senales, fs_hz, n_muestras, inicio, tuple(senales))
+
+
+def leer_encabezado(fuente: Fuente, registro: str) -> Encabezado:
+    """Lee el ``.hea`` de un registro de la carpeta de 24 h."""
+    return parsear_encabezado(fuente.leer_texto(f"{CARPETA_EMG}/{registro}.hea"))
+
+
+# -------------------------------------------------------------- segmentos ---
+
+
+def _sha256(datos: bytes) -> str:
+    return hashlib.sha256(datos).hexdigest()
+
+
+def rango_muestras(enc: Encabezado, inicio_s: float, duracion_s: float) -> tuple[int, int]:
+    """Muestras ``[desde, hasta)`` del segmento, recortadas al registro."""
+    if duracion_s <= 0:
+        raise ValueError("La duración del segmento debe ser positiva.")
+    desde = max(0, int(round(inicio_s * enc.fs_hz)))
+    hasta = min(enc.n_muestras, desde + int(round(duracion_s * enc.fs_hz)))
+    if hasta <= desde:
+        raise ValueError(f"El segmento pedido queda fuera del registro ({enc.duracion_s / 3600:.2f} h).")
+    return desde, hasta
+
+
+def leer_segmento(
+    fuente: Fuente,
+    registro: str,
+    inicio_s: float,
+    duracion_s: float,
+    dir_segmentos: Path | None = DIR_SEGMENTOS,
+) -> tuple[pd.DataFrame, Encabezado]:
+    """Lee ``duracion_s`` segundos desde ``inicio_s`` en unidades físicas.
+
+    Si ``dir_segmentos`` no es ``None``, los bytes recibidos se conservan allí
+    como dato original (``.bin`` + ``.json``) y las lecturas siguientes los
+    reutilizan tras verificar su SHA-256.
+    """
+    enc = leer_encabezado(fuente, registro)
+    formatos = {s.formato.split("+")[0] for s in enc.senales}
+    archivos = {s.archivo for s in enc.senales}
+    if formatos != {"16"} or len(archivos) != 1:
+        raise NotImplementedError(f"Solo se admite formato 16 en un único .dat ({formatos}, {archivos}).")
+    desde, hasta = rango_muestras(enc, inicio_s, duracion_s)
+    bytes_trama = BYTES_POR_MUESTRA * enc.n_senales
+    ruta_dat = f"{CARPETA_EMG}/{archivos.pop()}"
+
+    if dir_segmentos is None:
+        crudo = fuente.leer_bytes(ruta_dat, desde * bytes_trama, (hasta - desde) * bytes_trama)
+    else:
+        base = ruta_base_segmento(Path(dir_segmentos), registro, desde, hasta)
+        crudo = _obtener_crudo(fuente, ruta_dat, base, desde, hasta, bytes_trama)
+    digitales = np.frombuffer(crudo, dtype="<i2").reshape(-1, enc.n_senales)
+    return _a_fisicas(digitales, enc, desde), enc
+
+
+def ruta_base_segmento(dir_segmentos: Path, registro: str, desde: int, hasta: int) -> Path:
+    """Ruta sin extensión del segmento original (``.bin``) y su procedencia (``.json``)."""
+    return dir_segmentos / f"{registro}_m{desde}-{hasta}"
+
+
+def _obtener_crudo(fuente: Fuente, ruta_dat: str, base: Path, desde: int, hasta: int, bytes_trama: int) -> bytes:
+    binario, meta = base.with_suffix(".bin"), base.with_suffix(".json")
+    if binario.exists():
+        crudo = binario.read_bytes()
+        esperado = json.loads(meta.read_text(encoding="utf-8"))["sha256"]
+        if _sha256(crudo) != esperado:
+            raise ValueError(f"{binario.name} no coincide con su SHA-256 registrado: el dato original cambió.")
+        return crudo
+    inicio_byte, n_bytes = desde * bytes_trama, (hasta - desde) * bytes_trama
+    crudo = fuente.leer_bytes(ruta_dat, inicio_byte, n_bytes)
+    procedencia = {
+        "fuente": fuente.descripcion(),
+        "archivo": ruta_dat,
+        "rango_bytes": [inicio_byte, inicio_byte + n_bytes - 1],
+        "muestras": [desde, hasta],
+        "sha256": _sha256(crudo),
+        "descargado": datetime.now().isoformat(timespec="seconds"),
+    }
+    _escribir_sin_sobrescribir(binario, crudo)
+    _escribir_sin_sobrescribir(meta, json.dumps(procedencia, indent=2).encode("utf-8"))
+    return crudo
+
+
+def _escribir_sin_sobrescribir(ruta: Path, datos: bytes) -> None:
+    """Escribe un dato original solo si no existe (modo ``x``)."""
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(ruta, "xb") as archivo:
+            archivo.write(datos)
+    except FileExistsError:
+        pass  # otra ejecución concurrente ya lo escribió; el original se conserva
+
+
+def _a_fisicas(digitales: np.ndarray, enc: Encabezado, desde: int) -> pd.DataFrame:
+    """Unidades físicas = (digital − línea base) / ganancia, canal por canal."""
+    datos = {"tiempo_s": (desde + np.arange(len(digitales))) / enc.fs_hz}
+    for j, senal in enumerate(enc.senales):
+        datos[senal.nombre] = (digitales[:, j].astype(float) - senal.linea_base) / senal.ganancia
+    return pd.DataFrame(datos)
+
+
+# ------------------------------------------------------------ anotaciones ---
+
+
+def leer_marcadores(fuente: Fuente, registro: str, fs_hz: float) -> pd.DataFrame:
+    """Lee el ``.marker`` (anotaciones WFDB, formato MIT); tabla vacía si no existe."""
+    from ictus_semg.anotaciones import leer_anotaciones_mit
+
+    try:
+        contenido = fuente.leer_archivo_pequeno(f"{CARPETA_EMG}/{registro}.marker")
+    except OSError:  # incluye FileNotFoundError y HTTPError 404
+        return pd.DataFrame(columns=["muestra", "codigo", "subtipo", "canal", "num", "aux", "simbolo", "tiempo_s"])
+    tabla = leer_anotaciones_mit(contenido)
+    tabla["tiempo_s"] = tabla["muestra"] / fs_hz
+    return tabla
+
+
+# ---------------------------------------------------------------- cohorte ---
+
+_ID = re.compile(r"^s(\d{4})", re.IGNORECASE)
+
+
+def id_sujeto(registro: str) -> str:
+    """``s0175-05030325`` → ``S0175`` (formato de ``subjects.csv``)."""
+    coincidencia = _ID.match(Path(registro).name)
+    if not coincidencia:
+        raise ValueError(f"Nombre de registro inesperado: {registro!r}.")
+    return f"S{coincidencia.group(1)}"
+
+
+def listar_registros_emg(fuente: Fuente) -> pd.DataFrame:
+    """Registros de 24 h de EMG según el índice ``RECORDS`` del dataset."""
+    lineas = [ln.strip() for ln in fuente.leer_texto("RECORDS").splitlines()]
+    registros = [Path(ln).name for ln in lineas if ln.startswith(CARPETA_EMG + "/")]
+    return pd.DataFrame({"registro": registros, "sujeto": [id_sujeto(r) for r in registros]})
+
+
+def cargar_sujetos(fuente: Fuente) -> pd.DataFrame:
+    """Lee ``subjects.csv`` con nombres de columna normalizados.
+
+    Añade ``lado_paretico_inferido``: el lado del cuerpo contralateral al
+    hemisferio de ``Stroke Side``. Es una inferencia anatómica, no un dato.
+    """
+    df = pd.read_csv(io.StringIO(fuente.leer_texto("subjects.csv")))
+    df.columns = [re.sub(r"[^0-9a-z]+", "_", c.strip().lower()).strip("_") for c in df.columns]
+    df["subject_number"] = df["subject_number"].astype(str).str.strip().str.upper()
+    lado = df.get("stroke_side", pd.Series(index=df.index, dtype=object)).astype(str).str.strip().str.upper()
+    df["lado_paretico_inferido"] = lado.map({"LEFT": "derecho", "RIGHT": "izquierdo"})
+    return df
+
+
+COLUMNAS_CLINICAS = (
+    "subject_number",
+    "group",
+    "age",
+    "gender",
+    "completed_visit_status",
+    "stroke_group",
+    "stroke_side",
+    "lado_paretico_inferido",
+    "nihss",
+    "mrs",
+    "symptoms",
+)
+
+
+def tabla_cohorte(fuente: Fuente) -> pd.DataFrame:
+    """Une los registros de EMG con la información clínica de cada sujeto."""
+    registros = listar_registros_emg(fuente)
+    sujetos = cargar_sujetos(fuente)
+    columnas = [c for c in COLUMNAS_CLINICAS if c in sujetos.columns]
+    return registros.merge(sujetos[columnas], left_on="sujeto", right_on="subject_number", how="left")
+
+
+def hora_de_reloj(enc: Encabezado, t_s: float) -> str:
+    """Hora del día correspondiente a ``t_s`` segundos desde el inicio del registro."""
+    if enc.inicio is None:
+        return f"{t_s:.0f} s"
+    return (enc.inicio + timedelta(seconds=float(t_s))).strftime("%H:%M:%S")
+```
+
+::: {.callout-tip title="Pruébelo antes de seguir"}
+```bash
+uv run python -c "from ictus_semg import cves; f = cves.FuentePhysioNet(); print(cves.leer_encabezado(f, 's0164-06033004').canales('emg'))"
+```
+Debe imprimir `['emg_0', 'emg_1']` y dejar una copia del encabezado en `data/raw/cves/data/24h-electromyography/`.
+:::
+
+# Módulo 2 · Canales y marcadores
+
+## Validar la configuración de canales
+
+La práctica integradora de fundamentos del Laboratorio 0 pide una función que resuma duplicados, faltantes y canales adicionales. En CVES esa función tiene un uso inmediato, porque los canales cambian de un registro a otro. La **lista** conserva el orden de adquisición y los duplicados; los **conjuntos** responden qué falta y qué sobra; el resultado es un **diccionario** serializable que termina en `summary.json`.
+
+```{.python filename="src/ictus_semg/canales.py"}
+"""Validación de la configuración de canales de un registro."""
+
+from collections import Counter
+
+
+def validar_configuracion_canales(
+    observados: list[str],
+    requeridos: set[str] | frozenset[str],
+) -> dict[str, object]:
+    """Resume duplicados, faltantes y canales adicionales.
+
+    La lista conserva el orden de adquisición; los conjuntos responden
+    preguntas de pertenencia. Las entradas no se modifican y el resultado es
+    serializable a JSON.
+    """
+    for nombre in [*observados, *requeridos]:
+        if not isinstance(nombre, str) or not nombre.strip():
+            raise ValueError("Los nombres de canal no pueden estar vacíos.")
+    conteo = Counter(observados)
+    presentes = set(observados)
+    return {
+        "observados": list(observados),
+        "duplicados": sorted(nombre for nombre, n in conteo.items() if n > 1),
+        "faltantes": sorted(set(requeridos) - presentes),
+        "adicionales": sorted(presentes - set(requeridos)),
+        "completo": set(requeridos) <= presentes,
+    }
+```
+
+## Leer los marcadores de eventos
+
+Algunos registros incluyen un archivo `.marker` con anotaciones WFDB en **formato MIT**: palabras de 16 bits en las que los 6 bits altos indican el tipo y los 10 bajos el incremento de tiempo, con códigos especiales para saltos largos y texto auxiliar. El lector se valida contra `wfdb` en las pruebas.
+
+```{.python filename="src/ictus_semg/anotaciones.py"}
+"""Lector de anotaciones WFDB en formato MIT (archivos ``.marker`` de CVES).
+
+Cada anotación empieza con una palabra de 16 bits little-endian: los 6 bits
+altos son el código ``A`` y los 10 bajos el campo ``I``. Si ``A`` es un tipo de
+anotación, ``I`` es el incremento de tiempo (en muestras) desde la anterior.
+Los códigos 59–63 son pseudo-anotaciones que modifican la siguiente lectura:
+
+- 59 SKIP: los 4 bytes siguientes son un incremento largo (palabra alta primero).
+- 60 NUM, 61 SUB, 62 CHN: ``I`` es el valor de ``num``, ``subtipo`` o ``canal``.
+- 63 AUX: ``I`` bytes de texto auxiliar, rellenados hasta longitud par.
+
+La palabra 0x0000 marca el fin del archivo.
+"""
+
+import numpy as np
+import pandas as pd
+
+SKIP, NUM, SUB, CHN, AUX = 59, 60, 61, 62, 63
+
+# Mnemónicos habituales de WFDB (subconjunto) para facilitar la lectura.
+MNEMONICOS = {1: "N", 14: "~", 16: "|", 22: "NOTE", 28: "+", 32: "[", 33: "]"}
+
+
+def leer_anotaciones_mit(contenido: bytes) -> pd.DataFrame:
+    """Convierte el contenido binario de un archivo de anotaciones en una tabla."""
+    palabras = np.frombuffer(contenido[: len(contenido) // 2 * 2], dtype="<u2")
+    filas: list[dict] = []
+    tiempo, num, canal = 0, 0, 0
+    i = 0
+    while i < len(palabras):
+        w = int(palabras[i])
+        a, dato = w >> 10, w & 0x3FF
+        i += 1
+        if a == 0 and dato == 0:
+            break
+        if a == SKIP:
+            alta, baja = int(palabras[i]), int(palabras[i + 1])
+            salto = (alta << 16) | baja
+            if salto >= 2**31:  # entero con signo de 32 bits
+                salto -= 2**32
+            tiempo += salto
+            i += 2
+        elif a == NUM:
+            num = dato
+            if filas:
+                filas[-1]["num"] = dato
+        elif a == SUB:
+            if filas:
+                filas[-1]["subtipo"] = dato
+        elif a == CHN:
+            canal = dato
+            if filas:
+                filas[-1]["canal"] = dato
+        elif a == AUX:
+            n_palabras = (dato + 1) // 2
+            texto = palabras[i : i + n_palabras].tobytes()[:dato]
+            if filas:
+                filas[-1]["aux"] = texto.decode("latin-1").rstrip("\x00")
+            i += n_palabras
+        else:
+            tiempo += dato
+            filas.append({"muestra": tiempo, "codigo": a, "subtipo": 0, "canal": canal, "num": num, "aux": ""})
+    tabla = pd.DataFrame(filas, columns=["muestra", "codigo", "subtipo", "canal", "num", "aux"])
+    tabla["simbolo"] = tabla["codigo"].map(lambda c: MNEMONICOS.get(int(c), str(c)))
+    return tabla
+
+
+def escribir_anotaciones_mit(muestras: list[int], codigos: list[int], aux: list[str] | None = None) -> bytes:
+    """Escritor mínimo (para pruebas y ejercicios); inverso de ``leer_anotaciones_mit``."""
+    salida: list[int] = []
+    previo = 0
+    for k, (m, c) in enumerate(zip(muestras, codigos, strict=True)):
+        delta = m - previo
+        if delta > 1023:
+            salida += [SKIP << 10, (delta >> 16) & 0xFFFF, delta & 0xFFFF]
+            delta = 0
+        salida.append((c << 10) | delta)
+        if aux and aux[k]:
+            b = aux[k].encode("latin-1")
+            salida.append((AUX << 10) | len(b))
+            b += b"\x00" * (len(b) % 2)
+            salida += list(np.frombuffer(b, dtype="<u2"))
+        previo = m
+    salida.append(0)
+    return np.asarray(salida, dtype="<u2").tobytes()
+```
+
+# Módulo 3 · Cadena de procesamiento
+
+1. **Pasabanda Butterworth de orden 4, 20–450 Hz.** Con $f_s = 1000$ Hz, Nyquist es 500 Hz. El corte inferior elimina también los **offsets de continua** de varios canales de CVES (valores iniciales cercanos a 2000 µV en algunos encabezados).
+2. **Notch de 60 Hz y armónicos.** CVES se registró en Boston, donde la red opera a 60 Hz, como en Colombia.
+3. **Envolvente lineal.** Rectificación de onda completa y pasabajas de 8 Hz.
+4. **RMS móvil de 200 ms.**
+
+Todos los filtros son de **fase cero**, todos los parámetros por defecto vienen de `configuracion.py` y todas las funciones rechazan una frecuencia de muestreo no positiva. `procesar` no modifica el DataFrame de entrada: produce objetos nuevos con nombres que describen la transformación.
+
+```{.python filename="src/ictus_semg/procesamiento.py"}
+"""Cadena de acondicionamiento digital del sEMG.
+
+Orden: pasabanda → notch (red) → rectificación → envolvente / RMS móvil.
+Todos los filtros son de fase cero (``sosfiltfilt`` / ``filtfilt``) para no
+desplazar temporalmente los eventos de activación.
+"""
+
+import numpy as np
+import pandas as pd
+from scipy import signal
+
+from ictus_semg.configuracion import (
+    ARMONICOS_RED,
+    BANDA_SEMG_HZ,
+    CORTE_ENVOLVENTE_HZ,
+    FACTOR_CALIDAD_NOTCH,
+    FRECUENCIA_RED_HZ,
+    ORDEN_FILTRO,
+    VENTANA_RMS_S,
+)
+
+MARGEN_NYQUIST = 0.95  # el corte superior no se acerca a menos del 5 % de fs/2
+
+
+def _validar_fs(fs_hz: float) -> None:
+    if fs_hz <= 0:
+        raise ValueError("La frecuencia de muestreo debe ser positiva.")
+
+
+def pasabanda(
+    x: np.ndarray,
+    fs_hz: float,
+    f_baja_hz: float = BANDA_SEMG_HZ[0],
+    f_alta_hz: float = BANDA_SEMG_HZ[1],
+    orden: int = ORDEN_FILTRO,
+) -> np.ndarray:
+    """Butterworth pasabanda de fase cero; recorta el corte superior si excede Nyquist."""
+    _validar_fs(fs_hz)
+    f_alta_hz = min(f_alta_hz, MARGEN_NYQUIST * fs_hz / 2)
+    if not 0 < f_baja_hz < f_alta_hz:
+        raise ValueError(f"Banda inválida: {f_baja_hz}–{f_alta_hz} Hz con fs = {fs_hz:.0f} Hz.")
+    sos = signal.butter(orden, [f_baja_hz, f_alta_hz], btype="bandpass", fs=fs_hz, output="sos")
+    return signal.sosfiltfilt(sos, x, axis=0)
+
+
+def notch(
+    x: np.ndarray,
+    fs_hz: float,
+    f0_hz: float = FRECUENCIA_RED_HZ,
+    q: float = FACTOR_CALIDAD_NOTCH,
+    armonicos: int = ARMONICOS_RED,
+) -> np.ndarray:
+    """Elimina la interferencia de red y sus armónicos por debajo de Nyquist."""
+    _validar_fs(fs_hz)
+    y = np.asarray(x, dtype=float)
+    for k in range(1, armonicos + 1):
+        fk_hz = k * f0_hz
+        if fk_hz >= fs_hz / 2:
+            break
+        b, a = signal.iirnotch(fk_hz, q, fs=fs_hz)
+        y = signal.filtfilt(b, a, y, axis=0)
+    return y
+
+
+def envolvente(
+    x: np.ndarray,
+    fs_hz: float,
+    fc_hz: float = CORTE_ENVOLVENTE_HZ,
+    orden: int = ORDEN_FILTRO,
+) -> np.ndarray:
+    """Envolvente lineal: rectificación de onda completa y pasabajas; nunca negativa."""
+    _validar_fs(fs_hz)
+    sos = signal.butter(orden, fc_hz, btype="lowpass", fs=fs_hz, output="sos")
+    return np.clip(signal.sosfiltfilt(sos, np.abs(x), axis=0), 0, None)
+
+
+def rms_movil(x: np.ndarray, fs_hz: float, ventana_s: float = VENTANA_RMS_S) -> np.ndarray:
+    """Valor cuadrático medio en una ventana deslizante centrada."""
+    _validar_fs(fs_hz)
+    n = max(1, int(round(ventana_s * fs_hz)))
+    nucleo = np.ones(n) / n
+    return np.sqrt(np.convolve(np.asarray(x, dtype=float) ** 2, nucleo, mode="same"))
+
+
+def procesar(
+    df: pd.DataFrame,
+    fs_hz: float,
+    banda_hz: tuple[float, float] = BANDA_SEMG_HZ,
+    usar_notch: bool = True,
+    f_red_hz: float = FRECUENCIA_RED_HZ,
+    fc_envolvente_hz: float = CORTE_ENVOLVENTE_HZ,
+    ventana_rms_s: float = VENTANA_RMS_S,
+    canales: list[str] | None = None,
+) -> dict[str, pd.DataFrame]:
+    """Aplica la cadena completa a ``canales`` (por defecto, todos).
+
+    Devuelve las etapas ``cruda``, ``filtrada``, ``envolvente`` y ``rms``; cada
+    DataFrame conserva ``tiempo_s``. El DataFrame de entrada no se modifica.
+    """
+    canales = canales or [c for c in df.columns if c != "tiempo_s"]
+    faltantes = set(canales) - set(df.columns)
+    if faltantes:
+        raise ValueError(f"Canales inexistentes en el segmento: {sorted(faltantes)}.")
+    t_s = df["tiempo_s"].to_numpy()
+    salida = {etapa: {"tiempo_s": t_s} for etapa in ("filtrada", "envolvente", "rms")}
+    for canal in canales:
+        x = df[canal].to_numpy(dtype=float)
+        y = pasabanda(x, fs_hz, *banda_hz)
+        if usar_notch:
+            y = notch(y, fs_hz, f0_hz=f_red_hz)
+        salida["filtrada"][canal] = y
+        salida["envolvente"][canal] = envolvente(y, fs_hz, fc_envolvente_hz)
+        salida["rms"][canal] = rms_movil(y, fs_hz, ventana_rms_s)
+    resultado = {etapa: pd.DataFrame(columnas) for etapa, columnas in salida.items()}
+    resultado["cruda"] = df[["tiempo_s", *canales]].copy()
+    return resultado
+```
+
+# Módulo 4 · Métricas con significado fisiológico
+
+## Validar antes de calcular
+
+Toda métrica empieza por `validar_senal`: el arreglo debe ser unidimensional, no vacío y finito. Es la misma disciplina de la función de resumen exigida en el Laboratorio 0, y `estadisticos_descriptivos` reproduce su contrato con claves que incluyen la unidad (`media_uv`, `iqr_uv`…) y desviación estándar muestral (`ddof=1`).
+
+## Calidad antes que interpretación
+
+En un registro ambulatorio de 24 h un electrodo puede despegarse o el conversor saturarse. Por canal se calculan la **fracción de potencia entre 20 y 450 Hz** (por debajo de 80 % el canal se marca como dudoso), el **pico de red** en dB y la **fracción de muestras saturadas**.
+
+## Amplitud, actividad, espectro y coactivación
+
+$$
+\mathrm{RMS} = \sqrt{\frac{1}{N}\sum_{n=1}^{N} x_n^2}, \qquad
+\mathrm{MNF} = \frac{\sum_k f_k\,P(f_k)}{\sum_k P(f_k)}, \qquad
+\sum_{f_k \le \mathrm{MDF}} P(f_k) = \frac{1}{2}\sum_k P(f_k)
+$$
+
+$$
+\mathrm{CI} = \frac{2\sum_n \min\big(a_n, b_n\big)}{\sum_n \big(a_n + b_n\big)} \times 100\,\%
+$$
+
+La línea base para detectar activaciones se toma en la **ventana más silenciosa** del segmento, porque en un registro ambulatorio no hay reposo garantizado al inicio. El **porcentaje de tiempo activo** resume cuánto trabaja el músculo en el tramo. La pendiente de MDF se asocia con fatiga solo en contracciones sostenidas. Unidades: amplitudes y RMS en µV, frecuencias en Hz, densidad espectral en µV²/Hz, pendientes en Hz/s.
+
+```{.python filename="src/ictus_semg/metricas.py"}
+"""Métricas temporales, espectrales, de calidad y de coordinación para sEMG.
+
+Convención: los arreglos son unidimensionales (una muestra por posición) y las
+amplitudes están en µV, como en los registros de 24 h de CVES.
+"""
+
+import numpy as np
+import pandas as pd
+from scipy import signal
+
+from ictus_semg.configuracion import (
+    BANDA_SEMG_HZ,
+    DURACION_MIN_ACTIVACION_S,
+    FRECUENCIA_RED_HZ,
+    K_UMBRAL_ACTIVACION,
+    VENTANA_REPOSO_S,
+)
+
+NPERSEG_WELCH = 1024
+PERCENTIL_NORMALIZACION = 99
+
+
+def validar_senal(x: np.ndarray) -> np.ndarray:
+    """Devuelve ``x`` como arreglo 1D de flotantes; rechaza vacíos y no finitos."""
+    arreglo = np.asarray(x, dtype=float)
+    if arreglo.ndim != 1:
+        raise ValueError("Se esperaba un arreglo unidimensional.")
+    if arreglo.size == 0:
+        raise ValueError("El arreglo no puede estar vacío.")
+    if not np.all(np.isfinite(arreglo)):
+        raise ValueError("El arreglo contiene valores no finitos.")
+    return arreglo
+
+
+# ----------------------------------------------------- dominio del tiempo ---
+
+
+def rms(x: np.ndarray) -> float:
+    """Valor cuadrático medio (mismas unidades que ``x``)."""
+    arreglo = validar_senal(x)
+    return float(np.sqrt(np.mean(arreglo**2)))
+
+
+def mav(x: np.ndarray) -> float:
+    """Valor absoluto medio (mismas unidades que ``x``)."""
+    return float(np.mean(np.abs(validar_senal(x))))
+
+
+def estadisticos_descriptivos(x: np.ndarray, unidad: str = "uv") -> dict[str, float | int]:
+    """Estadísticos de un arreglo 1D finito; las claves incluyen la unidad.
+
+    La desviación estándar es muestral (``ddof=1``).
+    """
+    arreglo = validar_senal(x)
+    q1, q3 = np.quantile(arreglo, [0.25, 0.75])
+    desviacion = float(np.std(arreglo, ddof=1)) if arreglo.size > 1 else 0.0
+    return {
+        "n_muestras": int(arreglo.size),
+        f"media_{unidad}": float(np.mean(arreglo)),
+        f"mediana_{unidad}": float(np.median(arreglo)),
+        f"desviacion_estandar_{unidad}": desviacion,
+        f"minimo_{unidad}": float(np.min(arreglo)),
+        f"maximo_{unidad}": float(np.max(arreglo)),
+        f"q1_{unidad}": float(q1),
+        f"q3_{unidad}": float(q3),
+        f"iqr_{unidad}": float(q3 - q1),
+        f"rms_{unidad}": float(np.sqrt(np.mean(arreglo**2))),
+    }
+
+
+# ------------------------------------------------ dominio de la frecuencia ---
+
+
+def espectro(x: np.ndarray, fs_hz: float, nperseg: int = NPERSEG_WELCH) -> tuple[np.ndarray, np.ndarray]:
+    """Densidad espectral de potencia por Welch (Hann, 50 % de traslape)."""
+    arreglo = validar_senal(x)
+    if fs_hz <= 0:
+        raise ValueError("La frecuencia de muestreo debe ser positiva.")
+    return signal.welch(arreglo, fs=fs_hz, nperseg=int(min(nperseg, arreglo.size)))
+
+
+def _en_banda(f: np.ndarray, p: np.ndarray, banda_hz: tuple[float, float]) -> tuple[np.ndarray, np.ndarray]:
+    mascara = (f >= banda_hz[0]) & (f <= banda_hz[1])
+    if not mascara.any():
+        raise ValueError(f"La banda {banda_hz} Hz no contiene frecuencias del espectro.")
+    return f[mascara], p[mascara]
+
+
+def frecuencia_media(f: np.ndarray, p: np.ndarray, banda_hz: tuple[float, float] = BANDA_SEMG_HZ) -> float:
+    """MNF: centroide del espectro dentro de ``banda_hz``."""
+    f, p = _en_banda(f, p, banda_hz)
+    return float(np.sum(f * p) / np.sum(p))
+
+
+def frecuencia_mediana(f: np.ndarray, p: np.ndarray, banda_hz: tuple[float, float] = BANDA_SEMG_HZ) -> float:
+    """MDF: frecuencia que divide la potencia de ``banda_hz`` en dos mitades."""
+    f, p = _en_banda(f, p, banda_hz)
+    acumulada = np.cumsum(p)
+    return float(f[np.searchsorted(acumulada, acumulada[-1] / 2)])
+
+
+def espectro_por_ventanas(
+    x: np.ndarray,
+    fs_hz: float,
+    ventana_s: float,
+    paso_s: float,
+    banda_hz: tuple[float, float] = BANDA_SEMG_HZ,
+    energia_min: float = 0.0,
+) -> pd.DataFrame:
+    """RMS, MNF y MDF en ventanas deslizantes; omite ventanas con energía ≤ ``energia_min``."""
+    arreglo = validar_senal(x)
+    n, paso = int(ventana_s * fs_hz), int(paso_s * fs_hz)
+    if n < 2 or paso < 1:
+        raise ValueError("La ventana y el paso deben abarcar al menos dos y una muestra.")
+    filas = []
+    for i in range(0, arreglo.size - n + 1, paso):
+        segmento = arreglo[i : i + n]
+        energia = float(np.mean(segmento**2))
+        if energia <= energia_min:
+            continue
+        f, p = espectro(segmento, fs_hz, nperseg=min(512, n))
+        filas.append(
+            {
+                "t_centro_s": (i + n / 2) / fs_hz,
+                "rms": np.sqrt(energia),
+                "mnf_hz": frecuencia_media(f, p, banda_hz),
+                "mdf_hz": frecuencia_mediana(f, p, banda_hz),
+            },
+        )
+    return pd.DataFrame(filas, columns=["t_centro_s", "rms", "mnf_hz", "mdf_hz"])
+
+
+def pendiente(t: np.ndarray, y: np.ndarray) -> float:
+    """Pendiente de la recta de mínimos cuadrados; ``nan`` con menos de dos puntos."""
+    if len(t) != len(y):
+        raise ValueError("t e y deben tener la misma longitud.")
+    if len(t) < 2:
+        return float("nan")
+    return float(np.polyfit(t, y, 1)[0])
+
+
+# ------------------------------------------------------- calidad de señal ---
+
+
+def calidad_canal(x_crudo: np.ndarray, fs_hz: float, f_red_hz: float = FRECUENCIA_RED_HZ) -> dict[str, float]:
+    """Indicadores para decidir si un canal contiene sEMG crudo utilizable.
+
+    - ``frac_potencia_20_450``: fracción de la potencia (sin continua) entre 20 y
+      450 Hz. Valores bajos sugieren un canal sin sEMG útil o ya procesado.
+    - ``red_db``: pico en ±1 Hz de la red respecto a la mediana de 20–450 Hz.
+    - ``frac_saturacion``: fracción de muestras en los valores extremos.
+    """
+    x = validar_senal(x_crudo)
+    x = x - np.mean(x)
+    f, p = espectro(x, fs_hz, nperseg=2048)
+    util = (f >= BANDA_SEMG_HZ[0]) & (f <= min(BANDA_SEMG_HZ[1], fs_hz / 2))
+    total = np.sum(p[f > 0.5])
+    referencia = np.median(p[util])
+    banda_red = (f >= f_red_hz - 1) & (f <= f_red_hz + 1)
+    if banda_red.any() and referencia > 0:
+        red_db = float(10 * np.log10(np.max(p[banda_red]) / referencia))
+    else:
+        red_db = float("nan")
+    extremos = np.isclose(x, x.max()) | np.isclose(x, x.min())
+    return {
+        "frac_potencia_20_450": float(np.sum(p[util]) / total) if total > 0 else float("nan"),
+        "red_db": red_db,
+        "frac_saturacion": float(np.mean(extremos)) if np.ptp(x) > 0 else 1.0,
+    }
+
+
+# -------------------------------------------------------------- actividad ---
+
+
+def linea_base_reposo(env: np.ndarray, fs_hz: float, ventana_s: float = VENTANA_REPOSO_S) -> tuple[float, float, float]:
+    """Media y desviación de ``env`` en la ventana de menor media, y su inicio en s.
+
+    En registros ambulatorios no hay reposo garantizado al inicio; se toma como
+    reposo la ventana más silenciosa del segmento.
+    """
+    arreglo = validar_senal(env)
+    n = max(1, int(ventana_s * fs_hz))
+    k = arreglo.size // n
+    if k == 0:
+        return float(np.mean(arreglo)), float(np.std(arreglo)), 0.0
+    bloques = arreglo[: k * n].reshape(k, n)
+    j = int(np.argmin(bloques.mean(axis=1)))
+    return float(bloques[j].mean()), float(bloques[j].std()), j * n / fs_hz
+
+
+def detectar_activaciones(
+    env: np.ndarray,
+    fs_hz: float,
+    umbral: float,
+    duracion_min_s: float = DURACION_MIN_ACTIVACION_S,
+    t0_s: float = 0.0,
+) -> pd.DataFrame:
+    """Intervalos en que ``env`` supera ``umbral`` durante al menos ``duracion_min_s``."""
+    activo = validar_senal(env) > umbral
+    bordes = np.diff(activo.astype(int), prepend=0, append=0)
+    inicios, fines = np.flatnonzero(bordes == 1), np.flatnonzero(bordes == -1)
+    n_min = int(duracion_min_s * fs_hz)
+    filas = [
+        {"inicio_s": t0_s + a / fs_hz, "fin_s": t0_s + b / fs_hz, "duracion_s": (b - a) / fs_hz}
+        for a, b in zip(inicios, fines, strict=True)
+        if b - a >= n_min
+    ]
+    return pd.DataFrame(filas, columns=["inicio_s", "fin_s", "duracion_s"])
+
+
+def ciclo_de_actividad(activaciones: pd.DataFrame, duracion_total_s: float) -> float:
+    """Porcentaje del tiempo con el músculo activo."""
+    if duracion_total_s <= 0:
+        raise ValueError("La duración total debe ser positiva.")
+    return float(100 * activaciones["duracion_s"].sum() / duracion_total_s)
+
+
+# ----------------------------------------------------------- coordinación ---
+
+
+def indice_coactivacion(env_a: np.ndarray, env_b: np.ndarray) -> float:
+    """Índice de coactivación de Falconer y Winter (1985), en %.
+
+    CI = 2 · Σ min(a, b) / Σ (a + b) · 100. Tiene lectura fisiológica solo si
+    los canales registran un par agonista-antagonista.
+    """
+    a, b = validar_senal(env_a), validar_senal(env_b)
+    if a.shape != b.shape:
+        raise ValueError("Las envolventes deben tener la misma longitud.")
+    total = np.sum(a + b)
+    if total == 0:
+        return float("nan")
+    return float(200.0 * np.sum(np.minimum(a, b)) / total)
+
+
+def normalizar_por_pico(env: np.ndarray) -> np.ndarray:
+    """Escala la envolvente a su percentil 99 (un artefacto aislado no fija la escala)."""
+    arreglo = validar_senal(env)
+    referencia = np.percentile(arreglo, PERCENTIL_NORMALIZACION)
+    return arreglo / referencia if referencia > 0 else arreglo
+
+
+# ---------------------------------------------------------------- resumen ---
+
+
+def tabla_resumen(
+    etapas: dict[str, pd.DataFrame],
+    canales: list[str],
+    fs_hz: float,
+    banda_hz: tuple[float, float] = BANDA_SEMG_HZ,
+    k_umbral: float = K_UMBRAL_ACTIVACION,
+    f_red_hz: float = FRECUENCIA_RED_HZ,
+) -> pd.DataFrame:
+    """Una fila por canal con amplitud, espectro, actividad y calidad."""
+    duracion_s = len(etapas["filtrada"]) / fs_hz
+    filas = []
+    for canal in canales:
+        x = etapas["filtrada"][canal].to_numpy()
+        env = etapas["envolvente"][canal].to_numpy()
+        f, p = espectro(x, fs_hz)
+        mu, sigma, _ = linea_base_reposo(env, fs_hz)
+        activaciones = detectar_activaciones(env, fs_hz, mu + k_umbral * sigma)
+        filas.append(
+            {
+                "canal": canal,
+                "rms_uv": rms(x),
+                "mav_uv": mav(x),
+                "mnf_hz": frecuencia_media(f, p, banda_hz),
+                "mdf_hz": frecuencia_mediana(f, p, banda_hz),
+                "actividad_pct": ciclo_de_actividad(activaciones, duracion_s),
+                **calidad_canal(etapas["cruda"][canal].to_numpy(), fs_hz, f_red_hz),
+            },
+        )
+    return pd.DataFrame(filas)
+```
+
+# Módulo 5 · Figuras: interactivas y estáticas
+
+El proyecto produce dos tipos de figura con propósitos distintos, y ambos cumplen la lista de inspección del Laboratorio 0: título informativo, ejes con variable y unidad, leyenda cuando hay categorías, escala honesta y generación desde código.
+
+## Plotly para el tablero
+
+- **Eje de hora de reloj**: si el encabezado trae la hora de inicio, el trazado muestra la hora del día.
+- **Ejes compartidos** entre canales y acelerómetro; **`Scattergl`** y submuestreo solo para dibujar.
+- **Colores estables** por canal; rojo para STROKE y azul para CONTROL en la comparación de grupos.
+
+```{.python filename="src/ictus_semg/graficas.py"}
+"""Figuras interactivas Plotly para el tablero.
+
+Cada función recibe datos y devuelve un ``go.Figure``; ninguna depende de
+Streamlit. Las figuras estáticas del informe están en ``figuras.py``.
+"""
+
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from scipy import signal
+
+from ictus_semg.configuracion import UMBRAL_CALIDAD_ESPECTRAL
+
+PALETA_CANALES = ("#1F4E79", "#B7750C", "#2E7D6B", "#6B4C9A", "#8A5A44", "#4A5A66")
+COLOR_GRUPO = {"STROKE": "#C0392B", "CONTROL": "#1F4E79"}
+COLOR_ENVOLVENTE = "#C0392B"
+GRIS = "#9AA5B1"
+PLANTILLA = "simple_white"
+MAX_PUNTOS_TRAZO = 8000
+
+
+def color_canal(i: int) -> str:
+    """Color estable para el i-ésimo canal."""
+    return PALETA_CANALES[i % len(PALETA_CANALES)]
+
+
+def _eje_tiempo(t_s: np.ndarray, t0: datetime | None) -> np.ndarray | pd.DatetimeIndex:
+    """Hora de reloj si el encabezado trae la hora de inicio; si no, segundos."""
+    if t0 is None:
+        return t_s
+    return pd.Timestamp(t0) + pd.to_timedelta(t_s, unit="s")
+
+
+def _paso_visual(n: int, max_puntos: int) -> slice:
+    """Submuestreo solo para dibujar; las métricas usan todas las muestras."""
+    return slice(None, None, max(1, n // max_puntos))
+
+
+def fig_multicanal(
+    etapas: dict[str, pd.DataFrame],
+    canales: list[str],
+    etiquetas: dict[str, str],
+    t0: datetime | None = None,
+    mostrar_cruda: bool = False,
+    acelerometros: pd.DataFrame | None = None,
+    marcadores: pd.DataFrame | None = None,
+) -> go.Figure:
+    """Señal filtrada y envolvente por canal, con acelerómetro y marcadores opcionales."""
+    t_s = etapas["filtrada"]["tiempo_s"].to_numpy()
+    paso = _paso_visual(len(t_s), MAX_PUNTOS_TRAZO)
+    x = _eje_tiempo(t_s[paso], t0)
+    con_acelerometro = acelerometros is not None and acelerometros.shape[1] > 1
+    n_filas = len(canales) + int(con_acelerometro)
+    titulos = [etiquetas.get(c, c) for c in canales]
+    if con_acelerometro:
+        titulos.append("Acelerómetro [unidades del archivo]")
+    fig = make_subplots(rows=n_filas, cols=1, shared_xaxes=True, vertical_spacing=0.04, subplot_titles=titulos)
+    for i, canal in enumerate(canales, start=1):
+        if mostrar_cruda:
+            cruda = etapas["cruda"][canal].to_numpy()[paso]
+            fig.add_trace(
+                go.Scattergl(
+                    x=x,
+                    y=cruda - np.median(cruda),
+                    name="cruda (sin offset)",
+                    line={"color": GRIS, "width": 0.7},
+                    legendgroup="cruda",
+                    showlegend=i == 1,
+                ),
+                row=i,
+                col=1,
+            )
+        fig.add_trace(
+            go.Scattergl(
+                x=x,
+                y=etapas["filtrada"][canal].to_numpy()[paso],
+                name="filtrada",
+                line={"color": color_canal(i - 1), "width": 0.7},
+                legendgroup="filtrada",
+                showlegend=i == 1,
+            ),
+            row=i,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scattergl(
+                x=x,
+                y=etapas["envolvente"][canal].to_numpy()[paso],
+                name="envolvente",
+                line={"color": COLOR_ENVOLVENTE, "width": 1.8},
+                legendgroup="envolvente",
+                showlegend=i == 1,
+            ),
+            row=i,
+            col=1,
+        )
+        fig.update_yaxes(title_text="µV", row=i, col=1)
+    if con_acelerometro:
+        columnas = [c for c in acelerometros.columns if c != "tiempo_s"]
+        for j, columna in enumerate(columnas):
+            fig.add_trace(
+                go.Scattergl(
+                    x=x,
+                    y=acelerometros[columna].to_numpy()[paso],
+                    name=columna,
+                    line={"color": "#4A5A66" if j == 0 else GRIS, "width": 1},
+                ),
+                row=n_filas,
+                col=1,
+            )
+    if marcadores is not None:
+        for t_marcador in marcadores["tiempo_s"]:
+            x_marcador = _eje_tiempo(np.array([t_marcador]), t0)[0]
+            if isinstance(x_marcador, pd.Timestamp):
+                x_marcador = x_marcador.to_pydatetime()
+            fig.add_vline(x=x_marcador, line={"color": COLOR_ENVOLVENTE, "dash": "dot", "width": 1})
+    fig.update_xaxes(title_text="Hora del registro" if t0 else "Tiempo [s]", row=n_filas, col=1)
+    fig.update_layout(
+        template=PLANTILLA,
+        height=170 * n_filas + 90,
+        margin={"l": 60, "r": 20, "t": 50, "b": 40},
+        legend={"orientation": "h", "y": 1.06, "x": 0},
+        hovermode="x unified",
+    )
+    return fig
+
+
+def fig_psd(filtrada: pd.DataFrame, canales: list[str], etiquetas: dict[str, str], fs_hz: float) -> go.Figure:
+    """Densidad espectral de potencia (Welch) de cada canal filtrado."""
+    fig = go.Figure()
+    for i, canal in enumerate(canales):
+        f, p = signal.welch(filtrada[canal].to_numpy(), fs=fs_hz, nperseg=1024)
+        fig.add_trace(
+            go.Scatter(
+                x=f,
+                y=10 * np.log10(p + 1e-20),
+                name=etiquetas.get(canal, canal),
+                line={"color": color_canal(i)},
+            ),
+        )
+    fig.update_layout(
+        template=PLANTILLA,
+        height=400,
+        xaxis_title="Frecuencia [Hz]",
+        yaxis_title="DEP [dB re µV²/Hz]",
+        hovermode="x unified",
+    )
+    fig.update_xaxes(range=[0, fs_hz / 2])
+    return fig
+
+
+def fig_espectrograma(x: np.ndarray, fs_hz: float, titulo: str, t_inicio_s: float = 0.0) -> go.Figure:
+    """Espectrograma en dB (ventanas de 512 muestras, 75 % de traslape)."""
+    f, t, sxx = signal.spectrogram(x, fs=fs_hz, nperseg=512, noverlap=384)
+    fig = go.Figure(
+        go.Heatmap(x=t + t_inicio_s, y=f, z=10 * np.log10(sxx + 1e-20), colorscale="Viridis", colorbar={"title": "dB"}),
+    )
+    fig.update_layout(
+        template=PLANTILLA,
+        height=360,
+        title=titulo,
+        xaxis_title="Tiempo desde el inicio del registro [s]",
+        yaxis_title="Frecuencia [Hz]",
+    )
+    return fig
+
+
+def fig_calidad(resumen: pd.DataFrame, etiquetas: dict[str, str]) -> go.Figure:
+    """Fracción de potencia en la banda del sEMG por canal, con el umbral orientativo."""
+    nombres = [etiquetas.get(c, c) for c in resumen["canal"]]
+    fracciones = resumen["frac_potencia_20_450"].to_numpy()
+    colores = [color_canal(i) if v >= UMBRAL_CALIDAD_ESPECTRAL else "#C0392B" for i, v in enumerate(fracciones)]
+    fig = go.Figure(go.Bar(x=nombres, y=fracciones, marker_color=colores))
+    fig.add_hline(
+        y=UMBRAL_CALIDAD_ESPECTRAL,
+        line={"dash": "dot", "color": "#4A5A66"},
+        annotation_text=f"umbral orientativo {UMBRAL_CALIDAD_ESPECTRAL:.0%}",
+        annotation_position="top left",
+    )
+    fig.update_layout(
+        template=PLANTILLA,
+        height=300,
+        yaxis={"range": [0, 1], "tickformat": ".0%"},
+        yaxis_title="Potencia en 20–450 Hz",
+    )
+    return fig
+
+
+def fig_actividad(series: dict[str, pd.DataFrame], colores: dict[str, str], variable: str = "mdf_hz") -> go.Figure:
+    """Arriba, RMS por ventana; abajo, MDF o MNF con su recta de tendencia."""
+    titulo_espectral = "Frecuencia mediana [Hz]" if variable == "mdf_hz" else "Frecuencia media [Hz]"
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        subplot_titles=["RMS por ventana [µV]", titulo_espectral],
+    )
+    for etiqueta, tabla in series.items():
+        if len(tabla) < 2:
+            continue
+        color = colores[etiqueta]
+        t_s = tabla["t_centro_s"].to_numpy()
+        fig.add_trace(
+            go.Scatter(x=t_s, y=tabla["rms"], mode="lines", name=etiqueta, line={"color": color}, legendgroup=etiqueta),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=t_s,
+                y=tabla[variable],
+                mode="markers",
+                name=etiqueta,
+                marker={"color": color, "size": 5, "opacity": 0.55},
+                legendgroup=etiqueta,
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
+        )
+        a, b = np.polyfit(t_s, tabla[variable].to_numpy(), 1)
+        extremos = np.array([t_s.min(), t_s.max()])
+        fig.add_trace(
+            go.Scatter(
+                x=extremos,
+                y=a * extremos + b,
+                mode="lines",
+                line={"color": color, "width": 2},
+                showlegend=False,
+                hovertemplate=f"pendiente = {a:.3f} Hz/s<extra></extra>",
+            ),
+            row=2,
+            col=1,
+        )
+    fig.update_xaxes(title_text="Tiempo desde el inicio del registro [s]", row=2, col=1)
+    fig.update_layout(template=PLANTILLA, height=520, legend={"orientation": "h", "y": 1.08, "x": 0})
+    return fig
+
+
+def fig_coactivacion(
+    t_s: np.ndarray,
+    env_a: np.ndarray,
+    env_b: np.ndarray,
+    nombre_a: str,
+    nombre_b: str,
+    titulo: str,
+) -> go.Figure:
+    """Dos envolventes y su área común (numerador del índice de coactivación)."""
+    paso = _paso_visual(len(t_s), MAX_PUNTOS_TRAZO)
+    comun = np.minimum(env_a, env_b)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=t_s[paso], y=env_a[paso], name=nombre_a, line={"color": PALETA_CANALES[0]}))
+    fig.add_trace(go.Scatter(x=t_s[paso], y=env_b[paso], name=nombre_b, line={"color": PALETA_CANALES[1]}))
+    fig.add_trace(
+        go.Scatter(
+            x=t_s[paso],
+            y=comun[paso],
+            name="área común",
+            fill="tozeroy",
+            line={"color": "rgba(192,57,43,0)"},
+            fillcolor="rgba(192,57,43,0.35)",
+        ),
+    )
+    fig.update_layout(
+        template=PLANTILLA,
+        height=340,
+        title=titulo,
+        xaxis_title="Tiempo [s]",
+        yaxis_title="Envolvente normalizada [adimensional]",
+        hovermode="x unified",
+        legend={"orientation": "h", "y": 1.12, "x": 0},
+    )
+    return fig
+
+
+def fig_cohorte(tabla: pd.DataFrame, metrica: str, etiqueta: str) -> go.Figure:
+    """Distribución de una métrica por grupo, con un punto por sujeto."""
+    fig = go.Figure()
+    for grupo in ("CONTROL", "STROKE"):
+        datos = tabla[tabla["group"].astype(str).str.upper() == grupo]
+        if datos.empty:
+            continue
+        n_sujetos = datos["sujeto"].nunique()
+        fig.add_trace(
+            go.Box(
+                y=datos[metrica],
+                name=f"{grupo} (n = {n_sujetos})",
+                boxpoints="all",
+                jitter=0.4,
+                pointpos=0,
+                marker={"color": COLOR_GRUPO[grupo], "size": 7, "opacity": 0.7},
+                line={"color": COLOR_GRUPO[grupo]},
+                fillcolor="rgba(0,0,0,0)",
+                text=datos["sujeto"],
+                hovertemplate="%{text}: %{y:.2f}<extra></extra>",
+            ),
+        )
+    fig.update_layout(template=PLANTILLA, height=420, yaxis_title=etiqueta, showlegend=False)
+    return fig
+```
+
+## Matplotlib para el informe y la presentación
+
+`figuras.py` usa la interfaz orientada a objetos (`Figure` y `Axes`) **sin `pyplot`**: no abre ventanas, no depende de un backend gráfico y no deja figuras acumuladas en memoria. La función devuelve la figura; el script decide dónde guardarla. Cada registro se distingue por color **y** por estilo de línea, de modo que la figura se lee también en escala de grises.
+
+```{.python filename="src/ictus_semg/figuras.py"}
+"""Figura estática de resumen para el informe LaTeX y la presentación Beamer.
+
+Se usa la interfaz orientada a objetos de Matplotlib (``Figure`` y ``Axes``)
+sin ``pyplot``: no abre ventanas ni depende de un backend gráfico, y la función
+devuelve la figura sin guardarla. El script decide dónde se escribe.
+"""
+
+from dataclasses import dataclass
+
+import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+
+from ictus_semg.configuracion import BANDA_SEMG_HZ
+
+ESTILO = {"stroke": ("#C0392B", "-"), "control": ("#1F4E79", "--")}
+ESTILO_POR_DEFECTO = ("#4A5A66", ":")
+
+
+@dataclass(frozen=True)
+class SerieResumen:
+    """Datos de un registro para la figura de resumen (un canal representativo)."""
+
+    etiqueta: str
+    grupo: str
+    t_s: np.ndarray
+    envolvente_uv: np.ndarray
+    f_hz: np.ndarray
+    dep_uv2_hz: np.ndarray
+    t_ventanas_s: np.ndarray
+    mdf_hz: np.ndarray
+
+
+def figura_resumen(series: list[SerieResumen], titulo: str) -> tuple[Figure, list[Axes]]:
+    """Tres paneles: envolvente en el tiempo, espectro y MDF por ventana.
+
+    Cada registro se distingue por color y por estilo de línea, de modo que la
+    figura es legible también en escala de grises.
+    """
+    if not series:
+        raise ValueError("Se requiere al menos una serie.")
+    fig = Figure(figsize=(10, 9), layout="constrained")
+    ejes = list(fig.subplots(nrows=3, ncols=1))
+    for serie in series:
+        color, linea = ESTILO.get(serie.grupo.lower(), ESTILO_POR_DEFECTO)
+        t_relativo_s = serie.t_s - serie.t_s[0]
+        ejes[0].plot(t_relativo_s, serie.envolvente_uv, color=color, linestyle=linea, label=serie.etiqueta)
+        ejes[1].plot(serie.f_hz, 10 * np.log10(serie.dep_uv2_hz + 1e-20), color=color, linestyle=linea)
+        t_ventanas_rel_s = serie.t_ventanas_s - serie.t_s[0]
+        ejes[2].plot(t_ventanas_rel_s, serie.mdf_hz, color=color, marker="o", linestyle="none", alpha=0.5)
+        if len(t_ventanas_rel_s) >= 2:
+            a, b = np.polyfit(t_ventanas_rel_s, serie.mdf_hz, 1)
+            ejes[2].plot(t_ventanas_rel_s, a * t_ventanas_rel_s + b, color=color, linestyle=linea)
+    ejes[0].set(
+        title="Envolvente lineal (8 Hz) del canal representativo",
+        xlabel="Tiempo desde el inicio del segmento [s]",
+        ylabel="Envolvente [µV]",
+    )
+    ejes[0].legend(frameon=False)
+    ejes[1].axvspan(*BANDA_SEMG_HZ, color="#E8EDF1", zorder=0)
+    ejes[1].set(
+        title="Densidad espectral de potencia (Welch); franja: banda 20–450 Hz",
+        xlabel="Frecuencia [Hz]",
+        ylabel="DEP [dB re µV²/Hz]",
+    )
+    ejes[2].set(
+        title="Frecuencia mediana por ventana de 1 s y recta de tendencia",
+        xlabel="Tiempo desde el inicio del segmento [s]",
+        ylabel="MDF [Hz]",
+    )
+    for eje in ejes:
+        eje.grid(True, alpha=0.25)
+        eje.spines[["top", "right"]].set_visible(False)
+    fig.suptitle(titulo)
+    return fig, ejes
+```
+
+# Módulo 6 · Script único de reproducción
+
+La orden pública es una sola:
+
+```bash
+uv run python scripts/reproduce.py
+```
+
+y, como exige el Laboratorio 0, crea los directorios que falten, obtiene los datos originales (descargándolos solo la primera vez y verificando su SHA-256 después), valida los canales, escribe los derivados en `data/processed`, calcula las métricas, escribe `results/summary.json` y `results/summary_table.tex`, genera `figures/summary.png` y termina listando las rutas creadas. Es **idempotente**: `summary.json` no incluye marcas de tiempo, de modo que dos ejecuciones producen archivos idénticos, y una prueba lo verifica.
+
+```{.python filename="scripts/reproduce.py"}
+"""Regenera los productos del proyecto con un solo comando.
+
+    uv run python scripts/reproduce.py
+
+Descarga (una sola vez) los segmentos de referencia de CVES a data/raw,
+verifica su SHA-256 y escribe data/processed, results/summary.json,
+results/summary_table.tex y figures/summary.png.
+"""
+
+from ictus_semg import cves
+from ictus_semg.configuracion import (
+    DURACION_REFERENCIA_S,
+    INICIO_REFERENCIA_S,
+    RAIZ_PROYECTO,
+    REGISTROS_REFERENCIA,
+)
+from ictus_semg.reproduccion import reproducir
+
+
+def main() -> None:
+    """Ejecuta el flujo completo y lista las rutas creadas."""
+    rutas = reproducir(
+        cves.FuentePhysioNet(),
+        REGISTROS_REFERENCIA,
+        INICIO_REFERENCIA_S,
+        DURACION_REFERENCIA_S,
+    )
+    print("Productos regenerados:")
+    for ruta in rutas:
+        print(f"  {ruta.relative_to(RAIZ_PROYECTO).as_posix()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+```{.python filename="src/ictus_semg/reproduccion.py"}
+"""Flujo único de reproducción: datos originales → derivados → resultados → figura.
+
+``scripts/reproduce.py`` llama a :func:`reproducir`. La función es idempotente:
+los datos originales se descargan una vez y se verifican con SHA-256; los
+derivados, el JSON, la tabla LaTeX y la figura se reescriben con el mismo
+contenido en cada ejecución (el JSON no incluye marcas de tiempo).
+"""
+
+import json
+import math
+from dataclasses import dataclass
+from pathlib import Path
+
+import pandas as pd
+
+from ictus_semg import cves
+from ictus_semg import metricas as m
+from ictus_semg.canales import validar_configuracion_canales
+from ictus_semg.configuracion import (
+    BANDA_SEMG_HZ,
+    CANALES_REQUERIDOS,
+    CORTE_ENVOLVENTE_HZ,
+    DIR_DATOS_PROCESADOS,
+    DIR_FIGURAS,
+    DIR_RESULTADOS,
+    DIR_SEGMENTOS,
+    FACTOR_ENERGIA_VENTANA,
+    FRECUENCIA_RED_HZ,
+    K_UMBRAL_ACTIVACION,
+    RAIZ_PROYECTO,
+    UMBRAL_CALIDAD_ESPECTRAL,
+    VENTANA_ESPECTRAL_S,
+    VENTANA_RMS_S,
+)
+from ictus_semg.figuras import SerieResumen, figura_resumen
+from ictus_semg.procesamiento import procesar
+
+CITA_DATASET = {
+    "nombre": "Cerebral Vasoregulation in Elderly with Stroke (CVES) v1.0.0",
+    "doi": "10.13026/C2DW96",
+    "licencia": "Open Data Commons Attribution License v1.0",
+    "publicacion_original": "Novak V. et al. (2010). Stroke 41(1):61-66. doi:10.1161/STROKEAHA.109.565556",
+}
+ADVERTENCIAS = [
+    "La ubicación muscular de cada canal emg_* no está documentada en los metadatos públicos.",
+    "El registro es ambulatorio: el mismo desfase temporal no implica la misma actividad entre sujetos.",
+    "Resultados exploratorios; no constituyen evidencia clínica.",
+]
+
+
+@dataclass(frozen=True)
+class DirectoriosSalida:
+    segmentos: Path = DIR_SEGMENTOS
+    procesados: Path = DIR_DATOS_PROCESADOS
+    resultados: Path = DIR_RESULTADOS
+    figuras: Path = DIR_FIGURAS
+    raiz: Path = RAIZ_PROYECTO
+
+
+def _sin_nan(valor: object) -> object:
+    """Sustituye ``nan`` por ``None`` para producir JSON estándar."""
+    if isinstance(valor, float) and math.isnan(valor):
+        return None
+    if isinstance(valor, dict):
+        return {k: _sin_nan(v) for k, v in valor.items()}
+    if isinstance(valor, list):
+        return [_sin_nan(v) for v in valor]
+    return valor
+
+
+def _relativa(ruta: Path, raiz: Path) -> str:
+    """Ruta relativa a la raíz del proyecto (nunca rutas absolutas en los resultados)."""
+    try:
+        return ruta.resolve().relative_to(raiz.resolve()).as_posix()
+    except ValueError:
+        return ruta.name
+
+
+def _analizar_registro(
+    fuente: cves.Fuente,
+    registro: str,
+    grupo_esperado: str,
+    clinica: pd.DataFrame,
+    inicio_s: float,
+    duracion_s: float,
+    dirs: DirectoriosSalida,
+) -> tuple[dict, SerieResumen, Path]:
+    df, enc = cves.leer_segmento(fuente, registro, inicio_s, duracion_s, dirs.segmentos)
+    validacion = validar_configuracion_canales(enc.nombres, CANALES_REQUERIDOS)
+    canales_emg = enc.canales("emg")
+    if not canales_emg:
+        raise ValueError(f"{registro} no tiene canales emg_*; elija otro registro en configuracion.py.")
+
+    sujeto = cves.id_sujeto(registro)
+    filas = clinica[clinica["subject_number"] == sujeto]
+    datos_clinicos = filas.iloc[0].dropna().to_dict() if not filas.empty else {}
+    grupo = str(datos_clinicos.get("group", "")).upper()
+    if grupo != grupo_esperado.upper():
+        raise ValueError(f"{registro}: subjects.csv indica grupo {grupo!r}, configuracion.py {grupo_esperado!r}.")
+
+    etapas = procesar(df, enc.fs_hz, canales=canales_emg)
+    resumen = m.tabla_resumen(etapas, canales_emg, enc.fs_hz)
+
+    derivado = dirs.procesados / f"{registro}_segmento_procesado.csv"
+    derivado.parent.mkdir(parents=True, exist_ok=True)
+    tabla_derivada = pd.DataFrame({"tiempo_s": etapas["filtrada"]["tiempo_s"]})
+    for canal in canales_emg:
+        tabla_derivada[f"{canal}_filtrada_uv"] = etapas["filtrada"][canal]
+        tabla_derivada[f"{canal}_envolvente_uv"] = etapas["envolvente"][canal]
+    tabla_derivada.to_csv(derivado, index=False, float_format="%.4f")
+
+    canales_json = []
+    for _, fila in resumen.iterrows():
+        canal = fila["canal"]
+        canales_json.append(
+            {
+                **{k: v if k == "canal" else float(v) for k, v in fila.items()},
+                "calidad_aceptable": bool(fila["frac_potencia_20_450"] >= UMBRAL_CALIDAD_ESPECTRAL),
+                "estadisticos_filtrada": m.estadisticos_descriptivos(etapas["filtrada"][canal].to_numpy()),
+            },
+        )
+
+    representativo = canales_emg[0]
+    x = etapas["filtrada"][representativo].to_numpy()
+    f, p = m.espectro(x, enc.fs_hz)
+    energia_reposo, _, _ = m.linea_base_reposo(x**2, enc.fs_hz, VENTANA_ESPECTRAL_S)
+    ventanas = m.espectro_por_ventanas(
+        x,
+        enc.fs_hz,
+        VENTANA_ESPECTRAL_S,
+        VENTANA_ESPECTRAL_S / 2,
+        energia_min=FACTOR_ENERGIA_VENTANA * energia_reposo,
+    )
+    serie = SerieResumen(
+        etiqueta=f"{sujeto} · {grupo} · {representativo}",
+        grupo=grupo,
+        t_s=etapas["envolvente"]["tiempo_s"].to_numpy(),
+        envolvente_uv=etapas["envolvente"][representativo].to_numpy(),
+        f_hz=f,
+        dep_uv2_hz=p,
+        t_ventanas_s=ventanas["t_centro_s"].to_numpy() + df["tiempo_s"].iloc[0],
+        mdf_hz=ventanas["mdf_hz"].to_numpy(),
+    )
+
+    desde, hasta = cves.rango_muestras(enc, inicio_s, duracion_s)
+    procedencia = cves.ruta_base_segmento(dirs.segmentos, registro, desde, hasta).with_suffix(".json")
+    sha256 = json.loads(procedencia.read_text(encoding="utf-8"))["sha256"]
+    resultado = {
+        "registro": registro,
+        "sujeto": sujeto,
+        "grupo": grupo,
+        "clinica": {k: str(v) for k, v in datos_clinicos.items() if k != "subject_number"},
+        "encabezado": {
+            "fs_hz": enc.fs_hz,
+            "n_senales": enc.n_senales,
+            "duracion_h": round(enc.duracion_s / 3600, 4),
+            "inicio": enc.inicio.isoformat() if enc.inicio else None,
+        },
+        "validacion_canales": validacion,
+        "segmento": {
+            "inicio_s": inicio_s,
+            "duracion_s": duracion_s,
+            "hora_inicio": cves.hora_de_reloj(enc, inicio_s),
+            "sha256_crudo": sha256,
+            "derivado": _relativa(derivado, dirs.raiz),
+        },
+        "canal_representativo": representativo,
+        "pendiente_mdf_hz_por_s": m.pendiente(ventanas["t_centro_s"].to_numpy(), ventanas["mdf_hz"].to_numpy()),
+        "canales": canales_json,
+    }
+    return resultado, serie, derivado
+
+
+def tabla_latex(registros: list[dict]) -> str:
+    """Tabla ``booktabs`` generada a partir de los resultados (no se edita a mano)."""
+    lineas = [
+        "% Generado por scripts/reproduce.py; no editar manualmente.",
+        r"\begin{table}[htbp]",
+        r"\centering",
+        r"\caption{Métricas del segmento de referencia por registro y canal.}",
+        r"\label{tab:resumen}",
+        r"\begin{tabular}{lllrrrr}",
+        r"\toprule",
+        r"Registro & Grupo & Canal & RMS [\si{\micro\volt}] & MDF [\si{\hertz}]"
+        r" & Actividad [\si{\percent}] & Calidad [\si{\percent}] \\",
+        r"\midrule",
+    ]
+    for reg in registros:
+        for canal in reg["canales"]:
+            nombre = canal["canal"].replace("_", r"\_")
+            valores = (
+                canal["rms_uv"],
+                canal["mdf_hz"],
+                canal["actividad_pct"],
+                100 * canal["frac_potencia_20_450"],
+            )
+            celdas = [reg["registro"], reg["grupo"], nombre, *[rf"\num{{{v:.1f}}}" for v in valores]]
+            lineas.append(" & ".join(celdas) + r" \\")
+    lineas += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
+    return "\n".join(lineas)
+
+
+def reproducir(
+    fuente: cves.Fuente,
+    registros: tuple[tuple[str, str], ...],
+    inicio_s: float,
+    duracion_s: float,
+    dirs: DirectoriosSalida | None = None,
+) -> list[Path]:
+    """Ejecuta el flujo completo y devuelve las rutas escritas."""
+    dirs = dirs or DirectoriosSalida()
+    for carpeta in (dirs.procesados, dirs.resultados, dirs.figuras):
+        carpeta.mkdir(parents=True, exist_ok=True)
+    clinica = cves.cargar_sujetos(fuente)
+
+    resultados, series, escritos = [], [], []
+    for registro, grupo in registros:
+        resultado, serie, derivado = _analizar_registro(
+            fuente,
+            registro,
+            grupo,
+            clinica,
+            inicio_s,
+            duracion_s,
+            dirs,
+        )
+        resultados.append(resultado)
+        series.append(serie)
+        escritos.append(derivado)
+
+    resumen = {
+        "dataset": CITA_DATASET,
+        "parametros": {
+            "inicio_s": inicio_s,
+            "duracion_s": duracion_s,
+            "banda_hz": list(BANDA_SEMG_HZ),
+            "notch_hz": FRECUENCIA_RED_HZ,
+            "corte_envolvente_hz": CORTE_ENVOLVENTE_HZ,
+            "ventana_rms_s": VENTANA_RMS_S,
+            "k_umbral_activacion": K_UMBRAL_ACTIVACION,
+            "umbral_calidad_espectral": UMBRAL_CALIDAD_ESPECTRAL,
+            "canales_requeridos": sorted(CANALES_REQUERIDOS),
+        },
+        "registros": resultados,
+        "advertencias": ADVERTENCIAS,
+    }
+    ruta_json = dirs.resultados / "summary.json"
+    ruta_json.write_text(json.dumps(_sin_nan(resumen), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    ruta_tabla = dirs.resultados / "summary_table.tex"
+    ruta_tabla.write_text(tabla_latex(resultados), encoding="utf-8")
+
+    fig, _ = figura_resumen(series, f"CVES · segmento de {duracion_s:g} s desde el minuto {inicio_s / 60:g}")
+    ruta_figura = dirs.figuras / "summary.png"
+    fig.savefig(ruta_figura, dpi=180)
+    return [*escritos, ruta_json, ruta_tabla, ruta_figura]
+```
+
+# Módulo 7 · El tablero Streamlit
+
+Streamlit ejecuta `app.py` **de arriba abajo cada vez que el usuario mueve un control**. De esa regla se derivan las decisiones del archivo:
+
+- todo acceso a datos está en funciones con `@st.cache_data` que reciben tipos simples; mover un deslizador de filtrado no vuelve a pedir bytes;
+- los valores por defecto de los controles vienen de `configuracion.py`, de modo que el tablero arranca con los mismos parámetros que el informe;
+- los segmentos pedidos desde el tablero también quedan en `data/raw/cves/segmentos` con su SHA-256: explorar no rompe la trazabilidad;
+- la barra lateral sigue el razonamiento: fuente, participante y registro, segmento con hora de reloj, canales con etiquetas opcionales y parámetros;
+- seis pestañas: Señal, Espectro y calidad, Actividad y fatiga, Entre canales, Cohorte y Métricas.
+
+```{.python filename="app.py"}
+"""Tablero interactivo de sEMG del dataset CVES (PhysioNet) — SBVI.
+
+    uv run streamlit run app.py
+"""
+
+import pandas as pd
+import streamlit as st
+
+from ictus_semg import cves
+from ictus_semg import graficas as g
+from ictus_semg import metricas as m
+from ictus_semg.canales import validar_configuracion_canales
+from ictus_semg.configuracion import (
+    BANDA_SEMG_HZ,
+    CANALES_REQUERIDOS,
+    CORTE_ENVOLVENTE_HZ,
+    DIR_CVES,
+    DIR_DATOS_PROCESADOS,
+    DIR_SEGMENTOS,
+    FACTOR_ENERGIA_VENTANA,
+    K_UMBRAL_ACTIVACION,
+    UMBRAL_CALIDAD_ESPECTRAL,
+    VENTANA_RMS_S,
+)
+from ictus_semg.procesamiento import procesar
+
+st.set_page_config(page_title="CVES · sEMG en ictus", page_icon="🧠", layout="wide")
+ORIGENES = ("PhysioNet", "Copia local completa")
+DURACIONES_S = (10, 30, 60, 120, 300)
+METRICAS_COHORTE = {
+    "rms_uv": "RMS [µV]",
+    "mdf_hz": "MDF [Hz]",
+    "mnf_hz": "MNF [Hz]",
+    "actividad_pct": "Actividad [% del tiempo]",
+    "frac_potencia_20_450": "Calidad espectral [fracción]",
+}
+
+
+# ----------------------------------------------------------------- caché ----
+
+
+@st.cache_resource
+def obtener_fuente(origen: str) -> cves.Fuente:
+    """PhysioNet por rangos, o una copia completa en data/raw/cves."""
+    return cves.FuenteLocal(DIR_CVES) if origen == ORIGENES[1] else cves.FuentePhysioNet()
+
+
+@st.cache_data(show_spinner="Leyendo el índice de registros y subjects.csv…")
+def cargar_cohorte(origen: str) -> pd.DataFrame:
+    return cves.tabla_cohorte(obtener_fuente(origen))
+
+
+@st.cache_data(show_spinner="Leyendo encabezado…")
+def cargar_encabezado(origen: str, registro: str) -> cves.Encabezado:
+    return cves.leer_encabezado(obtener_fuente(origen), registro)
+
+
+@st.cache_data(show_spinner="Leyendo el segmento (solo los bytes necesarios)…")
+def cargar_segmento(origen: str, registro: str, inicio_s: float, duracion_s: float) -> pd.DataFrame:
+    dir_segmentos = None if origen == ORIGENES[1] else DIR_SEGMENTOS
+    df, _ = cves.leer_segmento(obtener_fuente(origen), registro, inicio_s, duracion_s, dir_segmentos)
+    return df
+
+
+@st.cache_data(show_spinner=False)
+def cargar_marcadores(origen: str, registro: str, fs_hz: float) -> pd.DataFrame:
+    return cves.leer_marcadores(obtener_fuente(origen), registro, fs_hz)
+
+
+@st.cache_data(show_spinner="Filtrando…")
+def procesar_cache(
+    df: pd.DataFrame,
+    fs_hz: float,
+    canales: tuple[str, ...],
+    banda_hz: tuple[float, float],
+    usar_notch: bool,
+    f_red_hz: float,
+    fc_envolvente_hz: float,
+    ventana_rms_s: float,
+) -> dict[str, pd.DataFrame]:
+    return procesar(df, fs_hz, banda_hz, usar_notch, f_red_hz, fc_envolvente_hz, ventana_rms_s, list(canales))
+
+
+def texto_o_signo(fila: pd.Series, columna: str) -> str:
+    """Valor de la columna como texto, o «¿?» si falta."""
+    valor = fila.get(columna)
+    return "¿?" if valor is None or pd.isna(valor) else str(valor)
+
+
+# --------------------------------------------------------- barra lateral ----
+
+with st.sidebar:
+    st.header("Fuente de datos")
+    origen = st.radio("Origen", ORIGENES, help="PhysioNet lee por rangos de bytes; no descarga registros completos.")
+    try:
+        cohorte = cargar_cohorte(origen)
+    except (OSError, ValueError) as error:
+        st.error(f"No fue posible leer el índice del dataset: {error}")
+        st.stop()
+
+    st.header("Participante")
+    grupos = st.multiselect("Grupo", ["STROKE", "CONTROL"], default=["STROKE", "CONTROL"])
+    candidatos = cohorte[cohorte["group"].astype(str).str.upper().isin(grupos)]
+    if candidatos.empty:
+        st.info("Seleccione al menos un grupo.")
+        st.stop()
+    grupo_de = candidatos.groupby("sujeto")["group"].first().to_dict()
+    sujeto = st.selectbox("Sujeto", sorted(grupo_de), format_func=lambda s: f"{s} · {grupo_de[s]}")
+    registro = st.selectbox("Registro de 24 h", candidatos.loc[candidatos["sujeto"] == sujeto, "registro"].tolist())
+    enc = cargar_encabezado(origen, registro)
+    inicio_texto = enc.inicio.strftime("%d/%m/%Y %H:%M:%S") if enc.inicio else "sin hora"
+    st.caption(f"{inicio_texto} · {enc.duracion_s / 3600:.2f} h · {enc.n_senales} canales a {enc.fs_hz:.0f} Hz")
+
+    st.header("Segmento")
+    max_min = max(0.0, round(enc.duracion_s / 60 - 5, 1))
+    inicio_min = st.slider("Inicio [min desde el comienzo]", 0.0, max_min, min(60.0, max_min), 0.5)
+    duracion_s = st.select_slider("Duración [s]", DURACIONES_S, value=60)
+    hora_inicio = cves.hora_de_reloj(enc, inicio_min * 60)
+    hora_fin = cves.hora_de_reloj(enc, inicio_min * 60 + duracion_s)
+    st.caption(f"Hora de reloj: {hora_inicio} → {hora_fin}")
+
+    st.header("Canales")
+    por_defecto = enc.canales("emg") or [n for n in enc.nombres if not n.startswith(("ecg", "accel"))]
+    canales = st.multiselect("Canales a analizar", enc.nombres, default=por_defecto)
+    if not canales:
+        st.info("Elija al menos un canal.")
+        st.stop()
+    with st.expander("Etiquetas de los canales"):
+        st.caption(
+            "Los metadatos públicos no indican qué músculo registra cada canal. "
+            "Una etiqueta es una hipótesis del analista y debe justificarse con el protocolo.",
+        )
+        etiquetas = {c: st.text_input(c, value=c, key=f"etiqueta_{c}") for c in canales}
+
+    st.header("Procesamiento")
+    banda_hz = st.slider("Pasabanda [Hz]", 5.0, 490.0, BANDA_SEMG_HZ, 5.0)
+    usar_notch = st.toggle("Notch de red", value=True)
+    f_red_hz = st.radio(
+        "Frecuencia de red [Hz]",
+        [60.0, 50.0],
+        horizontal=True,
+        disabled=not usar_notch,
+        help="CVES se registró en Boston (EE. UU.), donde la red es de 60 Hz.",
+    )
+    fc_envolvente_hz = st.slider("Corte de la envolvente [Hz]", 2.0, 20.0, CORTE_ENVOLVENTE_HZ, 0.5)
+    ventana_rms_s = st.slider("Ventana RMS [ms]", 50, 500, int(VENTANA_RMS_S * 1000), 25) / 1000
+    k_umbral = st.slider(
+        "Umbral de activación [μ + k·σ del tramo más silencioso]",
+        1.0,
+        10.0,
+        K_UMBRAL_ACTIVACION,
+        0.5,
+    )
+
+# --------------------------------------------------------- procesamiento ----
+
+try:
+    df = cargar_segmento(origen, registro, inicio_min * 60, float(duracion_s))
+except (OSError, ValueError, NotImplementedError) as error:
+    st.error(f"No fue posible leer el segmento: {error}")
+    st.stop()
+
+fs_hz = enc.fs_hz
+etapas = procesar_cache(
+    df,
+    fs_hz,
+    tuple(canales),
+    tuple(banda_hz),
+    usar_notch,
+    f_red_hz,
+    fc_envolvente_hz,
+    ventana_rms_s,
+)
+t_s = etapas["filtrada"]["tiempo_s"].to_numpy()
+filtrada, envolvente = etapas["filtrada"], etapas["envolvente"]
+resumen = m.tabla_resumen(etapas, canales, fs_hz, tuple(banda_hz), k_umbral, f_red_hz)
+resumen.insert(1, "etiqueta", resumen["canal"].map(etiquetas))
+marcadores = cargar_marcadores(origen, registro, fs_hz)
+marcadores = marcadores[(marcadores["tiempo_s"] >= t_s[0]) & (marcadores["tiempo_s"] <= t_s[-1])]
+acelerometros = [c for c in df.columns if c.startswith("accelerometer")]
+validacion = validar_configuracion_canales(enc.nombres, CANALES_REQUERIDOS)
+
+# ------------------------------------------------------------ encabezado ----
+
+fila = cohorte[cohorte["registro"] == registro].iloc[0]
+grupo = texto_o_signo(fila, "group")
+st.title(f"{sujeto} · {grupo}")
+edad, sexo = texto_o_signo(fila, "age"), texto_o_signo(fila, "gender")
+datos_clinicos = [f"{edad} años", f"sexo {sexo}"]
+if grupo.upper() == "STROKE":
+    hemisferio = texto_o_signo(fila, "stroke_side")
+    lado_paretico = texto_o_signo(fila, "lado_paretico_inferido")
+    nihss, mrs = texto_o_signo(fila, "nihss"), texto_o_signo(fila, "mrs")
+    datos_clinicos += [
+        f"hemisferio lesionado: {hemisferio}",
+        f"lado parético inferido: {lado_paretico}",
+        f"NIHSS {nihss}",
+        f"mRS {mrs}",
+    ]
+    sintomas = texto_o_signo(fila, "symptoms")
+    st.caption(f"Síntomas registrados: {sintomas}")
+st.markdown(" · ".join(datos_clinicos))
+if not validacion["completo"]:
+    faltantes = ", ".join(validacion["faltantes"])
+    st.info(f"Este registro no tiene los canales requeridos {faltantes}; se analizan los disponibles.")
+
+peor_calidad = resumen["frac_potencia_20_450"].min()
+actividad_media = resumen["actividad_pct"].mean()
+k1, k2, k3, k4 = st.columns(4)
+k1.metric("Canales analizados", len(canales))
+k2.metric("Peor calidad espectral", f"{peor_calidad:.0%}", help="Fracción de la potencia entre 20 y 450 Hz.")
+k3.metric("Actividad media", f"{actividad_media:.0f} % del tiempo")
+k4.metric("Marcadores en el segmento", len(marcadores))
+malos = resumen.loc[resumen["frac_potencia_20_450"] < UMBRAL_CALIDAD_ESPECTRAL, "etiqueta"].tolist()
+if malos:
+    lista_malos = ", ".join(malos)
+    st.warning(
+        f"Revise la calidad de: {lista_malos}. Menos del {UMBRAL_CALIDAD_ESPECTRAL:.0%} de su potencia "
+        "está en la banda del sEMG: puede ser un canal sin electrodo, saturado o sin sEMG crudo.",
+    )
+
+# --------------------------------------------------------------- pestañas ---
+
+pestanas = st.tabs(["Señal", "Espectro y calidad", "Actividad y fatiga", "Entre canales", "Cohorte", "Métricas"])
+
+with pestanas[0]:
+    c1, c2 = st.columns(2)
+    ver_cruda = c1.toggle("Superponer señal cruda (sin offset)", value=False)
+    ver_acelerometro = c2.toggle("Mostrar acelerómetro", value=bool(acelerometros), disabled=not acelerometros)
+    figura = g.fig_multicanal(
+        etapas,
+        canales,
+        etiquetas,
+        t0=enc.inicio,
+        mostrar_cruda=ver_cruda,
+        acelerometros=df[["tiempo_s", *acelerometros]] if ver_acelerometro else None,
+        marcadores=marcadores,
+    )
+    st.plotly_chart(figura, width="stretch")
+    if len(marcadores):
+        st.caption("Marcadores del archivo .marker dentro del segmento (líneas punteadas):")
+        horas = marcadores["tiempo_s"].map(lambda s: cves.hora_de_reloj(enc, s))
+        st.dataframe(marcadores.assign(hora=horas)[["hora", "simbolo", "aux"]], hide_index=True)
+
+with pestanas[1]:
+    st.plotly_chart(g.fig_psd(filtrada, canales, etiquetas, fs_hz), width="stretch")
+    c1, c2 = st.columns(2)
+    c1.plotly_chart(g.fig_calidad(resumen, etiquetas), width="stretch")
+    c2.dataframe(resumen[["etiqueta", "frac_potencia_20_450", "red_db", "frac_saturacion"]].round(3), hide_index=True)
+    canal_sg = st.selectbox("Espectrograma del canal", canales, format_func=lambda c: etiquetas[c])
+    x_sg = filtrada[canal_sg].to_numpy()
+    st.plotly_chart(g.fig_espectrograma(x_sg, fs_hz, etiquetas[canal_sg], t_s[0]), width="stretch")
+
+with pestanas[2]:
+    c1, c2 = st.columns(2)
+    ventana_s = c1.select_slider("Ventana de análisis [s]", [0.5, 1.0, 2.0, 5.0], value=1.0)
+    variable = c2.radio(
+        "Indicador espectral",
+        ["mdf_hz", "mnf_hz"],
+        horizontal=True,
+        format_func=lambda v: "Frecuencia mediana" if v == "mdf_hz" else "Frecuencia media",
+    )
+    series, colores = {}, {}
+    for i, canal in enumerate(canales):
+        x = filtrada[canal].to_numpy()
+        energia_reposo, _, _ = m.linea_base_reposo(x**2, fs_hz, ventana_s)
+        tabla_v = m.espectro_por_ventanas(
+            x,
+            fs_hz,
+            ventana_s,
+            ventana_s / 2,
+            tuple(banda_hz),
+            energia_min=FACTOR_ENERGIA_VENTANA * energia_reposo,
+        )
+        tabla_v["t_centro_s"] += t_s[0]
+        series[etiquetas[canal]], colores[etiquetas[canal]] = tabla_v, g.color_canal(i)
+    st.plotly_chart(g.fig_actividad(series, colores, variable), width="stretch")
+    pendientes = pd.DataFrame(
+        {
+            "canal": list(series),
+            "pendiente [Hz/s]": [m.pendiente(v["t_centro_s"], v[variable]) for v in series.values()],
+            "ventanas activas": [len(v) for v in series.values()],
+        },
+    )
+    st.dataframe(pendientes.round(4), hide_index=True)
+    st.caption(
+        "Solo se usan ventanas con energía mayor que 4 veces la de la ventana más silenciosa. "
+        "En registros ambulatorios la actividad cambia con la tarea: una pendiente negativa "
+        "no demuestra fatiga si la contracción no fue sostenida.",
+    )
+
+with pestanas[3]:
+    if len(canales) < 2:
+        st.info("Seleccione al menos dos canales en la barra lateral.")
+    else:
+        c1, c2, c3 = st.columns(3)
+        canal_a = c1.selectbox("Canal A", canales, index=0, format_func=lambda c: etiquetas[c])
+        canal_b = c2.selectbox("Canal B", canales, index=1, format_func=lambda c: etiquetas[c])
+        normalizar = c3.toggle("Normalizar cada envolvente a su percentil 99", value=True)
+        env_a, env_b = envolvente[canal_a].to_numpy(), envolvente[canal_b].to_numpy()
+        if normalizar:
+            env_a, env_b = m.normalizar_por_pico(env_a), m.normalizar_por_pico(env_b)
+        ci = m.indice_coactivacion(env_a, env_b)
+        razon = m.rms(filtrada[canal_a].to_numpy()) / m.rms(filtrada[canal_b].to_numpy())
+        k1, k2 = st.columns(2)
+        k1.metric("Índice de coactivación", f"{ci:.1f} %")
+        k2.metric(f"Razón RMS {etiquetas[canal_a]} / {etiquetas[canal_b]}", f"{razon:.2f}")
+        figura = g.fig_coactivacion(t_s, env_a, env_b, etiquetas[canal_a], etiquetas[canal_b], f"CI = {ci:.1f} %")
+        st.plotly_chart(figura, width="stretch")
+        st.caption(
+            "El índice solo tiene lectura fisiológica si A y B son un par agonista-antagonista; "
+            "la razón RMS, si son músculos homólogos de ambos lados. Ninguna condición está "
+            "documentada para los canales de CVES.",
+        )
+
+with pestanas[4]:
+    archivos = sorted(DIR_DATOS_PROCESADOS.glob("cohorte_*.csv"))
+    if not archivos:
+        st.info("Aún no hay métricas de cohorte. Genérelas desde la terminal:")
+        st.code("uv run python scripts/cohorte.py --inicio-min 60 --duracion-s 120", language="bash")
+    else:
+        archivo = st.selectbox("Archivo de métricas", archivos, format_func=lambda ruta: ruta.name)
+        tabla = pd.read_csv(archivo)
+        c1, c2 = st.columns(2)
+        canal_c = c1.selectbox("Canal", sorted(tabla["canal"].unique()))
+        metrica = c2.selectbox("Métrica", list(METRICAS_COHORTE), format_func=METRICAS_COHORTE.get)
+        solo_calidad = st.toggle(f"Excluir canales con calidad espectral < {UMBRAL_CALIDAD_ESPECTRAL:.0%}", value=True)
+        datos = tabla[tabla["canal"] == canal_c]
+        if solo_calidad:
+            datos = datos[datos["frac_potencia_20_450"] >= UMBRAL_CALIDAD_ESPECTRAL]
+        st.plotly_chart(g.fig_cohorte(datos, metrica, METRICAS_COHORTE[metrica]), width="stretch")
+        descriptivos = datos.groupby("group")[metrica].describe(percentiles=[0.25, 0.5, 0.75])
+        st.dataframe(descriptivos[["count", "25%", "50%", "75%"]].round(2))
+        st.caption(
+            "Descriptivos por grupo, un valor por sujeto. Antes de cualquier prueba inferencial, "
+            "considere que el tramo no corresponde a la misma actividad en todos los sujetos.",
+        )
+
+with pestanas[5]:
+    exportar = resumen.assign(
+        registro=registro,
+        sujeto=sujeto,
+        grupo=grupo,
+        inicio_s=inicio_min * 60,
+        duracion_s=duracion_s,
+        banda_hz=f"{banda_hz[0]:g}-{banda_hz[1]:g}",
+        notch_hz=f_red_hz if usar_notch else "no",
+        envolvente_hz=fc_envolvente_hz,
+    )
+    st.dataframe(exportar.round(3), hide_index=True)
+    st.download_button(
+        "Descargar métricas (CSV)",
+        exportar.to_csv(index=False).encode("utf-8"),
+        file_name=f"metricas_{registro}_{inicio_min:g}min.csv",
+        mime="text/csv",
+    )
+    st.caption(
+        "Datos: Novak V. Cerebral Vasoregulation in Elderly with Stroke (v1.0.0). PhysioNet. "
+        "https://doi.org/10.13026/C2DW96 · Licencia ODC-By 1.0.",
+    )
+```
+
+```bash
+uv run streamlit run app.py
+```
+
+::: {.callout-note title="El tablero no reemplaza la reproducción"}
+El estado de un tablero no queda en ningún archivo. La evidencia evaluable es la que produce `reproduce.py`; el tablero sirve para explorar, formular preguntas y, en la sustentación, mostrar que usa exactamente las mismas funciones.
+:::
+
+# Módulo 8 · Inventario y comparación de grupos
+
+Dos scripts opcionales amplían el análisis. `inventario_canales.py` descarga solo los encabezados (unos 500 bytes cada uno) de todos los registros de 24 h y escribe `results/inventario_canales.csv` con grupo, duración, canales y validación: es la herramienta para elegir registros de referencia. `cohorte.py` lee el mismo tramo de cada sujeto y deja un CSV en `data/processed` y un JSON de procedencia en `results`; la pestaña Cohorte del tablero lo visualiza.
+
+```bash
+uv run python scripts/inventario_canales.py
+uv run python scripts/cohorte.py --inicio-min 60 --duracion-s 120 --max-sujetos 5   # prueba rápida
+```
+
+Las decisiones metodológicas quedan escritas en el código: la unidad de análisis es el participante (su primer registro), todos se leen en el mismo desfase, los errores esperables (`ValueError`, `NotImplementedError`, `OSError`) se registran con su causa en lugar de ocultarse, y la pestaña Cohorte excluye por defecto los canales que no superan el umbral de calidad.
+
+```{.python filename="scripts/inventario_canales.py"}
+"""Inventario de canales de todos los registros de 24 h (solo descarga encabezados).
+
+    uv run python scripts/inventario_canales.py
+
+Escribe results/inventario_canales.csv con grupo, duración, canales y la
+validación frente a CANALES_REQUERIDOS. Úselo para elegir registros de
+referencia antes de modificar configuracion.py.
+"""
+
+import time
+
+import pandas as pd
+
+from ictus_semg import cves
+from ictus_semg.canales import validar_configuracion_canales
+from ictus_semg.configuracion import CANALES_REQUERIDOS, DIR_RESULTADOS, RAIZ_PROYECTO
+
+PAUSA_ENTRE_PETICIONES_S = 0.3
+
+
+def main() -> None:
+    """Lee cada ``.hea`` (unos 500 bytes) y resume su configuración de canales."""
+    fuente = cves.FuentePhysioNet()
+    cohorte = cves.tabla_cohorte(fuente)
+    filas = []
+    for _, fila in cohorte.iterrows():
+        try:
+            enc = cves.leer_encabezado(fuente, fila["registro"])
+        except (OSError, ValueError) as error:
+            filas.append({"registro": fila["registro"], "error": f"{type(error).__name__}: {error}"})
+            continue
+        validacion = validar_configuracion_canales(enc.nombres, CANALES_REQUERIDOS)
+        filas.append(
+            {
+                "registro": fila["registro"],
+                "sujeto": fila["sujeto"],
+                "grupo": fila.get("group"),
+                "duracion_h": round(enc.duracion_s / 3600, 3),
+                "fs_hz": enc.fs_hz,
+                "canales": " ".join(enc.nombres),
+                "n_emg": len(enc.canales("emg")),
+                "faltantes": " ".join(validacion["faltantes"]),
+                "completo": validacion["completo"],
+            },
+        )
+        time.sleep(PAUSA_ENTRE_PETICIONES_S)
+    ruta = DIR_RESULTADOS / "inventario_canales.csv"
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(filas).to_csv(ruta, index=False)
+    print(f"{len(filas)} registros → {ruta.relative_to(RAIZ_PROYECTO).as_posix()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+```{.python filename="src/ictus_semg/cohorte.py"}
+"""Extracción por lotes de métricas de sEMG para comparar STROKE y CONTROL.
+
+Por cada sujeto se toma su primer registro de 24 h, se lee el mismo tramo y se
+calculan métricas en cada canal ``emg_*``. Resultado: un CSV en
+``data/processed`` (una fila por sujeto y canal) y un JSON de procedencia en
+``results`` con parámetros, fuente y errores.
+
+Advertencia: el tramo no corresponde a la misma actividad en todos los sujetos
+y la ubicación de los canales no está documentada; la comparación es exploratoria.
+"""
+
+import argparse
+import json
+import time
+from pathlib import Path
+
+import pandas as pd
+
+from ictus_semg import cves
+from ictus_semg import metricas as m
+from ictus_semg.configuracion import DIR_DATOS_PROCESADOS, DIR_RESULTADOS, RAIZ_PROYECTO
+from ictus_semg.procesamiento import procesar
+
+COLUMNAS_CONTEXTO = ("sujeto", "registro", "group", "stroke_side", "lado_paretico_inferido", "nihss", "mrs", "age")
+ERRORES_ESPERABLES = (ValueError, NotImplementedError, OSError)  # OSError incluye errores de red
+
+
+def extraer(
+    fuente: cves.Fuente,
+    inicio_s: float,
+    duracion_s: float,
+    max_sujetos: int | None = None,
+    pausa_s: float = 0.5,
+    dir_segmentos: Path | None = None,
+) -> tuple[pd.DataFrame, list[dict[str, str]]]:
+    """Métricas por sujeto y canal; los registros que fallan se documentan y se omiten."""
+    cohorte = cves.tabla_cohorte(fuente)
+    primeros = cohorte.sort_values("registro").groupby("sujeto", as_index=False).first()
+    if max_sujetos is not None:
+        primeros = primeros.head(max_sujetos)
+
+    tablas, errores = [], []
+    for _, fila in primeros.iterrows():
+        try:
+            df, enc = cves.leer_segmento(fuente, fila["registro"], inicio_s, duracion_s, dir_segmentos)
+            canales = enc.canales("emg")
+            if not canales:
+                raise ValueError("sin canales emg_*")
+            etapas = procesar(df, enc.fs_hz, canales=canales)
+            resumen = m.tabla_resumen(etapas, canales, enc.fs_hz)
+        except ERRORES_ESPERABLES as error:
+            errores.append({"registro": fila["registro"], "error": f"{type(error).__name__}: {error}"})
+        else:
+            for columna in COLUMNAS_CONTEXTO:
+                if columna in fila:
+                    resumen[columna] = fila[columna]
+            tablas.append(resumen)
+        time.sleep(pausa_s)
+    tabla = pd.concat(tablas, ignore_index=True) if tablas else pd.DataFrame()
+    return tabla, errores
+
+
+def main() -> None:
+    """Punto de entrada de ``scripts/cohorte.py``."""
+    parser = argparse.ArgumentParser(description="Métricas de sEMG por lotes para la cohorte CVES.")
+    parser.add_argument("--inicio-min", type=float, default=60.0)
+    parser.add_argument("--duracion-s", type=float, default=120.0)
+    parser.add_argument("--max-sujetos", type=int, default=None)
+    argumentos = parser.parse_args()
+
+    fuente = cves.FuentePhysioNet()
+    tabla, errores = extraer(fuente, argumentos.inicio_min * 60, argumentos.duracion_s, argumentos.max_sujetos)
+
+    nombre = f"cohorte_inicio{argumentos.inicio_min:g}min_dur{argumentos.duracion_s:g}s"
+    ruta_csv = DIR_DATOS_PROCESADOS / f"{nombre}.csv"
+    ruta_json = DIR_RESULTADOS / f"{nombre}.json"
+    ruta_csv.parent.mkdir(parents=True, exist_ok=True)
+    ruta_json.parent.mkdir(parents=True, exist_ok=True)
+    tabla.to_csv(ruta_csv, index=False, float_format="%.4f")
+    procedencia = {
+        "parametros": vars(argumentos),
+        "fuente": fuente.descripcion(),
+        "salida": ruta_csv.relative_to(RAIZ_PROYECTO).as_posix(),
+        "n_filas": len(tabla),
+        "n_sujetos": int(tabla["sujeto"].nunique()) if not tabla.empty else 0,
+        "errores": errores,
+    }
+    ruta_json.write_text(json.dumps(procedencia, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    salida = procedencia["salida"]
+    print(f"{len(tabla)} filas en {salida} ({len(errores)} registros con error)")
+```
+
+# Pruebas automáticas y análisis estático
+
+Las pruebas **no usan la red**: `conftest.py` construye una réplica sintética con la estructura de CVES, con semilla explícita. Siguen el patrón organizar–actuar–comprobar, prueban errores esperados con `pytest.raises(..., match=...)` y comparan flotantes con tolerancias declaradas.
+
+| Área | Contratos verificados |
+|---|---|
+| Acceso a datos | encabezado real de CVES, encabezado vacío, bytes idénticos a lo escrito, segmentos fuera de rango o de duración no positiva |
+| Datos originales | el segmento se guarda una vez, se reutiliza y un original alterado detiene la lectura por SHA-256; un archivo auxiliar existente no se sobrescribe |
+| Red | la petición lleva `Range` correcto y una respuesta HTTP 200 se rechaza |
+| Canales | configuración completa, faltante, duplicada y nombre vacío |
+| Anotaciones | ida y vuelta con saltos largos y texto; archivo vacío; validación contra `wfdb` |
+| Señal y métricas | notch ≥ 20 dB, pasabanda sin offset, MDF de una senoide, límites del CI, estadísticos conocidos, un valor, vacío, no finito, forma incorrecta |
+| Figura | tres paneles, etiquetas con unidades, leyenda y archivo creado |
+| Reproducción | productos creados, segunda ejecución idéntica, originales no duplicados, rutas relativas, grupo inconsistente detiene el flujo |
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest -v
+```
+
+```{.python filename="tests/conftest.py"}
+"""Réplica mínima y sintética de la estructura de CVES para pruebas sin red.
+
+Las pruebas nunca descargan datos: construyen un árbol de carpetas con la misma
+forma que PhysioNet (RECORDS, subjects.csv, .hea, .dat, .marker). Toda la
+aleatoriedad usa la semilla explícita SEMILLA.
+"""
+
+from pathlib import Path
+
+import numpy as np
+import pytest
+from scipy import signal
+
+from ictus_semg.anotaciones import escribir_anotaciones_mit
+
+SEMILLA = 2026
+FS_HZ = 1000
+DURACION_S = 120
+NOMBRES = ("ecg_0", "emg_0", "emg_1", "accelerometer_0")
+REGISTRO_STROKE = "s0999-06010108"
+REGISTRO_CONTROL = "s0998-06010108"
+OFFSET_DC_UV = 1975  # como el valor inicial de emg_0 en s0183-05042808
+AMPLITUD_RED_UV = 30
+
+
+def semg_sintetico(n: int, fs_hz: float, rng: np.random.Generator, periodo_s: float = 4.0, fase: float = 0.0):
+    """Ruido de banda 20–250 Hz modulado por ráfagas periódicas (µV)."""
+    sos = signal.butter(4, [20, 250], btype="bandpass", fs=fs_hz, output="sos")
+    portadora = signal.sosfiltfilt(sos, rng.standard_normal(n))
+    t_s = np.arange(n) / fs_hz
+    rafagas = np.clip(np.sin(2 * np.pi * t_s / periodo_s + fase), 0, None) ** 2
+    return 80 * portadora / portadora.std() * (0.05 + rafagas)
+
+
+def escribir_registro(carpeta: Path, nombre: str, digitales: np.ndarray, nombres: tuple[str, ...]) -> None:
+    """Escribe un registro WFDB formato 16, ganancia 1, µV (como los de CVES)."""
+    carpeta.mkdir(parents=True, exist_ok=True)
+    digitales.astype("<i2").tofile(carpeta / f"{nombre}.dat")
+    lineas = [f"{nombre} {len(nombres)} {FS_HZ} {len(digitales)} 09:01:42 30/03/2006"]
+    for j, canal in enumerate(nombres):
+        lineas.append(f"{nombre}.dat 16 1(0)/uV 16 0 {int(digitales[0, j])} 0 0 {canal}")
+    (carpeta / f"{nombre}.hea").write_text("\n".join(lineas) + "\n")
+
+
+def _digitales(rng: np.random.Generator) -> np.ndarray:
+    n = DURACION_S * FS_HZ
+    t_s = np.arange(n) / FS_HZ
+    ecg = 800 * np.exp(-(((t_s % 0.9) - 0.1) ** 2) / 2e-4)
+    emg0 = semg_sintetico(n, FS_HZ, rng) + OFFSET_DC_UV + AMPLITUD_RED_UV * np.sin(2 * np.pi * 60 * t_s)
+    emg1 = semg_sintetico(n, FS_HZ, rng, fase=np.pi)
+    acelerometro = 200 * np.sin(2 * np.pi * 0.25 * t_s)
+    return np.round(np.column_stack([ecg, emg0, emg1, acelerometro])).astype(int)
+
+
+@pytest.fixture(scope="session")
+def raiz_cves(tmp_path_factory) -> Path:
+    """Árbol de carpetas con dos registros (STROKE y CONTROL) y datos clínicos."""
+    raiz = tmp_path_factory.mktemp("cves")
+    rng = np.random.default_rng(SEMILLA)
+    carpeta = raiz / "data" / "24h-electromyography"
+    for registro in (REGISTRO_STROKE, REGISTRO_CONTROL):
+        escribir_registro(carpeta, registro, _digitales(rng), NOMBRES)
+    marcadores = escribir_anotaciones_mit([5_000, 65_000], [22, 22], ["inicio caminata", "fin"])
+    (carpeta / f"{REGISTRO_STROKE}.marker").write_bytes(marcadores)
+    (raiz / "RECORDS").write_text(
+        f"data/24h-electromyography/{REGISTRO_STROKE}\n"
+        f"data/24h-electromyography/{REGISTRO_CONTROL}\n"
+        "data/sit-stand/s0999-sit-stand\n",
+    )
+    (raiz / "subjects.csv").write_text(
+        "subject_number,group,age,gender,Stroke Side,NIHSS,MRS,Symptoms\n"
+        "S0999,STROKE,70,F,LEFT,2,1,R hemiparesis\n"
+        "S0998,CONTROL,68,M,,,,\n",
+    )
+    return raiz
+```
+
+```{.python filename="tests/test_cves.py"}
+from datetime import datetime
+from unittest import mock
+
+import numpy as np
+import pytest
+from conftest import FS_HZ, NOMBRES, REGISTRO_STROKE
+
+from ictus_semg import cves
+
+# Encabezado real de CVES: data/24h-electromyography/s0164-06033004.hea
+HEA_REAL = """s0164-06033004 8 1000 31479330 09:01:42 30/03/2006
+s0164-06033004.dat 16 1(0)/uV 16 0 -370 64304 0 ecg_0
+s0164-06033004.dat 16 1(0)/uV 16 0 -156 42075 0 ecg_1
+s0164-06033004.dat 16 1(0)/uV 16 0 2257 26341 0 sensor_0
+s0164-06033004.dat 16 1(0)/uV 16 0 2223 14970 0 sensor_1
+s0164-06033004.dat 16 1(0)/uV 16 0 3 871 0 emg_0
+s0164-06033004.dat 16 1(0)/uV 16 0 4 50859 0 emg_1
+s0164-06033004.dat 16 1(0)/uV 16 0 -270 62612 0 accelerometer_0
+s0164-06033004.dat 16 1(0)/uV 16 0 -235 50267 0 accelerometer_1
+"""
+
+
+def test_parsea_encabezado_real_de_cves() -> None:
+    enc = cves.parsear_encabezado(HEA_REAL)
+    assert (enc.n_senales, enc.fs_hz, enc.n_muestras) == (8, 1000, 31_479_330)
+    assert enc.inicio == datetime(2006, 3, 30, 9, 1, 42)
+    assert enc.canales("emg") == ["emg_0", "emg_1"]
+    assert {s.unidades for s in enc.senales} == {"uV"}
+    assert enc.duracion_s / 3600 == pytest.approx(8.744, abs=1e-3)
+
+
+def test_encabezado_vacio_es_rechazado() -> None:
+    with pytest.raises(ValueError, match="vacío"):
+        cves.parsear_encabezado("\n# solo comentarios\n")
+
+
+def test_segmento_coincide_con_los_bytes_escritos(raiz_cves) -> None:
+    fuente = cves.FuenteLocal(raiz_cves)
+    df, _ = cves.leer_segmento(fuente, REGISTRO_STROKE, inicio_s=10, duracion_s=2, dir_segmentos=None)
+    ruta_dat = raiz_cves / "data" / "24h-electromyography" / f"{REGISTRO_STROKE}.dat"
+    completo = np.fromfile(ruta_dat, dtype="<i2").reshape(-1, len(NOMBRES))
+    assert list(df.columns) == ["tiempo_s", *NOMBRES]
+    assert len(df) == 2 * FS_HZ
+    assert df["tiempo_s"].iloc[0] == pytest.approx(10.0)
+    np.testing.assert_array_equal(df["emg_0"].to_numpy(), completo[10 * FS_HZ : 12 * FS_HZ, 1])
+
+
+def test_segmento_original_se_guarda_una_vez_y_se_verifica(raiz_cves, tmp_path) -> None:
+    fuente = cves.FuenteLocal(raiz_cves)
+    a, _ = cves.leer_segmento(fuente, REGISTRO_STROKE, 5, 1, dir_segmentos=tmp_path)
+    b, _ = cves.leer_segmento(fuente, REGISTRO_STROKE, 5, 1, dir_segmentos=tmp_path)
+    binarios = list(tmp_path.glob("*.bin"))
+    assert len(binarios) == 1 and len(list(tmp_path.glob("*.json"))) == 1
+    assert a.equals(b)
+    binarios[0].write_bytes(binarios[0].read_bytes()[::-1])  # simula un original alterado
+    with pytest.raises(ValueError, match="SHA-256"):
+        cves.leer_segmento(fuente, REGISTRO_STROKE, 5, 1, dir_segmentos=tmp_path)
+
+
+@pytest.mark.parametrize(("inicio_s", "duracion_s"), [(10_000, 5), (0, 0), (0, -1)])
+def test_segmentos_invalidos(raiz_cves, inicio_s, duracion_s) -> None:
+    with pytest.raises(ValueError):
+        cves.leer_segmento(cves.FuenteLocal(raiz_cves), REGISTRO_STROKE, inicio_s, duracion_s, dir_segmentos=None)
+
+
+def test_marcadores_y_cohorte(raiz_cves) -> None:
+    fuente = cves.FuenteLocal(raiz_cves)
+    marcadores = cves.leer_marcadores(fuente, REGISTRO_STROKE, FS_HZ)
+    assert marcadores["tiempo_s"].tolist() == [5.0, 65.0]
+    assert marcadores["aux"].tolist() == ["inicio caminata", "fin"]
+    cohorte = cves.tabla_cohorte(fuente).set_index("sujeto")
+    assert cohorte.loc["S0999", "lado_paretico_inferido"] == "derecho"
+    assert cohorte.loc["S0998", "group"] == "CONTROL"
+
+
+def test_registro_sin_marcadores_devuelve_tabla_vacia(raiz_cves) -> None:
+    tabla = cves.leer_marcadores(cves.FuenteLocal(raiz_cves), "s0998-06010108", FS_HZ)
+    assert tabla.empty
+
+
+def _respuesta(estado: int, contenido: bytes = b"") -> mock.MagicMock:
+    respuesta = mock.MagicMock(status=estado)
+    respuesta.__enter__.return_value = respuesta
+    respuesta.read.return_value = contenido
+    return respuesta
+
+
+def test_remoto_envia_cabecera_range(tmp_path) -> None:
+    with mock.patch("urllib.request.urlopen", return_value=_respuesta(206, b"\x00" * 10)) as abrir:
+        cves.FuentePhysioNet(espejo=tmp_path).leer_bytes("data/x.dat", 100, 10)
+    peticion = abrir.call_args.args[0]
+    assert peticion.get_header("Range") == "bytes=100-109"
+    assert peticion.full_url == cves.URL_CVES + "data/x.dat"
+
+
+def test_remoto_rechaza_respuesta_sin_rango(tmp_path) -> None:
+    with mock.patch("urllib.request.urlopen", return_value=_respuesta(200)):
+        with pytest.raises(ConnectionError, match="rango"):
+            cves.FuentePhysioNet(espejo=tmp_path).leer_bytes("a.dat", 0, 10)
+
+
+def test_archivo_auxiliar_no_se_sobrescribe(tmp_path) -> None:
+    (tmp_path / "RECORDS").write_text("original")
+    with mock.patch("urllib.request.urlopen") as abrir:
+        texto = cves.FuentePhysioNet(espejo=tmp_path).leer_texto("RECORDS")
+    assert texto == "original"
+    abrir.assert_not_called()
+
+
+def test_id_sujeto() -> None:
+    assert cves.id_sujeto("s0244-ET-06041303") == "S0244"
+    with pytest.raises(ValueError, match="inesperado"):
+        cves.id_sujeto("registro-sin-formato")
+```
+
+```{.python filename="tests/test_canales.py"}
+import pytest
+
+from ictus_semg.canales import validar_configuracion_canales
+
+REQUERIDOS = {"emg_0", "emg_1"}
+
+
+def test_configuracion_completa() -> None:
+    resultado = validar_configuracion_canales(["ecg_0", "emg_0", "emg_1"], REQUERIDOS)
+    assert resultado["completo"] is True
+    assert resultado["faltantes"] == [] and resultado["adicionales"] == ["ecg_0"]
+
+
+def test_configuracion_con_faltante() -> None:
+    resultado = validar_configuracion_canales(["unknown_0", "emg_0"], REQUERIDOS)
+    assert resultado["completo"] is False
+    assert resultado["faltantes"] == ["emg_1"]
+
+
+def test_configuracion_con_duplicado_conserva_orden() -> None:
+    observados = ["emg_1", "emg_0", "emg_1"]
+    resultado = validar_configuracion_canales(observados, REQUERIDOS)
+    assert resultado["duplicados"] == ["emg_1"]
+    assert resultado["observados"] == ["emg_1", "emg_0", "emg_1"]
+    assert observados == ["emg_1", "emg_0", "emg_1"]  # la entrada no se modifica
+
+
+@pytest.mark.parametrize("nombre", ["", "   "])
+def test_nombre_vacio_es_rechazado(nombre) -> None:
+    with pytest.raises(ValueError, match="vacíos"):
+        validar_configuracion_canales(["emg_0", nombre], REQUERIDOS)
+```
+
+```{.python filename="tests/test_anotaciones.py"}
+import numpy as np
+import pytest
+
+from ictus_semg.anotaciones import escribir_anotaciones_mit, leer_anotaciones_mit
+
+
+def test_ida_y_vuelta_con_saltos_largos_y_texto() -> None:
+    muestras = [10, 500, 2_000_000, 2_000_001]
+    datos = escribir_anotaciones_mit(muestras, [22, 1, 22, 1], ["a", "", "texto impar", ""])
+    tabla = leer_anotaciones_mit(datos)
+    assert tabla["muestra"].tolist() == muestras
+    assert tabla["aux"].tolist() == ["a", "", "texto impar", ""]
+    assert tabla["simbolo"].tolist() == ["NOTE", "N", "NOTE", "N"]
+
+
+def test_archivo_vacio_produce_tabla_vacia() -> None:
+    assert leer_anotaciones_mit(b"\x00\x00").empty
+
+
+def test_valida_contra_wfdb(tmp_path) -> None:
+    wfdb = pytest.importorskip("wfdb")
+    muestras = np.array([100, 5000, 1_500_000])
+    wfdb.wrann(
+        "r",
+        "marker",
+        sample=muestras,
+        symbol=['"', '"', '"'],
+        aux_note=["uno", "dos", "tres"],
+        write_dir=str(tmp_path),
+    )
+    tabla = leer_anotaciones_mit((tmp_path / "r.marker").read_bytes())
+    assert tabla["muestra"].tolist() == muestras.tolist()
+    assert tabla["aux"].tolist() == ["uno", "dos", "tres"]
+```
+
+```{.python filename="tests/test_senal.py"}
+import numpy as np
+import pytest
+from conftest import REGISTRO_STROKE
+
+from ictus_semg import cves
+from ictus_semg import metricas as m
+from ictus_semg.procesamiento import envolvente, notch, pasabanda, procesar
+
+FS_HZ = 1000.0
+T_S = np.arange(int(5 * FS_HZ)) / FS_HZ
+ATENUACION_MINIMA_DB = 20
+
+
+def potencia_en(x: np.ndarray, f0_hz: float) -> float:
+    f, p = m.espectro(x, FS_HZ, nperseg=4096)
+    return float(p[np.argmin(np.abs(f - f0_hz))])
+
+
+def test_notch_atenua_60hz() -> None:
+    x = np.sin(2 * np.pi * 60 * T_S) + 0.1 * np.sin(2 * np.pi * 150 * T_S)
+    y = notch(x, FS_HZ, f0_hz=60)
+    assert 10 * np.log10(potencia_en(x, 60) / potencia_en(y, 60)) > ATENUACION_MINIMA_DB
+
+
+def test_pasabanda_elimina_offset_y_deriva() -> None:
+    x = np.sin(2 * np.pi * 100 * T_S) + 2000 + 2 * np.sin(2 * np.pi * 0.5 * T_S)
+    assert m.rms(pasabanda(x, FS_HZ)) == pytest.approx(1 / np.sqrt(2), abs=0.05)
+
+
+def test_pasabanda_rechaza_frecuencia_de_muestreo_invalida() -> None:
+    with pytest.raises(ValueError, match="positiva"):
+        pasabanda(T_S, 0.0)
+
+
+def test_mdf_y_mnf_de_una_senoide() -> None:
+    f, p = m.espectro(np.sin(2 * np.pi * 120 * T_S), FS_HZ, nperseg=2048)
+    assert m.frecuencia_mediana(f, p) == pytest.approx(120, abs=2)
+    assert m.frecuencia_media(f, p) == pytest.approx(120, abs=5)
+
+
+def test_indice_coactivacion_limites() -> None:
+    a = np.abs(np.sin(2 * np.pi * T_S))
+    assert m.indice_coactivacion(a, a) == pytest.approx(100)
+    assert m.indice_coactivacion(a, np.zeros_like(a)) == pytest.approx(0)
+    with pytest.raises(ValueError, match="longitud"):
+        m.indice_coactivacion(a, a[:-1])
+
+
+def test_envolvente_no_negativa() -> None:
+    rng = np.random.default_rng(2026)
+    assert np.all(envolvente(rng.standard_normal(4000), FS_HZ) >= 0)
+
+
+def test_estadisticos_de_valores_conocidos() -> None:
+    resultado = m.estadisticos_descriptivos(np.array([1.0, 2.0, 3.0]))
+    assert resultado["n_muestras"] == 3
+    assert resultado["media_uv"] == pytest.approx(2.0)
+    assert resultado["desviacion_estandar_uv"] == pytest.approx(1.0)  # ddof = 1
+    assert resultado["rms_uv"] == pytest.approx(np.sqrt(14 / 3))
+
+
+def test_estadisticos_de_un_solo_valor() -> None:
+    assert m.estadisticos_descriptivos(np.array([4.0]))["desviacion_estandar_uv"] == 0.0
+
+
+@pytest.mark.parametrize(
+    ("valores", "mensaje"),
+    [
+        (np.array([]), "vacío"),
+        (np.array([1.0, np.nan]), "no finitos"),
+        (np.ones((2, 2)), "unidimensional"),
+    ],
+)
+def test_entradas_invalidas(valores, mensaje) -> None:
+    with pytest.raises(ValueError, match=mensaje):
+        m.estadisticos_descriptivos(valores)
+
+
+def test_calidad_distingue_semg_de_senal_lenta(raiz_cves) -> None:
+    df, enc = cves.leer_segmento(cves.FuenteLocal(raiz_cves), REGISTRO_STROKE, 0, 60, dir_segmentos=None)
+    semg = m.calidad_canal(df["emg_1"].to_numpy(), enc.fs_hz)
+    lenta = m.calidad_canal(df["accelerometer_0"].to_numpy(), enc.fs_hz)
+    con_red = m.calidad_canal(df["emg_0"].to_numpy(), enc.fs_hz)
+    assert semg["frac_potencia_20_450"] > 0.9
+    assert lenta["frac_potencia_20_450"] < 0.1
+    assert con_red["red_db"] > 10
+
+
+def test_ciclo_de_actividad_de_rafagas(raiz_cves) -> None:
+    df, enc = cves.leer_segmento(cves.FuenteLocal(raiz_cves), REGISTRO_STROKE, 0, 60, dir_segmentos=None)
+    env = procesar(df, enc.fs_hz, canales=["emg_1"])["envolvente"]["emg_1"].to_numpy()
+    mu, sigma, _ = m.linea_base_reposo(env, enc.fs_hz)
+    activaciones = m.detectar_activaciones(env, enc.fs_hz, mu + 3 * sigma)
+    assert 20 < m.ciclo_de_actividad(activaciones, 60) < 60  # ráfagas en cerca de medio ciclo
+
+
+def test_procesar_no_modifica_la_entrada_y_valida_canales(raiz_cves) -> None:
+    df, enc = cves.leer_segmento(cves.FuenteLocal(raiz_cves), REGISTRO_STROKE, 0, 5, dir_segmentos=None)
+    copia = df.copy()
+    procesar(df, enc.fs_hz, canales=["emg_0"])
+    assert df.equals(copia)
+    with pytest.raises(ValueError, match="inexistentes"):
+        procesar(df, enc.fs_hz, canales=["emg_9"])
+```
+
+```{.python filename="tests/test_figuras.py"}
+import numpy as np
+import pytest
+
+from ictus_semg.figuras import SerieResumen, figura_resumen
+
+
+def _serie(grupo: str) -> SerieResumen:
+    t_s = np.linspace(60.0, 70.0, 101)
+    return SerieResumen(
+        etiqueta=f"S0000 · {grupo}",
+        grupo=grupo,
+        t_s=t_s,
+        envolvente_uv=np.abs(np.sin(t_s)),
+        f_hz=np.linspace(0, 500, 51),
+        dep_uv2_hz=np.ones(51),
+        t_ventanas_s=t_s[::10],
+        mdf_hz=np.linspace(120, 110, 11),
+    )
+
+
+def test_figura_tiene_tres_paneles_con_unidades(tmp_path) -> None:
+    fig, ejes = figura_resumen([_serie("STROKE"), _serie("CONTROL")], "Prueba")
+    assert len(fig.axes) == 3
+    assert [eje.get_xlabel() for eje in ejes] == [
+        "Tiempo desde el inicio del segmento [s]",
+        "Frecuencia [Hz]",
+        "Tiempo desde el inicio del segmento [s]",
+    ]
+    assert all("[" in eje.get_ylabel() for eje in ejes)
+    assert len(ejes[0].get_legend().get_texts()) == 2
+    ruta = tmp_path / "summary.png"
+    fig.savefig(ruta)
+    assert ruta.exists() and ruta.stat().st_size > 0
+
+
+def test_figura_sin_series_es_rechazada() -> None:
+    with pytest.raises(ValueError, match="al menos una"):
+        figura_resumen([], "Vacía")
+```
+
+```{.python filename="tests/test_reproduccion.py"}
+import json
+
+import pytest
+from conftest import REGISTRO_CONTROL, REGISTRO_STROKE
+
+from ictus_semg import cves
+from ictus_semg.reproduccion import DirectoriosSalida, reproducir
+
+REGISTROS = ((REGISTRO_STROKE, "STROKE"), (REGISTRO_CONTROL, "CONTROL"))
+
+
+def _dirs(raiz) -> DirectoriosSalida:
+    return DirectoriosSalida(
+        segmentos=raiz / "data" / "raw" / "segmentos",
+        procesados=raiz / "data" / "processed",
+        resultados=raiz / "results",
+        figuras=raiz / "figures",
+        raiz=raiz,
+    )
+
+
+def test_reproduccion_completa_e_idempotente(raiz_cves, tmp_path) -> None:
+    dirs = _dirs(tmp_path)
+    rutas = reproducir(cves.FuenteLocal(raiz_cves), REGISTROS, 30.0, 20.0, dirs)
+    nombres = {ruta.name for ruta in rutas}
+    assert {"summary.json", "summary_table.tex", "summary.png"} <= nombres
+    assert all(ruta.exists() for ruta in rutas)
+
+    primera = (dirs.resultados / "summary.json").read_text(encoding="utf-8")
+    tabla = (dirs.resultados / "summary_table.tex").read_text(encoding="utf-8")
+    reproducir(cves.FuenteLocal(raiz_cves), REGISTROS, 30.0, 20.0, dirs)
+    assert (dirs.resultados / "summary.json").read_text(encoding="utf-8") == primera
+    assert (dirs.resultados / "summary_table.tex").read_text(encoding="utf-8") == tabla
+    assert len(list(dirs.segmentos.glob("*.bin"))) == 2  # los originales no se duplican
+
+    resumen = json.loads(primera)
+    assert [r["grupo"] for r in resumen["registros"]] == ["STROKE", "CONTROL"]
+    assert resumen["registros"][0]["validacion_canales"]["completo"] is True
+    assert resumen["registros"][0]["segmento"]["derivado"].startswith("data/processed/")  # ruta relativa
+    assert r"\label{tab:resumen}" in tabla
+
+
+def test_grupo_inconsistente_detiene_la_reproduccion(raiz_cves, tmp_path) -> None:
+    with pytest.raises(ValueError, match="grupo"):
+        reproducir(cves.FuenteLocal(raiz_cves), ((REGISTRO_CONTROL, "STROKE"),), 30.0, 20.0, _dirs(tmp_path))
+```
+
+```{.python filename="tests/test_wfdb_validacion.py"}
+"""Valida el lector propio contra la biblioteca de referencia ``wfdb`` (grupo dev)."""
+
+import numpy as np
+import pytest
+from conftest import REGISTRO_STROKE
+
+from ictus_semg import cves
+
+
+def test_lector_propio_igual_a_wfdb(raiz_cves) -> None:
+    wfdb = pytest.importorskip("wfdb")
+    ruta = raiz_cves / "data" / "24h-electromyography" / REGISTRO_STROKE
+    referencia = wfdb.rdrecord(str(ruta), sampfrom=3000, sampto=7000)
+    propio, _ = cves.leer_segmento(cves.FuenteLocal(raiz_cves), REGISTRO_STROKE, 3.0, 4.0, dir_segmentos=None)
+    assert referencia.sig_name == list(propio.columns[1:])
+    np.testing.assert_allclose(referencia.p_signal, propio.iloc[:, 1:].to_numpy(), rtol=0, atol=1e-9)
+```
+
+# Informe LaTeX y presentación Beamer
+
+Los documentos **no ejecutan Python**: leen `results/summary_table.tex` y `figures/summary.png`, producidos antes por `reproduce.py`. La tabla no se transcribe a mano y el informe usa referencias cruzadas (`\label` y `\ref`). La presentación tiene exactamente cinco diapositivas, incluida la portada. No se usan `minted`, `-shell-escape` ni recursos remotos.
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+```
+
+```{.latex filename="reports/informe.tex"}
+% Compilar desde la raíz del proyecto, después de scripts/reproduce.py:
+% latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\sisetup{output-decimal-marker={,}}
+
+\title{Tablero de sEMG del dataset CVES:\\ procesamiento reproducible y visualización interactiva}
+\author{Equipo XX: Integrante A, Integrante B, Integrante C\\
+  Señales Bioeléctricas y Visualización Interactiva (SBVI)}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  Indique el problema, el método (segmento de referencia, cadena de filtrado y métricas),
+  la evidencia principal (Tabla~\ref{tab:resumen} y Figura~\ref{fig:resumen}) y el alcance:
+  datos reales de CVES con ubicación de canales no documentada; resultados exploratorios.
+\end{abstract}
+
+\section{Pregunta de trabajo}
+¿Puede el equipo reconstruir, en un computador distinto, el análisis de un segmento de sEMG
+ambulatorio de personas con y sin ictus, con los mismos datos originales (verificados por
+SHA-256), parámetros, métricas y figuras, sin copiar el entorno virtual ni editar rutas?
+
+\section{Arquitectura}
+Complete la tabla de responsabilidades (entrada, transformación, salida y si es regenerable)
+para \texttt{pyproject.toml}, \texttt{uv.lock}, \texttt{src/ictus\_semg/}, \texttt{scripts/},
+\texttt{tests/}, \texttt{data/raw/}, \texttt{data/processed/}, \texttt{results/},
+\texttt{figures/}, \texttt{reports/}, \texttt{slides/} y \texttt{app.py}.
+
+\section{Métodos}
+\subsection{Datos}
+Registros de 24~h de la carpeta \texttt{24h-electromyography} del dataset CVES
+\cite{novak2010,cves2018}, muestreados a \SI{1000}{\hertz} en formato WFDB~16.
+Se analiza un segmento de referencia definido en \texttt{configuracion.py}; los bytes
+originales se conservan en \texttt{data/raw/cves/segmentos} con su huella SHA-256.
+
+\subsection{Procesamiento}
+Pasabanda Butterworth de orden~4 (\SIrange{20}{450}{\hertz}), notch de \SI{60}{\hertz} y
+armónicos, envolvente lineal (rectificación y pasabajas de \SI{8}{\hertz}), todos de fase cero.
+
+\subsection{Métricas}
+Para un segmento de $N$ muestras $x_n$ en \si{\micro\volt}:
+\begin{equation}
+  \mathrm{RMS} = \sqrt{\frac{1}{N}\sum_{n=1}^{N} x_n^2},
+  \qquad
+  \sum_{f_k \le \mathrm{MDF}} P(f_k) = \frac{1}{2}\sum_k P(f_k).
+  \label{eq:metricas}
+\end{equation}
+La actividad es el porcentaje de tiempo con la envolvente sobre $\mu_0 + 3\sigma_0$ de la
+ventana más silenciosa. La calidad es la fracción de potencia entre 20 y \SI{450}{\hertz}.
+
+\section{Validación}
+Describa qué contrato verifica cada grupo de pruebas: lectura WFDB (encabezado real, bytes,
+SHA-256, rango HTTP), anotaciones, canales, filtros, métricas y entradas inválidas, figura
+y reproducción idempotente.
+
+\section{Resultados}
+\input{results/summary_table.tex}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figures/summary.png}
+  \caption{Resumen del segmento de referencia: envolvente, densidad espectral de potencia y
+    frecuencia mediana por ventana del canal representativo de cada registro.
+    Generada por \texttt{scripts/reproduce.py}.}
+  \label{fig:resumen}
+\end{figure}
+
+Interprete la Tabla~\ref{tab:resumen} y la Figura~\ref{fig:resumen} a partir de las
+ecuaciones~\eqref{eq:metricas}, separando lo observado de la causa propuesta.
+
+\section{Reproducibilidad}
+Registre sistema operativo, versiones de uv, Python, distribución \TeX{} y \texttt{latexmk},
+tiempo total, comandos exactos, pruebas aprobadas, archivos producidos, problemas y correcciones
+del ensayo en un equipo diferente.
+
+\section{Limitaciones}
+La ubicación muscular de cada canal \texttt{emg\_*} no está documentada en los metadatos
+públicos; el registro es ambulatorio; los resultados no tienen valor clínico.
+
+\section{Contribuciones}
+Resuma \texttt{results/contributions.md}: roles, rotación y evidencia verificable.
+
+\begin{thebibliography}{9}
+  \bibitem{novak2010} V.~Novak, K.~Hu, L.~Desrochers, P.~Novak, L.~Caplan, L.~Lipsitz y
+  M.~Selim, ``Cerebral flow velocities during daily activities depend on blood pressure in
+  patients with chronic ischemic infarctions'', \emph{Stroke}, vol.~41, n.º~1, pp.~61--66, 2010.
+  \bibitem{cves2018} V.~Novak, \emph{Cerebral Vasoregulation in Elderly with Stroke}
+  (versión 1.0.0), PhysioNet, 2018. doi:10.13026/C2DW96.
+  \bibitem{physionet} T.~Pollard \emph{et al.}, ``PhysioNet as a global platform for
+  biomedical research'', \emph{Nature Health}, 2026. doi:10.1038/s44360-026-00096-z.
+\end{thebibliography}
+\end{document}
+```
+
+```{.latex filename="slides/presentacion.tex"}
+% Compilar desde la raíz del proyecto, después de scripts/reproduce.py:
+% latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,}}
+
+\title{Tablero de sEMG del dataset CVES}
+\subtitle{Procesamiento reproducible y visualización interactiva}
+\author{Equipo XX}
+\institute{SBVI}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Problema y arquitectura}
+  \begin{itemize}
+    \item Pregunta: ¿se reconstruye el análisis en otro equipo con los mismos datos y resultados?
+    \item Datos: CVES, registros ambulatorios de 24~h a \SI{1000}{\hertz}, lectura por rangos.
+    \item Flujo: \texttt{data/raw} $\rightarrow$ \texttt{src/ictus\_semg} $\rightarrow$
+          \texttt{results}, \texttt{figures} $\rightarrow$ informe, presentación y tablero.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Métodos y validación}
+  \begin{itemize}
+    \item Pasabanda \SIrange{20}{450}{\hertz}, notch \SI{60}{\hertz}, envolvente \SI{8}{\hertz}.
+    \item RMS, MDF, actividad y calidad espectral por canal.
+    \item Pruebas: encabezado real, bytes y SHA-256, rango HTTP, filtros, entradas inválidas,
+          figura y reproducción idempotente.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Resultados}
+  \centering
+  \includegraphics[height=0.8\textheight]{figures/summary.png}
+\end{frame}
+
+\begin{frame}{Reproducibilidad y limitaciones}
+  \begin{itemize}
+    \item Ensayo externo: tiempo, comandos, fallos y correcciones.
+    \item Canales \texttt{emg\_*} sin ubicación documentada; registro ambulatorio.
+    \item Resultados exploratorios, sin valor clínico.
+  \end{itemize}
+\end{frame}
+
+\end{document}
+```
+
+Las plantillas incluyen indicaciones de lo que el equipo debe redactar: pregunta, tabla de arquitectura, interpretación, bitácora del ensayo externo y contribuciones. No deben pegarse resultados inventados.
+
+# Protocolo de reconstrucción en otro equipo
+
+## Material transferible
+
+Incluya código y pruebas, `pyproject.toml`, `uv.lock`, `.python-version`, `README.md`, `data/raw` (originales de CVES con su procedencia), las fuentes `.tex`, los PDF finales y `results/contributions.md`. Excluya `.venv`, cachés, archivos personales del editor y rutas del equipo original.
+
+## Ejecución cronometrada
+
+Desde una copia nueva, sin `.venv`:
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+uv run streamlit run app.py
+```
+
+El criterio de éxito es el del Laboratorio 0, más dos condiciones propias de datos remotos:
+
+- sincronización sin editar archivos, pruebas y Ruff aprobados;
+- creación automática de derivados, JSON, tabla LaTeX y PNG, y compilación de ambos PDF;
+- **las huellas SHA-256 de `summary.json` coinciden con las del equipo de desarrollo**;
+- el tablero abre con la configuración de referencia y muestra los mismos valores que la tabla del informe.
+
+## Ensayo limpio obligatorio
+
+Antes de la sustentación, duplique la carpeta en una ubicación temporal, elimine de la copia `.venv`, `data/processed`, `results/summary*`, `figures/summary.png` y `build/`, ejecute el protocolo, registre tiempos y problemas, corrija el original y repita hasta que no requiera intervención. No elimine la única copia del proyecto ni use borrados recursivos sobre rutas amplias.
+
+# Entrega
+
+## Manifiesto
+
+```bash
+uv run python scripts/delivery_manifest.py
+```
+
+`results/delivery_manifest.txt` lista archivos entregados, versión de Python y de uv, fecha, estado de las pruebas, huellas SHA-256 de los segmentos originales y la advertencia sobre el alcance de los datos.
+
+```{.python filename="scripts/delivery_manifest.py"}
+"""Genera results/delivery_manifest.txt antes de comprimir la entrega.
+
+    uv run python scripts/delivery_manifest.py
+"""
+
+import json
+import platform
+import subprocess
+import sys
+from datetime import datetime
+
+from ictus_semg.configuracion import DIR_RESULTADOS, RAIZ_PROYECTO
+
+EXCLUIDOS = {".venv", ".git", "__pycache__", ".pytest_cache", ".ruff_cache", "build"}
+
+
+def _archivos_entregables() -> list[str]:
+    rutas = []
+    for ruta in sorted(RAIZ_PROYECTO.rglob("*")):
+        relativa = ruta.relative_to(RAIZ_PROYECTO)
+        if ruta.is_file() and not EXCLUIDOS.intersection(relativa.parts):
+            rutas.append(relativa.as_posix())
+    return rutas
+
+
+def _version_uv() -> str:
+    try:
+        salida = subprocess.run(["uv", "--version"], capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return "no disponible en PATH"
+    return salida.stdout.strip()
+
+
+def main() -> None:
+    """Lista archivos, versiones, huellas de los datos originales y estado de pruebas."""
+    pruebas = subprocess.run([sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True, cwd=RAIZ_PROYECTO)
+    ultima_linea = pruebas.stdout.strip().splitlines()[-1] if pruebas.stdout.strip() else "sin salida"
+    resumen = DIR_RESULTADOS / "summary.json"
+    huellas = []
+    if resumen.exists():
+        for registro in json.loads(resumen.read_text(encoding="utf-8"))["registros"]:
+            nombre, huella = registro["registro"], registro["segmento"]["sha256_crudo"]
+            huellas.append(f"  {nombre}: sha256 {huella}")
+    fecha = datetime.now().isoformat(timespec="seconds")
+    lineas = [
+        f"Fecha de generación: {fecha}",
+        f"Python: {platform.python_version()}",
+        f"uv: {_version_uv()}",
+        f"Pruebas: código {pruebas.returncode} · {ultima_linea}",
+        "Datos: segmentos reales de CVES (PhysioNet, ODC-By 1.0); ubicación de canales no documentada;",
+        "       resultados exploratorios, sin valor clínico. No hay aleatoriedad en el análisis.",
+        "Huellas de los segmentos originales:",
+        *huellas,
+        "Archivos entregados:",
+        *[f"  {ruta}" for ruta in _archivos_entregables()],
+    ]
+    ruta = DIR_RESULTADOS / "delivery_manifest.txt"
+    ruta.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    print(f"→ {ruta.relative_to(RAIZ_PROYECTO).as_posix()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Lista de verificación
+
+Antes de comprimir `equipo_XX_sbvi_tablero_cves.zip`: `uv.lock` actualizado; `.python-version` con 3.13; sin `.venv`; pruebas y Ruff aprobados; `reproduce.py` regenera todo; ambos `.tex` compilan con `latexmk`; presentación de cinco diapositivas; README con comandos; sin rutas absolutas; originales de `data/raw` con su procedencia; manifiesto y bitácora del ensayo externo incluidos.
+
+## Criterios de no conformidad
+
+La entrega se considera no reproducible si solo funciona copiando `.venv`, requiere editar rutas, instala dependencias fuera de `pyproject.toml`, no incluye `uv.lock`, **modifica o sobrescribe un original de `data/raw`**, presenta en el informe números distintos de los archivos generados, entrega solo PDF sin fuentes, desactiva una prueba para aprobar o no puede reconstruirse en el computador asignado.
+
+# Sustentación y rúbrica
+
+Se conserva el formato del Laboratorio 0: equipo de tres, **un solo expositor** que puede ser elegido por el docente al iniciar, 12 minutos de exposición y hasta 5 de verificación técnica, en un computador distinto al de desarrollo, partiendo de una copia sin `.venv` y con la presentación Beamer como apoyo.
+
+| Minuto | Contenido |
+|---|---|
+| 0–1 | Problema, alcance y advertencias sobre los datos |
+| 1–3 | Arquitectura, archivos esenciales y política de datos originales |
+| 3–7 | `uv sync --locked`, Ruff, pruebas y reproducción; verificación de SHA-256 |
+| 7–9 | Procesamiento y métricas: calidad, amplitud, espectro, actividad |
+| 9–11 | Tablero en vivo, informe y presentación: los mismos valores en los tres |
+| 11–12 | Limitaciones y cierre |
+
+| Criterio | Peso | 4 — sólido |
+|---|---|---|
+| Reconstrucción externa en vivo | 25 | Sincroniza con `--locked`, pasa Ruff y pruebas, reproduce con huellas coincidentes, compila ambos PDF y abre el tablero, sin editar rutas ni instalar durante la prueba |
+| Defensa técnica del entorno y la arquitectura | 15 | Explica uv, bloqueo, `src`, scripts, `configuracion.py`, datos originales y lectura por rangos |
+| Razonamiento Python, NumPy y estructuras | 10 | Justifica lista y conjuntos en la validación de canales, formas y ejes, vistas y copias, validación de entradas |
+| Fundamento de procesamiento e interpretación | 15 | Explica filtros, Nyquist, calidad, RMS, MDF, actividad y coactivación con unidades y sin exceder la evidencia |
+| Diagnóstico solicitado | 5 | Localiza la causa, propone una verificación mínima y corrige sin ocultar el error |
+| Comunicación, tiempo y manejo de evidencia | 5 | Beamer claro y dentro del tiempo; distingue observación, inferencia y limitación |
+| Código y estructura entregados | 10 | Funciones pequeñas, tipadas y documentadas; rutas con `pathlib`; sin antipatrones |
+| Pruebas y trazabilidad | 10 | Pruebas de contratos y límites; README, JSON, manifiesto y bitácora concuerdan |
+| Informe, presentación, figura y contribuciones | 5 | Ambos PDF compilan desde sus fuentes y reutilizan los productos generados |
+
+Los niveles 3, 2, 1 y 0 valen 80 %, 60 %, 30 % y 0 % del peso, y se aplican las reglas del Laboratorio 0: si el proyecto no ejecuta `uv sync --locked` o requiere copiar `.venv`, la reconstrucción vale 0 y la nota no supera 70/100 hasta demostrar la corrección. Si PhysioNet no está disponible durante la prueba, el equipo usa los originales de `data/raw` incluidos en la entrega: por eso se transfieren.
+
+**Situaciones de diagnóstico que el docente puede solicitar:** alterar un byte de un segmento original y explicar el error de SHA-256; cambiar el registro de referencia por uno sin `emg_1` e interpretar la validación de canales; cambiar la frecuencia de red a 50 Hz y predecir qué métricas cambian; mostrar qué prueba falla si la envolvente puede ser negativa; regenerar resultados después de eliminarlos; diagnosticar una tabla o figura faltante en LaTeX.
+
+**Preguntas orientadoras:** ¿por qué los datos de `data/raw` se versionan y `.venv` no? ¿Qué garantiza la huella SHA-256 y qué no garantiza? ¿Por qué se lee por rangos y qué pasaría si el servidor ignorara el rango? ¿Por qué los canales observados son una lista y los requeridos un conjunto? ¿Qué diferencia hay entre la figura del informe y las del tablero? ¿Por qué la pendiente de MDF no demuestra fatiga en un registro ambulatorio? ¿Qué no puede afirmar sobre el ictus con estos datos?
+
+# Actividades para el laboratorio
+
+## Exploración guiada
+
+1. Abra `S0175` (STROKE) en el tablero y revise primero la pestaña de calidad: ¿qué canales son utilizables en el segmento de referencia? Compruebe que los valores coinciden con `results/summary_table.tex`.
+2. Recorra el registro en saltos de 60 minutos. ¿Cómo cambia el porcentaje de tiempo activo? ¿Coinciden los cambios con el acelerómetro?
+3. Desactive el notch. ¿Cuánto crece el pico de 60 Hz y qué métrica se contamina más, RMS o MDF?
+4. Busque un registro con marcadores y observe el sEMG alrededor de ellos. ¿Qué evento podría marcar el participante?
+5. En un registro con ECG, compare el espectro de `emg_*` con el de `ecg_0`. ¿Hay contaminación cardíaca? ¿Qué sugiere sobre la ubicación de los electrodos?
+
+## Retos de extensión
+
+1. **Perfil de 24 h.** Recorra un registro completo en bloques de 1 minuto, leyendo 5 s de cada bloque, y grafique RMS y actividad frente a la hora del día. Declare cuántos bytes descargó.
+2. **Estadística de grupos.** Con el CSV de la cohorte, compare STROKE y CONTROL con Mann-Whitney y delta de Cliff, y discuta por qué el resultado es exploratorio.
+3. **Otra carpeta del dataset.** Adapte `cves.py` para leer `sit-stand` (500 Hz) y superponga la frecuencia cardíaca a la transición de sedente a bípedo.
+4. **Documentar los canales.** Lea `full-study-protocol.docx` y proponga una tabla de ubicación de electrodos; conviértala en etiquetas por defecto.
+5. **Validación con red.** Añada una prueba marcada que compare `leer_segmento` con `wfdb.rdrecord(..., pn_dir="cves/1.0.0/data/24h-electromyography")` sobre un registro real.
+
+# Limitaciones
+
+La ubicación de los electrodos de EMG no está documentada en los metadatos públicos, de modo que ninguna métrica puede atribuirse con certeza a un músculo o a un lado. Los registros son ambulatorios: el mismo desfase temporal no corresponde a la misma actividad en distintos participantes. El umbral de calidad de 80 % es orientativo. El lector propio solo implementa el formato 16. La huella SHA-256 garantiza que el dato original no cambió, no que sea correcto. Y el índice de coactivación y la pendiente de MDF tienen sentido fisiológico solo bajo condiciones que el tablero recuerda pero no puede verificar.
+
+# Referencias
+
+- Caicedo-Rodríguez, P. E. (2026). *Laboratorio 01 · Python científico legible y reproducible. Guía del estudiante*. <https://pablocaicedor.github.io/laboratorios/PythonLanguage/Laboratorio_00_Python_Cientifico_Reproducible_Guia_Estudiante.html>
+- Novak, V., Hu, K., Desrochers, L., Novak, P., Caplan, L., Lipsitz, L., & Selim, M. (2010). Cerebral flow velocities during daily activities depend on blood pressure in patients with chronic ischemic infarctions. *Stroke, 41*(1), 61–66. <https://doi.org/10.1161/STROKEAHA.109.565556>
+- Novak, V. (2018). *Cerebral Vasoregulation in Elderly with Stroke* (versión 1.0.0). PhysioNet. <https://doi.org/10.13026/C2DW96>
+- Pollard, T., Moody, B. E., Lehman, L., Gow, B., Fernandes, C., Xie, C., Johnson, A., Mark, R. G., & Heldt, T. (2026). PhysioNet as a global platform for biomedical research. *Nature Health*. <https://doi.org/10.1038/s44360-026-00096-z>
+- De Luca, C. J. (2002). *Surface electromyography: Detection and recording*. DelSys Incorporated.
+- Falconer, K., & Winter, D. A. (1985). Quantitative assessment of co-contraction at the ankle joint in walking. *Electromyography and Clinical Neurophysiology, 25*(2–3), 135–149.
+- Hermens, H. J., Freriks, B., Disselhorst-Klug, C., & Rau, G. (2000). Development of recommendations for SEMG sensors and sensor placement procedures. *Journal of Electromyography and Kinesiology, 10*(5), 361–374.
+- Merletti, R., & Parker, P. A. (Eds.). (2004). *Electromyography: Physiology, engineering, and non-invasive applications*. Wiley-IEEE Press.
+- Documentación: [WFDB](https://physionet.org/physiotools/wfdb.shtml), [uv](https://docs.astral.sh/uv/), [Streamlit](https://docs.streamlit.io), [Plotly](https://plotly.com/python/), [Matplotlib](https://matplotlib.org/stable/), [SciPy `signal`](https://docs.scipy.org/doc/scipy/reference/signal.html), [latexmk](https://ctan.org/pkg/latexmk).

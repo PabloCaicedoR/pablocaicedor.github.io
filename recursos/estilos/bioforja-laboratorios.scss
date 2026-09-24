@@ -1,0 +1,357 @@
+/*!
+ * BioForja · Laboratorios y tutoriales · Tema claro para Quarto HTML
+ * Versión 1.1 · 2026-09-23 · Texto blanco en la cabecera y banner.
+ * Extraído de Laboratorio_PSIM_EDA_Imagenes_Guia_Estudiante.html.
+ * Conserva paleta, tipografía, portada, tablas, código, fórmulas y estilos
+ * responsive/impresión. Los selectores se adaptan al HTML de Quarto Bootstrap.
+ * No requiere fuentes externas, JavaScript ni hojas CSS adicionales.
+ *
+ * USO: guardar este archivo junto al .qmd y añadir a su YAML:
+ *
+ * format:
+ *   html:
+ *     theme: bioforja-laboratorios.scss
+ *     toc: true
+ *     toc-location: body
+ *     toc-depth: 2
+ *     number-sections: true
+ *     title-block-banner: false
+ *     code-copy: true
+ *     code-overflow: wrap
+ *     embed-resources: true
+ *
+ * Para un proyecto, colocar el mismo bloque en _quarto.yml y guardar este
+ * archivo en la raíz; o ajustar la ruta, p. ej. estilos/bioforja-laboratorios.scss.
+ * Eliminar los <style> anteriores de include-in-header que dupliquen este tema.
+ * Sustituir theme: cosmo por la referencia a este archivo; no es necesario Cosmo.
+ * toc-location: body aproxima el índice integrado del HTML original.
+ * El índice, numeración y contenido son opciones YAML, no propiedades del tema.
+ * Editar las variables de la primera sección para personalizar la apariencia.
+ * La geometría del documento usa la cuadrícula de Quarto y puede diferir del
+ * HTML original generado con Pandoc; no se fuerzan anchos sobre el sitio entero.
+ */
+
+/*-- scss:defaults --*/
+
+// Paleta del diseño original.
+$bf-ink: #173b4d !default;
+$bf-accent: #278b8c !default;
+$bf-line: #d9e4e8 !default;
+$bf-page: #fcfdfd !default;
+$bf-canvas: #fdfdfd !default;
+$bf-text: #263b45 !default;
+$bf-link: #12686c !default;
+$bf-subtitle: #cce9e7 !default;
+$bf-toc: #eef5f6 !default;
+$bf-stripe: #f0f6f7 !default;
+$bf-code: #edf2f3 !default;
+$bf-white: #ffffff !default;
+$bf-base-ink: #1a1a1a !default;
+$bf-quote-line: #e6e6e6 !default;
+$bf-quote-text: #606060 !default;
+$bf-line-number: #aaaaaa !default;
+
+// Variables consumidas por Quarto / Bootstrap.
+$body-bg: $bf-page !default;
+$body-color: $bf-text !default;
+$primary: $bf-ink !default;
+$link-color: $bf-link !default;
+$link-hover-color: $bf-ink !default;
+$headings-color: $bf-ink !default;
+$headings-font-weight: 700 !default;
+$headings-line-height: 1.3 !default;
+$font-family-sans-serif: system-ui, -apple-system, "Segoe UI", sans-serif !default;
+$font-family-monospace: ui-monospace, monospace !default;
+$font-size-root: 17px !default;
+$font-size-base: 1rem !default;
+$line-height-base: 1.7 !default;
+$h1-font-size: 1.7rem !default;
+$h2-font-size: 1.3rem !default;
+$h3-font-size: 1.1rem !default;
+$h4-font-size: 1rem !default;
+$h5-font-size: 1rem !default;
+$h6-font-size: 1rem !default;
+$grid-body-width: 1044px !default; // 1120px originales menos 2 × 38px.
+$border-color: $bf-line !default;
+$code-color: $bf-text !default;
+$code-bg: $bf-code !default;
+$code-block-bg: $bf-code !default;
+$code-block-border-left: $bf-accent !default;
+$code-block-border-left-size: 4px !default;
+$code-block-bg-padding: 20px !default;
+$btn-code-copy-color: $bf-link !default;
+$btn-code-copy-color-active: $bf-ink !default;
+$table-border-color: $bf-line !default;
+$table-striped-bg: $bf-stripe !default;
+$toc-color: $bf-link !default;
+$toc-active-border: $bf-accent !default;
+
+/*-- scss:rules --*/
+
+:root {
+  --bf-ink: #{$bf-ink};
+  --bf-accent: #{$bf-accent};
+  --bf-line: #{$bf-line};
+  --bf-page: #{$bf-page};
+  --bf-text: #{$bf-text};
+  --bf-link: #{$bf-link};
+  --bf-subtitle: #{$bf-subtitle};
+  --bf-toc: #{$bf-toc};
+  --bf-stripe: #{$bf-stripe};
+  --bf-code: #{$bf-code};
+}
+
+html { scroll-behavior: smooth; background-color: $bf-canvas; }
+body {
+  background: $bf-page;
+  color: $bf-text;
+  font-family: $font-family-sans-serif;
+  line-height: 1.7;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+// El contenedor de Quarto mantiene sus márgenes laterales y barras de navegación.
+main.content {
+  padding-top: 42px;
+  padding-bottom: 80px;
+  min-width: 0;
+  overflow-wrap: break-word;
+  hyphens: auto;
+
+  p { margin: 1em 0; }
+  a { color: $bf-link; }
+  a:visited { color: $bf-base-ink; }
+  a:hover { color: $bf-ink; }
+  a:focus-visible { outline: 2px solid $bf-accent; outline-offset: 3px; }
+  img { max-width: 100%; height: auto; }
+  strong { color: inherit; }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: $bf-ink;
+    line-height: 1.3;
+    scroll-margin-top: 24px;
+  }
+  h1 {
+    font-size: 1.7rem;
+    margin-top: 2.5em;
+    padding-bottom: .5em;
+    border-bottom: 2px solid $bf-accent;
+  }
+  h2 { font-size: 1.3rem; margin-top: 2em; border-bottom: 0; padding-bottom: 0; }
+  h3 { font-size: 1.1rem; margin-top: 1.4em; }
+  h4, h5, h6 { font-size: 1rem; margin-top: 1.4em; }
+  h5, h6 { font-style: italic; }
+  h6 { font-weight: normal; }
+
+  ol, ul { padding-left: 1.7em; margin-top: 1em; }
+  li { margin: .4em 0; }
+  li > ol, li > ul { margin-top: 0; }
+  blockquote {
+    margin: 1em 0 1em 1.7em;
+    padding-left: 1em;
+    border-left: 2px solid $bf-quote-line;
+    color: $bf-quote-text;
+  }
+  hr { background: $bf-base-ink; border: 0; height: 1px; margin: 1em 0; opacity: 1; }
+  span.smallcaps { font-variant: small-caps; }
+  div.hanging-indent { margin-left: 1.5em; text-indent: -1.5em; }
+  div.columns { display: flex; gap: min(4vw, 1.5em); }
+  div.column { flex: auto; overflow-x: auto; }
+  ul.task-list { list-style: none; }
+  ul.task-list li input[type="checkbox"] {
+    font-size: inherit; width: .8em; margin: 0 .8em .2em -1.6em;
+    vertical-align: middle;
+  }
+}
+
+// Portada del documento: no seleccionar el <header> global de un sitio.
+#title-block-header {
+  background: $bf-ink;
+  color: $bf-white;
+  padding: 36px;
+  border-radius: 8px;
+  margin: 0 0 28px;
+  text-align: center;
+  h1.title {
+    color: $bf-white;
+    margin-top: 0;
+    font-size: 2.1rem;
+    line-height: 1.2;
+    border-bottom: 2px solid $bf-accent;
+    padding-bottom: .5em;
+  }
+  .subtitle { font-size: 1.25rem; color: $bf-white; }
+  .author, .date, .quarto-title-meta {
+    font-size: .92rem;
+    margin: .25em 0;
+    color: $bf-white;
+  }
+  .quarto-title-meta-heading { color: $bf-white; }
+  .quarto-title-meta-contents, .quarto-title-meta-contents p { color: $bf-white; }
+  a, a:visited { color: $bf-white; }
+}
+
+// Contraste de la cabecera: cubre tanto el bloque normal como el banner
+// de Quarto. La prioridad explícita evita colores oscuros heredados del sitio.
+// Se limita a pantalla para conservar texto oscuro sobre papel blanco.
+@media screen {
+  #title-block-header,
+  #title-block-header *,
+  .quarto-title-banner,
+  .quarto-title-banner * {
+    color: $bf-white !important;
+  }
+  #title-block-header .title,
+  #title-block-header .subtitle,
+  #title-block-header .description,
+  .quarto-title-banner .title,
+  .quarto-title-banner .subtitle,
+  .quarto-title-banner .description {
+    opacity: 1;
+  }
+}
+
+// Solo el índice del documento, nunca navbar, menús ni pestañas.
+nav#TOC {
+  padding: 24px 30px;
+  background: $bf-toc;
+  border-radius: 8px;
+  ul { margin: .3em 0; padding-left: 1.3em; }
+  > ul { padding-left: 0; }
+  li { list-style: none; margin: .4em 0; }
+  a { color: $bf-link; }
+  a:not(:hover) { text-decoration: none; }
+  a.active { color: $bf-ink; border-left-color: $bf-accent; }
+}
+
+// Tablas Markdown, incluida .table de Bootstrap.
+main.content table:not(.gt_table) {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: .86em;
+  margin: 1.5em 0;
+  display: block;
+  overflow-x: auto;
+  font-variant-numeric: lining-nums tabular-nums;
+  --bs-table-bg: transparent;
+  --bs-table-color: #{$bf-text};
+  --bs-table-striped-bg: transparent;
+  caption { margin-bottom: .75em; color: $bf-quote-text; }
+  tbody { border-top: 1px solid $bf-base-ink; border-bottom: 1px solid $bf-base-ink; }
+  th, td {
+    padding: 11px 13px;
+    border: 1px solid $bf-line;
+    vertical-align: top;
+    box-shadow: none;
+  }
+  thead th { background: $bf-ink; color: $bf-white; text-align: left; }
+  tbody tr:nth-child(even) > * { background: $bf-stripe; }
+  tbody tr:nth-child(odd) > * { background: transparent; }
+}
+
+// Código en línea y bloques: fondo y borde propios del HTML original.
+main.content {
+  code {
+    font-family: $font-family-monospace;
+    font-size: .88em;
+    overflow-wrap: anywhere;
+    hyphens: manual;
+  }
+  p code, li > code, td code, th code {
+    background: $bf-code;
+    color: $bf-text;
+    padding: .1em .25em;
+    border-radius: 3px;
+  }
+  div.sourceCode { margin: 1em 0; background: transparent; border: 0; overflow: auto; }
+  pre, pre.sourceCode {
+    background: $bf-code;
+    border: 0;
+    border-left: 4px solid $bf-accent;
+    border-radius: 0;
+    padding: 20px;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+  pre { margin: 1em 0; }
+  div.sourceCode pre.sourceCode { margin: 0; }
+  pre code, pre code.sourceCode {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: transparent;
+    padding: 0;
+    color: $bf-text;
+  }
+  pre > code.sourceCode { position: relative; }
+  pre > code.sourceCode > span { line-height: 1.25; }
+  pre > code.sourceCode > span:empty { height: 1.2em; }
+  code.sourceCode > span { color: inherit; text-decoration: inherit; }
+  // El resaltado reproduce todos los colores de tokens del HTML fuente.
+  code span.al, code span.er { color: #ff0000; font-weight: bold; }
+  code span.an, code span.cv, code span.in, code span.wa {
+    color: #60a0b0; font-weight: bold; font-style: italic;
+  }
+  code span.at { color: #7d9029; }
+  code span.bn, code span.dv, code span.fl { color: #40a070; }
+  code span.bu { color: #008000; }
+  code span.cf, code span.kw { color: #007020; font-weight: bold; }
+  code span.ch, code span.sc, code span.st, code span.vs { color: #4070a0; }
+  code span.cn { color: #880000; }
+  code span.co { color: #60a0b0; font-style: italic; }
+  code span.do { color: #ba2121; font-style: italic; }
+  code span.dt { color: #902000; }
+  code span.fu { color: #06287e; }
+  code span.im { color: #008000; font-weight: bold; }
+  code span.op { color: #666666; }
+  code span.ot { color: #007020; }
+  code span.pp { color: #bc7a00; }
+  code span.ss { color: #bb6688; }
+  code span.va { color: #19177c; }
+  .code-copy-button { color: $bf-link; }
+  .code-copy-button:hover { color: $bf-ink; }
+  pre.numberSource code > span > a:first-child::before { color: $bf-line-number; }
+}
+
+// MathML (HTML fuente) y MathJax (salida habitual de Quarto).
+main.content math { font-size: 1.05em; }
+main.content math[display="block"],
+main.content mjx-container[display="true"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 16px 0;
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  html { font-size: 16px; }
+  main.content { padding-top: 16px; padding-bottom: 32px; }
+  #title-block-header { padding: 24px; }
+  #title-block-header h1.title { font-size: 1.65rem; }
+  main.content table:not(.gt_table) th,
+  main.content table:not(.gt_table) td { padding: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+@media print {
+  html, body { background: white; }
+  body { font-size: 10pt; color: $bf-text; }
+  main.content { max-width: none; padding: 0; }
+  nav#TOC { display: none; }
+  #title-block-header { background: white; color: $bf-ink; padding: 0; }
+  #title-block-header h1.title { color: $bf-ink; }
+  #title-block-header .subtitle,
+  #title-block-header .author,
+  #title-block-header .date,
+  #title-block-header .quarto-title-meta-heading,
+  #title-block-header .quarto-title-meta-contents,
+  #title-block-header .quarto-title-meta-contents p { color: $bf-ink; }
+  main.content h1, main.content h2, main.content h3 { break-after: avoid; }
+  main.content p, main.content h2, main.content h3 { orphans: 3; widows: 3; }
+  main.content tr, main.content pre { break-inside: avoid; }
+  main.content pre > code.sourceCode { white-space: pre-wrap; }
+  main.content table { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

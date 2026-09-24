@@ -1,0 +1,218 @@
+# BioForja · Tema reutilizable para Quarto / RevealJS / Beamer
+# Versión: 1.0.0
+# Origen: SYSB_Semanas_01_05.html y su fuente Quarto.
+#
+# USO: guarde este archivo junto a su presentación y añada al YAML del QMD:
+#
+#   metadata-files:
+#     - bioforja-presentaciones.yml
+#
+# Compile con:
+#   quarto render mi-clase.qmd --to revealjs
+#   quarto render mi-clase.qmd --to beamer
+#
+# También puede incluirlo desde _quarto.yml o _metadata.yml para compartirlo.
+# Si está en otra carpeta, indique su ruta relativa en metadata-files.
+# No lo coloque en `theme:`: este archivo contiene opciones para DOS formatos.
+# Quite del QMD el bloque <style> original y las opciones de tema duplicadas.
+# Título, autor, fecha, bibliografía y pie de página pertenecen a cada QMD.
+# El tema no modifica la ejecución de Python/R ni incluye contenidos del curso.
+#
+# BASES: RevealJS simple; Beamer Madrid + seahorse (como en el original).
+# Las reglas estructurales y fuentes del tema simple las proporciona Quarto.
+# Los colores de los cinco callouts se fijan a los del HTML original.
+# Se corrige el h1 blanco sobre la portada blanca: el blanco queda reservado
+# para las secciones con fondo oscuro.
+#
+# PALETA PERSONALIZADA (CSS y LaTeX):
+#   azul petróleo  #123047      turquesa       #008C86
+#   coral          #E76F51      dorado         #D9A441
+#   fondo claro    #EEF4F7      azul degradado #20556F
+#   texto atenuado #657582      pie de página  #607583
+#
+# CLASES RevealJS: .small .smaller .shrink .center .accent .muted
+# En Beamer use las capacidades nativas de Pandoc/Beamer, p. ej. {.shrink}
+# sobre un encabezado de diapositiva. CSS, transiciones, degradados, scroll y
+# botones de copiar son propios del HTML, no instrucciones para LaTeX.
+# Beamer requiere una distribución TeX con XeLaTeX y los paquetes de Quarto
+# (incluidos tcolorbox y fontawesome5 para los callouts).
+
+lang: es
+slide-level: 2
+callout-appearance: default
+callout-icon: false
+
+format:
+  revealjs:
+    theme: simple
+    width: 1600
+    height: 900
+    margin: 0.065
+    center: false
+    center-title-slide: true
+    slide-number: c/t
+    transition: fade
+    progress: true
+    scrollable: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    embed-resources: true
+    include-in-header:
+      - text: |
+          <style id="bioforja-presentaciones">
+          :root {
+            --sysb-navy: #123047;
+            --sysb-teal: #008c86;
+            --sysb-coral: #e76f51;
+            --sysb-gold: #d9a441;
+            --sysb-light: #eef4f7;
+            --sysb-gradient-mid: #20556f;
+            --sysb-muted: #657582;
+            --sysb-footer: #607583;
+            --sysb-note: #0d6efd;
+            --sysb-tip: #198754;
+            --sysb-warning: #ffc107;
+            --sysb-caution: #fd7e14;
+            --sysb-important: #dc3545;
+          }
+
+          /* Tipografía y jerarquía originales. */
+          .reveal {
+            color: var(--sysb-navy);
+            font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+          }
+          .reveal .slides { text-align: left; }
+          .reveal h1, .reveal h2 {
+            color: var(--sysb-navy);
+            letter-spacing: -0.02em;
+            text-transform: none;
+          }
+          .reveal h1 { font-size: 2.15em; }
+          .reveal h2 {
+            border-bottom: 5px solid var(--sysb-teal);
+            padding-bottom: 0.16em;
+            font-size: 1.55em;
+          }
+          .reveal h3 {
+            color: var(--sysb-teal);
+            text-transform: none;
+          }
+          .reveal #title-slide h1 { color: var(--sysb-navy); }
+          .reveal .quarto-title-author-name { color: var(--sysb-teal); }
+
+          /* Separadores de sección: encabezados Markdown de nivel 1. */
+          .reveal section.level1 {
+            background: linear-gradient(135deg,
+              var(--sysb-navy) 0%,
+              var(--sysb-gradient-mid) 68%,
+              var(--sysb-teal) 100%);
+            color: white;
+            padding: 5%;
+            border-radius: 18px;
+          }
+          .reveal section.level1 h1,
+          .reveal section.level1 h2,
+          .reveal section.level1 p { color: white; }
+
+          /* Callouts: reglas propias y colores extraídos del HTML. */
+          .reveal div.callout {
+            font-size: 0.83em;
+            border-radius: 12px;
+          }
+          .reveal .callout-title-container,
+          .reveal div.callout .callout-title { font-weight: 750; }
+          .reveal div.callout.callout-note {
+            border-left-color: var(--sysb-note);
+          }
+          .reveal div.callout.callout-note.callout-style-default .callout-title {
+            background-color: rgb(230.8, 240.5, 254.8);
+          }
+          .reveal div.callout.callout-tip {
+            border-left-color: var(--sysb-tip);
+          }
+          .reveal div.callout.callout-tip.callout-style-default .callout-title {
+            background-color: rgb(232, 243, 237.9);
+          }
+          .reveal div.callout.callout-warning {
+            border-left-color: var(--sysb-warning);
+          }
+          .reveal div.callout.callout-warning.callout-style-default .callout-title {
+            background-color: rgb(255, 248.8, 230.2);
+          }
+          .reveal div.callout.callout-caution {
+            border-left-color: var(--sysb-caution);
+          }
+          .reveal div.callout.callout-caution.callout-style-default .callout-title {
+            background-color: rgb(254.8, 242.1, 231.5);
+          }
+          .reveal div.callout.callout-important {
+            border-left-color: var(--sysb-important);
+          }
+          .reveal div.callout.callout-important.callout-style-default .callout-title {
+            background-color: rgb(251.5, 234.8, 236.4);
+          }
+
+          /* Tablas, código, imágenes y clases auxiliares originales. */
+          .reveal table { font-size: 0.72em; }
+          .reveal pre code { font-size: 0.80em; line-height: 1.25; }
+          .reveal img { max-height: 610px; }
+          .reveal .small { font-size: 0.72em; }
+          .reveal .smaller { font-size: 0.64em; }
+          .reveal .shrink { font-size: 0.82em; }
+          .reveal .center { text-align: center; }
+          .reveal .accent { color: var(--sysb-coral); font-weight: 750; }
+          .reveal .muted { color: var(--sysb-muted); }
+          .reveal .footer { color: var(--sysb-footer); }
+          </style>
+
+  beamer:
+    theme: Madrid
+    colortheme: seahorse
+    aspectratio: 169
+    incremental: false
+    pdf-engine: xelatex
+    keep-tex: true
+    classoption: professionalfonts
+    include-in-header:
+      - text: |
+          % Paleta extraída, disponible también para gráficos TikZ/PGF.
+          \definecolor{SYSBnavy}{HTML}{123047}
+          \definecolor{SYSBteal}{HTML}{008C86}
+          \definecolor{SYSBcoral}{HTML}{E76F51}
+          \definecolor{SYSBgold}{HTML}{D9A441}
+          \definecolor{SYSBlight}{HTML}{EEF4F7}
+          \definecolor{SYSBgradientmid}{HTML}{20556F}
+          \definecolor{SYSBmuted}{HTML}{657582}
+          \definecolor{SYSBfooter}{HTML}{607583}
+
+          % Configuración Beamer de la presentación original.
+          \setbeamercolor{structure}{fg=SYSBteal}
+          \setbeamercolor{frametitle}{fg=white,bg=SYSBnavy}
+          \setbeamercolor{alerted text}{fg=SYSBcoral}
+          \setbeamertemplate{navigation symbols}{}
+          \setbeamertemplate{section page}{%
+            \begin{centering}
+              \vfill
+              {\usebeamerfont{section title}%
+               \usebeamercolor[fg]{section title}%
+               \insertsectionhead\par}
+              \vfill
+            \end{centering}
+          }
+
+          % Equivalencia cromática de los callouts del HTML.
+          % Se aplica al iniciar el documento, después de las definiciones
+          % que Quarto añade automáticamente al preámbulo.
+          \AtBeginDocument{%
+            \definecolor{quarto-callout-note-color}{HTML}{0D6EFD}
+            \definecolor{quarto-callout-note-color-frame}{HTML}{0D6EFD}
+            \definecolor{quarto-callout-tip-color}{HTML}{198754}
+            \definecolor{quarto-callout-tip-color-frame}{HTML}{198754}
+            \definecolor{quarto-callout-warning-color}{HTML}{FFC107}
+            \definecolor{quarto-callout-warning-color-frame}{HTML}{FFC107}
+            \definecolor{quarto-callout-caution-color}{HTML}{FD7E14}
+            \definecolor{quarto-callout-caution-color-frame}{HTML}{FD7E14}
+            \definecolor{quarto-callout-important-color}{HTML}{DC3545}
+            \definecolor{quarto-callout-important-color-frame}{HTML}{DC3545}
+          }
