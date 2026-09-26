@@ -1,0 +1,386 @@
+---
+title: "Instalación de Entorno de trabajo. Garuda Linux"
+description: "Tutorial"
+subtitle: "Ingeniería Biomédica"
+lang: es
+author: "Ph.D. Pablo Eduardo Caicedo Rodríguez"
+image: "../recursos/imagenes/tutoriales/InstalacionPython/portada.png"
+date: last-modified
+format:
+  html:
+    toc: true
+    toc-location: left
+    code-tools: true
+    code-overflow: wrap
+    code-line-numbers: true
+    code-copy: true
+    fig-align: center
+    align: justify
+    self-contained: true
+    theme:
+      - simple
+      - ../recursos/estilos/metropolis.scss
+    slide-number: true
+    preview-links: auto
+    logo: ../recursos/imagenes/generales/Escuela_Rosario_logo.png
+    css: ../recursos/estilos/styles_pres.scss
+    footer: <https://pablocaicedor.github.io/>
+    transition: fade
+    progress: true
+    scrollable: true
+    mainfont: "Fira Code"
+
+resources:
+  - demo.pdf
+---
+
+# Preparación de Garuda Linux
+
+Garuda Linux está basado en **Arch Linux**: es una distribución *rolling release* (se actualiza de forma continua, sin versiones fijas) y usa `pacman` como gestor de paquetes en lugar de `apt`. Antes de instalar el entorno de trabajo conviene conocer las equivalencias básicas:
+
+| Ubuntu / WSL | Garuda (Arch) |
+|---|---|
+| `sudo apt update && sudo apt upgrade` | `garuda-update` |
+| `sudo apt install <paquete>` | `sudo pacman -S <paquete>` |
+| `apt search <paquete>` | `pacman -Ss <paquete>` |
+| PPAs / `.deb` externos | AUR (`paru -S <paquete>`) |
+
+> **Nota sobre la shell:** Garuda usa **fish** como shell por defecto. Todos los comandos de este tutorial funcionan en fish y en bash; donde hay diferencias se indica explícitamente.
+
+1. **Actualizar el sistema completo**:
+
+    ```bash
+    garuda-update
+    ```
+    - `garuda-update` sincroniza los repositorios, actualiza todos los paquetes y crea antes un *snapshot* del sistema (Btrfs + Snapper).
+    - Si una actualización rompe algo, se puede arrancar desde un snapshot anterior en el menú de GRUB y restaurarlo con **Btrfs Assistant**.
+
+2. **Reiniciar** si se actualizó el kernel o el driver de video.
+
+# Instalación de R y Python
+
+## 1. Instalar dependencias de desarrollo
+
+En Arch, los encabezados de desarrollo vienen incluidos en cada paquete (no existen paquetes `-dev` separados), por lo que la lista es mucho más corta que en Ubuntu. Las bibliotecas que el tutorial original instalaba para **compilar Python** ya no son necesarias: `uv` descarga intérpretes de Python precompilados (ver sección 5).
+
+```bash
+sudo pacman -S --needed \
+  base-devel \
+  git \
+  wget \
+  cmake \
+  gcc-fortran \
+  blas-openblas \
+  libxml2 \
+  curl \
+  openssl \
+  harfbuzz \
+  fribidi \
+  fontconfig \
+  freetype2 \
+  libpng \
+  libjpeg-turbo \
+  libtiff \
+  cairo \
+  imagemagick \
+  libgit2 \
+  libxt \
+  icu \
+  glpk \
+  gmp \
+  libuv \
+  nodejs \
+  protobuf \
+  rust \
+  pandoc-cli \
+  qpdf \
+  ttf-jetbrains-mono \
+  ttf-fira-code \
+  ttf-cascadia-code \
+  inter-font \
+  ttf-ibm-plex \
+  noto-fonts \
+  noto-fonts-emoji
+```
+
+- `--needed` evita reinstalar lo que ya esté presente.
+- `base-devel` reemplaza a `build-essential` (incluye `gcc`, `make` y `pkgconf`).
+- `blas-openblas` reemplaza a la BLAS de referencia y acelera el álgebra lineal de R. Si `pacman` pregunta si desea reemplazar `blas`/`lapack`, responda que sí.
+- Las fuentes **Latin Modern** y **EB Garamond** se instalan con TeX Live (sección "Instalación de Texlive"). **Manrope** no está en los repositorios oficiales de Arch; si la necesita, búsquela en AUR con `paru -Ss manrope`.
+
+## 2. Driver NVIDIA (sustituye al kit de repositorio CUDA)
+
+En Garuda **no se agrega ningún repositorio de NVIDIA**. El driver se gestiona desde el propio sistema:
+
+1. Abra **Garuda Settings Manager → Hardware Configuration**.
+2. Instale el perfil de driver **NVIDIA propietario** recomendado para su tarjeta.
+3. Reinicie.
+
+> **Importante:** para usar PyTorch con GPU **no es necesario instalar el CUDA Toolkit**. Las ruedas (*wheels*) de PyTorch traen su propio runtime de CUDA; solo se requiere el driver. Instale el toolkit (`sudo pacman -S cuda`, ≈ 5 GB) únicamente si va a compilar extensiones CUDA propias; en ese caso `nvcc` queda en `/opt/cuda/bin`.
+
+## 3. Verificar el driver
+
+```bash
+# Debe mostrar la GPU, la versión del driver y la "CUDA Version" máxima soportada
+nvidia-smi
+```
+
+La "CUDA Version" que reporta `nvidia-smi` debe ser **13.0 o superior** para usar las ruedas actuales de PyTorch (sección 5).
+
+## 4. Instalación de la versión más reciente de R
+
+En Garuda, R se instala directamente desde el repositorio oficial `extra` de Arch. No hace falta agregar claves ni repositorios de CRAN.
+
+A la fecha de este tutorial (septiembre de 2026), la versión más reciente de R publicada por CRAN es **R 4.6.1 ("Happy Hop")**, liberada el 2026-06-24, y es la misma que ofrece el paquete `r` de Arch (`4.6.1-1`). Por ser *rolling release*, cada `garuda-update` mantendrá R en la última versión.
+
+### 1. **Instalar R**:
+```bash
+sudo pacman -S r
+```
+
+### 2. **Verificar la instalación**:
+```bash
+# Debe mostrar R version 4.6.1 (o posterior)
+R --version
+```
+
+### 3. **Compilación en paralelo de paquetes**:
+
+En Linux (a diferencia de Windows y macOS) CRAN no distribuye binarios: los paquetes de R se **compilan desde el código fuente**. Para acelerar la compilación, configure `make` para usar todos los núcleos:
+
+```bash
+mkdir -p ~/.R
+echo "MAKEFLAGS = -j$(nproc)" >> ~/.R/Makevars
+```
+
+### 4. **Instalar renv y los paquetes de trabajo**:
+
+Abra R (`R` en la terminal) y ejecute:
+
+```r
+install.packages("renv", repos = "https://cloud.r-project.org")
+renv::install(c("DiagrammeR", "reticulate", "kableExtra", "tidyverse", "knitr", "cowplot", "ggfx", "rstatix", "languageserver", "bibliometrix"))
+```
+
+- La primera vez, R preguntará si desea crear una **biblioteca personal** en `~/R/x86_64-pc-linux-gnu-library/4.6`: responda que sí.
+- Cuando R cambie de versión menor (por ejemplo, de 4.6 a 4.7) tras un `garuda-update`, esa biblioteca cambia de carpeta y será necesario reinstalar los paquetes.
+
+## Introducción
+
+En el desarrollo de **IA confiable** y el procesamiento de señales biomédicas, la reproducibilidad es un pilar fundamental. El uso de `uv`, desarrollado por Astral, proporciona una gestión de dependencias y entornos Python significativamente más rápida y robusta que las herramientas tradicionales (`pip`, `venv`, `conda`).
+
+En Garuda, `uv` **reemplaza por completo** la compilación de Python desde el código fuente y la instalación de Miniconda del tutorial original: con un solo programa se instalan versiones de Python, se crean entornos virtuales y se gestionan las dependencias.
+
+> **Nunca use el Python del sistema para proyectos:** en Garuda el Python del sistema se actualiza con cada `garuda-update` y puede ir por delante de lo que soportan PyTorch u otras bibliotecas. Además, `pacman` lo usa internamente. Trabaje siempre con intérpretes gestionados por `uv`.
+
+## 1. Instalación de uv
+
+En Garuda, `uv` está en el repositorio oficial `extra` de Arch (versión `0.12.19` a la fecha de este tutorial), por lo que se instala con `pacman` y se actualiza junto con el resto del sistema:
+
+```bash
+sudo pacman -S uv
+uv --version
+```
+
+> Al instalarlo con `pacman`, **no use** `uv self update`: las actualizaciones llegan con `garuda-update`.
+
+Las herramientas que instale con `uv tool install` quedan en `~/.local/bin`. Asegúrese de que esa carpeta esté en el `PATH`:
+
+```bash
+# En fish (shell por defecto de Garuda)
+fish_add_path ~/.local/bin
+
+# En bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## 2. Gestión de Versiones de Python
+
+Como investigador, es probable que requiera versiones específicas para garantizar la compatibilidad de librerías de procesamiento de imágenes. `uv` gestiona estas instalaciones de forma transparente.
+
+```bash
+# Instalación de una versión específica
+uv python install 3.12
+
+# Listado de versiones disponibles y detectadas
+uv python list
+```
+
+> **¿Por qué 3.12?** Es la versión mínima que exigen las versiones actuales de NumPy (2.5) y la que usa este curso. Las ruedas actuales de PyTorch (2.14) están disponibles para Python 3.10 a 3.14.
+
+## 3. Flujo de Trabajo en Proyectos de Biomecánica
+
+Para asegurar la integridad de los experimentos, cada proyecto debe estar encapsulado.
+
+### Inicialización
+El comando `init` genera un archivo `pyproject.toml` compatible con los estándares modernos de empaquetado (PEP 621).
+
+```bash
+mkdir -p ~/proyectos/mi-proyecto
+cd ~/proyectos/mi-proyecto
+uv init --python 3.12
+```
+
+### Creación y Activación de Entornos
+
+`uv` crea el entorno virtual `.venv` automáticamente la primera vez que se ejecuta `uv add`, `uv sync` o `uv run`. Si desea crearlo de forma explícita:
+
+```bash
+# Crear entorno virtual con versión específica
+uv venv --python 3.12
+```
+
+Activación (solo necesaria si quiere usar `python` directamente en la terminal; con `uv run` no hace falta activar nada):
+
+```bash
+# En fish (shell por defecto de Garuda)
+source .venv/bin/activate.fish
+
+# En bash
+source .venv/bin/activate
+
+# Para salir del entorno (ambas shells)
+deactivate
+```
+
+## 4. Gestión de Dependencias y Reproducibilidad
+
+El archivo `uv.lock` garantiza que todos los colaboradores (o procesos de CI/CD) utilicen las mismas versiones de las librerías, minimizando la incertidumbre en los resultados de IA Causal.
+
+| Comando | Función |
+|---------|---------|
+| `uv add <paquete>` | Añade una dependencia al proyecto y actualiza el lockfile. |
+| `uv remove <paquete>` | Elimina una dependencia. |
+| `uv sync` | Sincroniza el entorno local con el archivo de bloqueo. |
+
+Ejemplo práctico para procesamiento de señales:
+
+```bash
+uv add numpy scipy pandas matplotlib
+```
+
+## 5. Instalación de las bibliotecas de trabajo (PyTorch con GPU)
+
+Esta sección reemplaza la instalación con `pip` del tutorial original.
+
+### 1. PyTorch
+
+En Linux, las ruedas de PyTorch publicadas en PyPI (versión estable **2.14.0** a la fecha) ya vienen compiladas con **CUDA 13**, así que basta con:
+
+```bash
+uv add torch torchvision
+```
+
+Si prefiere fijar explícitamente la variante de CUDA (recomendado para reproducibilidad), agregue al final de `pyproject.toml` el índice oficial de PyTorch, tal como lo documenta `uv`:
+
+```toml
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu130" }]
+torchvision = [{ index = "pytorch-cu130" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+```
+
+y luego ejecute `uv sync`. La opción `explicit = true` hace que ese índice se use **solo** para los paquetes de PyTorch.
+
+> `torchaudio` se omite a propósito: el proyecto está en modo de mantenimiento y ya no publica versiones alineadas con cada versión de PyTorch. Agréguelo solo si su proyecto lo necesita.
+
+### 2. Bibliotecas científicas y de visión
+
+```bash
+uv add pandas matplotlib scikit-learn opencv-contrib-python pywavelets statsmodels scipy seaborn plotly "scikit-image[data,optional]" jupyter ipykernel
+```
+
+> Se instala solo `opencv-contrib-python` (y no también `opencv-python`, como en el tutorial original): ambos paquetes proveen el mismo módulo `cv2` y se sobrescriben entre sí; la versión *contrib* ya incluye todo lo de la básica.
+
+### 3. Verificar la GPU desde Python
+
+```bash
+uv run python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())"
+```
+
+Debe imprimir la versión de PyTorch, la versión de CUDA de la rueda y `True`.
+
+## 6. Integración con Quarto e IA
+
+Para la generación de diapositivas o reportes técnicos, Quarto debe apuntar al intérprete del entorno virtual creado. `uv run` antepone `.venv/bin` al `PATH`, de modo que Quarto encuentra el Python (y el kernel de Jupyter) del proyecto.
+
+```bash
+# Ejemplo de renderización usando el entorno del proyecto
+uv run quarto render documento.qmd
+```
+
+Para que **R** (vía `reticulate`) use el mismo entorno, defina la variable `RETICULATE_PYTHON` antes de abrir R:
+
+```bash
+# En fish
+set -gx RETICULATE_PYTHON ~/proyectos/mi-proyecto/.venv/bin/python
+
+# En bash
+export RETICULATE_PYTHON=~/proyectos/mi-proyecto/.venv/bin/python
+```
+
+o, desde R: `reticulate::use_virtualenv("~/proyectos/mi-proyecto/.venv", required = TRUE)`.
+
+> **Nota Académica:** La adopción de `uv` no solo optimiza el tiempo de cómputo en la resolución de dependencias, sino que mitiga riesgos asociados a la mutabilidad de los entornos de desarrollo, un paso necesario hacia una IA más confiable y reproducible.
+
+---
+
+```python
+# Verificación de entorno dentro de un bloque de código Quarto
+import sys
+import os
+
+print(f"Intérprete en uso: {sys.executable}")
+print(f"Versión de Python: {sys.version}")
+```
+
+# ¿Y Miniconda?
+
+Con `uv` **no es necesario instalar Miniconda**: `uv` cubre la instalación de versiones de Python, los entornos virtuales y las dependencias. Además, los canales `defaults` de Anaconda tienen restricciones de licencia para uso institucional.
+
+Si algún proyecto requiere paquetes que solo existen en conda (bibliotecas de C/Fortran no disponibles en PyPI), use **Miniforge** (distribución comunitaria que usa el canal libre `conda-forge`):
+
+```bash
+wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O ~/miniforge.sh
+bash ~/miniforge.sh -b -p $HOME/miniforge3
+~/miniforge3/bin/conda init fish   # o: init bash
+```
+
+# Instalación de Texlive (LATEX)
+
+El equivalente en Arch de `texlive-full` es el metapaquete `texlive-meta` más los paquetes de idioma. Para trabajar en español basta con:
+
+```bash
+sudo pacman -S texlive-meta texlive-langspanish
+```
+
+- `texlive-meta` instala todas las colecciones de TeX Live 2026 (incluye las fuentes Latin Modern y EB Garamond).
+- Si necesita todos los idiomas (equivalente exacto a `texlive-full`), instale también el grupo completo: `sudo pacman -S texlive-lang`.
+
+# Instalación de Quarto
+
+Quarto no está en los repositorios oficiales de Arch, por lo que se instala desde el *tarball* oficial para Linux. Se requiere revisar la versión de Quarto disponible en la página de descargas de Quarto [https://quarto.org/docs/get-started/](https://quarto.org/docs/get-started/). A la fecha de este tutorial, la versión estable más reciente es la **1.10.18**.
+
+```bash
+cd ~
+mkdir -p ~/instaladores ~/opt ~/.local/bin
+cd ~/instaladores
+wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.10.18/quarto-1.10.18-linux-amd64.tar.gz
+tar -C ~/opt -xvzf quarto-1.10.18-linux-amd64.tar.gz
+ln -sf ~/opt/quarto-1.10.18/bin/quarto ~/.local/bin/quarto
+```
+
+Verifique la instalación (requiere `~/.local/bin` en el `PATH`, ver sección "Instalación de uv"):
+
+```bash
+quarto check
+```
+
+Para actualizar Quarto, repita los pasos con la nueva versión y vuelva a crear el enlace simbólico.
+
+---

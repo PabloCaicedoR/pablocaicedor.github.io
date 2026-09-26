@@ -1,0 +1,1169 @@
+---
+title: "Tutorial: kitty + Fira Code + Starship para Python en Garuda Linux"
+subtitle: "Tema oscuro BioForge, prompt con Python, Git y cuenta de GitHub, y monitoreo rápido de tokens"
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
+image: "../recursos/imagenes/tutoriales/kitty/portada.png"
+date: last-modified
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+    theme: cosmo
+lang: es
+---
+
+<style>
+:root {
+  --bg: #05070a;
+  --panel: #0b0f14;
+  --panel-2: #111827;
+  --fg: #d7dde5;
+  --muted: #9aa5b1;
+  --green: #9ece6a;
+  --orange: #e0af68;
+  --yellow: #f6c177;
+  --blue: #7aa2f7;
+  --cyan: #7dcfff;
+  --magenta: #bb9af7;
+  --red: #f7768e;
+  --border: #263241;
+}
+body {
+  background: #f6f8fa;
+}
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+blockquote {
+  border-left: 4px solid var(--blue);
+  background: #eef4ff;
+  padding: 0.7rem 1rem;
+}
+.callout {
+  border: 1px solid #d0d7de;
+  border-left: 5px solid var(--blue);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+  background: #ffffff;
+}
+.callout.warn { border-left-color: var(--orange); }
+.callout.danger { border-left-color: var(--red); }
+.callout.ok { border-left-color: var(--green); }
+.terminal-preview {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  font-family: "Fira Code", "DejaVu Sans Mono", monospace;
+  line-height: 1.55;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+}
+.t-green { color: var(--green); font-weight: 700; }
+.t-orange { color: var(--orange); font-weight: 700; }
+.t-blue { color: var(--blue); font-weight: 700; }
+.t-yellow { color: var(--yellow); font-weight: 700; }
+.t-magenta { color: var(--magenta); font-weight: 700; }
+.t-cyan { color: var(--cyan); font-weight: 700; }
+.t-muted { color: var(--muted); font-weight: 700; }
+.t-red { color: var(--red); font-weight: 700; }
+.small { color: #586069; font-size: .92rem; }
+</style>
+
+# Objetivo
+
+Este tutorial configura un terminal de escritorio para desarrollo en Python en **Garuda Linux** con:
+
+- **kitty** (0.49 o posterior, desde el repositorio `extra` de Arch) como emulador de terminal.
+- **FiraCode Nerd Font Mono** tamaño **12**.
+- Tema oscuro armónico: fondo casi negro, acentos verdes, naranjas, azules y cian.
+- **fish** como shell (la de Garuda por defecto), con **bash** como alternativa.
+- **Starship** como prompt.
+- Indicadores de **Git**, **Python**, **entorno virtual** (uv) y **cuenta de GitHub**.
+- **Monitoreo rápido de tokens** gastados por asistentes de IA para programar (Claude Code, Codex, Gemini CLI y otros), al estilo de *YapCap*.
+- Comandos de verificación y reversión.
+
+<div class="callout ok">
+<strong>Qué trae Garuda de fábrica (verificado en los paquetes oficiales de Garuda):</strong><br>
+<code>fish</code> como shell por defecto, configurado por el paquete <code>garuda-fish-config</code>.<br>
+<code>starship</code> ya instalado y <strong>ya activado</strong> en fish y en bash (paquetes <code>garuda-fish-config</code>, <code>garuda-bash-config</code> y <code>garuda-starship-prompt</code>).<br>
+Un <code>~/.config/starship.toml</code> propio de Garuda, copiado desde <code>/etc/skel/.config/starship.toml</code>.<br>
+<code>~/.local/bin</code> ya se agrega al <code>PATH</code> en fish.
+</div>
+
+# Qué cambia respecto a la versión Ubuntu/Pop!_OS
+
+| Tema | Ubuntu / Pop!_OS | Garuda Linux |
+|---|---|---|
+| Gestor de paquetes | `apt` | `pacman` (y `garuda-update` para actualizar todo) |
+| Instalar Starship | Instalador `install.sh` en `/usr/local/bin` porque APT no tenía el paquete | `sudo pacman -S starship` (ya viene instalado) |
+| Activar Starship | Agregar `eval "$(starship init bash)"` a `~/.bashrc` | Ya está activado. **No** se agrega otra línea `init` |
+| Shell | bash | fish (bash sigue disponible) |
+| Fuente | Fira Code instalada a mano | `ttf-fira-code` y `ttf-firacode-nerd` desde `extra` |
+| GitHub CLI | Repositorio APT de GitHub con llave GPG | `sudo pacman -S github-cli` |
+| Sesión gráfica | X11 | Normalmente Wayland (KDE Plasma 6) |
+
+Además se corrigieron cuatro detalles de la versión anterior:
+
+1. `kitty.conf` usaba **FiraCode Nerd Font Mono**, pero la verificación buscaba **Fira Code**. Ahora se instala y se verifica la misma fuente que usa kitty.
+2. El prompt mostraba `venv:` aunque no hubiera entorno activo. Ahora solo aparece con un entorno activado.
+3. El módulo de GitHub ejecutaba `gh auth status` dos veces en cada prompt, y ese comando consulta la red. Ahora lee la configuración local de `gh` y responde en milisegundos.
+4. La clase CSS `t-muted` del ejemplo visual no estaba definida.
+
+Referencias oficiales:
+
+- Configuración de Starship (`~/.config/starship.toml`, módulos `python` y `custom`, paletas): <https://starship.rs/config/>.
+- Activación de Starship en fish y bash: <https://starship.rs/#quick-install>.
+- Opciones de `kitty.conf` (`font_family`, `font_size`, `enabled_layouts`, etc.): <https://sw.kovidgoyal.net/kitty/conf/>.
+- Divisiones de ventana en kitty (`launch --location=hsplit`): <https://sw.kovidgoyal.net/kitty/layouts/>.
+- Configuración de fish de Garuda: <https://gitlab.com/garuda-linux/pkgbuilds/-/tree/main/garuda-fish-config>.
+- Paquetes de Arch: [kitty](https://archlinux.org/packages/extra/x86_64/kitty/), [starship](https://archlinux.org/packages/extra/x86_64/starship/), [ttf-fira-code](https://archlinux.org/packages/extra/any/ttf-fira-code/), [ttf-firacode-nerd](https://archlinux.org/packages/extra/any/ttf-firacode-nerd/), [github-cli](https://archlinux.org/packages/extra/x86_64/github-cli/).
+- GitHub CLI se autentica con `gh auth login`: <https://docs.github.com/en/github-cli/github-cli/quickstart>.
+- Línea de estado de Claude Code (`statusLine`, `rate_limits`): <https://code.claude.com/docs/en/statusline>.
+- Seguimiento de costos en Claude Code (`/usage`): <https://code.claude.com/docs/en/costs>.
+- ccusage: <https://ccusage.com/> y <https://github.com/ccusage/ccusage>.
+- YapCap: <https://github.com/TopiCsarno/yapcap>.
+
+# Convención de riesgo
+
+Durante el tutorial se usan estas categorías:
+
+| Categoría | Significado |
+|---|---|
+| **Inspección** | No modifica el sistema. Solo muestra información. |
+| **Modificación reversible** | Cambia archivos de configuración del usuario o instala paquetes normales. Se puede revertir. |
+| **Modificación delicada** | Cambia paquetes del sistema o archivos fuera de tu carpeta personal. Requiere más cuidado. |
+| **Alto riesgo** | No se usa en este tutorial. Evitamos borrados recursivos, particiones, arranque y permisos masivos. |
+
+<div class="callout ok">
+<strong>Red de seguridad de Garuda:</strong> <code>garuda-update</code> y <code>pacman</code> crean un <em>snapshot</em> Btrfs antes de cada transacción. Si una instalación rompe algo, se puede arrancar desde un snapshot anterior en el menú de GRUB y restaurarlo con <strong>Btrfs Assistant</strong>.
+</div>
+
+# Paso 1: inspección segura
+
+**Tipo:** inspección.
+
+Ejecuta (funciona igual en fish y en bash):
+
+```bash
+echo $SHELL
+echo $XDG_SESSION_TYPE
+kitty --version
+fc-list | grep -i "FiraCode Nerd Font Mono" | head -3
+echo $TERM
+starship --version
+pacman -Q kitty starship ttf-fira-code ttf-firacode-nerd github-cli
+```
+
+Qué valida cada comando:
+
+| Comando | Qué verifica |
+|---|---|
+| `echo $SHELL` | Qué shell usas. En Garuda suele ser `/usr/bin/fish`. |
+| `echo $XDG_SESSION_TYPE` | Indica si estás en `wayland` o `x11`. |
+| `kitty --version` | Confirma que kitty está instalado y su versión. |
+| `fc-list \| grep ...` | Confirma que fontconfig encuentra la fuente que usará kitty. |
+| `echo $TERM` | Dentro de kitty debe mostrar `xterm-kitty`. |
+| `starship --version` | Confirma que Starship ya viene instalado. |
+| `pacman -Q ...` | Lista qué paquetes ya están instalados; los que falten aparecen como `error: package ... was not found`. |
+
+Resultado esperado parecido:
+
+```text
+/usr/bin/fish
+wayland
+kitty 0.49.1 created by Kovid Goyal
+/usr/share/fonts/TTF/FiraCodeNerdFontMono-Regular.ttf: FiraCode Nerd Font Mono:style=Regular
+xterm-kitty
+starship 1.26.0
+kitty 0.49.1-1
+starship 1.26.0-1
+...
+```
+
+Las versiones pueden ser más nuevas: Garuda es *rolling release* y cada `garuda-update` las actualiza.
+
+<div class="callout warn">
+<strong>Nota Wayland:</strong> Garuda con KDE Plasma 6 inicia normalmente en Wayland, y kitty funciona de forma nativa en Wayland. Si ves <code>x11</code>, elegiste una sesión X11 en el gestor de inicio de sesión. Con tarjetas NVIDIA, Wayland depende del controlador instalado (ver el tutorial de instalación de Python y R en Garuda).
+</div>
+
+# Paso 2: instalar kitty y las fuentes
+
+**Tipo:** modificación reversible.
+
+Actualiza primero el sistema completo. En Arch no se recomienda instalar paquetes sobre una base de datos desactualizada:
+
+```bash
+garuda-update
+```
+
+Instala kitty, Fira Code y su versión Nerd Font:
+
+```bash
+sudo pacman -S --needed kitty ttf-fira-code ttf-firacode-nerd
+```
+
+Qué hace:
+
+- `--needed` omite los paquetes que ya estén instalados.
+- `ttf-fira-code` es la Fira Code original, con ligaduras.
+- `ttf-firacode-nerd` es Fira Code con los íconos de Nerd Fonts, que Starship y otros programas de terminal usan para símbolos.
+
+Refresca la caché de fuentes y verifica:
+
+```bash
+fc-cache -f
+fc-list | grep -i "FiraCode Nerd Font Mono" | head -3
+```
+
+# Paso 3: configurar kitty
+
+## 3.1 Crear respaldo
+
+**Tipo:** modificación reversible.
+
+```bash
+mkdir -p ~/.config/kitty
+cp ~/.config/kitty/kitty.conf ~/.config/kitty/kitty.conf.bak 2>/dev/null || true
+```
+
+Qué hace:
+
+- `mkdir -p ~/.config/kitty` crea el directorio si no existe.
+- `cp ... .bak` crea un respaldo si ya existía `kitty.conf`.
+- `2>/dev/null || true` evita un error visible si el archivo aún no existía. Funciona igual en fish y en bash.
+
+## 3.2 Editar `kitty.conf`
+
+```bash
+nano ~/.config/kitty/kitty.conf
+```
+
+Si `nano` no está instalado, usa `sudo pacman -S nano`, o abre el archivo con `micro` o con Kate.
+
+Pega este contenido completo:
+
+```conf
+# ============================================================
+# Kitty - tema oscuro BioForge (Garuda Linux)
+# Ajustado para:
+# - FiraCode Nerd Font Mono (paquete ttf-firacode-nerd)
+# - tamaño 12
+# - kitty 0.49 o posterior (repositorio extra de Arch)
+# - fish (por defecto en Garuda) o bash
+# - Wayland (KDE Plasma 6) o X11
+# ============================================================
+
+# Fuente
+font_family      FiraCode Nerd Font Mono
+bold_font        auto
+italic_font      auto
+bold_italic_font auto
+font_size        12.0
+disable_ligatures never
+
+# Ventana
+background_opacity 1.0
+window_padding_width 6
+confirm_os_window_close 0
+enable_audio_bell no
+visual_bell_duration 0.0
+
+# Diseños: "splits" permite abrir el panel de tokens debajo de la ventana actual
+enabled_layouts splits,stack
+
+# Cursor
+cursor_shape beam
+cursor_blink_interval 0.5
+cursor            #9ece6a
+cursor_text_color #0b0f14
+
+# Selección
+selection_foreground #e6edf3
+selection_background #2d3743
+
+# Colores base
+foreground #d7dde5
+background #05070a
+
+# Negro / gris
+color0  #0b0f14
+color8  #4b5563
+
+# Rojo
+color1  #f7768e
+color9  #ff8fa3
+
+# Verde
+color2  #9ece6a
+color10 #b4f27a
+
+# Amarillo / naranja
+color3  #e0af68
+color11 #f6c177
+
+# Azul
+color4  #7aa2f7
+color12 #8fb8ff
+
+# Magenta
+color5  #bb9af7
+color13 #cba6ff
+
+# Cian
+color6  #7dcfff
+color14 #9defff
+
+# Blanco
+color7  #c0caf5
+color15 #ffffff
+
+# Tabs
+tab_bar_style powerline
+tab_powerline_style slanted
+
+active_tab_foreground   #05070a
+active_tab_background   #e0af68
+inactive_tab_foreground #9aa5b1
+inactive_tab_background #111827
+
+# Bordes de ventanas internas
+active_border_color   #e0af68
+inactive_border_color #263241
+
+# Enlaces
+url_color #7dcfff
+url_style curly
+
+# Atajos
+map ctrl+shift+enter new_window
+map ctrl+shift+t new_tab
+map ctrl+shift+w close_tab
+map ctrl+shift+[ previous_tab
+map ctrl+shift+] next_tab
+map ctrl+shift+c copy_to_clipboard
+map ctrl+shift+v paste_from_clipboard
+
+# Panel de tokens estilo yapcap (ver Paso 9): se abre debajo,
+# ocupa el 35 % de la altura y se refresca cada 60 s.
+# Se cierra con Ctrl+C dentro del panel.
+map ctrl+shift+u launch --location=hsplit --bias=35 --title=tokens fish -c "tokens --watch 60"
+```
+
+Guarda en nano:
+
+```text
+Ctrl + O
+Enter
+Ctrl + X
+```
+
+Cierra kitty y vuelve a abrirlo.
+
+<div class="callout">
+<strong>Sobre los diseños:</strong> con <code>enabled_layouts splits,stack</code>, <code>Ctrl+Shift+Enter</code> abre la nueva ventana dividiendo la actual. <code>Ctrl+Shift+L</code> alterna entre <em>splits</em> y <em>stack</em> (una ventana a pantalla completa). Si prefieres otro diseño, quita esa línea; solo el panel de tokens perderá la posición "debajo".
+</div>
+
+<div class="callout">
+<strong>Elegir la fuente con vista previa:</strong> kitty trae <code>kitten choose-fonts</code>, que muestra las fuentes instaladas con vista previa y escribe la línea <code>font_family</code> por ti.
+</div>
+
+## 3.3 Verificar kitty
+
+```bash
+echo $TERM
+```
+
+Resultado esperado: `xterm-kitty`.
+
+Para ver la configuración que kitty cargó realmente, pulsa <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F6</kbd> dentro de kitty: abre un informe donde deben aparecer `FiraCode Nerd Font Mono` y tus cambios frente a los valores por defecto.
+
+## 3.4 (Opcional) kitty como terminal predeterminado de KDE
+
+En **Configuración del sistema → Aplicaciones predeterminadas → Emulador de terminal**, elige **kitty**. Así, las acciones de KDE que abren una terminal (por ejemplo, desde Dolphin) usan kitty.
+
+# Paso 4: Starship en Garuda (ya instalado)
+
+## 4.1 Verificar
+
+**Tipo:** inspección.
+
+```bash
+command -v starship
+starship --version
+pacman -Qi starship | grep -E "^(Name|Version|Required By)"
+```
+
+Resultado esperado:
+
+```text
+/usr/bin/starship
+starship 1.26.0
+Name            : starship
+Version         : 1.26.0-1
+Required By     : garuda-starship-prompt ...
+```
+
+Si `starship` no apareciera (por ejemplo, en una instalación mínima):
+
+**Tipo:** modificación reversible.
+
+```bash
+sudo pacman -S starship
+```
+
+<div class="callout danger">
+<strong>No uses el instalador <code>install.sh</code> en Garuda.</strong> Instalaría una segunda copia en <code>/usr/local/bin</code> que <code>pacman</code> no actualiza, y la configuración de Garuda llama a <code>/usr/bin/starship</code>. Con <code>pacman</code>, Starship se actualiza con cada <code>garuda-update</code>.
+</div>
+
+## 4.2 Dónde se activa
+
+**Tipo:** inspección.
+
+Garuda ya activa Starship en ambas shells. Compruébalo:
+
+```bash
+grep -n starship /usr/share/garuda/garuda-fish-config/config.fish
+grep -n starship /usr/share/garuda/garuda-bash-config/bashrc
+```
+
+La salida muestra la línea `starship init fish` (en fish) y `starship init bash` (en bash). Por eso **no hay que agregar** `eval "$(starship init bash)"` como en Ubuntu: una segunda activación duplica el trabajo en cada prompt.
+
+<div class="callout warn">
+<strong>No edites los archivos de <code>/usr/share/garuda/</code>:</strong> se sobrescriben en cada actualización. Tus cambios de fish van en <code>~/.config/fish/config.fish</code>, debajo de la línea <code># -- Insert customizations below this line! --</code>.
+</div>
+
+# Paso 5: configurar Starship
+
+## 5.1 Crear respaldo
+
+**Tipo:** modificación reversible.
+
+Garuda ya dejó su propio `~/.config/starship.toml`, así que el respaldo sí importa:
+
+```bash
+mkdir -p ~/.config
+cp ~/.config/starship.toml ~/.config/starship.toml.bak 2>/dev/null || true
+```
+
+## 5.2 Crear `starship.toml`
+
+Vacía el archivo de Garuda (ya tienes el respaldo) y ábrelo:
+
+```bash
+truncate -s 0 ~/.config/starship.toml
+nano ~/.config/starship.toml
+```
+
+Pega esto:
+
+```toml
+# ============================================================
+# Starship prompt - BioForge Dark (Garuda Linux)
+# Ajustado para:
+# - fish (por defecto en Garuda) y bash
+# - Python con entornos uv (.venv)
+# - Git
+# - FiraCode Nerd Font Mono
+# - GitHub CLI opcional
+# ============================================================
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = true
+command_timeout = 800
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$python\
+${custom.github}\
+$cmd_duration\
+$line_break\
+$character
+"""
+
+palette = "bioforge"
+
+# Los nombres green, blue, etc. de esta paleta reemplazan
+# a los colores estándar en todos los estilos.
+[palettes.bioforge]
+bg = "#05070a"
+fg = "#d7dde5"
+gray = "#7f8790"
+green = "#9ece6a"
+orange = "#e0af68"
+yellow = "#f6c177"
+blue = "#7aa2f7"
+cyan = "#7dcfff"
+magenta = "#bb9af7"
+red = "#f7768e"
+
+[username]
+show_always = true
+style_user = "bold green"
+style_root = "bold red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold gray"
+format = "[@$hostname]($style) "
+
+[directory]
+style = "bold orange"
+format = "[$path]($style) "
+truncate_to_repo = false
+truncation_length = 5
+home_symbol = "~"
+
+[git_branch]
+symbol = "git:"
+style = "bold blue"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "bold yellow"
+format = "([\\[$all_status$ahead_behind\\]]($style) )"
+
+[python]
+symbol = "py:"
+style = "bold yellow"
+version_format = "${major}.${minor}"
+# El grupo entre paréntesis hace que "venv:" solo aparezca con un entorno activo.
+format = "[$symbol$version]($style) ([venv:$virtualenv](bold magenta) )"
+# uv crea el entorno como .venv: en su lugar se muestra el nombre de la carpeta del proyecto.
+generic_venv_names = [".venv", "venv"]
+detect_extensions = ["py", "ipynb"]
+detect_files = ["pyproject.toml", "requirements.txt", "setup.py", "environment.yml", ".python-version", "uv.lock"]
+detect_folders = [".venv", "venv"]
+
+# Muestra la cuenta de GitHub activa en GitHub CLI.
+# Lee la configuración local de gh (no consulta la red), así el prompt no se frena.
+# Solo aparece dentro de repositorios Git.
+[custom.github]
+description = "Cuenta activa de GitHub"
+command = "gh config get -h github.com user"
+when = "command -v gh"
+require_repo = true
+shell = ["sh"]
+symbol = "gh:"
+style = "bold blue"
+format = "[$symbol$output]($style) "
+
+[cmd_duration]
+min_time = 700
+style = "bold cyan"
+format = "[took:$duration]($style) "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+```
+
+Qué cambió frente a la versión Ubuntu:
+
+- `version_format` muestra `py:3.12` en lugar de `py:v3.12.7`.
+- `generic_venv_names` hace que un entorno `.venv` creado con `uv` aparezca como `venv:bioforge` (el nombre del proyecto) y no como `venv:.venv`.
+- `custom.github` usa `require_repo = true` (opción oficial de Starship) en lugar de llamar a `git rev-parse`, y `shell = ["sh"]` para que el comando se ejecute igual desde fish o desde bash.
+- La línea `"$schema"` permite que editores como VS Code autocompleten y validen el archivo.
+
+<div class="callout warn">
+<strong>Privacidad:</strong> mostrar cuentas en el prompt es cómodo, pero puede exponer tu usuario en capturas de pantalla, clases, videos o documentación. Esta configuración muestra el usuario de GitHub, no el correo, y solo dentro de repositorios Git.
+</div>
+
+# Paso 6: aplicar los cambios
+
+**Tipo:** inspección.
+
+Starship relee `starship.toml` cada vez que dibuja el prompt, así que **no hace falta recargar la shell**: basta con pulsar <kbd>Enter</kbd>.
+
+Para comprobar que el archivo no tiene errores:
+
+```bash
+starship print-config > /dev/null
+```
+
+Si no imprime nada, el archivo es válido. Si hay un error, Starship muestra `[ERROR] ... Unable to parse the config file` con la línea y la columna del problema.
+
+Si alguna vez cambias `~/.config/fish/config.fish`, recarga fish con:
+
+```bash
+exec fish
+```
+
+En bash, el equivalente es `source ~/.bashrc`.
+
+# Paso 7: instalar y autenticar GitHub CLI
+
+El módulo `custom.github` necesita `gh`.
+
+## 7.1 Inspección
+
+```bash
+command -v gh
+gh --version
+```
+
+Si existe, pasa a la autenticación.
+
+## 7.2 Instalar desde los repositorios de Arch
+
+**Tipo:** modificación reversible.
+
+En Arch el paquete se llama `github-cli`, aunque el comando es `gh`. No hace falta agregar repositorios ni llaves GPG como en Ubuntu:
+
+```bash
+sudo pacman -S --needed github-cli
+gh --version
+```
+
+## 7.3 Autenticar GitHub
+
+**Tipo:** modificación reversible.
+
+```bash
+gh auth login
+```
+
+Opciones habituales:
+
+```text
+GitHub.com
+HTTPS
+Login with a web browser
+```
+
+Verifica:
+
+```bash
+gh auth status
+gh config get -h github.com user
+```
+
+El segundo comando es el mismo que usa el prompt y debe imprimir tu usuario de GitHub.
+
+# Paso 8: resultado esperado
+
+Dentro de un repositorio Git con entorno virtual Python activo, el prompt debería verse conceptualmente así:
+
+<div class="terminal-preview">
+<span class="t-green">pacaicedo</span><span class="t-muted">@promise</span>
+<span class="t-orange">~/Data_Cantatio/BioForja-Projects/bioforge</span>
+<span class="t-blue">git:main</span>
+<span class="t-yellow">py:3.12</span>
+<span class="t-magenta">venv:bioforge</span>
+<span class="t-blue">gh:caicasanalytics</span><br>
+<span class="t-green">❯</span>
+</div>
+
+La lógica visual queda así:
+
+| Elemento | Color |
+|---|---|
+| Usuario | Verde |
+| Host | Gris |
+| Directorio | Naranja |
+| Rama Git | Azul |
+| Estado Git | Amarillo |
+| Python | Amarillo |
+| Entorno virtual | Magenta |
+| GitHub | Azul |
+| Duración de comandos | Cian |
+| Error | Rojo |
+
+## 8.1 Prueba completa en un proyecto Python
+
+Entra a tu proyecto:
+
+```bash
+cd ~/Data_Cantatio/BioForja-Projects/bioforge
+```
+
+Activa tu entorno virtual (creado con `uv venv`):
+
+```bash
+# En fish (shell por defecto de Garuda)
+source .venv/bin/activate.fish
+
+# En bash
+source .venv/bin/activate
+```
+
+Verifica Python:
+
+```bash
+python --version
+command -v python
+```
+
+Verifica Git:
+
+```bash
+git status --short
+git branch --show-current
+```
+
+Verifica GitHub CLI:
+
+```bash
+gh auth status
+```
+
+Explica qué está mostrando Starship:
+
+```bash
+starship explain
+```
+
+<div class="callout">
+<strong>Nota:</strong> la configuración de fish de Garuda define <code>VIRTUAL_ENV_DISABLE_PROMPT=1</code>, así que el <code>(.venv)</code> clásico no aparece delante del prompt. El entorno activo lo muestra Starship como <code>venv:bioforge</code>.
+</div>
+
+# Paso 9: monitoreo rápido de tokens (estilo YapCap)
+
+## 9.1 Qué es YapCap y por qué aquí se usa otra cosa
+
+[YapCap](https://github.com/TopiCsarno/yapcap) es un *applet* para el panel del escritorio **COSMIC** (el de Pop!_OS) que muestra el uso de cuota de asistentes de IA para programar (Codex, Claude Code, Cursor, Gemini, Copilot…): porcentaje usado de la ventana de 5 horas, de la semana y créditos. Según su propio README, es **solo para COSMIC**: no tiene versión para KDE, GNOME ni bandeja del sistema, y tampoco tiene modo de terminal. Sus paquetes oficiales son Flatpak (tienda de COSMIC), `.deb` y `.rpm`.
+
+En Garuda (KDE Plasma) se reproduce la misma idea con dos piezas de terminal:
+
+| Pieza | Qué muestra | De dónde saca los datos |
+|---|---|---|
+| **Línea de estado de Claude Code** | % usado del límite de 5 h y del límite semanal, % de contexto y costo estimado de la sesión, siempre visible mientras trabajas | Los datos que Claude Code recibe de la API (campo `rate_limits`) |
+| **ccusage** + función `tokens` + atajo de kitty | Tokens y costo estimado de hoy, bloque de 5 h activo, historial por día/semana/mes | Los registros locales de Claude Code, Codex, Gemini CLI, Copilot CLI, OpenCode y otros |
+
+<div class="callout warn">
+<strong>Supuesto:</strong> "tokens gastados" se refiere a los asistentes de IA para programar que se usan desde la terminal, en particular Claude Code. Los costos que muestran ccusage y Claude Code son <strong>estimaciones a precio de lista</strong>: con un plan Pro o Max no son lo que pagas, pero sirven para comparar el consumo entre días y proyectos.
+</div>
+
+## 9.2 Instalar las dependencias
+
+**Tipo:** modificación reversible.
+
+```bash
+sudo pacman -S --needed jq npm
+```
+
+- `jq` procesa el JSON que envía Claude Code a la línea de estado.
+- `npm` (arrastra `nodejs`) instala ccusage.
+
+Instala **ccusage** en tu carpeta personal, sin `sudo`:
+
+```bash
+npm install -g --prefix ~/.local ccusage
+```
+
+Qué hace:
+
+- `--prefix ~/.local` deja el ejecutable en `~/.local/bin/ccusage`, que la configuración de fish de Garuda ya pone en el `PATH`. No toca archivos del sistema.
+- ccusage trae un binario nativo para Linux x86_64, así que responde en alrededor de un segundo.
+
+Verifica:
+
+```bash
+ccusage --version
+ccusage daily --last 1
+```
+
+Si prefieres no instalar nada, `npx ccusage@latest daily --last 1` lo ejecuta sin instalar (más lento, porque descarga el paquete la primera vez).
+
+## 9.3 Línea de estado de Claude Code (lo más parecido a YapCap)
+
+**Tipo:** modificación reversible.
+
+Claude Code puede ejecutar un script después de cada respuesta y mostrar lo que imprima en una barra fija al pie. Ese script recibe un JSON con, entre otros, `rate_limits.five_hour.used_percentage` y `rate_limits.seven_day.used_percentage`: los mismos porcentajes que muestra YapCap.
+
+Crea el script:
+
+```bash
+mkdir -p ~/.claude
+nano ~/.claude/statusline.sh
+```
+
+Pega esto:
+
+```bash
+#!/usr/bin/env bash
+# ~/.claude/statusline.sh
+# Barra de estado de Claude Code estilo yapcap:
+# modelo · contexto · límite de 5 h · límite semanal · costo estimado de la sesión
+input=$(cat)
+
+j() { jq -r "$1 // empty" <<<"$input"; }
+
+model=$(j '.model.display_name')
+ctx=$(j '.context_window.used_percentage')
+h5=$(j '.rate_limits.five_hour.used_percentage')
+h5_reset=$(j '.rate_limits.five_hour.resets_at')
+d7=$(j '.rate_limits.seven_day.used_percentage')
+cost=$(j '.cost.total_cost_usd')
+
+# Colores BioForge (verde < 50 %, naranja < 80 %, rojo >= 80 %)
+color() {
+  local p=${1%.*}
+  if   [ "$p" -ge 80 ]; then printf '\033[1;38;2;247;118;142m'
+  elif [ "$p" -ge 50 ]; then printf '\033[1;38;2;224;175;104m'
+  else                       printf '\033[1;38;2;158;206;106m'
+  fi
+}
+reset=$'\033[0m'
+
+# Barra de 10 bloques
+bar() {
+  local p=${1%.*} n i out=""
+  n=$(( (p + 5) / 10 )); [ "$n" -gt 10 ] && n=10
+  for ((i = 0; i < 10; i++)); do
+    if [ "$i" -lt "$n" ]; then out+="▰"; else out+="▱"; fi
+  done
+  printf '%s' "$out"
+}
+
+line="[${model:-?}]"
+[ -n "$ctx" ] && line+=" ctx:$(color "$ctx")${ctx%.*}%${reset}"
+if [ -n "$h5" ]; then
+  line+=" 5h:$(color "$h5")$(bar "$h5") ${h5%.*}%${reset}"
+  [ -n "$h5_reset" ] && line+=" ↻$(date -d "@$h5_reset" +%H:%M)"
+fi
+[ -n "$d7" ] && line+=" 7d:$(color "$d7")$(bar "$d7") ${d7%.*}%${reset}"
+[ -n "$cost" ] && line+=" \$$(printf '%.2f' "$cost")"
+
+printf '%s\n' "$line"
+```
+
+Dale permiso de ejecución y pruébalo con datos de ejemplo:
+
+```bash
+chmod +x ~/.claude/statusline.sh
+echo '{"model":{"display_name":"Opus"},"context_window":{"used_percentage":8},"cost":{"total_cost_usd":0.01234},"rate_limits":{"five_hour":{"used_percentage":23.5,"resets_at":1738425600},"seven_day":{"used_percentage":81.2}}}' | ~/.claude/statusline.sh
+```
+
+El script empieza con `#!/usr/bin/env bash`, así que se ejecuta con bash aunque tu shell sea fish.
+
+Ahora registra el script en la configuración de usuario de Claude Code, `~/.claude/settings.json`. Si el archivo ya existe, este comando **agrega** la clave `statusLine` sin borrar el resto; primero hace un respaldo:
+
+```bash
+# En fish
+test -f ~/.claude/settings.json; or echo '{}' > ~/.claude/settings.json
+cp ~/.claude/settings.json ~/.claude/settings.json.bak
+jq '. + {statusLine: {type: "command", command: "~/.claude/statusline.sh", padding: 0}}' ~/.claude/settings.json.bak > ~/.claude/settings.json
+
+# En bash
+[ -f ~/.claude/settings.json ] || echo '{}' > ~/.claude/settings.json
+cp ~/.claude/settings.json ~/.claude/settings.json.bak
+jq '. + {statusLine: {type: "command", command: "~/.claude/statusline.sh", padding: 0}}' ~/.claude/settings.json.bak > ~/.claude/settings.json
+```
+
+Abre Claude Code (`claude`) y envía un mensaje: la barra aparece al pie y se actualiza tras cada respuesta.
+
+<div class="terminal-preview">
+[Opus] ctx:<span class="t-green">8%</span>
+5h:<span class="t-green">▰▰▱▱▱▱▱▱▱▱ 23%</span> ↻16:00
+7d:<span class="t-red">▰▰▰▰▰▰▰▰▱▱ 81%</span> $0.01
+</div>
+
+<div class="callout">
+<strong>Cuándo aparecen los límites:</strong> según la documentación de Claude Code, <code>rate_limits</code> solo llega con suscripciones Pro o Max de claude.ai, y solo después de la primera respuesta de la sesión. Con una API key, la barra muestra modelo, contexto y costo, sin las barras de 5 h y 7 d. Dentro de Claude Code, el comando <code>/usage</code> muestra el detalle completo del plan.
+</div>
+
+## 9.4 Función `tokens` para fish
+
+**Tipo:** modificación reversible.
+
+fish carga automáticamente las funciones guardadas en `~/.config/fish/functions/`, una por archivo:
+
+```bash
+mkdir -p ~/.config/fish/functions
+nano ~/.config/fish/functions/tokens.fish
+```
+
+Pega esto:
+
+```fish
+# ~/.config/fish/functions/tokens.fish
+# Monitoreo rápido de tokens gastados por asistentes de IA (vía ccusage).
+#   tokens            -> resumen de hoy + bloque de 5 h activo de Claude Code
+#   tokens --line     -> una sola línea: tokens y costo estimado de hoy
+#   tokens --watch N  -> panel que se refresca cada N segundos (60 por defecto)
+function tokens --description 'Resumen rápido de tokens gastados hoy (ccusage)'
+    if not command -q ccusage
+        echo "ccusage no está instalado (ver el paso de monitoreo de tokens)." >&2
+        return 1
+    end
+
+    switch "$argv[1]"
+        case --line -l
+            ccusage daily --last 1 --json \
+                | jq -r '"hoy: \(.totals.totalTokens // 0) tokens (in \(.totals.inputTokens // 0) · out \(.totals.outputTokens // 0)) · $\((.totals.totalCost // 0) * 100 | round / 100)"'
+        case --watch -w
+            set -l intervalo 60
+            if test -n "$argv[2]"
+                set intervalo $argv[2]
+            end
+            while true
+                clear
+                date '+%F %T'
+                ccusage daily --last 1 --compact
+                ccusage blocks --active --compact
+                echo
+                echo "Actualiza cada $intervalo s · Ctrl+C para salir"
+                sleep $intervalo
+            end
+        case '*'
+            ccusage daily --last 1 --compact
+            ccusage blocks --active --compact
+    end
+end
+```
+
+Úsala en cualquier ventana nueva de fish:
+
+```bash
+tokens           # tabla de hoy por agente y modelo + bloque de 5 h activo
+tokens --line    # hoy: 27000 tokens (in 1200 · out 800) · $0.04
+tokens --watch   # panel que se refresca cada 60 s
+```
+
+`totalTokens` incluye los tokens leídos de caché, que suelen ser la mayor parte; `in` y `out` son los de entrada y salida sin caché.
+
+<details>
+<summary><strong>Alternativa en bash</strong></summary>
+
+Agrega esta función al final de `~/.bashrc` y ejecuta `source ~/.bashrc`:
+
+```bash
+# Monitoreo rápido de tokens (ccusage) - versión bash
+tokens() {
+  command -v ccusage >/dev/null || { echo "ccusage no está instalado." >&2; return 1; }
+  case "$1" in
+    --line|-l)
+      ccusage daily --last 1 --json \
+        | jq -r '"hoy: \(.totals.totalTokens // 0) tokens (in \(.totals.inputTokens // 0) · out \(.totals.outputTokens // 0)) · $\((.totals.totalCost // 0) * 100 | round / 100)"' ;;
+    --watch|-w)
+      local intervalo=${2:-60}
+      while true; do
+        clear; date '+%F %T'
+        ccusage daily --last 1 --compact
+        ccusage blocks --active --compact
+        echo; echo "Actualiza cada $intervalo s · Ctrl+C para salir"
+        sleep "$intervalo"
+      done ;;
+    *)
+      ccusage daily --last 1 --compact
+      ccusage blocks --active --compact ;;
+  esac
+}
+```
+
+Si usas bash, verifica que `~/.local/bin` esté en el `PATH` (`echo $PATH`) y cambia el atajo de kitty del Paso 3 por:
+
+```conf
+map ctrl+shift+u launch --location=hsplit --bias=35 --title=tokens bash -ic "tokens --watch 60"
+```
+
+</details>
+
+## 9.5 Panel rápido en kitty
+
+El `kitty.conf` del Paso 3 ya incluye el atajo. Pulsa <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd> en kitty: se abre un panel debajo de la ventana actual con el resumen de hoy y el bloque de 5 h, que se actualiza cada 60 segundos. <kbd>Ctrl</kbd>+<kbd>C</kbd> dentro del panel lo cierra.
+
+## 9.6 Otros reportes útiles de ccusage
+
+```bash
+ccusage daily --since 20260901          # desde una fecha
+ccusage weekly --last 1                 # esta semana
+ccusage monthly                         # por mes
+ccusage claude daily --instances        # Claude Code separado por proyecto
+ccusage codex daily                     # solo Codex
+ccusage blocks --recent                 # bloques de 5 h de los últimos 3 días
+```
+
+Para actualizar ccusage:
+
+```bash
+npm install -g --prefix ~/.local ccusage@latest
+```
+
+# Paso 10: ajustes útiles
+
+## 10.1 Mostrar GitHub siempre, no solo en repositorios
+
+Edita:
+
+```bash
+nano ~/.config/starship.toml
+```
+
+En la sección `[custom.github]`, borra la línea:
+
+```toml
+require_repo = true
+```
+
+No hace falta recargar: el cambio se ve en el siguiente prompt.
+
+## 10.2 Ocultar Google Cloud del prompt
+
+Si aparece algo como:
+
+```text
+~ on ☁ usuario@gmail.com
+```
+
+eso viene del módulo `gcloud`. En esta configuración no aparece porque el `format` lista los módulos de forma explícita, pero si vuelves al formato por defecto de Starship, agrega:
+
+```toml
+[gcloud]
+disabled = true
+```
+
+## 10.3 No mostrar usuario y host
+
+Si quieres un prompt más minimalista, cambia el `format`:
+
+```toml
+format = """
+$directory\
+$git_branch\
+$git_status\
+$python\
+${custom.github}\
+$cmd_duration\
+$line_break\
+$character
+"""
+```
+
+## 10.4 Quitar el resumen de fastfetch al abrir la terminal
+
+Garuda muestra un resumen del sistema (fastfetch) en cada terminal nueva. Para quitarlo, edita `~/.config/fish/config.fish` y comenta la última línea:
+
+```fish
+# __garuda_fastfetch
+```
+
+# Paso 11: verificación final
+
+Abre una ventana nueva de kitty y ejecuta:
+
+```bash
+echo $TERM
+echo $SHELL
+echo $XDG_SESSION_TYPE
+fc-list | grep -i "FiraCode Nerd Font Mono" | head -1
+starship --version
+starship explain
+tokens --line
+```
+
+Resultados esperados:
+
+```text
+xterm-kitty
+/usr/bin/fish
+wayland
+/usr/share/fonts/TTF/FiraCodeNerdFontMono-Regular.ttf: FiraCode Nerd Font Mono:style=Regular
+starship x.y.z
+...
+hoy: N tokens (in N · out N) · $N
+```
+
+Para validar GitHub:
+
+```bash
+gh auth status
+```
+
+Para validar Python:
+
+```bash
+cd ~/Data_Cantatio/BioForja-Projects/bioforge
+source .venv/bin/activate.fish
+python --version
+```
+
+Para validar el panel de tokens: pulsa <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd> en kitty.
+
+# Paso 12: reversión
+
+## 12.1 Revertir kitty
+
+```bash
+mv ~/.config/kitty/kitty.conf.bak ~/.config/kitty/kitty.conf
+```
+
+Si no había respaldo, puedes simplemente desactivar la configuración actual:
+
+```bash
+mv ~/.config/kitty/kitty.conf ~/.config/kitty/kitty.conf.disabled
+```
+
+## 12.2 Revertir la configuración de Starship
+
+Volver a tu respaldo:
+
+```bash
+mv ~/.config/starship.toml.bak ~/.config/starship.toml
+```
+
+O volver a la configuración original de Garuda:
+
+```bash
+cp /etc/skel/.config/starship.toml ~/.config/starship.toml
+```
+
+<div class="callout warn">
+<strong>No desinstales Starship con <code>pacman</code>:</strong> los paquetes de configuración de fish y bash de Garuda dependen de él. Si no quieres usarlo, basta con revertir <code>starship.toml</code> o desactivar el prompt como se indica abajo.
+</div>
+
+## 12.3 Desactivar Starship solo en fish
+
+Como la activación vive en un archivo de Garuda que no se debe editar, la forma limpia es volver al prompt nativo de fish desde tu `~/.config/fish/config.fish`, debajo de la línea de personalizaciones:
+
+```fish
+functions -e fish_right_prompt
+fish_config prompt choose default
+```
+
+`fish_config prompt choose default` carga el prompt de ejemplo `default` de fish en lugar del de Starship. Para volver a Starship, borra esas dos líneas y ejecuta `exec fish`.
+
+## 12.4 Quitar el monitoreo de tokens
+
+```bash
+npm uninstall -g --prefix ~/.local ccusage
+rm ~/.config/fish/functions/tokens.fish
+rm ~/.claude/statusline.sh
+mv ~/.claude/settings.json.bak ~/.claude/settings.json
+```
+
+Y borra la línea `map ctrl+shift+u ...` de `kitty.conf`.
+
+`rm` se usa aquí sobre archivos concretos. No uses `rm -r` para esto.
+
+## 12.5 Quitar paquetes instalados
+
+Solo si los instalaste con este tutorial y ya no los quieres:
+
+```bash
+sudo pacman -Rs github-cli ttf-fira-code ttf-firacode-nerd
+```
+
+`-Rs` quita también las dependencias que ya nadie usa. `pacman` muestra la lista y pide confirmación antes de borrar. No afecta tus repositorios ni tus proyectos.
+
+# Resumen operativo
+
+1. Actualiza con `garuda-update` e instala kitty y las fuentes con `pacman`.
+2. Configura `~/.config/kitty/kitty.conf` con FiraCode Nerd Font Mono y el tema BioForge.
+3. Starship ya viene instalado y activado en fish y bash: no uses `install.sh` ni agregues otra línea `init`.
+4. Respalda el `starship.toml` de Garuda y reemplázalo por el tema BioForge.
+5. Instala `github-cli` con `pacman` y autentica con `gh auth login`.
+6. Instala `jq`, `npm` y ccusage para el monitoreo de tokens.
+7. Activa la línea de estado de Claude Code para ver los límites de 5 h y semanal, como en YapCap.
+8. Usa `tokens`, `tokens --line` o <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd> en kitty para un vistazo rápido.
+9. Verifica con `starship explain` y `tokens --line`.
