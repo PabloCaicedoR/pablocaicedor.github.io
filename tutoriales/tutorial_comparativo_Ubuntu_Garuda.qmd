@@ -1,0 +1,474 @@
+---
+title: "Ubuntu vs. Garuda Linux: comparación a fondo"
+subtitle: "Gestión de aplicaciones, terminal, mantenimiento y entorno para ML/DL"
+author: "Ph.D. Pablo Eduardo Caicedo-Rodríguez"
+image: "../recursos/imagenes/tutoriales/comparativo/portada.png"
+date: last-modified
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    theme: cosmo
+lang: es
+---
+
+# Objetivo
+
+Este tutorial compara **Ubuntu** y **Garuda Linux** desde el punto de vista de quien administra su propia estación de trabajo para ciencia de datos, *machine learning* y *deep learning*. No busca declarar un ganador: busca que entiendas **qué cambia en tu día a día** al pasar de una a otra y **por qué**.
+
+Versiones comparadas (verificadas el 27 de septiembre de 2026):
+
+| | Ubuntu | Garuda Linux |
+|---|---|---|
+| Versión | **26.04 LTS "Resolute Raccoon"** (publicada el 23 de abril de 2026) | *Rolling release* (no tiene versiones; se compara el estado actual de los repositorios) |
+| Edición | Ubuntu Desktop (GNOME) | **Dr460nized** (KDE Plasma 6), la edición insignia |
+| Base | Debian | Arch Linux |
+
+::: {.callout-note}
+## Convención de este documento
+Los bloques marcados como **Ubuntu** o **Garuda** muestran el mismo objetivo resuelto en cada sistema. Todos los comandos son para que los ejecutes tú; ninguno es destructivo salvo que se indique.
+:::
+
+# Dos filosofías: versión fija frente a *rolling release*
+
+La diferencia de fondo, de la que se derivan casi todas las demás, es el **modelo de publicación**.
+
+**Ubuntu (versión fija).** Canonical congela las versiones de los paquetes al publicar cada versión. Durante su vida útil solo recibe parches de seguridad y correcciones, no versiones nuevas de los programas. Una LTS recibe **5 años de soporte estándar** (hasta abril de 2031 para la 26.04) y hasta **10 años** con Ubuntu Pro (ESM). Pasar a la siguiente LTS es un evento puntual (`do-release-upgrade`) cada dos años.
+
+**Garuda (*rolling release*).** Hereda los repositorios de Arch Linux, que publican cada programa poco después de que salga su versión nueva. No hay "versión 2026": actualizas de forma continua y siempre estás en lo último. Garuda añade encima su propia configuración, herramientas y el repositorio **Chaotic-AUR**.
+
+| Aspecto | Ubuntu 26.04 LTS | Garuda |
+|---|---|---|
+| Frescura del software | Congelado en abril de 2026 | Lo último disponible en Arch |
+| Estabilidad de la API del sistema | Muy alta durante 5 años | Cambia con cada actualización |
+| Riesgo de que una actualización rompa algo | Bajo | Moderado (mitigado con *snapshots*) |
+| Esfuerzo de mantenimiento | Bajo, casi automático | Actualizar a menudo y leer avisos |
+| Soporte comercial | Sí (Canonical, Ubuntu Pro) | No; comunidad y foro |
+| Certificación de hardware y software de terceros | Amplia (NVIDIA, nubes, servidores) | Ninguna oficial |
+
+::: {.callout-important}
+## Consecuencia práctica para ML
+En Garuda, el Python, el compilador y el CUDA **del sistema** pueden ir por delante de lo que soportan PyTorch o TensorFlow. En Ubuntu pasa lo contrario: pueden quedarse atrás al final de la vida de la LTS. En ambos casos la solución es la misma: **nunca dependas del Python del sistema** y usa entornos por proyecto (`uv`, ver la sección [Stack de ML/DL](#stack-de-mldl)).
+:::
+
+# Tabla resumen
+
+| Componente | Ubuntu 26.04 LTS | Garuda Dr460nized |
+|---|---|---|
+| Kernel por defecto | Linux 7.0 (`linux-generic`) | `linux-garuda` (7.2.x hoy, con parches de CachyOS) |
+| Escritorio | GNOME 50, **solo Wayland** | KDE Plasma 6 con tema Dr460nized |
+| Gestor de inicio de sesión | GDM | Plasma Login Manager |
+| Terminal gráfica por defecto | **Ptyxis** (sustituye a GNOME Terminal) | **Konsole** |
+| Shell interactiva en la terminal | bash | **fish** (la shell de inicio de sesión sigue siendo bash) |
+| Prompt | El de bash | Starship, preinstalado |
+| Gestor de paquetes | APT 3.1 + dpkg | pacman |
+| Formato universal por defecto | **Snap** | Ninguno forzado (Flatpak opcional) |
+| Repositorio comunitario | PPAs | AUR (con `paru`) + Chaotic-AUR |
+| Tienda gráfica | App Center (Snap) + Actualizador de software | Octopi (paquetes) y Discover (Flatpak/firmware) |
+| Actualizar el sistema | `apt` + `unattended-upgrades` | `garuda-update` |
+| Sistema de archivos al instalar | ext4 | **Btrfs** con compresión y subvolúmenes |
+| Instantáneas del sistema | No por defecto | **Snapper + snap-pac + grub-btrfs** |
+| Swap | Archivo de intercambio | **zram** (`zram-generator`) |
+| Cifrado de disco | LUKS; opción de cifrado respaldado por TPM | LUKS desde el instalador Calamares |
+| Cortafuegos preinstalado | `ufw` (desactivado por defecto) | `firewalld` |
+| `sudo` | **sudo-rs** (reimplementación en Rust) | `sudo` clásico |
+| `coreutils` | **uutils** (reimplementación en Rust) | GNU coreutils |
+| Requisitos mínimos (escritorio) | 2 núcleos a 2 GHz, 6 GB RAM, 25 GB | 4 GB RAM, 30 GB (recomendado 8 GB y 40 GB) |
+
+Fuentes: notas de versión de Ubuntu 26.04 y listas de paquetes de la ISO Dr460nized en el repositorio oficial de Garuda (ver [Referencias](#referencias)).
+
+# Gestión de aplicaciones
+
+Es la diferencia que más notarás. Tiene tres capas en ambos sistemas: el **gestor de paquetes nativo**, el **repositorio comunitario** y el **formato universal** (Snap o Flatpak).
+
+## El gestor nativo: APT frente a pacman
+
+**APT** trabaja sobre paquetes `.deb` y la base de datos de `dpkg`. Separa la actualización del índice (`apt update`) de la instalación. Ubuntu 26.04 trae **APT 3.1**, que usa un nuevo resolvedor de dependencias y una salida con colores y columnas; los comandos de siempre siguen funcionando.
+
+**pacman** trabaja sobre paquetes `.pkg.tar.zst`. Es más rápido y su sintaxis es más compacta: una letra mayúscula indica la operación (`-S` sincronizar, `-R` quitar, `-Q` consultar, `-U` instalar un archivo local) y las minúsculas la modifican.
+
+Una diferencia de diseño importante: en Arch **no existen paquetes `-dev`**. Los encabezados de C vienen dentro de cada paquete, así que compilar extensiones de Python o paquetes de R requiere menos pasos.
+
+### Tabla de equivalencias
+
+| Tarea | Ubuntu | Garuda |
+|---|---|---|
+| Actualizar todo | `sudo apt update && sudo apt full-upgrade` | `garuda-update` |
+| Instalar | `sudo apt install x` | `sudo pacman -S x` |
+| Instalar sin reinstalar lo que ya está | (automático) | `sudo pacman -S --needed x` |
+| Instalar un archivo local | `sudo apt install ./x.deb` | `sudo pacman -U x.pkg.tar.zst` |
+| Quitar | `sudo apt remove x` | `sudo pacman -R x` |
+| Quitar con dependencias y configuración | `sudo apt purge x && sudo apt autoremove` | `sudo pacman -Rns x` |
+| Buscar | `apt search x` | `pacman -Ss x` |
+| Información (repositorio) | `apt show x` | `pacman -Si x` |
+| Información (instalado) | `dpkg -s x` | `pacman -Qi x` |
+| Archivos de un paquete | `dpkg -L x` | `pacman -Ql x` |
+| ¿Qué paquete instaló este archivo? | `dpkg -S /ruta` | `pacman -Qo /ruta` |
+| ¿Qué paquete trae un comando que no tengo? | `apt-file search cmd` | `pkgfile cmd` (preinstalado en Garuda) |
+| Paquetes instalados a mano | `apt-mark showmanual` | `pacman -Qe` |
+| Dependencias huérfanas | `sudo apt autoremove` | `pacman -Qdt` (listar) |
+| Dependencias inversas | `apt rdepends x` | `pactree -r x` |
+| Limpiar caché | `sudo apt autoclean` | `sudo paccache -rk2` (deja 2 versiones) |
+| Congelar una versión | `sudo apt-mark hold x` | `IgnorePkg = x` en `/etc/pacman.conf` |
+| Volver a una versión anterior | `sudo apt install x=<versión>` | `downgrade x` (preinstalado) |
+| Historial | `/var/log/apt/history.log` | `/var/log/pacman.log` |
+| Configuración de repositorios | `/etc/apt/sources.list.d/ubuntu.sources` | `/etc/pacman.conf` y `/etc/pacman.d/mirrorlist` |
+
+Para eliminar los huérfanos en Garuda, el comando cambia según la shell:
+
+```fish
+# fish (Konsole en Garuda)
+sudo pacman -Rns (pacman -Qdtq)
+```
+
+```bash
+# bash
+sudo pacman -Rns $(pacman -Qdtq)
+```
+
+### Reglas de oro en Garuda
+
+1. **Nunca hagas actualizaciones parciales.** No uses `pacman -Sy x` (sincronizar el índice e instalar sin actualizar el resto). En Arch todas las bibliotecas deben estar a la misma versión; una actualización parcial puede dejar programas que no arrancan. Instala con `pacman -S x` después de un `garuda-update` completo.
+2. **Actualiza con `garuda-update`, no con `pacman -Syu`.** Ver [Actualizar el sistema](#actualizar-el-sistema).
+3. **Revisa los archivos `.pacnew`.** Cuando una actualización trae una configuración nueva y tú modificaste la anterior, pacman guarda la nueva como `archivo.pacnew` y no toca la tuya. Revísalos con `sudo pacdiff` (de `pacman-contrib`, preinstalado). En Ubuntu, `dpkg` te pregunta en el momento qué versión conservar.
+4. **Lee las noticias de Arch antes de actualizar** si llevas semanas sin hacerlo: <https://archlinux.org/news/>. Ahí se anuncian las intervenciones manuales.
+
+## Repositorios comunitarios: PPA frente a AUR y Chaotic-AUR
+
+| | PPA (Ubuntu) | AUR (Arch/Garuda) | Chaotic-AUR (Garuda) |
+|---|---|---|---|
+| Qué contiene | Paquetes binarios compilados por terceros | **Recetas** (PKGBUILD) para compilar en tu equipo | Binarios precompilados de paquetes populares del AUR |
+| Cómo se usa | `add-apt-repository ppa:...` y luego `apt` | `paru -S x` | `sudo pacman -S x` (ya viene activado) |
+| Tamaño | Cientos de PPAs dispersos | Decenas de miles de paquetes en un solo lugar | Una selección del AUR |
+| Riesgo | Confías en quien mantiene el PPA | Confías en el PKGBUILD: **léelo** | Confías en el equipo de Chaotic-AUR |
+
+Flujo recomendado en Garuda para algo que no está en los repositorios oficiales:
+
+```bash
+pacman -Ss nombre      # 1. ¿Está en los repositorios oficiales o en Chaotic-AUR?
+paru -Ss nombre        # 2. Si no, búscalo en el AUR
+paru -S nombre         # 3. paru te muestra el PKGBUILD antes de compilar: léelo
+```
+
+::: {.callout-warning}
+## Seguridad en el AUR
+Cualquier persona puede subir un PKGBUILD al AUR, y compilarlo ejecuta su código en tu equipo. Antes de aceptar, revisa de dónde descarga el código (`source=`) y qué hace en `package()`. Prefiere paquetes con muchos votos y mantenedor activo. Nunca uses `sudo` con `paru`.
+:::
+
+## Formatos universales: Snap frente a Flatpak
+
+**Ubuntu apuesta por Snap.** Firefox, el App Center y varias aplicaciones preinstaladas son *snaps*. Los snaps se actualizan solos en segundo plano y corren confinados. Flatpak no viene instalado, pero puedes añadirlo:
+
+```bash
+# Ubuntu
+snap list                          # qué snaps tienes
+sudo snap refresh                  # forzar actualización
+sudo apt install flatpak           # opcional
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
+**Garuda no fuerza ninguno.** Casi todo lo que necesitas está como paquete nativo en los repositorios o en Chaotic-AUR, y esa es la vía preferida. Flatpak es útil para aplicaciones propietarias o muy aisladas:
+
+```bash
+# Garuda
+sudo pacman -S flatpak
+flatpak install flathub com.ejemplo.App
+```
+
+Para ML y desarrollo la recomendación es la misma en ambos: **herramientas de desarrollo (compiladores, Git, R, bibliotecas) siempre como paquetes nativos**, porque los formatos confinados no ven bien tus bibliotecas ni tus entornos. Usa Snap/Flatpak solo para aplicaciones de escritorio (Zotero, Slack, etc.).
+
+## Tiendas gráficas
+
+| | Ubuntu | Garuda |
+|---|---|---|
+| Tienda principal | **App Center**: muestra primero snaps; también instala `.deb` | **Octopi**: interfaz gráfica de pacman y del AUR |
+| Actualizaciones | **Actualizador de software** + `unattended-upgrades` (parches de seguridad automáticos) | Aviso de **Garuda System Maintenance** y `garuda-update` en la terminal |
+| Otras | Centro de controladores en "Software y actualizaciones" | **Discover** (Flatpak y firmware), **Garuda Toolbox** (herramientas del sistema), **Garuda Setup Assistant** (primer arranque) |
+
+::: {.callout-tip}
+## Recomendación en Garuda
+Usa Octopi para explorar, pero **actualiza siempre con `garuda-update`**. No mezcles actualizaciones de sistema desde varias herramientas gráficas a la vez.
+:::
+
+## Actualizar el sistema
+
+**Ubuntu.** `unattended-upgrades` instala parches de seguridad solo, y el Actualizador de software te avisa del resto. El salto de versión (26.04 → 28.04) es explícito:
+
+```bash
+sudo apt update && sudo apt full-upgrade
+sudo do-release-upgrade    # solo cuando quieras cambiar de LTS
+```
+
+**Garuda.** `garuda-update` es la forma recomendada por el proyecto. Según su ayuda oficial, en cada ejecución:
+
+1. se actualiza a sí mismo para traer las últimas correcciones;
+2. refresca la lista de espejos con `rate-mirrors`;
+3. actualiza los llaveros de Arch y de Chaotic-AUR;
+4. aplica correcciones aprobadas por el equipo para conflictos conocidos;
+5. comprueba el espacio libre teniendo en cuenta los *snapshots* de Btrfs;
+6. aplica la actualización (y `snap-pac` crea un *snapshot* antes y otro después);
+7. ejecuta tareas posteriores (base de `locate`, completados de fish).
+
+```bash
+garuda-update                 # actualización completa
+garuda-update --aur           # además actualiza paquetes del AUR con paru
+garuda-update remote keyring  # si falla la verificación de firmas
+garuda-update remote fix      # restablece pacman.conf y los llaveros
+```
+
+Frecuencia sugerida: una vez por semana. Dejar pasar meses en un sistema *rolling* hace que la actualización acumulada sea más propensa a conflictos.
+
+# Terminal y shell
+
+## La aplicación de terminal
+
+| | Ubuntu 26.04 | Garuda Dr460nized |
+|---|---|---|
+| Terminal por defecto | **Ptyxis** | **Konsole** |
+| Puntos fuertes | Integración con GNOME, perfiles, detección de contenedores (Toolbox/Podman) | Pestañas y divisiones, perfiles, integración con Dolphin y KDE |
+| Alternativa GPU recomendada | kitty (`sudo apt install kitty`, versión congelada) | kitty (`sudo pacman -S kitty`, versión reciente) |
+
+Ubuntu 26.04 sustituyó GNOME Terminal por Ptyxis. Si tienes tutoriales antiguos que dicen "abre GNOME Terminal", ahora es Ptyxis.
+
+## La shell: bash frente a fish
+
+**Ubuntu** usa **bash** para todo: shell de inicio de sesión, terminal y scripts.
+
+**Garuda** usa un esquema mixto que conviene entender bien:
+
+- La **shell de inicio de sesión** del usuario es **bash** (`echo $SHELL` muestra `/bin/bash`). Así se mantiene la compatibilidad con programas que esperan bash, como Flatpak.
+- **Konsole** tiene un perfil que abre **fish**. Por eso "ves" fish al abrir la terminal.
+- `garuda-fish-config` y `garuda-bash-config` dejan configuradas ambas shells con Starship, alias y utilidades.
+
+```bash
+echo $SHELL          # /bin/bash en ambos sistemas
+ps -p $fish_pid      # dentro de Konsole en Garuda: muestra fish
+```
+
+::: {.callout-important}
+## Consecuencia para kitty y otras terminales
+Una terminal distinta de Konsole (kitty, Alacritty, WezTerm) abre la shell de `$SHELL`, es decir, **bash**, no fish. Para que kitty abra fish, añade en `~/.config/kitty/kitty.conf`:
+
+```
+shell /usr/bin/fish
+```
+
+O cambia la shell de inicio de sesión con `chsh -s /usr/bin/fish` (menos recomendable, por la compatibilidad mencionada).
+:::
+
+### Qué cambia al escribir en fish
+
+fish no es compatible con la sintaxis POSIX de bash. Lo cotidiano funciona igual (`cd`, `ls`, tuberías, `&&`, `||`, `$(...)`), pero hay diferencias:
+
+| Tarea | bash (Ubuntu) | fish (Garuda) |
+|---|---|---|
+| Variable de entorno | `export CUDA_VISIBLE_DEVICES=0` | `set -gx CUDA_VISIBLE_DEVICES 0` |
+| Añadir al PATH | `export PATH="$HOME/.local/bin:$PATH"` en `~/.bashrc` | `fish_add_path ~/.local/bin` (una vez; es persistente) |
+| Activar un venv | `source .venv/bin/activate` | `source .venv/bin/activate.fish` |
+| Alias | `alias ll='ls -l'` en `~/.bashrc` | `abbr -a ll 'ls -l'` en `~/.config/fish/config.fish` |
+| Bucle | `for f in *.csv; do echo $f; done` | `for f in *.csv; echo $f; end` |
+| Condicional | `if [ -f x ]; then ...; fi` | `if test -f x; ...; end` |
+| Archivo de configuración | `~/.bashrc` | `~/.config/fish/config.fish` |
+
+::: {.callout-tip}
+## Regla práctica
+Usa fish de forma **interactiva** y escribe los **scripts en bash**, con `#!/usr/bin/env bash` en la primera línea. Así tus scripts funcionan igual en Garuda, en Ubuntu, en servidores y en clústeres. Si te encuentras con una instrucción de bash que fish no acepta, escribe `bash`, ejecútala y sal con `exit`.
+:::
+
+### Lo que Garuda añade a la terminal
+
+`garuda-fish-config` instala y configura herramientas modernas que en Ubuntu tendrías que instalar a mano:
+
+| Herramienta | Sustituye a | En Ubuntu |
+|---|---|---|
+| `eza` | `ls` | `sudo apt install eza` |
+| `bat` | `cat` | `sudo apt install bat` (el comando se llama `batcat`) |
+| `ugrep` | `grep` | `sudo apt install ugrep` |
+| `fzf` | búsqueda en historial | `sudo apt install fzf` |
+| `tealdeer` (`tldr`) | `man` resumido | `sudo apt install tealdeer` |
+| `pkgfile` | *command-not-found* | Ubuntu ya trae `command-not-found` |
+| `starship` | prompt | script oficial de starship.rs |
+| `btop`, `fastfetch` | `top`, `neofetch` | `sudo apt install btop fastfetch` |
+
+Los alias de Garuda hacen que, por ejemplo, `ls` muestre en realidad `eza`. Si un tutorial externo espera la salida clásica, usa `command ls`.
+
+## Diferencias en los comandos base de Ubuntu 26.04
+
+Ubuntu 26.04 reemplazó dos piezas históricas por reimplementaciones en Rust:
+
+- **sudo-rs** como proveedor de `sudo`. El uso normal es idéntico; algunas opciones poco comunes de `sudoers` pueden no estar soportadas.
+- **uutils coreutils** como proveedor de `ls`, `cp`, `cat`, etc. Las herramientas GNU siguen disponibles con un prefijo. Si un script tuyo depende de un comportamiento muy específico de GNU coreutils, pruébalo.
+
+Garuda, como Arch, sigue usando `sudo` y GNU coreutils.
+
+# Escritorio y experiencia gráfica
+
+| | Ubuntu 26.04 | Garuda Dr460nized |
+|---|---|---|
+| Entorno | GNOME 50 con las extensiones de Ubuntu (dock, indicadores) | KDE Plasma 6 con tema oscuro, efectos y Kvantum |
+| Sesión gráfica | **Solo Wayland** (GNOME ya no ofrece sesión X.org) | Wayland por defecto; X11 disponible |
+| Personalización | Limitada sin extensiones | Muy amplia desde Configuración del sistema |
+| Consumo de RAM en reposo | Moderado | Más alto (efectos, zram, ajustes de rendimiento) |
+| Navegador | Firefox (snap) | FireDragon (derivado de Firefox) |
+| Archivos | Nautilus (Archivos) | Dolphin |
+
+::: {.callout-warning}
+## NVIDIA y Wayland
+La página de requisitos de Garuda desaconseja Wayland con GPU NVIDIA. Si ves parpadeos o fallos gráficos, elige la sesión X11 en la pantalla de inicio de sesión. En Ubuntu 26.04 no tienes esa opción con GNOME, así que el driver NVIDIA debe ser reciente.
+:::
+
+# Hardware y drivers
+
+| Tarea | Ubuntu | Garuda |
+|---|---|---|
+| Driver NVIDIA propietario | `sudo ubuntu-drivers install` o "Controladores adicionales" | Se elige al instalar; después, **Garuda Hardware Tool** (`garuda-hardware-tool`) desde Garuda Toolbox |
+| Ver el driver activo | `nvidia-smi` | `nvidia-smi` |
+| Microcódigo de CPU | `intel-microcode` / `amd64-microcode` | `intel-ucode` / `amd-ucode` (preinstalados) |
+| Firmware | `fwupd` | `fwupd` (preinstalado) |
+| Diagnóstico para pedir ayuda | `ubuntu-bug`, `inxi -Fxz` | `garuda-inxi` (el foro de Garuda lo pide en cada consulta) |
+
+Con un kernel que se actualiza a menudo, en Garuda conviene tener un kernel de respaldo:
+
+```bash
+sudo pacman -S linux-lts linux-lts-headers
+sudo update-grub
+```
+
+Si una actualización del kernel rompe el driver, arrancas con `linux-lts` desde GRUB mientras se resuelve.
+
+# Sistema de archivos, *snapshots* y recuperación
+
+Esta es la mayor ventaja práctica de Garuda para quien experimenta.
+
+**Garuda** instala en **Btrfs** con subvolúmenes y compresión, y configura **Snapper**:
+
+- `snap-pac` crea un *snapshot* antes y después de cada operación de pacman;
+- `grub-btrfs` añade esos *snapshots* al menú de GRUB, para arrancar desde uno si el sistema no inicia;
+- **Btrfs Assistant** (gráfico) permite restaurar un *snapshot* de forma permanente.
+
+```bash
+sudo snapper list                     # ver snapshots
+sudo btrfs filesystem usage /         # uso real del disco (df no es fiable en Btrfs)
+```
+
+**Ubuntu** instala en **ext4** sin *snapshots*. La recuperación depende de copias de seguridad (Deja Dup) o de instalar Timeshift a mano. A cambio, ext4 es más simple y su uso de disco es predecible.
+
+::: {.callout-note}
+## Datasets y checkpoints en Garuda
+Los *snapshots* retienen los bloques de archivos borrados. Si guardas datasets o checkpoints grandes dentro de un subvolumen con *snapshots*, el disco se llenará sin que `df` lo explique. Pon esos datos en un subvolumen propio sin *snapshots* (por ejemplo `/data`), como se indica en la ruta de aprendizaje.
+:::
+
+Otras diferencias de base:
+
+| | Ubuntu 26.04 | Garuda |
+|---|---|---|
+| Swap | Archivo en disco | zram (memoria comprimida) |
+| OOM | `systemd-oomd` | `systemd-oomd` |
+| initramfs | **Dracut** (nuevo en 26.04) | Dracut |
+| systemd | 259 | Última versión de Arch |
+| Registros | `journalctl` | `journalctl` |
+
+La administración con `systemctl` y `journalctl` es **idéntica** en ambos: todo lo que aprendas de systemd te sirve en los dos.
+
+# Seguridad
+
+| | Ubuntu | Garuda |
+|---|---|---|
+| Parches automáticos | Sí (`unattended-upgrades`) | No; tú ejecutas `garuda-update` |
+| Tiempo hasta recibir un parche | Parches retroportados a la versión congelada | Llega con la versión nueva del programa |
+| Confinamiento | AppArmor activo + snaps confinados | Flatpak si lo usas |
+| Cortafuegos | `ufw`, instalado pero desactivado | `firewalld`, con interfaz en Configuración del sistema |
+| Parches del kernel en caliente | Livepatch (Ubuntu Pro) | No |
+
+```bash
+# Ubuntu: activar el cortafuegos
+sudo ufw enable && sudo ufw status
+
+# Garuda: comprobar el estado del cortafuegos
+systemctl status firewalld
+sudo firewall-cmd --list-all
+```
+
+# Stack de ML/DL {#stack-de-mldl}
+
+| Pieza | Ubuntu 26.04 | Garuda |
+|---|---|---|
+| Python del sistema | 3.14 | La última estable en Arch |
+| Entornos de Python | `uv` (recomendado en ambos) | `uv` (`sudo pacman -S uv`) |
+| CUDA Toolkit | En el archivo de Ubuntu y en los repositorios oficiales de NVIDIA | Paquete `cuda` en `extra` |
+| Soporte oficial de NVIDIA | **Sí**: Ubuntu es plataforma soportada por NVIDIA | No oficial; lo mantiene Arch |
+| ROCm (AMD) | ROCm 7.1 en el archivo | Paquetes `rocm-*` en `extra` |
+| R | Paquete `r-base`; binarios de CRAN precompilados vía Posit Package Manager o r2u | Paquete `r`; los paquetes de CRAN **se compilan desde fuente** |
+| Docker + GPU | `docker.io` + `nvidia-container-toolkit` | `docker` + `nvidia-container-toolkit` |
+| Imágenes de contenedor base | La mayoría de imágenes oficiales (`nvidia/cuda`, PyTorch) están basadas en Ubuntu | Igual: usas las mismas imágenes |
+
+Puntos clave:
+
+- **PyTorch con `uv` funciona igual en ambos.** Las ruedas de PyTorch traen su propio CUDA, así que solo necesitas el driver. No instales el CUDA del sistema salvo que compiles extensiones.
+- **R es donde más se nota la diferencia.** En Ubuntu puedes instalar miles de paquetes de CRAN ya compilados en segundos. En Garuda se compilan (por eso el tutorial de instalación incluye `gcc-fortran` y `blas-openblas`). Paquetes grandes como `rstan` o `arrow` tardan varios minutos.
+- **Reproducibilidad.** Si tus estudiantes o un clúster usan Ubuntu, publica tus entornos con `uv.lock`, `renv.lock` o una imagen Docker. Así da igual que tú desarrolles en Garuda.
+
+Ejemplo idéntico en ambos sistemas:
+
+```bash
+mkdir -p ~/proyectos/xai-demo && cd ~/proyectos/xai-demo
+uv init --python 3.12
+uv add torch shap dowhy
+uv run python -c "import torch; print(torch.cuda.is_available())"
+```
+
+# Documentación y comunidad
+
+| | Ubuntu | Garuda |
+|---|---|---|
+| Documentación oficial | <https://documentation.ubuntu.com> | <https://wiki.garudalinux.org> (complementa a la Arch Wiki) |
+| Referencia técnica de fondo | Documentación de Debian y Ubuntu | **Arch Wiki**, <https://wiki.archlinux.org> |
+| Preguntas y respuestas | Ask Ubuntu, Ubuntu Discourse | Foro de Garuda, <https://forum.garudalinux.org> |
+| Tutoriales en internet | La mayoría asume Ubuntu | Hay que traducir `apt` → `pacman` |
+
+La Arch Wiki es útil también para usuarios de Ubuntu: explica cada componente (systemd, NVIDIA, Btrfs, Wayland) con gran detalle.
+
+# ¿Cuál usar y cuándo?
+
+| Situación | Recomendación |
+|---|---|
+| Estación de trabajo personal, quieres lo último y te gusta ajustar | **Garuda** |
+| Servidor de laboratorio, clúster o máquina compartida | **Ubuntu LTS** |
+| Equipos de estudiantes en un curso | **Ubuntu LTS** (instrucciones estables todo el semestre) |
+| Hardware muy reciente (GPU, portátil nuevo) | **Garuda** (kernel y Mesa más nuevos) |
+| Software comercial certificado (CUDA empresarial, herramientas propietarias) | **Ubuntu LTS** |
+| Experimentar con configuraciones del sistema sin miedo | **Garuda** (*snapshots*) |
+| Muchos paquetes de R | **Ubuntu** (binarios precompilados) |
+
+Una combinación razonable: **Garuda en tu equipo de trabajo** y **Ubuntu LTS en servidores y en los contenedores** que compartes. Los entornos bloqueados (`uv.lock`, `renv.lock`) y Docker hacen de puente entre los dos.
+
+# Práctica guiada
+
+Ejercicios para comprobar que dominas las diferencias. Hazlos en Garuda y, si tienes acceso, repítelos en Ubuntu (una máquina virtual o WSL sirven).
+
+1. **Inventario.** Muestra cuántos paquetes instalaste a mano (`pacman -Qe | wc -l` / `apt-mark showmanual | wc -l`) y cuánto ocupa la caché de paquetes (`du -sh /var/cache/pacman/pkg` / `du -sh /var/cache/apt/archives`).
+2. **Rastreo.** Averigua qué paquete instaló `/usr/bin/python3` y lista sus dependencias inversas.
+3. **Comando inexistente.** Escribe `nvtop` sin tenerlo instalado; observa qué sugiere cada sistema e instálalo.
+4. **Shell.** Define `CUDA_VISIBLE_DEVICES=0` de forma persistente en fish y en bash, y verifica con `echo`.
+5. **Script portable.** Escribe un script bash que muestre el uso de GPU, RAM y disco; ejecútalo desde fish y desde bash.
+6. **Recuperación (solo Garuda).** Instala un paquete pequeño, localiza en `snapper list` los *snapshots* creados antes y después, y compara con `sudo snapper status <antes>..<después>`.
+7. **Configuración nueva.** Busca archivos `.pacnew` pendientes con `sudo pacdiff -o` y explica qué harías con cada uno.
+
+# Referencias
+
+- Notas de versión de Ubuntu 26.04 LTS: <https://documentation.ubuntu.com/release-notes/26.04/>
+- Resumen para usuarios de LTS anteriores: <https://documentation.ubuntu.com/release-notes/26.04/summary-for-lts-users/>
+- Wiki de Garuda Linux: <https://wiki.garudalinux.org>
+- Requisitos de sistema de Garuda: <https://wiki.garudalinux.org/en/system-requirements>
+- Listas de paquetes de las ISO de Garuda: <https://gitlab.com/garuda-linux/tools/iso-profiles>
+- PKGBUILDs de Garuda (`garuda-update`, `garuda-fish-config`, `linux-garuda`): <https://gitlab.com/garuda-linux/pkgbuilds>
+- Foro de Garuda, shell de inicio de sesión bash y fish en Konsole: <https://forum.garudalinux.org/t/how-does-garuda-use-bash-but-the-shell-is-fish/28339>
+- Arch Wiki, pacman y tabla de equivalencias con otros gestores: <https://wiki.archlinux.org/title/Pacman> · <https://wiki.archlinux.org/title/Pacman/Rosetta>
+- Arch Wiki, actualizaciones parciales: <https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported>
+- Chaotic-AUR: <https://aur.chaotic.cx>
+- Documentación de fish: <https://fishshell.com/docs/current/>
+- uv: <https://docs.astral.sh/uv/>
