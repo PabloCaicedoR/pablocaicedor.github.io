@@ -1,0 +1,915 @@
+---
+title: "Series y transformada de Fourier"
+subtitle: "Del concepto al espectro de las bioseñales"
+author: "Pablo Eduardo Caicedo Rodríguez"
+institute: "Sistemas y Señales Biomédicos (SYSB) · Semanas 5–7"
+lang: es
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: c/t
+    progress: true
+    hash-type: number
+    center: false
+    width: 1280
+    height: 720
+    margin: 0.06
+    code-line-numbers: false
+    code-overflow: wrap
+    highlight-style: github
+    html-math-method: mathjax
+    chalkboard: false
+    menu: true
+    toc: false
+    footer: "SYSB · Series y transformada de Fourier"
+    self-contained: true
+execute:
+  echo: false
+  warning: false
+jupyter: python3
+---
+
+```{python}
+#| label: setup
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
+
+plt.rcParams.update({
+    "figure.dpi": 130,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": True,
+    "grid.alpha": 0.25,
+    "font.size": 12,
+    "axes.titlesize": 13,
+    "axes.labelsize": 12,
+    "legend.frameon": False,
+})
+C_AZUL, C_NARANJA, C_GRIS, C_VERDE = "#1f5f8b", "#d9731a", "#6b6b6b", "#2e8b57"
+rng = np.random.default_rng(2027)
+
+
+def ecg_sintetico(fs, dur, rr, rng=None, jitter=0.0):
+    """Tren de latidos sintéticos (suma de gaussianas P-QRS-T).
+
+    No es un modelo fisiológico: solo reproduce la morfología gruesa
+    para ilustrar la estructura espectral de una señal cuasiperiódica.
+    """
+    t = np.arange(0, dur, 1 / fs)
+    x = np.zeros_like(t)
+    # (desfase respecto a R [s], amplitud [mV], ancho sigma [s])
+    ondas = [(-0.20, 0.12, 0.025), (-0.03, -0.10, 0.008),
+             (0.00, 1.00, 0.010), (0.03, -0.20, 0.008), (0.25, 0.30, 0.040)]
+    tr = 0.3
+    while tr < dur:
+        for d, a, s in ondas:
+            x += a * np.exp(-((t - tr - d) ** 2) / (2 * s ** 2))
+        paso = rr if (rng is None or jitter == 0) else rr + jitter * rng.standard_normal()
+        tr += paso
+    return t, x
+
+
+def espectro_amplitud(x, fs, ventana=None):
+    """Espectro de amplitud unilateral con ganancia coherente corregida."""
+    N = len(x)
+    w = np.ones(N) if ventana is None else signal.get_window(ventana, N)
+    X = np.fft.rfft(x * w)
+    f = np.fft.rfftfreq(N, 1 / fs)
+    A = np.abs(X) / np.sum(w)
+    A[1:] *= 2          # se pliega la energía de las frecuencias negativas
+    if N % 2 == 0:
+        A[-1] /= 2      # el bin de Nyquist no tiene par negativo
+    return f, A
+```
+
+## Ruta de la sesión
+
+:::: {.columns}
+::: {.column width="50%"}
+**Bloques**
+
+1. Conceptualización: ¿por qué pensar en frecuencia?
+2. Serie de Fourier (señales periódicas)
+3. Transformada de Fourier (señales aperiódicas)
+4. Tipología de señales y la «familia» de Fourier
+5. Fourier y sistemas LTI
+6. De lo continuo a lo computable: DFT y FFT
+7. Usos en bioseñales, errores frecuentes y verificación
+:::
+
+::: {.column width="50%"}
+**Al finalizar, el estudiante debe poder**
+
+- Escribir y justificar las ecuaciones de análisis y síntesis.
+- Elegir la herramienta de Fourier según el tipo de señal.
+- Explicar por qué las sinusoides son «especiales» para un sistema LTI.
+- Relacionar convolución temporal con producto espectral.
+- Calcular e interpretar un espectro con `numpy`, reconociendo resolución, fuga y ventanas.
+:::
+::::
+
+::: {.fuente}
+Texto guía: Semmlow, *Circuits, Signals, and Systems for Bioengineers* (3.ª ed.), cap. 3 (secc. 3.1–3.4).
+:::
+
+# 1 · Conceptualización {background-color="#1f5f8b"}
+
+## El problema: lo que el tiempo no muestra
+
+:::: {.columns}
+::: {.column width="55%"}
+- Un EEG en reposo parece irregular en el tiempo, pero concentra energía en bandas: la oscilación **alfa (8–12 Hz)** aparece en reposo con ojos cerrados.
+- Un ECG contaminado por la red eléctrica lleva una componente de **60 Hz** (Colombia) que en el tiempo se confunde con la morfología.
+- La deriva de línea base por respiración vive por debajo de ~1 Hz.
+
+**Pregunta guía:** ¿cuánta de la señal oscila a cada frecuencia y con qué fase?
+:::
+
+::: {.column width="45%"}
+::: {.callout-important}
+## No todo es «ruido»
+Deriva, interferencia de red y artefactos de movimiento **tienen estructuras espectrales distintas**. El análisis en frecuencia sirve precisamente para distinguirlas y elegir el tratamiento adecuado.
+:::
+:::
+::::
+
+::: notes
+Conectar con la semana 4: limitaciones del dominio temporal. Insistir en que el análisis frecuencial no reemplaza al temporal: son dos representaciones de la misma información.
+:::
+
+## La idea central
+
+::: {style="font-size: 0.84em"}
+
+> Toda señal «razonable» puede escribirse como una **suma (o integral) de sinusoides** de distinta frecuencia, amplitud y fase.
+
+- **Análisis:** de $x(t)$ a sus componentes → *espectro*.
+- **Síntesis:** de las componentes a $x(t)$ → reconstrucción.
+- Ambas representaciones contienen **la misma información**; cambia qué es fácil de ver.
+
+**Vocabulario mínimo**
+
+| Término | Significado |
+|---|---|
+| Espectro | Amplitud (y fase) de las componentes en función de la frecuencia |
+| Espectro de magnitud / fase | $\lvert X \rvert$ y $\angle X$ |
+| Ancho de banda | Intervalo de frecuencias donde se concentra la energía relevante |
+| Armónico $m$ | Componente a $m f_1$ en una señal periódica de fundamental $f_1$ |
+:::
+
+## ¿Por qué sinusoides y no otra base?
+
+$$
+\cos(2\pi f t) \;\xrightarrow{\;\text{LTI}\;}\; |H(f)|\cos\!\big(2\pi f t + \angle H(f)\big)
+$$
+
+:::: {.columns}
+::: {.column width="45%"}
+Un sistema **lineal e invariante en el tiempo (LTI)** excitado por una sinusoide responde, en régimen permanente, con **una sinusoide de la misma frecuencia**; solo cambian amplitud y fase.
+
+Si conozco cómo el sistema trata **cada** frecuencia, conozco cómo trata **cualquier** señal que sea suma de ellas.
+:::
+
+::: {.column width="55%"}
+```{python}
+#| label: fig-lti-seno
+#| fig-cap: "Pasabajas de primer orden (f_c = 5 Hz) excitado con 8 Hz. Tras el transitorio, la salida es otra sinusoide de 8 Hz, atenuada y desfasada."
+fs, fc, f0 = 2000, 5.0, 8.0
+t = np.arange(0, 1.0, 1 / fs)
+x = np.cos(2 * np.pi * f0 * t)
+wc = 2 * np.pi * fc
+_, y, _ = signal.lsim(([wc], [1, wc]), x, t)
+H = 1 / (1 + 1j * f0 / fc)
+fig, ax = plt.subplots(figsize=(6.6, 3.4))
+ax.plot(t, x, color=C_GRIS, lw=1.3, label="entrada 8 Hz")
+ax.plot(t, y, color=C_AZUL, lw=2, label="salida simulada")
+ax.plot(t, np.abs(H) * np.cos(2 * np.pi * f0 * t + np.angle(H)), "--",
+        color=C_NARANJA, lw=1.4, label=r"$|H|\cos(2\pi f_0 t+\angle H)$")
+ax.set_xlabel("tiempo [s]"); ax.set_ylabel("amplitud")
+ax.set_xlim(0, 0.6)
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=3, fontsize=9)
+fig.tight_layout()
+```
+:::
+::::
+
+::: notes
+La línea discontinua es la predicción analítica con H(f)=1/(1+jf/fc). La coincidencia tras el transitorio es el argumento visual de que las sinusoides son autofunciones del sistema. Esto se formaliza en el bloque 5.
+:::
+
+## El mecanismo: correlación con sinusoides de prueba
+
+::: {style="font-size: 0.9em"}
+
+- Cada coeficiente de Fourier es una **correlación** (producto interno) entre la señal y una sinusoide de prueba:
+
+$$
+\langle x, \phi_m\rangle = \frac{1}{T}\int_{0}^{T} x(t)\,\phi_m^*(t)\,dt
+$$
+
+- Correlación alta ⇒ la señal «contiene» esa frecuencia con esa fase. Funciona porque la base es **ortogonal**:
+
+$$
+\frac{1}{T}\int_{0}^{T} e^{j2\pi m f_1 t}\,e^{-j2\pi k f_1 t}\,dt =
+\begin{cases} 1, & m = k \\ 0, & m \neq k \end{cases}
+$$
+
+- Ortogonalidad ⇒ cada coeficiente se calcula **independientemente**: añadir armónicos no altera los ya calculados.
+:::
+
+# 2 · Serie de Fourier {background-color="#1f5f8b"}
+
+## Punto de partida: señales periódicas
+
+$$
+x(t) = x(t + T) \quad \forall t, \qquad f_1 = \frac{1}{T}\;\;\text{(frecuencia fundamental)}
+$$
+
+- La serie de Fourier representa $x(t)$ con sinusoides a **múltiplos enteros** de $f_1$: $f_m = m f_1$.
+- Consecuencia inmediata: el espectro de una señal continua periódica es **discreto** (líneas separadas $1/T$).
+- Resolución espectral: dos componentes solo se distinguen si están separadas al menos $1/T$ → **mayor periodo (o registro), mejor resolución**.
+
+::: {.callout-note}
+Una bioseñal real casi nunca es estrictamente periódica (ECG, marcha, respiración son **cuasiperiódicas**). La serie de Fourier es un modelo; su validez depende de cuánto se aparta la señal de ese supuesto.
+:::
+
+## Tres formas equivalentes de la serie {.smaller}
+
+:::: {.columns}
+::: {.column width="50%"}
+**Rectangular (trigonométrica)**
+$$
+x(t) = \frac{a_0}{2} + \sum_{m=1}^{\infty}\big[a_m\cos(2\pi m f_1 t) + b_m\sin(2\pi m f_1 t)\big]
+$$
+$$
+a_m = \frac{2}{T}\int_0^T x(t)\cos(2\pi m f_1 t)\,dt,\quad
+b_m = \frac{2}{T}\int_0^T x(t)\sin(2\pi m f_1 t)\,dt
+$$
+
+**Polar (magnitud y fase)**
+$$
+x(t) = \frac{a_0}{2} + \sum_{m=1}^{\infty} C_m\cos(2\pi m f_1 t + \theta_m)
+$$
+$$
+C_m = \sqrt{a_m^2 + b_m^2},\qquad \theta_m = \operatorname{atan2}(-b_m,\,a_m)
+$$
+:::
+
+::: {.column width="50%"}
+**Exponencial compleja**
+$$
+x(t) = \sum_{m=-\infty}^{\infty} c_m\,e^{j2\pi m f_1 t},\qquad
+c_m = \frac{1}{T}\int_0^T x(t)\,e^{-j2\pi m f_1 t}\,dt
+$$
+
+**Relaciones** (señal real)
+
+- $c_0 = a_0/2$ (valor medio)
+- $c_m = \tfrac{1}{2}(a_m - j b_m)$, $\;|c_m| = C_m/2$
+- $c_{-m} = c_m^*$ → simetría hermítica: magnitud par, fase impar.
+
+::: {.callout-warning}
+No hay convención única de escala. `numpy.fft` **no** normaliza la transformada directa: el usuario debe escalar.
+:::
+:::
+::::
+
+::: notes
+Las frecuencias negativas no son "físicas"; son la contrapartida matemática de escribir un coseno real como suma de dos exponenciales conjugadas (Euler). Por eso la magnitud bilateral es la mitad de la amplitud física.
+:::
+
+## Simetría: atajos para calcular e interpretar
+
+| Simetría de $x(t)$ | Consecuencia en la serie |
+|---|---|
+| Par: $x(t) = x(-t)$ | $b_m = 0$ → solo cosenos, $c_m$ real |
+| Impar: $x(t) = -x(-t)$ | $a_m = 0$ → solo senos, $c_m$ imaginario puro |
+| Media onda: $x(t) = -x(t + T/2)$ | Solo **armónicos impares** |
+| Media nula | $a_0 = 0$ |
+
+- La simetría depende del **origen de tiempo** elegido: desplazar la señal cambia fases, no magnitudes.
+- Útil como verificación: si una onda cuadrada impar produce cosenos o armónicos pares en su cálculo, hay un error.
+
+## Ejemplo: tren de pulsos rectangulares
+
+:::: {.columns}
+::: {.column width="42%"}
+Pulso de amplitud $V_p$, ancho $W$, periodo $T$, centrado en $t=0$:
+
+$$
+c_m = \frac{V_p W}{T}\,\operatorname{sinc}\!\left(\frac{mW}{T}\right)
+$$
+$$
+\operatorname{sinc}(u)=\frac{\sin(\pi u)}{\pi u}
+$$
+
+- Envolvente tipo *sinc*: ceros en $f = k/W$.
+- Pulso **más angosto** ⇒ envolvente **más ancha**.
+:::
+
+::: {.column width="58%"}
+```{python}
+#| label: fig-tren-pulsos
+#| fig-cap: "Coeficientes de un tren de pulsos (T = 1 s, W = 0,1 s): integración numérica (puntos) frente a la envolvente analítica."
+T, W, Vp = 1.0, 0.1, 1.0
+tt = np.linspace(-T / 2, T / 2, 20001)
+xp = np.where(np.abs(tt) <= W / 2, Vp, 0.0)
+m = np.arange(-40, 41)
+cm = np.array([np.trapezoid(xp * np.exp(-2j * np.pi * k * tt / T), tt) / T for k in m])
+fcont = np.linspace(-40, 40, 2000)
+fig, ax = plt.subplots(figsize=(7, 3.8))
+ax.plot(fcont, Vp * W / T * np.sinc(fcont * W), color=C_GRIS, lw=1.2, label="envolvente analítica")
+ax.stem(m / T, cm.real, linefmt=C_AZUL, markerfmt="o", basefmt=" ", label=r"$c_m$ numérico")
+ax.set_xlabel("frecuencia [Hz]"); ax.set_ylabel(r"$c_m$")
+ax.legend(fontsize=9)
+fig.tight_layout()
+```
+:::
+::::
+
+## Convergencia y fenómeno de Gibbs
+
+:::: {.columns}
+::: {.column width="40%"}
+**Dirichlet** (suficientes): $x(t)$ absolutamente integrable en un periodo; finitos máximos, mínimos y discontinuidades por periodo.
+
+- Donde $x(t)$ es continua, la serie converge a $x(t)$; en un salto, al **punto medio**.
+- Cerca del salto persiste un sobrepaso de ≈ 9 % del salto que **no desaparece** al aumentar $M$: solo se estrecha.
+:::
+
+::: {.column width="60%"}
+```{python}
+#| echo: false
+t_g = np.linspace(0, 1, 200001)
+sq = lambda M: (4 / np.pi) * sum(np.sin(2 * np.pi * k * t_g) / k for k in range(1, M + 1, 2))
+for M in (5, 21, 101):
+    print(f"M = {M:>3} armónicos → máximo = {sq(M).max():.4f}")
+```
+
+```{python}
+#| label: fig-gibbs
+#| fig-cap: "Síntesis parcial de una onda cuadrada ±1 (f1 = 1 Hz) con M armónicos."
+t = np.linspace(0, 1, 4000)
+ideal = np.sign(np.sin(2 * np.pi * t))
+fig, ax = plt.subplots(figsize=(7, 3.3))
+ax.plot(t, ideal, color="k", lw=1, alpha=0.6, label="ideal")
+for M, c in zip((5, 21, 101), (C_NARANJA, C_VERDE, C_AZUL)):
+    xs = (4 / np.pi) * sum(np.sin(2 * np.pi * k * t) / k for k in range(1, M + 1, 2))
+    ax.plot(t, xs, color=c, lw=1.4, label=f"M = {M}")
+ax.set_xlabel("tiempo [s]"); ax.set_ylabel("amplitud")
+ax.legend(ncol=4, fontsize=9, loc="lower left")
+fig.tight_layout()
+```
+:::
+::::
+
+::: notes
+Valor teórico del sobrepaso: aproximadamente 0,0895 del salto; para un salto de 2 (de −1 a +1) el máximo tiende a ≈1,179. Relevancia práctica: truncar un espectro (filtro ideal) introduce oscilaciones en bordes abruptos; esto reaparece en diseño de filtros FIR y en ventanas.
+:::
+
+## Potencia y teorema de Parseval (serie)
+
+$$
+P_x = \frac{1}{T}\int_0^T |x(t)|^2\,dt = \sum_{m=-\infty}^{\infty}|c_m|^2
+= c_0^2 + \sum_{m=1}^{\infty}\frac{C_m^2}{2}
+$$
+
+- La potencia media se **reparte** entre armónicos: $|c_m|^2$ indica cuánta potencia aporta cada frecuencia.
+- Permite cuantificar la calidad de una aproximación truncada: fracción de potencia capturada por los primeros $M$ armónicos.
+- Interpretación biomédica: «¿qué porcentaje de la potencia del ECG está por debajo de 40 Hz?» es una pregunta de Parseval, no de inspección visual.
+
+## ¿Es el ECG una señal periódica?
+
+```{python}
+#| label: fig-ecg-periodico
+#| fig-cap: "ECG sintético (suma de gaussianas, fs = 500 Hz, 20 s). Izquierda: RR fijo = 0,8 s. Derecha: RR con variabilidad (σ = 40 ms). Espectros con ventana de Hann."
+fs, dur = 500, 20
+t1, e1 = ecg_sintetico(fs, dur, 0.8)
+t2, e2 = ecg_sintetico(fs, dur, 0.8, rng=np.random.default_rng(7), jitter=0.04)
+fig, axs = plt.subplots(2, 2, figsize=(12, 4.6), gridspec_kw={"height_ratios": [1, 1.2]})
+for j, (tt_, ee, tit) in enumerate([(t1, e1, "RR constante"), (t2, e2, "RR variable")]):
+    axs[0, j].plot(tt_, ee, color=C_AZUL, lw=0.9)
+    axs[0, j].set_xlim(0, 4); axs[0, j].set_title(tit); axs[0, j].set_xlabel("tiempo [s]")
+    f, A = espectro_amplitud(ee - ee.mean(), fs, "hann")
+    axs[1, j].plot(f, A, color=C_NARANJA, lw=1)
+    axs[1, j].set_xlim(0, 20); axs[1, j].set_xlabel("frecuencia [Hz]"); axs[1, j].set_ylabel("amplitud")
+    for k in range(1, 17):
+        axs[1, j].axvline(k * 1.25, color=C_GRIS, lw=0.5, ls=":")
+fig.tight_layout()
+```
+
+::: {.fuente}
+Líneas punteadas: múltiplos de 1/RR = 1,25 Hz. Con RR constante el espectro es de **líneas**; con variabilidad, la energía se **dispersa** alrededor de los armónicos, más en los de orden alto.
+:::
+
+::: notes
+Pregunta para el grupo: ¿por qué la dispersión aumenta con el orden del armónico? Pista: una variación relativa del periodo produce una variación de frecuencia proporcional a m·f1.
+:::
+
+# 3 · Transformada de Fourier {background-color="#1f5f8b"}
+
+## De la serie a la transformada: $T \to \infty$
+
+:::: {.columns}
+::: {.column width="40%"}
+- Una señal aperiódica es una periódica con **periodo infinito**.
+- El espaciamiento entre líneas $1/T \to 0$: el espectro discreto se vuelve **continuo**.
+- Se cumple $T\,c_m = X(f)\big|_{f=m/T}$: la serie *muestrea* la transformada.
+
+$$
+X(f) = \lim_{T\to\infty} T\,c_m
+$$
+:::
+
+::: {.column width="60%"}
+```{python}
+#| label: fig-serie-a-tf
+#| fig-cap: "Pulso de ancho W = 0,1 s repetido cada T. Se grafica T·c_m para comparar escalas."
+W = 0.1
+fcont = np.linspace(0, 30, 1500)
+fig, axs = plt.subplots(3, 1, figsize=(7.2, 4.8), sharex=True)
+for ax, T_ in zip(axs[:2], (1.0, 4.0)):
+    mm = np.arange(0, int(30 * T_) + 1)
+    ax.stem(mm / T_, W * np.sinc(mm * W / T_), linefmt=C_AZUL, markerfmt=".", basefmt=" ")
+    ax.set_title(f"T = {T_:g} s  →  Δf = {1/T_:g} Hz", fontsize=11, loc="left")
+axs[2].plot(fcont, W * np.sinc(fcont * W), color=C_NARANJA, lw=2)
+axs[2].set_title(r"$T\to\infty$: $X(f) = W\,\mathrm{sinc}(fW)$", fontsize=11, loc="left")
+axs[2].set_xlabel("frecuencia [Hz]")
+fig.tight_layout()
+```
+:::
+::::
+
+## Definición del par transformado
+
+$$
+\boxed{X(f) = \int_{-\infty}^{\infty} x(t)\,e^{-j2\pi f t}\,dt}
+\qquad
+\boxed{x(t) = \int_{-\infty}^{\infty} X(f)\,e^{j2\pi f t}\,df}
+$$
+
+Con frecuencia angular $\omega = 2\pi f$: $\;x(t) = \dfrac{1}{2\pi}\displaystyle\int_{-\infty}^{\infty} X(\omega)e^{j\omega t}d\omega$.
+
+- $X(f)$ es, en general, **complejo**: $X(f) = |X(f)|\,e^{j\angle X(f)}$.
+- Unidades: si $x$ está en mV, $X(f)$ está en mV·s = mV/Hz → es una **densidad** espectral de amplitud, no una amplitud.
+- **Existencia** (condición suficiente): $\int |x(t)|\,dt < \infty$. Señales de energía finita tienen TF en sentido cuadrático; sinusoides y constantes requieren **deltas de Dirac**.
+- Para $x(t)$ real: $X(-f) = X^*(f)$ → basta el semieje $f \ge 0$.
+
+## Pares transformados fundamentales
+
+| $x(t)$ | $X(f)$ | Lectura |
+|---|---|---|
+| $\delta(t)$ | $1$ | Un impulso contiene todas las frecuencias por igual |
+| $1$ | $\delta(f)$ | Una constante es solo DC |
+| $\operatorname{rect}(t/W)$ | $W\operatorname{sinc}(fW)$ | Corto en tiempo ⇒ ancho en frecuencia |
+| $e^{-at}u(t),\ a>0$ | $\dfrac{1}{a + j2\pi f}$ | Respuesta de un sistema de primer orden |
+| $\cos(2\pi f_0 t)$ | $\tfrac12[\delta(f-f_0) + \delta(f+f_0)]$ | Dos líneas en $\pm f_0$ |
+| $e^{-\pi t^2}$ | $e^{-\pi f^2}$ | La gaussiana es su propia transformada |
+| $\sum_n \delta(t - nT)$ | $\tfrac{1}{T}\sum_k \delta(f - k/T)$ | Base del muestreo (semana 8) |
+
+## Propiedades de la transformada
+
+| Propiedad | Tiempo | Frecuencia |
+|---|---|---|
+| Linealidad | $a x_1(t) + b x_2(t)$ | $a X_1(f) + b X_2(f)$ |
+| Desplazamiento temporal | $x(t - t_0)$ | $e^{-j2\pi f t_0}X(f)$ |
+| Desplazamiento en frecuencia (modulación) | $e^{j2\pi f_0 t}x(t)$ | $X(f - f_0)$ |
+| Escalamiento | $x(at)$ | $\dfrac{1}{|a|}X\!\left(\dfrac{f}{a}\right)$ |
+| Dualidad | $X(t)$ | $x(-f)$ |
+| Derivación | $\dfrac{d x}{dt}$ | $j2\pi f\,X(f)$ |
+| **Convolución** | $(x * h)(t)$ | $X(f)\,H(f)$ |
+| **Multiplicación** | $x(t)\,w(t)$ | $(X * W)(f)$ |
+| Parseval (energía) | $\int |x(t)|^2 dt$ | $\int |X(f)|^2 df$ |
+
+::: notes
+Las dos filas resaltadas (convolución y multiplicación) son las más importantes del curso: la primera explica el filtrado; la segunda, el efecto de las ventanas y del muestreo.
+:::
+
+## Escalamiento: duración ↔ ancho de banda
+
+:::: {.columns}
+::: {.column width="40%"}
+- Comprimir en el tiempo **expande** en frecuencia, y viceversa.
+- El producto duración × ancho de banda tiene una cota inferior: **no** se puede ser arbitrariamente corto y angosto a la vez.
+- Lectura en ECG: el complejo QRS (decenas de ms) aporta el contenido de alta frecuencia; las ondas P y T, más lentas, concentran su energía en bajas frecuencias.
+- La derivación ($j2\pi f$) **realza** altas frecuencias: por eso la derivada amplifica ruido de banda ancha.
+:::
+
+::: {.column width="60%"}
+```{python}
+#| label: fig-escalamiento
+#| fig-cap: "Pulsos gaussianos de σ = 10 ms y σ = 40 ms (amplitud unitaria) y sus magnitudes |X(f)| analíticas."
+t = np.linspace(-0.2, 0.2, 2001)
+f = np.linspace(0, 60, 1000)
+fig, axs = plt.subplots(1, 2, figsize=(7.4, 3.6))
+for s, c in ((0.010, C_AZUL), (0.040, C_NARANJA)):
+    axs[0].plot(t * 1e3, np.exp(-t**2 / (2 * s**2)), color=c, lw=2, label=f"σ = {s*1e3:.0f} ms")
+    axs[1].plot(f, s * np.sqrt(2 * np.pi) * np.exp(-2 * np.pi**2 * s**2 * f**2), color=c, lw=2)
+axs[0].set_xlabel("tiempo [ms]"); axs[0].legend(fontsize=9)
+axs[1].set_xlabel("frecuencia [Hz]"); axs[1].set_ylabel(r"$|X(f)|$ [s]")
+fig.tight_layout()
+```
+:::
+::::
+
+## Desplazamiento temporal: magnitud invariante, fase lineal
+
+$$
+x(t - t_0) \;\longleftrightarrow\; e^{-j2\pi f t_0}X(f)
+\quad\Rightarrow\quad
+|\cdot| \text{ igual},\qquad \angle \text{ cambia en } -2\pi f t_0
+$$
+
+- Un **retardo puro** es una fase que crece linealmente con $f$.
+- Si un sistema retrasa todas las frecuencias el mismo tiempo (**fase lineal**), la **morfología** de la señal se preserva.
+- Si la fase es no lineal, cada componente llega con distinto retardo → **distorsión de forma**, aunque $|H(f)|$ sea plana en la banda.
+
+::: {.callout-important}
+## Consecuencia clínica
+En ECG, un pasaaltas de fase no lineal para remover la deriva puede **deformar el segmento ST**. Las recomendaciones de la AHA (Kligfield et al., 2007) fijan un corte bajo de 0,05 Hz, admitiendo hasta 0,67 Hz solo con filtros digitales lineales de fase cero.
+:::
+
+# 4 · Tipología de señales y herramientas {background-color="#1f5f8b"}
+
+## La familia de Fourier: cuatro casos
+
+| Señal en el tiempo | Herramienta | Espectro |
+|---|---|---|
+| Continua, **periódica** | Serie de Fourier (SF) | **Discreto**, no periódico |
+| Continua, **aperiódica** | Transformada de Fourier (TF, CTFT) | **Continuo**, no periódico |
+| Discreta, aperiódica | Transformada de Fourier en tiempo discreto (DTFT) | Continuo, **periódico** (periodo $f_s$) |
+| Discreta, **periódica / segmento finito** | Transformada discreta de Fourier (DFT) | **Discreto** y **periódico** |
+
+. . .
+
+::: {.callout-tip}
+## Regla de dualidad
+**Discreto en un dominio ⇔ periódico en el otro.** Muestrear en el tiempo periodiza el espectro (aliasing); muestrear el espectro periodiza el tiempo (fuga espectral).
+:::
+
+- Solo la **DFT** (y su inversa) puede calcularse en un computador: número finito de muestras en ambos dominios.
+
+## Otras distinciones que cambian la herramienta
+
+:::: {.columns}
+::: {.column width="50%"}
+**Energía vs. potencia**
+
+- *Energía finita* (transitorios, un latido aislado, un potencial evocado): $E = \int |x|^2 dt < \infty$ → TF y **densidad espectral de energía** $|X(f)|^2$.
+- *Potencia finita* (periódicas, registros continuos): $E = \infty$, $P < \infty$ → SF o **densidad espectral de potencia**.
+:::
+
+::: {.column width="50%"}
+**Determinística vs. aleatoria / estacionaria vs. no estacionaria**
+
+- En señales aleatorias (EEG, EMG), $|X(f)|^2$ de **una** realización es un estimador ruidoso: se requiere promediado (periodograma de Welch, semana 8).
+- Si el contenido espectral cambia en el tiempo (marcha con cambios de velocidad, EEG en tareas), una única TF **promedia** esos cambios: se necesita análisis tiempo-frecuencia (STFT, semana 9).
+:::
+::::
+
+# 5 · Fourier y sistemas LTI {background-color="#1f5f8b"}
+
+## Las exponenciales complejas son autofunciones
+
+Para un sistema LTI con respuesta al impulso $h(t)$ y entrada $x(t) = e^{j2\pi f t}$:
+
+$$
+y(t) = \int_{-\infty}^{\infty} h(\tau)\,e^{j2\pi f (t-\tau)}\,d\tau
+= e^{j2\pi f t}\underbrace{\int_{-\infty}^{\infty} h(\tau)\,e^{-j2\pi f\tau}\,d\tau}_{H(f)}
+$$
+
+- La salida es **la misma exponencial** multiplicada por un número complejo $H(f)$: la **respuesta en frecuencia**.
+- $H(f)$ es la **transformada de Fourier de la respuesta al impulso**; $|H(f)|$ es ganancia y $\angle H(f)$ desfase por frecuencia.
+
+::: {.callout-warning}
+Exige **linealidad e invariancia**. Muchos sistemas fisiológicos no lo son (saturación, adaptación neural): allí $H(f)$ es, a lo sumo, una aproximación local.
+:::
+
+## Teorema de convolución
+
+$$
+y(t) = (h * x)(t) \quad\Longleftrightarrow\quad Y(f) = H(f)\,X(f)
+$$
+
+:::: {.columns}
+::: {.column width="50%"}
+**Qué significa**
+
+- Una operación integral en el tiempo se vuelve un **producto punto a punto** en frecuencia.
+- Filtrar = **pesar** cada componente espectral por $H(f)$.
+- Cascada de sistemas: $H_{\text{total}} = H_1 H_2 \cdots$
+:::
+
+::: {.column width="50%"}
+**Qué permite**
+
+- Diseñar filtros especificando $|H(f)|$.
+- Calcular convoluciones largas con FFT: $\mathcal{O}(N\log N)$ en vez de $\mathcal{O}(N^2)$.
+- Identificar sistemas: $H(f) = Y(f)/X(f)$ donde $X(f) \neq 0$.
+:::
+::::
+
+::: notes
+Conexión con semanas 10–12: convolución en el dominio frecuencial y relación entre respuesta al impulso y espectro. Aquí solo se sienta la base.
+:::
+
+## Verificación numérica: media móvil
+
+```{python}
+#| echo: true
+fs = 500
+t, x = ecg_sintetico(fs, 4, 0.8)
+x = x + 0.1 * np.sin(2 * np.pi * 60 * t)  # interferencia de red
+L = 25; h = np.ones(L) / L                 # media móvil de 50 ms
+
+y_t = np.convolve(x, h)                    # convolución lineal (tiempo), N + L - 1
+
+# Producto espectral con relleno suficiente
+nfft = len(x) + L - 1
+y_f = np.fft.irfft(np.fft.rfft(x, nfft) * np.fft.rfft(h, nfft), nfft)
+
+# Producto espectral SIN relleno → convolución circular
+y_c = np.fft.irfft(np.fft.rfft(x) * np.fft.rfft(h, len(x)), len(x))
+
+print(f"max|y_t - y_f|           = {np.max(np.abs(y_t - y_f)):.2e}")
+err_c = np.abs(y_t[:len(x)] - y_c)
+print(f"max|y_t[:N] - y_circular| = {err_c.max():.2e}")
+print(f"muestras afectadas (error > 1e-12): {np.sum(err_c > 1e-12)}"
+      f"  → índices {np.flatnonzero(err_c > 1e-12).min()}–{np.flatnonzero(err_c > 1e-12).max()}")
+```
+
+::: {.fuente}
+El producto de DFT equivale a convolución **circular**. Solo coincide con la lineal si ambas secuencias se rellenan con ceros hasta al menos $N + L - 1$.
+:::
+
+## Respuesta en frecuencia de la media móvil
+
+:::: {.columns}
+::: {.column width="42%"}
+$$
+H(f) = \frac{1}{L}\,\frac{\sin(\pi f L / f_s)}{\sin(\pi f / f_s)}\,e^{-j\pi f (L-1)/f_s}
+$$
+
+- Ceros en $f = k\,f_s/L$. Con $f_s = 500$ Hz y $L = 25$: 20, 40, **60**, 80 … Hz.
+- Anula 60 Hz, pero también atenúa fuertemente el contenido del QRS: **compromiso**.
+- La fase es **lineal** (retardo constante de $(L-1)/2$ muestras).
+:::
+
+::: {.column width="58%"}
+```{python}
+#| label: fig-mediamovil
+#| fig-cap: "Magnitud de H(f) de la media móvil (L = 25, fs = 500 Hz), calculada con scipy.signal.freqz."
+fr, Hr = signal.freqz(h, worN=4096, fs=fs)
+fig, ax = plt.subplots(figsize=(7, 3.6))
+ax.plot(fr, 20 * np.log10(np.maximum(np.abs(Hr), 1e-6)), color=C_AZUL, lw=1.6)
+for k in range(1, 6):
+    ax.axvline(20 * k, color=C_NARANJA if k == 3 else C_GRIS, lw=0.8, ls="--")
+ax.set_xlim(0, 120); ax.set_ylim(-60, 3)
+ax.set_xlabel("frecuencia [Hz]"); ax.set_ylabel(r"$20\log_{10}|H(f)|$ [dB]")
+fig.tight_layout()
+```
+:::
+::::
+
+# 6 · De lo continuo a lo computable {background-color="#1f5f8b"}
+
+## Transformada discreta de Fourier (DFT)
+
+$$
+X[m] = \sum_{n=0}^{N-1} x[n]\,e^{-j2\pi mn/N},
+\qquad
+x[n] = \frac{1}{N}\sum_{m=0}^{N-1} X[m]\,e^{j2\pi mn/N}
+$$
+
+| Magnitud | Expresión | Ejemplo: $f_s = 500$ Hz, $N = 5000$ |
+|---|---|---|
+| Duración del registro | $T_r = N/f_s$ | 10 s |
+| Separación entre bins | $\Delta f = f_s/N = 1/T_r$ | 0,1 Hz |
+| Frecuencia del bin $m$ | $f_m = m\,f_s/N$ | $m = 600 \Rightarrow 60$ Hz |
+| Máxima frecuencia representable | $f_s/2$ (Nyquist) | 250 Hz |
+
+- **Supuesto implícito:** el segmento de $N$ muestras es **un periodo** de una señal periódica.
+- La resolución depende de la **duración** del registro, no de $f_s$.
+
+## FFT: el algoritmo, no otra transformada
+
+- La **FFT** calcula exactamente la DFT, reorganizando operaciones (Cooley & Tukey, 1965).
+- Costo: DFT directa $\sim N^2$ multiplicaciones; FFT radix-2 $\sim \tfrac{N}{2}\log_2 N$.
+
+```{python}
+#| echo: false
+for N in (1024, 2**14, 2**20):
+    print(f"N = {N:>8}:  N² ≈ {N**2:.1e}   (N/2)·log2 N ≈ {N/2*np.log2(N):.1e}   razón ≈ {N**2/(N/2*np.log2(N)):,.0f}")
+```
+
+**En `numpy`**
+
+```{.python}
+X = np.fft.rfft(x)                  # solo m = 0 … N/2 (señal real)
+f = np.fft.rfftfreq(len(x), 1/fs)   # eje de frecuencias en Hz
+A = 2*np.abs(X)/len(x)              # amplitud unilateral (excepto DC y Nyquist)
+```
+
+::: {.callout-warning}
+«FFT» no es sinónimo de «espectro». Es un algoritmo; lo que se interpreta depende de ventana, escala, duración y supuestos.
+:::
+
+## Fuga espectral
+
+```{python}
+#| label: fig-fuga
+#| fig-cap: "fs = 100 Hz, T_r = 1 s (Δf = 1 Hz). Izq.: 10 Hz cae exactamente en un bin. Centro: 10,5 Hz cae entre bins con ventana rectangular. Der.: 10,5 Hz con ventana de Hann."
+fs, N = 100, 100
+n = np.arange(N)
+casos = [(10.0, None, "10 Hz · rectangular"),
+         (10.5, None, "10,5 Hz · rectangular"),
+         (10.5, "hann", "10,5 Hz · Hann")]
+fig, axs = plt.subplots(1, 3, figsize=(12, 3.6), sharey=True)
+for ax, (f0, win, tit) in zip(axs, casos):
+    fA, A = espectro_amplitud(np.sin(2 * np.pi * f0 * n / fs), fs, win)
+    ax.stem(fA, A, linefmt=C_AZUL, markerfmt=".", basefmt=" ")
+    ax.axvline(f0, color=C_NARANJA, ls="--", lw=1)
+    ax.set_xlim(0, 25); ax.set_title(tit); ax.set_xlabel("frecuencia [Hz]")
+axs[0].set_ylabel("amplitud")
+fig.tight_layout()
+```
+
+- Si el segmento no contiene un número entero de ciclos, su «extensión periódica» tiene discontinuidades → la energía **se filtra** a bins vecinos y el pico se subestima.
+- Equivale a multiplicar por una ventana rectangular ⇒ convolucionar el espectro con un *sinc*.
+
+## Ventanas: un compromiso, no una corrección
+
+:::: {.columns}
+::: {.column width="45%"}
+| Ventana | Lóbulo principal | Lóbulos laterales |
+|---|---|---|
+| Rectangular | Más angosto | Altos (≈ −13 dB) |
+| Hann | ≈ 2× más ancho | Bajos (≈ −31 dB) y decaen rápido |
+
+- Angosto ⇒ mejor para separar tonos cercanos de amplitud similar.
+- Lóbulos bajos ⇒ mejor para ver componentes débiles junto a una fuerte.
+- Toda ventana reduce la energía: hay que **corregir la ganancia**.
+:::
+
+::: {.column width="55%"}
+```{python}
+#| label: fig-ventanas
+#| fig-cap: "Respuesta en frecuencia normalizada de ventanas de N = 64 muestras (eje en bins)."
+Nw, nfft = 64, 64 * 64
+fig, ax = plt.subplots(figsize=(7, 3.8))
+for nombre, c in (("boxcar", C_GRIS), ("hann", C_AZUL)):
+    w = signal.get_window(nombre, Nw)
+    Wf = np.fft.fftshift(np.fft.fft(w, nfft))
+    Wdb = 20 * np.log10(np.maximum(np.abs(Wf) / np.abs(Wf).max(), 1e-8))
+    ax.plot(np.linspace(-Nw / 2, Nw / 2, nfft, endpoint=False), Wdb, color=c, lw=1.4,
+            label="rectangular" if nombre == "boxcar" else "Hann")
+ax.set_xlim(-8, 8); ax.set_ylim(-90, 3)
+ax.set_xlabel("frecuencia [bins]"); ax.set_ylabel("dB"); ax.legend(fontsize=9)
+fig.tight_layout()
+```
+:::
+::::
+
+## Resolución: duración del registro vs. relleno con ceros
+
+```{python}
+#| label: fig-zeropad
+#| fig-cap: "Dos tonos de 10 y 10,6 Hz (fs = 100 Hz, ventana de Hann). El relleno con ceros interpola la curva, pero no crea información: solo un registro más largo los separa."
+fs = 100
+def dos_tonos(Tr):
+    tt = np.arange(0, Tr, 1 / fs)
+    return np.sin(2 * np.pi * 10 * tt) + np.sin(2 * np.pi * 10.6 * tt)
+
+def espectro_pad(x, fs, npad):
+    w = signal.get_window("hann", len(x))
+    X = np.fft.rfft(x * w, npad)
+    return np.fft.rfftfreq(npad, 1 / fs), 2 * np.abs(X) / w.sum()
+
+paneles = [(1, 100, "T_r = 1 s, sin relleno"),
+           (1, 1600, "T_r = 1 s, relleno ×16"),
+           (4, 6400, "T_r = 4 s, relleno ×16")]
+fig, axs = plt.subplots(1, 3, figsize=(12, 3.5), sharey=True)
+for ax, (Tr, npad, tit) in zip(axs, paneles):
+    fA, A = espectro_pad(dos_tonos(Tr), fs, npad)
+    if npad == int(Tr * fs):
+        ax.stem(fA, A, linefmt=C_AZUL, markerfmt=".", basefmt=" ")
+    else:
+        ax.plot(fA, A, color=C_AZUL, lw=1.5)
+    for f0 in (10, 10.6):
+        ax.axvline(f0, color=C_NARANJA, ls="--", lw=0.9)
+    ax.set_xlim(6, 15); ax.set_title(tit); ax.set_xlabel("frecuencia [Hz]")
+axs[0].set_ylabel("amplitud")
+fig.tight_layout()
+```
+
+- $\Delta f = 1/T_r$ fija la **resolución** real; el relleno solo reduce el espaciamiento de la **grilla**.
+- Implicación experimental: la resolución espectral se decide **al diseñar el protocolo de adquisición** (duración del registro), no en el posprocesamiento.
+
+## Muestreo y aliasing (anticipo de la semana 8)
+
+- Muestrear equivale a multiplicar por un tren de impulsos ⇒ el espectro se **replica** cada $f_s$.
+- Si $x(t)$ tiene componentes por encima de $f_s/2$, las réplicas se **solapan**: una componente en $f$ aparece en $|f - k f_s|$.
+- El aliasing **no se puede deshacer** después de muestrear: se previene con filtro antialiasing analógico y $f_s$ adecuada.
+
+$$
+x_s(t) = x(t)\sum_{n}\delta(t - nT_s) \;\longleftrightarrow\; X_s(f) = f_s\sum_{k} X(f - k f_s)
+$$
+
+::: {.callout-note}
+Es la misma regla de dualidad del bloque 4: **discreto en el tiempo ⇒ periódico en frecuencia.**
+:::
+
+# 7 · Usos en bioseñales {background-color="#1f5f8b"}
+
+## Dónde se usa Fourier en ingeniería biomédica {.smaller}
+
+| Aplicación | Qué se hace en frecuencia | Cuidado metodológico |
+|---|---|---|
+| **EEG** | Potencia por bandas (δ, θ, α, β, γ); ritmo alfa 8–12 Hz | Señal no estacionaria y aleatoria: estimación promediada |
+| **ECG** | Identificar interferencia de red, deriva, contenido del QRS; diseñar filtros | Fase lineal para no distorsionar ST |
+| **EMG de superficie** | Frecuencia media/mediana como indicador de fatiga | El desplazamiento espectral depende también de otros factores (grosor de tejido, electrodos) |
+| **Respiración / HRV** | Componentes periódicas de baja frecuencia | Requiere registros largos: $\Delta f = 1/T_r$ |
+| **Marcha** | Frecuencia de zancada y armónicos; regularidad | Cambios de velocidad rompen la periodicidad |
+| **Imágenes médicas** | TF 2D: filtrado, reconstrucción (TC, RM) | La RM adquiere directamente el «espacio k» (dominio de Fourier) |
+| **Instrumentación** | Ancho de banda de sensores, amplificadores y filtros antialiasing | La cadena de adquisición es un sistema LTI (aprox.) |
+
+## Ejemplo integrado: tres «contaminaciones», tres estructuras
+
+```{python}
+#| label: fig-integrado
+#| fig-cap: "ECG sintético (20 s, fs = 500 Hz) + deriva de 0,3 Hz + interferencia de 60 Hz + ruido blanco gaussiano. Espectro de amplitud con ventana de Hann (escala logarítmica)."
+fs, dur = 500, 20
+t, ecg = ecg_sintetico(fs, dur, 0.8, rng=np.random.default_rng(11), jitter=0.03)
+deriva = 0.3 * np.sin(2 * np.pi * 0.3 * t)
+red = 0.08 * np.sin(2 * np.pi * 60 * t)
+ruido = 0.02 * np.random.default_rng(3).standard_normal(len(t))
+x = ecg + deriva + red + ruido
+f, A = espectro_amplitud(x - x.mean(), fs, "hann")
+fig, axs = plt.subplots(1, 2, figsize=(12, 3.7), gridspec_kw={"width_ratios": [1, 1.3]})
+axs[0].plot(t, x, color=C_AZUL, lw=0.8); axs[0].set_xlim(0, 4)
+axs[0].set_xlabel("tiempo [s]"); axs[0].set_ylabel("amplitud [u.a.]")
+axs[1].semilogy(f, A, color=C_AZUL, lw=0.8)
+axs[1].set_xlim(0, 100); axs[1].set_xlabel("frecuencia [Hz]"); axs[1].set_ylabel("amplitud")
+for f0, lab in ((0.3, "deriva\n0,3 Hz"), (60, "red\n60 Hz")):
+    axs[1].annotate(lab, xy=(f0, A[np.argmin(np.abs(f - f0))]), xytext=(f0 + 6, 0.2),
+                    fontsize=9, color=C_NARANJA, arrowprops=dict(arrowstyle="->", color=C_NARANJA))
+fig.tight_layout()
+```
+
+- **Deriva:** energía concentrada a muy baja frecuencia, solapada con la banda útil baja del ECG.
+- **Red:** una línea angosta y estable → candidata a filtro rechaza-banda (*notch*).
+- **Ruido blanco:** piso espectral aproximadamente plano; no se elimina con un *notch*.
+
+::: notes
+Pedir a los estudiantes que propongan un tratamiento distinto para cada componente y justifiquen por qué un único pasabanda no es la respuesta "correcta" por defecto.
+:::
+
+# Cierre {background-color="#1f5f8b"}
+
+## Errores frecuentes
+
+1. **Llamar «FFT» al espectro** e ignorar escala, ventana y supuesto de periodicidad.
+2. **Creer que el relleno con ceros mejora la resolución.** Solo interpola; la resolución es $1/T_r$.
+3. **Leer amplitudes sin corregir la ventana** ni el factor 2 del espectro unilateral.
+4. **Interpretar frecuencias negativas como fenómenos físicos** en señales reales.
+5. **Confundir convolución circular con lineal** al filtrar por producto de DFT sin relleno.
+6. **Ignorar la fase:** dos señales con igual $|X(f)|$ pueden tener morfologías muy distintas.
+7. **Aplicar una sola TF a una señal no estacionaria** y reportar un espectro «promedio» como si describiera cada instante.
+8. **Suponer que todo sistema fisiológico es LTI** para usar $H(f)$ sin verificar.
+9. **Tratar todo contenido no deseado como «ruido»** y aplicar el mismo filtro a deriva, interferencia y artefactos.
+
+## Preguntas de verificación
+
+::: {style="font-size: 0.82em"}
+1. Una señal periódica tiene simetría de media onda. ¿Qué armónicos pueden ser distintos de cero y por qué?
+2. Si se duplica la duración de un pulso rectangular, ¿qué ocurre con la ubicación del primer cero de su espectro y con su valor en $f=0$?
+3. Un ECG se registra 8 s a 1000 Hz. ¿Cuál es la separación entre bins? ¿Cambia si se remuestrea a 500 Hz manteniendo los 8 s?
+4. ¿Por qué un retardo puro no altera $|X(f)|$? ¿Qué propiedad lo demuestra?
+5. Se multiplica en frecuencia $\text{DFT}\{x\}\cdot\text{DFT}\{h\}$ con $N = 1000$ y $L = 51$ sin relleno. ¿Qué muestras de la salida están contaminadas y cuántas son?
+6. Un tono de 50,3 Hz se analiza con $T_r = 1$ s. ¿Qué verá en el espectro con ventana rectangular? ¿Y con Hann?
+7. Explique por qué una media móvil de 25 muestras a 500 Hz elimina 60 Hz y qué costo tiene para el ECG.
+:::
+
+## Criterios de aprendizaje
+
+| El estudiante… | Evidencia |
+|---|---|
+| Relaciona tipo de señal y herramienta | Elige SF / TF / DTFT / DFT y justifica la forma del espectro |
+| Domina análisis y síntesis | Calcula coeficientes, usa simetrías, reconstruye y explica Gibbs |
+| Usa propiedades | Predice el efecto de retardos, escalamientos y convoluciones sin recalcular |
+| Conecta con LTI | Deduce $H(f)$ como TF de $h(t)$ y $Y = HX$ |
+| Calcula espectros con rigor | Escala correctamente, elige ventana, distingue resolución de espaciamiento |
+| Interpreta en contexto biomédico | Distingue deriva, interferencia, ruido y contenido fisiológico por su estructura espectral |
+
+## Referencias {.smaller}
+
+- Semmlow, J. (2018). *Circuits, Signals, and Systems for Bioengineers: A MATLAB-Based Introduction* (3.ª ed.). Academic Press. ISBN 978-0-12-809395-5. Cap. 3. **Texto guía.**
+- Oppenheim, A. V., Willsky, A. S., & Nawab, S. H. (1997). *Signals and Systems* (2.ª ed.). Prentice Hall. Caps. 3–5.
+- Cooley, J. W., & Tukey, J. W. (1965). An algorithm for the machine calculation of complex Fourier series. *Mathematics of Computation, 19*(90), 297–301. <https://doi.org/10.1090/S0025-5718-1965-0178586-1>
+- Harris, F. J. (1978). On the use of windows for harmonic analysis with the discrete Fourier transform. *Proceedings of the IEEE, 66*(1), 51–83. <https://doi.org/10.1109/PROC.1978.10837>
+- Kligfield, P., et al. (2007). Recommendations for the standardization and interpretation of the electrocardiogram: Part I. *Circulation, 115*(10), 1306–1324. <https://doi.org/10.1161/CIRCULATIONAHA.106.180200>
+
+::: {.fuente}
+Todas las señales de esta presentación son **sintéticas** y se generan en el propio documento; no representan registros de pacientes.
+:::
