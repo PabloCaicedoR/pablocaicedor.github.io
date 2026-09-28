@@ -45,7 +45,7 @@ Garuda Linux está basado en **Arch Linux**: es una distribución *rolling relea
 | `apt search <paquete>` | `pacman -Ss <paquete>` |
 | PPAs / `.deb` externos | AUR (`paru -S <paquete>`) |
 
-> **Nota sobre la shell:** Garuda usa **fish** como shell por defecto. Todos los comandos de este tutorial funcionan en fish y en bash; donde hay diferencias se indica explícitamente.
+> **Nota sobre la shell:** en Garuda, Konsole abre **fish**, aunque la shell de inicio de sesión es bash (compruébelo con `getent passwd $USER`). Todos los comandos de este tutorial funcionan en fish y en bash; donde hay diferencias se indica explícitamente.
 
 1. **Actualizar el sistema completo**:
 
@@ -105,7 +105,7 @@ sudo pacman -S --needed \
 
 - `--needed` evita reinstalar lo que ya esté presente.
 - `base-devel` reemplaza a `build-essential` (incluye `gcc`, `make` y `pkgconf`).
-- `blas-openblas` reemplaza a la BLAS de referencia y acelera el álgebra lineal de R. Si `pacman` pregunta si desea reemplazar `blas`/`lapack`, responda que sí.
+- `blas-openblas` reemplaza a la BLAS de referencia y acelera el álgebra lineal de R. Como provee `blas`, `cblas`, `lapack` y `lapacke`, entra en conflicto con esos paquetes y `pacman` preguntará, por ejemplo: `blas-openblas y blas están en conflicto. ¿Quitar blas? [s/N]`. Responda **`s`** a esa pregunta y a las equivalentes para `cblas`, `lapack` o `lapacke`: las dependencias de R, NumPy, etc. siguen satisfechas porque `blas-openblas` las provee. Si responde `N` (la opción por defecto), la instalación se cancela completa.
 - Las fuentes **Latin Modern** y **EB Garamond** se instalan con TeX Live (sección "Instalación de Texlive"). **Manrope** no está en los repositorios oficiales de Arch; si la necesita, búsquela en AUR con `paru -Ss manrope`.
 
 ## 2. Driver NVIDIA (sustituye al kit de repositorio CUDA)
@@ -187,7 +187,7 @@ uv --version
 Las herramientas que instale con `uv tool install` quedan en `~/.local/bin`. Asegúrese de que esa carpeta esté en el `PATH`:
 
 ```bash
-# En fish (shell por defecto de Garuda)
+# En fish (la que abre Konsole en Garuda)
 fish_add_path ~/.local/bin
 
 # En bash
@@ -234,7 +234,7 @@ uv venv --python 3.12
 Activación (solo necesaria si quiere usar `python` directamente en la terminal; con `uv run` no hace falta activar nada):
 
 ```bash
-# En fish (shell por defecto de Garuda)
+# En fish (la que abre Konsole en Garuda)
 source .venv/bin/activate.fish
 
 # En bash
@@ -356,11 +356,50 @@ bash ~/miniforge.sh -b -p $HOME/miniforge3
 El equivalente en Arch de `texlive-full` es el metapaquete `texlive-meta` más los paquetes de idioma. Para trabajar en español basta con:
 
 ```bash
-sudo pacman -S texlive-meta texlive-langspanish
+sudo pacman -S texlive-meta texlive-langspanish biber otf-latin-modern
 ```
 
 - `texlive-meta` instala todas las colecciones de TeX Live 2026 (incluye las fuentes Latin Modern y EB Garamond).
+- `otf-latin-modern` registra **Latin Modern** como fuente del sistema. Es necesaria para XeLaTeX/LuaLaTeX (motor que usa Quarto con `fontspec`): aunque TeX Live trae esas fuentes, en Arch no quedan visibles por nombre para *fontconfig* y el render falla con `The font "Latin Modern Roman" cannot be found`.
+- Para que **todas** las fuentes de TeX Live (EB Garamond, etc.) se puedan usar por nombre, active la configuración que trae `texlive-basic`:
+
+    ```bash
+    sudo ln -s /usr/share/fontconfig/conf.avail/09-texlive-fonts.conf /etc/fonts/conf.d/
+    fc-cache -fv
+    ```
+- `biber` es el procesador de bibliografías que usa **biblatex**. En Arch se distribuye como paquete aparte y `texlive-meta` no lo incluye; sin él, los documentos con bibliografía fallan al generar el PDF.
 - Si necesita todos los idiomas (equivalente exacto a `texlive-full`), instale también el grupo completo: `sudo pacman -S texlive-lang`.
+
+## TeX Live se administra con pacman, no con tlmgr
+
+En Arch, `tlmgr` **no puede actualizar ni instalar paquetes** en la instalación del sistema (falla con *package repository /usr/share (not verified)*). No lo ejecute con `sudo`.
+
+- **Actualizar TeX Live:** `garuda-update` (o `sudo pacman -Syu`).
+- **Buscar qué paquete contiene un archivo faltante** (por ejemplo, `File 'algo.sty' not found`):
+
+    ```bash
+    sudo pacman -Fy
+    pacman -F algo.sty
+    ```
+
+- **Paquetes de CTAN que Arch no trae:** use `tlmgr` en modo usuario, sin `sudo`:
+
+    ```bash
+    tlmgr init-usertree
+    tlmgr --usermode --repository https://mirror.ctan.org/systems/texlive/tlnet install nombre-paquete
+    ```
+
+## Desactivar la instalación automática de paquetes LaTeX en Quarto
+
+Cuando falta un paquete o programa de LaTeX, Quarto intenta instalarlo con `tlmgr`, lo que en Arch termina en `ERROR: Problem running 'tlmgr update'`. Desactive ese comportamiento en el `_quarto.yml` del proyecto (o en el encabezado YAML del documento):
+
+```yaml
+format:
+  pdf:
+    latex-auto-install: false
+```
+
+Así Quarto mostrará el error real de LaTeX, que se resuelve instalando el paquete correspondiente con `pacman` (ver sección anterior).
 
 # Instalación de Quarto
 
@@ -381,6 +420,82 @@ Verifique la instalación (requiere `~/.local/bin` en el `PATH`, ver sección "I
 quarto check
 ```
 
-Para actualizar Quarto, repita los pasos con la nueva versión y vuelva a crear el enlace simbólico.
+## Actualización de Quarto
+
+Quarto no tiene un comando para actualizarse a sí mismo, y al instalarlo desde el *tarball* tampoco se actualiza con `garuda-update`. Para actualizarlo se instala la versión nueva junto a la anterior y se cambia el enlace simbólico.
+
+### 1. Consultar la última versión publicada
+
+```bash
+curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep tag_name
+```
+
+### 2. Descargar, extraer y cambiar el enlace
+
+Reemplace `X.Y.Z` por la versión obtenida en el paso anterior (sin la `v` inicial):
+
+```bash
+cd ~/instaladores
+wget https://github.com/quarto-dev/quarto-cli/releases/download/vX.Y.Z/quarto-X.Y.Z-linux-amd64.tar.gz
+tar -C ~/opt -xvzf quarto-X.Y.Z-linux-amd64.tar.gz
+ln -sf ~/opt/quarto-X.Y.Z/bin/quarto ~/.local/bin/quarto
+quarto --version
+```
+
+### 3. Eliminar la versión anterior
+
+Una vez comprobado que la nueva versión funciona (`quarto check`), borre la carpeta de la versión anterior y su instalador:
+
+```bash
+rm -rf ~/opt/quarto-1.10.18
+rm ~/instaladores/quarto-1.10.18-linux-amd64.tar.gz
+```
+
+> Estos comandos funcionan igual en fish y en bash.
+
+---
+
+# Instalación de Zotero
+
+Zotero no está en los repositorios oficiales de Arch. El método con soporte oficial en Linux es el *tarball* publicado en [zotero.org](https://www.zotero.org/support/installation). Al instalarlo en una carpeta del usuario, Zotero se actualiza a sí mismo desde el menú **Ayuda → Buscar actualizaciones**.
+
+## 1. Descargar y extraer
+
+```bash
+mkdir -p ~/instaladores ~/opt ~/.local/bin ~/.local/share/applications
+cd ~/instaladores
+wget -O zotero.tar "https://www.zotero.org/download/client/dl?channel=release&platform=linux-x86_64"
+tar -xf zotero.tar
+ls    # compruebe el nombre de la carpeta extraída (normalmente Zotero_linux-x86_64)
+mv Zotero_linux-x86_64 ~/opt/zotero
+```
+
+## 2. Integrar con el menú de aplicaciones y la terminal
+
+```bash
+~/opt/zotero/set_launcher_icon
+ln -sf ~/opt/zotero/zotero.desktop ~/.local/share/applications/zotero.desktop
+ln -sf ~/opt/zotero/zotero ~/.local/bin/zotero
+```
+
+- `set_launcher_icon` ajusta la ruta del ícono en el archivo `.desktop`. Si el ícono desaparece tras una actualización, vuelva a ejecutarlo.
+- Zotero aparecerá en el menú de KDE y podrá abrirse con `zotero` desde la terminal (requiere `~/.local/bin` en el `PATH`, ver sección "Instalación de uv").
+
+## 3. Alternativa: Flatpak
+
+```bash
+flatpak install flathub org.zotero.Zotero
+```
+
+> El paquete de Flathub es mantenido por la comunidad y aparece como **no verificado**. Zotero advierte que los paquetes de terceros pueden presentar problemas por el aislamiento (*sandbox*), por ejemplo con el complemento para LibreOffice.
+
+## 4. Integración con Quarto: Better BibTeX
+
+Para citar desde documentos Quarto, instale el complemento [Better BibTeX](https://retorque.re/zotero-better-bibtex/):
+
+1. Descargue el archivo `.xpi` más reciente desde su página de *releases* en GitHub.
+2. En Zotero: **Herramientas → Complementos → ⚙ → Instalar complemento desde archivo** y seleccione el `.xpi`.
+3. Exporte su biblioteca o una colección con clic derecho → **Exportar**, formato **Better BibLaTeX**, y active **Mantener actualizado**. El archivo `.bib` se actualizará solo cada vez que agregue referencias.
+4. En el encabezado YAML del documento Quarto: `bibliography: referencias.bib`.
 
 ---

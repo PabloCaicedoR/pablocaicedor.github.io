@@ -7,8 +7,8 @@
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="../../site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.9.38">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.10.18">
 
   <title>BioForja – Apéndice: reconstrucción de imágenes médicas</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,10 +20,13 @@
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
     */
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
     ul.task-list li input[type="checkbox"] {
@@ -359,11 +362,11 @@
 <section id="rayos-x-qué-se-pierde-en-una-radiografía" class="slide level2">
 <h2>Rayos X: ¿qué se pierde en una radiografía?</h2>
 <p>Una radiografía mezcla estructuras que están a diferentes profundidades.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a></a>Objeto 3D       Proyección 2D</span>
-<span id="cb1-2"><a></a></span>
-<span id="cb1-3"><a></a>hueso delante</span>
-<span id="cb1-4"><a></a>pulmón detrás       todo aparece</span>
-<span id="cb1-5"><a></a>corazón detrás  →   sobre la misma imagen</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a aria-label="1"></a>Objeto 3D       Proyección 2D</span>
+<span id="cb1-2"><a aria-label="2"></a></span>
+<span id="cb1-3"><a aria-label="3"></a>hueso delante</span>
+<span id="cb1-4"><a aria-label="4"></a>pulmón detrás       todo aparece</span>
+<span id="cb1-5"><a aria-label="5"></a>corazón detrás  →   sobre la misma imagen</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="fragment">
 <p>Por eso una radiografía es muy útil, pero no separa completamente profundidad.</p>
 </div>
@@ -482,13 +485,13 @@
 <div class="column" style="width:50%;">
 <p><strong>Imagen final</strong></p>
 <p>Se organiza por posición:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a></a>fila, columna</span>
-<span id="cb2-2"><a></a>x, y</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a aria-label="1"></a>fila, columna</span>
+<span id="cb2-2"><a aria-label="2"></a>x, y</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:50%;">
 <p><strong>Sinograma</strong></p>
 <p>Se organiza por:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a></a>posición del detector</span>
-<span id="cb3-2"><a></a>ángulo de adquisición</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a aria-label="1"></a>posición del detector</span>
+<span id="cb3-2"><a aria-label="2"></a>ángulo de adquisición</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 </div></div>
 <div class="fragment">
 <p>El sinograma es como una libreta de todas las “sombras” medidas antes de reconstruir el corte.</p>
@@ -497,20 +500,20 @@
 <section id="pregunta-común-3-por-qué-ct-usa-filtros" class="slide level2">
 <h2>Pregunta común 3: ¿por qué CT usa filtros?</h2>
 <p>Si solo “devolvemos” cada proyección al espacio, la imagen queda borrosa.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb4-1"><a></a>Retroproyección simple</span>
-<span id="cb4-2"><a></a>        ↓</span>
-<span id="cb4-3"><a></a>la información se reparte demasiado</span>
-<span id="cb4-4"><a></a>        ↓</span>
-<span id="cb4-5"><a></a>imagen con estelas y borrosidad</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb4-1"><a aria-label="1"></a>Retroproyección simple</span>
+<span id="cb4-2"><a aria-label="2"></a>        ↓</span>
+<span id="cb4-3"><a aria-label="3"></a>la información se reparte demasiado</span>
+<span id="cb4-4"><a aria-label="4"></a>        ↓</span>
+<span id="cb4-5"><a aria-label="5"></a>imagen con estelas y borrosidad</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="fragment">
 <p>La <strong>retroproyección filtrada</strong> corrige parcialmente ese efecto:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a></a>proyecciones</span>
-<span id="cb5-2"><a></a>    ↓</span>
-<span id="cb5-3"><a></a>filtro</span>
-<span id="cb5-4"><a></a>    ↓</span>
-<span id="cb5-5"><a></a>retroproyección</span>
-<span id="cb5-6"><a></a>    ↓</span>
-<span id="cb5-7"><a></a>corte más nítido</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a aria-label="1"></a>proyecciones</span>
+<span id="cb5-2"><a aria-label="2"></a>    ↓</span>
+<span id="cb5-3"><a aria-label="3"></a>filtro</span>
+<span id="cb5-4"><a aria-label="4"></a>    ↓</span>
+<span id="cb5-5"><a aria-label="5"></a>retroproyección</span>
+<span id="cb5-6"><a aria-label="6"></a>    ↓</span>
+<span id="cb5-7"><a aria-label="7"></a>corte más nítido</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="fragment">
 <p>El filtro no inventa anatomía: ajusta cómo se reparte la información medida.</p>
@@ -757,13 +760,13 @@
 <section id="pregunta-común-6-cómo-sabe-el-ultrasonido-la-profundidad" class="slide level2">
 <h2>Pregunta común 6: ¿cómo sabe el ultrasonido la profundidad?</h2>
 <p>Usa el tiempo de ida y vuelta del eco.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1"><a></a>pulso sale</span>
-<span id="cb6-2"><a></a>    ↓</span>
-<span id="cb6-3"><a></a>rebota en una interfaz</span>
-<span id="cb6-4"><a></a>    ↓</span>
-<span id="cb6-5"><a></a>eco regresa</span>
-<span id="cb6-6"><a></a>    ↓</span>
-<span id="cb6-7"><a></a>más tiempo = mayor profundidad</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1"><a aria-label="1"></a>pulso sale</span>
+<span id="cb6-2"><a aria-label="2"></a>    ↓</span>
+<span id="cb6-3"><a aria-label="3"></a>rebota en una interfaz</span>
+<span id="cb6-4"><a aria-label="4"></a>    ↓</span>
+<span id="cb6-5"><a aria-label="5"></a>eco regresa</span>
+<span id="cb6-6"><a aria-label="6"></a>    ↓</span>
+<span id="cb6-7"><a aria-label="7"></a>más tiempo = mayor profundidad</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="fragment">
 <p>La máquina asume una velocidad promedio del sonido en tejido blando.</p>
 </div>
@@ -777,13 +780,13 @@
 <div class="columns">
 <div class="column" style="width:50%;">
 <p>Sin coordinación:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb7-1"><a></a>ecos mezclados</span>
-<span id="cb7-2"><a></a>imagen más confusa</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb7-1"><a aria-label="1"></a>ecos mezclados</span>
+<span id="cb7-2"><a aria-label="2"></a>imagen más confusa</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 </div><div class="column" style="width:50%;">
 <p>Con beamforming:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb8-1"><a></a>ecos alineados</span>
-<span id="cb8-2"><a></a>mayor señal útil</span>
-<span id="cb8-3"><a></a>mejor dirección</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb8-1"><a aria-label="1"></a>ecos alineados</span>
+<span id="cb8-2"><a aria-label="2"></a>mayor señal útil</span>
+<span id="cb8-3"><a aria-label="3"></a>mejor dirección</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 </div></div>
 <div class="fragment">
 <p>Una analogía: varios micrófonos escuchan el mismo sonido; el sistema ajusta retrasos para enfocarse en una dirección.</p>
@@ -805,13 +808,13 @@
 <h2>Pregunta común 9: ¿Doppler también es reconstrucción?</h2>
 <p>Doppler no solo muestra forma.</p>
 <p>Aprovecha cambios de frecuencia causados por movimiento.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb9-1"><a></a>glóbulos rojos en movimiento</span>
-<span id="cb9-2"><a></a>        ↓</span>
-<span id="cb9-3"><a></a>cambian la frecuencia del eco</span>
-<span id="cb9-4"><a></a>        ↓</span>
-<span id="cb9-5"><a></a>el equipo estima dirección y velocidad</span>
-<span id="cb9-6"><a></a>        ↓</span>
-<span id="cb9-7"><a></a>color sobre la imagen</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb9-1"><a aria-label="1"></a>glóbulos rojos en movimiento</span>
+<span id="cb9-2"><a aria-label="2"></a>        ↓</span>
+<span id="cb9-3"><a aria-label="3"></a>cambian la frecuencia del eco</span>
+<span id="cb9-4"><a aria-label="4"></a>        ↓</span>
+<span id="cb9-5"><a aria-label="5"></a>el equipo estima dirección y velocidad</span>
+<span id="cb9-6"><a aria-label="6"></a>        ↓</span>
+<span id="cb9-7"><a aria-label="7"></a>color sobre la imagen</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="fragment">
 <p>En divulgación:</p>
 <blockquote>
