@@ -1405,7 +1405,7 @@ Figura 2: Coeficientes de un tren de pulsos (T = 1 s, W = 0,1 s): integración 
 <li>Cerca del salto persiste un sobrepaso de ≈ 9 % del salto que <strong>no desaparece</strong> al aumentar <span class="math inline">\(M\)</span>: solo se estrecha.</li>
 </ul>
 </div><div class="column" style="width:60%;">
-<div id="b14ab034" class="cell" data-execution_count="4">
+<div id="5b4d1210" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-stdout">
 <pre><code>M =   5 armónicos → máximo = 1.1884
 M =  21 armónicos → máximo = 1.1797
@@ -1804,6 +1804,107 @@ x(t - t_0) \;\longleftrightarrow\; e^{-j2\pi f t_0}X(f)
 
 </section>
 <section class="slide level2">
+<h2>¿De dónde sale la base exponencial compleja?</h2>
+<div class="columns">
+<div class="column" style="width:55%;">
+<table class="caption-top">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Año</th>
+<th>Aporte</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1748</td>
+<td><strong>Euler</strong>, <em>Introductio</em>: <span class="math inline">\(e^{j\theta} = \cos\theta + j\sin\theta\)</span></td>
+</tr>
+<tr class="even">
+<td>s. XVIII</td>
+<td><strong>Euler, d’Alembert</strong>: EDO lineales de coeficientes constantes resueltas con <span class="math inline">\(e^{st}\)</span> → polinomio característico</td>
+</tr>
+<tr class="odd">
+<td>1807 / 1822</td>
+<td><strong>Fourier</strong>, ecuación del calor: series <strong>trigonométricas</strong></td>
+</tr>
+<tr class="even">
+<td>1893</td>
+<td><strong>Steinmetz</strong>: fasores en corriente alterna; <span class="math inline">\(\tfrac{d}{dt} \to j\omega\)</span></td>
+</tr>
+</tbody>
+</table>
+</div><div class="column" style="width:45%;">
+<p>Una sinusoide real es la suma de <strong>dos exponenciales conjugadas</strong>:</p>
+<p><span class="math display">\[
+\cos(\omega t + \theta) = \tfrac{1}{2}e^{j\theta}e^{j\omega t} + \tfrac{1}{2}e^{-j\theta}e^{-j\omega t}
+\]</span></p>
+<ul>
+<li>Un solo número complejo guarda <strong>amplitud y fase</strong>.</li>
+<li>La historia explica cómo llegó la idea; <strong>no</strong> explica por qué es la base correcta. Eso lo da la estructura (siguiente diapositiva).</li>
+</ul>
+</div></div>
+<aside class="notes">
+<p>Fourier trabajó con senos y cosenos; la forma exponencial se impuso después por su economía algebraica. Evitar atribuirle a Fourier la forma compleja.</p>
+<style type="text/css">
+span.MJX_Assistive_MathML {
+position:absolute!important;
+clip: rect(1px, 1px, 1px, 1px);
+padding: 1px 0 0 0!important;
+border: 0!important;
+height: 1px!important;
+width: 1px!important;
+overflow: hidden!important;
+display:block!important;
+}</style></aside>
+</section>
+<section class="slide level2">
+<h2>Por qué la exponencial: invariancia ante desplazamientos</h2>
+<div style="font-size: 0.84em">
+<p>Dos operaciones básicas actúan sobre <span class="math inline">\(e^{st}\)</span> solo como <strong>multiplicación por una constante</strong>:</p>
+<p><span class="math display">\[
+\frac{d}{dt}e^{st} = s\,e^{st},
+\qquad
+e^{s(t-\tau)} = \underbrace{e^{-s\tau}}_{\text{constante}}\;e^{st}
+\]</span></p>
+<ul>
+<li>Una convolución es una <strong>suma ponderada de copias desplazadas</strong> de la entrada ⇒ si cada copia es la misma exponencial por un escalar, la salida también lo es.</li>
+<li><strong>Unicidad:</strong> buscar <span class="math inline">\(\phi\)</span> continua, no nula, con <span class="math inline">\(\phi(t-\tau) = \lambda(\tau)\,\phi(t)\)</span> para todo <span class="math inline">\(\tau\)</span> conduce a <span class="math inline">\(\phi(a+b) = \phi(a)\,\phi(b)\)</span>, cuya única solución continua es <span class="math inline">\(\phi(t) = e^{st}\)</span>.</li>
+<li><strong>Senos y cosenos por separado no son autofunciones:</strong> un LTI convierte un coseno en un coseno desfasado (mezcla de seno y coseno).</li>
+<li><span class="math inline">\(s = j\omega\)</span> → módulo constante (ni crece ni decae) → <strong>Fourier</strong>. <span class="math inline">\(s = \sigma + j\omega\)</span> general → <strong>Laplace</strong> (semana 12).</li>
+</ul>
+</div>
+<div class="callout callout-tip callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Pregunta para el grupo</strong></p>
+</div>
+<div class="callout-content">
+<p>Si la ganancia de un sistema depende de <span class="math inline">\(t\)</span>, ¿sigue siendo <span class="math inline">\(e^{j\omega t}\)</span> una autofunción? ¿Qué dice esto sobre el alcance de Fourier?</p>
+</div>
+</div>
+</div>
+<aside class="notes">
+<p>Idea clave: la base exponencial diagonaliza simultáneamente todos los sistemas LTI; la convolución se vuelve producto frecuencia a frecuencia. Respuesta a la pregunta: no, porque e^{jω(t−τ)} ya no sale del operador como constante; el valor de Fourier depende del supuesto LTI.</p>
+<style type="text/css">
+span.MJX_Assistive_MathML {
+position:absolute!important;
+clip: rect(1px, 1px, 1px, 1px);
+padding: 1px 0 0 0!important;
+border: 0!important;
+height: 1px!important;
+width: 1px!important;
+overflow: hidden!important;
+display:block!important;
+}</style></aside>
+</section>
+<section class="slide level2">
 <h2>Las exponenciales complejas son autofunciones</h2>
 <p>Para un sistema LTI con respuesta al impulso <span class="math inline">\(h(t)\)</span> y entrada <span class="math inline">\(x(t) = e^{j2\pi f t}\)</span>:</p>
 <p><span class="math display">\[
@@ -1865,7 +1966,7 @@ display:block!important;
 </section>
 <section class="slide level2">
 <h2>Verificación numérica: media móvil</h2>
-<div id="adea69d3" class="cell" data-execution_count="9">
+<div id="61e8b9a1" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a aria-hidden="true" tabindex="-1"></a>fs <span class="op">=</span> <span class="dv">500</span></span>
 <span id="cb2-2"><a aria-hidden="true" tabindex="-1"></a>t, x <span class="op">=</span> ecg_sintetico(fs, <span class="dv">4</span>, <span class="fl">0.8</span>)</span>
 <span id="cb2-3"><a aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> x <span class="op">+</span> <span class="fl">0.1</span> <span class="op">*</span> np.sin(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> <span class="dv">60</span> <span class="op">*</span> t)  <span class="co"># interferencia de red</span></span>
@@ -1983,7 +2084,7 @@ x[n] = \frac{1}{N}\sum_{m=0}^{N-1} X[m]\,e^{j2\pi mn/N}
 <li>La <strong>FFT</strong> calcula exactamente la DFT, reorganizando operaciones (Cooley &amp; Tukey, 1965).</li>
 <li>Costo: DFT directa <span class="math inline">\(\sim N^2\)</span> multiplicaciones; FFT radix-2 <span class="math inline">\(\sim \tfrac{N}{2}\log_2 N\)</span>.</li>
 </ul>
-<div id="3d91193a" class="cell" data-execution_count="11">
+<div id="f8ad00fd" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-stdout">
 <pre><code>N =     1024:  N² ≈ 1.0e+06   (N/2)·log2 N ≈ 5.1e+03   razón ≈ 205
 N =    16384:  N² ≈ 2.7e+08   (N/2)·log2 N ≈ 1.1e+05   razón ≈ 2,341

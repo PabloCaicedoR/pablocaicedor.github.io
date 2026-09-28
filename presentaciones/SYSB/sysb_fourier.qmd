@@ -18,11 +18,11 @@ format:
     code-overflow: wrap
     highlight-style: github
     html-math-method: mathjax
+    self-contained: true
     chalkboard: false
     menu: true
     toc: false
     footer: "SYSB · Series y transformada de Fourier"
-    self-contained: true
 execute:
   echo: false
   warning: false
@@ -569,6 +569,62 @@ En ECG, un pasaaltas de fase no lineal para remover la deriva puede **deformar e
 ::::
 
 # 5 · Fourier y sistemas LTI {background-color="#1f5f8b"}
+
+## ¿De dónde sale la base exponencial compleja?
+
+:::: {.columns}
+::: {.column width="55%"}
+| Año | Aporte |
+|---|---|
+| 1748 | **Euler**, *Introductio*: $e^{j\theta} = \cos\theta + j\sin\theta$ |
+| s. XVIII | **Euler, d'Alembert**: EDO lineales de coeficientes constantes resueltas con $e^{st}$ → polinomio característico |
+| 1807 / 1822 | **Fourier**, ecuación del calor: series **trigonométricas** |
+| 1893 | **Steinmetz**: fasores en corriente alterna; $\tfrac{d}{dt} \to j\omega$ |
+
+: {tbl-colwidths="[24,76]"}
+:::
+
+::: {.column width="45%"}
+Una sinusoide real es la suma de **dos exponenciales conjugadas**:
+
+$$
+\cos(\omega t + \theta) = \tfrac{1}{2}e^{j\theta}e^{j\omega t} + \tfrac{1}{2}e^{-j\theta}e^{-j\omega t}
+$$
+
+- Un solo número complejo guarda **amplitud y fase**.
+- La historia explica cómo llegó la idea; **no** explica por qué es la base correcta. Eso lo da la estructura (siguiente diapositiva).
+:::
+::::
+
+::: notes
+Fourier trabajó con senos y cosenos; la forma exponencial se impuso después por su economía algebraica. Evitar atribuirle a Fourier la forma compleja.
+:::
+
+## Por qué la exponencial: invariancia ante desplazamientos
+
+::: {style="font-size: 0.84em"}
+Dos operaciones básicas actúan sobre $e^{st}$ solo como **multiplicación por una constante**:
+
+$$
+\frac{d}{dt}e^{st} = s\,e^{st},
+\qquad
+e^{s(t-\tau)} = \underbrace{e^{-s\tau}}_{\text{constante}}\;e^{st}
+$$
+
+- Una convolución es una **suma ponderada de copias desplazadas** de la entrada ⇒ si cada copia es la misma exponencial por un escalar, la salida también lo es.
+- **Unicidad:** buscar $\phi$ continua, no nula, con $\phi(t-\tau) = \lambda(\tau)\,\phi(t)$ para todo $\tau$ conduce a $\phi(a+b) = \phi(a)\,\phi(b)$, cuya única solución continua es $\phi(t) = e^{st}$.
+- **Senos y cosenos por separado no son autofunciones:** un LTI convierte un coseno en un coseno desfasado (mezcla de seno y coseno).
+- $s = j\omega$ → módulo constante (ni crece ni decae) → **Fourier**. $s = \sigma + j\omega$ general → **Laplace** (semana 12).
+:::
+
+::: {.callout-tip}
+## Pregunta para el grupo
+Si la ganancia de un sistema depende de $t$, ¿sigue siendo $e^{j\omega t}$ una autofunción? ¿Qué dice esto sobre el alcance de Fourier?
+:::
+
+::: notes
+Idea clave: la base exponencial diagonaliza simultáneamente todos los sistemas LTI; la convolución se vuelve producto frecuencia a frecuencia. Respuesta a la pregunta: no, porque e^{jω(t−τ)} ya no sale del operador como constante; el valor de Fourier depende del supuesto LTI.
+:::
 
 ## Las exponenciales complejas son autofunciones
 
