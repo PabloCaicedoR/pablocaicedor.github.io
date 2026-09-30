@@ -1,0 +1,1033 @@
+---
+title: "uv avanzado"
+subtitle: "Proyectos, lockfiles, workspaces, índices, scripts reproducibles, CI y contenedores"
+author: "Pablo Eduardo Caicedo Rodríguez"
+date: 2026-09-30
+lang: es
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Contenido"
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    code-line-numbers: false
+    highlight-style: github
+    embed-resources: true
+    smooth-scroll: true
+    anchor-sections: true
+    css: styles.css
+execute:
+  eval: false
+---
+
+::: {.callout-note appearance="simple"}
+## Versión de referencia
+
+Este tutorial está escrito para **uv 0.12.x** (serie publicada desde el 28 de julio de 2026; la última revisión consultada es del 28 de septiembre de 2026). Donde un comportamiento cambió en 0.12 se indica con la etiqueta **[0.12]**. Las funciones marcadas como **preview** pueden cambiar sin aviso y requieren `--preview` o `--preview-features <nombre>`.
+Compruebe su versión con `uv --version` y actualice con `uv self update` (instalador standalone) o con su gestor de paquetes.
+:::
+
+# Modelo mental
+
+uv no es "un pip más rápido": es un gestor de **proyectos** que coordina cinco piezas. Tenerlas separadas en la cabeza resuelve la mayoría de las dudas avanzadas.
+
+| Pieza | Archivo / lugar | Quién la edita | Qué fija |
+|---|---|---|---|
+| Declaración | `pyproject.toml` | usted (o `uv add`) | *rangos* de lo que el proyecto acepta |
+| Resolución | `uv.lock` | solo uv (`uv lock`) | versiones exactas + hashes para **todas** las plataformas |
+| Entorno | `.venv/` | solo uv (`uv sync`) | lo instalado en *esta* máquina |
+| Intérprete | `.python-version`, `requires-python` | usted (`uv python pin`) | qué CPython/PyPy usar |
+| Caché | `~/.cache/uv` (Linux) | uv | wheels y fuentes descargadas, compartidas entre proyectos |
+
+El flujo canónico es **declarar → bloquear → sincronizar → ejecutar**:
+
+```{.bash}
+uv add "scipy>=1.14"   # edita pyproject.toml, re-bloquea y sincroniza
+uv lock                # pyproject.toml  -> uv.lock   (resolución universal)
+uv sync                # uv.lock         -> .venv     (instalación exacta)
+uv run python -m pkg   # lock + sync implícitos y luego ejecuta
+```
+
+::: {.callout-important}
+## La idea clave: el lockfile es **universal**
+
+`uv.lock` no describe su máquina, describe *todas* las combinaciones de sistema operativo, arquitectura y versión de Python compatibles con `requires-python`. Por eso un mismo lockfile sirve en el portátil con macOS, en el servidor Linux del laboratorio y en CI. Esto lo diferencia de `pip freeze` o de un `requirements.txt` compilado en una sola plataforma.
+:::
+
+## `--locked` vs `--frozen` vs nada
+
+Esta tabla es la más consultada de todo el tutorial:
+
+| Bandera | ¿Comprueba que `uv.lock` coincide con `pyproject.toml`? | ¿Puede reescribir `uv.lock`? | Uso típico |
+|---|---|---|---|
+| *(ninguna)* | Sí | **Sí**, si está desactualizado | Desarrollo local |
+| `--locked` | Sí, y **falla** si no coincide | No | CI: garantiza que nadie olvidó hacer `uv lock` |
+| `--frozen` | **No** (confía ciegamente) | No | Docker / despliegue cuando el lock ya se validó antes |
+
+```{.bash}
+uv lock --check          # equivalente a "¿está al día el lock?" (exit code ≠ 0 si no)
+uv sync --locked         # CI
+uv run --frozen pytest   # contenedor ya construido
+```
+
+**[0.12]** uv reutiliza el lockfile cuando las declaraciones de dependencias son *semánticamente* equivalentes (por ejemplo, reordenar o normalizar nombres ya no fuerza re-resolución).
+
+# Proyectos: plantillas y estructura
+
+## Tipos de `uv init`
+
+**[0.12]** `uv init` ahora crea por defecto un proyecto **empaquetado** con `uv_build`, código en `src/<nombre>/` y un `[project.scripts]`. Antes el defecto era un `main.py` sin sistema de construcción.
+
+```{.bash}
+uv init biosenal                   # [0.12] empaquetado: src/biosenal, build-system = uv_build
+uv init --no-package notebooks     # layout antiguo: sin build-system, el proyecto no se instala
+uv init --lib bioforge-core        # biblioteca: src/ + py.typed, sin entry point
+uv init --app --package cli-tool   # aplicación empaquetada explícita
+uv init --build-backend hatch x    # otro backend (hatch, setuptools, flit, pdm, poetry, maturin, scikit, uv)
+uv init --script analisis.py       # script PEP 723 (ver §7)
+uv init --python 3.12 --vcs none x # fija Python y no inicializa git
+```
+
+::: {.callout-tip}
+## ¿Empaquetado o no?
+
+Use **empaquetado** (el nuevo defecto) si va a importar el código desde `tests/`, desde otros miembros de un workspace o desde notebooks en otro directorio. Use `--no-package` para un repositorio que solo contiene notebooks o scripts sueltos. En `pyproject.toml` se controla con `[tool.uv] package = true|false`.
+:::
+
+## Un `pyproject.toml` avanzado comentado
+
+```{.toml filename="pyproject.toml"}
+[project]
+name = "biosenal"
+version = "0.3.0"
+requires-python = ">=3.11,<3.14"     # acota el espacio de resolución universal
+dependencies = [
+  "numpy>=2.0",
+  "scipy>=1.14",
+  "pandas>=2.2",
+  "mne>=1.8 ; sys_platform != 'emscripten'",  # marcador PEP 508
+]
+
+[project.optional-dependencies]      # "extras": lo que ven los USUARIOS del paquete
+viz  = ["matplotlib>=3.9", "plotly>=5.24"]
+gpu  = ["torch>=2.5"]
+
+[dependency-groups]                  # PEP 735: lo que ven los DESARROLLADORES, no se publica
+dev  = ["pytest>=8", "pytest-cov", "ruff"]
+docs = ["quarto-cli", "jupyter"]
+lint = ["mypy>=1.13", { include-group = "dev" }]   # grupos que incluyen grupos
+
+[project.scripts]
+biosenal = "biosenal.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = ">=0.12"          # falla con un uv más viejo -> reproducibilidad del equipo
+default-groups = ["dev"]             # grupos que `uv sync` instala por defecto
+```
+
+::: {.callout-warning}
+## Extras vs grupos
+
+- **Extras** (`[project.optional-dependencies]`) viajan con el paquete publicado: `pip install biosenal[viz]`.
+- **Grupos** (`[dependency-groups]`) son locales al repositorio y *nunca* aparecen en los metadatos del wheel.
+
+Poner `pytest` en un extra es un error común: contamina los metadatos públicos.
+:::
+
+## Gestión fina de dependencias
+
+```{.bash}
+uv add "pydicom>=3" nibabel             # dependencias de producción
+uv add --dev pytest-xdist               # grupo "dev"
+uv add --group docs mkdocs-material     # grupo arbitrario
+uv add --optional viz seaborn           # extra "viz"
+uv add "scikit-learn ; python_version >= '3.12'"   # con marcador
+uv add --bounds major rich              # estilo del rango escrito: lower, major, minor, exact
+uv add --raw "numpy"                    # añade tal cual, sin cota inferior automática
+uv add -r requirements.txt              # migrar desde un requirements
+uv add --frozen httpx                   # edita pyproject pero no bloquea ni sincroniza
+uv remove --group docs mkdocs-material
+```
+
+# Fuentes de dependencias (`[tool.uv.sources]`)
+
+`[project.dependencies]` dice *qué* paquete; `[tool.uv.sources]` dice *de dónde* sacarlo durante el desarrollo, sin ensuciar los metadatos publicados.
+
+```{.toml}
+[project]
+dependencies = ["bioforge-core", "vicon-reader", "wfdb", "torch"]
+
+[tool.uv.sources]
+# Repositorio git: tag, branch o rev (commit)
+vicon-reader = { git = "https://github.com/lab/vicon-reader", tag = "v1.4.0" }
+# Directorio local editable (desarrollo en paralelo de dos paquetes)
+wfdb = { path = "../wfdb-fork", editable = true }
+# Miembro del mismo workspace (ver §5)
+bioforge-core = { workspace = true }
+# Paquete desde un índice con nombre (ver §4)
+torch = [
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cpu",   marker = "sys_platform != 'linux'" },
+]
+```
+
+```{.bash}
+uv add git+https://github.com/lab/vicon-reader --tag v1.4.0
+uv add --editable ../wfdb-fork
+uv add "https://ejemplo.org/pkg-1.0-py3-none-any.whl"
+uv lock --no-sources     # resuelve como lo haría un usuario final (ignora [tool.uv.sources])
+```
+
+::: {.callout-tip}
+Ejecute `uv build --no-sources` en CI antes de publicar: detecta paquetes que solo funcionan gracias a fuentes locales o git que el usuario final no tendrá.
+:::
+
+**[0.12]** `uv add` conserva la forma de la ruta que usted escribió: `uv add ../lib` queda relativa y `uv add /proyectos/lib` queda absoluta (las absolutas hacen el proyecto menos portable).
+
+# Índices, autenticación y el caso PyTorch
+
+## Declarar índices
+
+```{.toml}
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true            # solo se usa para paquetes que lo pidan en [tool.uv.sources]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "lab-privado"
+url = "https://pypi.lab.universidad.edu.co/simple"
+# sin explicit: se consulta ANTES que PyPI para cualquier paquete
+
+[[tool.uv.index]]
+name = "pypi-mirror"
+url = "https://mirror.example/simple"
+default = true             # reemplaza a PyPI como índice por defecto (solo uno puede ser default)
+```
+
+::: {.callout-important}
+## Estrategia de índices: por qué uv "no encuentra" una versión
+
+Por seguridad (ataques de *dependency confusion*), uv usa `index-strategy = "first-index"`: si un paquete aparece en el primer índice, **no** busca versiones en los siguientes. Si su índice privado tiene `numpy 1.26` y necesita `2.x` de PyPI, la resolución falla. Soluciones, de mejor a peor:
+
+1. Marcar el índice privado como `explicit = true` y asignarle solo sus paquetes vía `sources`.
+2. `index-strategy = "unsafe-best-match"` en `[tool.uv]` (considera todas las versiones de todos los índices).
+:::
+
+## Credenciales
+
+Nunca las escriba en `pyproject.toml`. uv lee variables de entorno derivadas del **nombre** del índice (mayúsculas, guiones → guion bajo):
+
+```{.bash}
+export UV_INDEX_LAB_PRIVADO_USERNAME=pcaicedo
+export UV_INDEX_LAB_PRIVADO_PASSWORD="$TOKEN"
+# alternativas: ~/.netrc, o keyring
+uv sync --keyring-provider subprocess
+```
+
+Certificados corporativos: `--native-tls` (usa el almacén del SO) o `SSL_CERT_FILE`. **[0.12]** un `SSL_CERT_FILE`/`SSL_CERT_DIR` no vacío *reemplaza* siempre las raíces por defecto, aunque apunte a un archivo inválido (antes uv volvía en silencio a sus raíces). `uv pip` acepta ahora `--cert ruta.pem`, como pip.
+
+## CPU y GPU en el mismo proyecto: extras en conflicto
+
+Patrón para un laboratorio con estaciones con y sin GPU:
+
+```{.toml}
+[project.optional-dependencies]
+cpu   = ["torch>=2.5"]
+cu124 = ["torch>=2.5"]
+
+[tool.uv]
+conflicts = [[ { extra = "cpu" }, { extra = "cu124" } ]]   # nunca juntos
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu",   extra = "cpu" },
+  { index = "pytorch-cu124", extra = "cu124" },
+]
+```
+
+```{.bash}
+uv sync --extra cpu      # portátil
+uv sync --extra cu124    # estación con NVIDIA
+```
+
+`conflicts` le dice al resolvedor que genere ramas separadas en el lockfile en lugar de intentar satisfacer ambos extras a la vez. Funciona igual con grupos: `{ group = "..." }`. **[0.12]** los extras activados por grupos de dependencias se incluyen en la evaluación de conflictos.
+
+# Workspaces (monorepos)
+
+Un workspace comparte **un solo `uv.lock` y un solo `.venv`** entre varios paquetes. Es la estructura natural para un sistema como BioForge: un núcleo y varias verticales.
+
+```{.text}
+bioforge/
+├── pyproject.toml            # raíz del workspace (puede ser o no un paquete)
+├── uv.lock                   # ÚNICO lockfile
+├── packages/
+│   ├── core/pyproject.toml         # bioforge-core
+│   ├── vicon/pyproject.toml        # depende de bioforge-core
+│   └── gait-fall-risk/pyproject.toml
+└── experiments/…
+```
+
+```{.toml filename="bioforge/pyproject.toml"}
+[project]
+name = "bioforge"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["bioforge-core", "bioforge-vicon"]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+exclude = ["packages/legacy-*"]
+
+[tool.uv.sources]
+bioforge-core  = { workspace = true }
+bioforge-vicon = { workspace = true }
+```
+
+```{.toml filename="packages/vicon/pyproject.toml"}
+[project]
+name = "bioforge-vicon"
+dependencies = ["bioforge-core", "ezc3d"]
+
+[tool.uv.sources]
+bioforge-core = { workspace = true }   # cada miembro declara sus fuentes de workspace
+```
+
+```{.bash}
+uv sync                              # instala la raíz y sus dependencias
+uv sync --all-packages               # instala TODOS los miembros
+uv sync --package bioforge-vicon     # solo un miembro (y lo que necesite)
+uv run --package bioforge-vicon pytest
+uv add --package bioforge-vicon ezc3d
+uv lock --upgrade-package ezc3d
+uv workspace list                    # lista miembros (estable desde 0.10)
+uv workspace dir --package bioforge-core
+```
+
+::: {.callout-warning}
+## Cuándo **no** usar un workspace
+
+Todos los miembros comparten `requires-python` (la intersección) y una única resolución: no puede haber `numpy 1.x` en un miembro y `numpy 2.x` en otro. Si dos componentes tienen requisitos incompatibles, use proyectos independientes enlazados con `{ path = "...", editable = true }`.
+:::
+
+# Resolución avanzada
+
+## Controlar el espacio de plataformas
+
+```{.toml}
+[tool.uv]
+# Solo resolver para estas plataformas (lockfile más pequeño, menos conflictos)
+environments = [
+  "sys_platform == 'linux'",
+  "sys_platform == 'darwin'",
+]
+# Exigir que existan wheels para estas plataformas (falla si solo hay sdist)
+required-environments = [
+  "sys_platform == 'linux' and platform_machine == 'x86_64'",
+  "sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+```
+
+## Restricciones, sobrescrituras y dependencias de construcción
+
+```{.toml}
+[tool.uv]
+# Limita versiones de dependencias (transitivas o no) SIN añadirlas al proyecto
+constraint-dependencies = ["urllib3<3", "grpcio<1.70"]
+
+# Sustituye requisitos declarados por terceros (último recurso: un paquete
+# declara numpy<2 pero funciona con 2.x)
+override-dependencies = ["numpy>=2.0"]
+
+# Paquetes que deben compilarse contra el entorno (sin aislamiento)
+no-build-isolation-package = ["flash-attn"]
+
+# Dependencias extra para construir un sdist mal empaquetado
+[tool.uv.extra-build-dependencies]
+pyedflib = ["numpy", "cython"]
+```
+
+## Estrategias de resolución
+
+```{.bash}
+uv lock --resolution highest        # por defecto: versiones más nuevas
+uv lock --resolution lowest-direct  # cotas inferiores de dependencias directas
+uv lock --resolution lowest         # cotas inferiores de todo
+```
+
+`lowest-direct` es la prueba honesta para una **biblioteca**: si usted declara `scipy>=1.10`, compruebe en CI que su código realmente funciona con 1.10.
+
+```{.bash}
+# Job de CI "mínimas versiones" sin tocar el uv.lock del repositorio
+uv run --resolution lowest-direct --isolated pytest
+```
+
+## Pre-releases **[0.12]**
+
+El modo por defecto es ahora `if-necessary`: uv prueba versiones estables primero y solo recurre a pre-releases si ninguna estable satisface las restricciones, **incluyendo requisitos transitivos** (antes fallaba). Opciones: `--prerelease disallow | allow | explicit | if-necessary`.
+
+## Reproducibilidad temporal: `exclude-newer`
+
+Congela el universo de paquetes a una fecha. Es la herramienta más potente para reproducir un análisis publicado.
+
+```{.toml}
+[tool.uv]
+exclude-newer = "2026-06-30T00:00:00Z"
+```
+
+```{.bash}
+uv lock --exclude-newer 2026-06-30T00:00:00Z
+```
+
+::: {.callout-tip}
+## Para artículos científicos
+
+Combine `exclude-newer` + `required-version` + `requires-python` acotado + `uv.lock` versionado en git. Con eso, `uv sync --locked` reconstruye el entorno exacto del artículo años después, siempre que PyPI conserve los archivos.
+:::
+
+## Actualizar dependencias
+
+```{.bash}
+uv lock --upgrade                         # re-resuelve todo al máximo permitido
+uv lock --upgrade-package scipy           # solo scipy (y lo que obligue)
+uv lock --upgrade-package "scipy<1.16"    # hasta cierta versión
+uv lock --upgrade-group docs              # [0.12] el grupo debe existir o falla
+uv tree --outdated --depth 1              # qué está desactualizado
+```
+
+**Preview [0.12]:** `uv upgrade` permite apuntar a varios paquetes, a todas las dependencias de producción y excluir algunas. Al ser preview, prefiera `uv lock --upgrade-package` en scripts y CI.
+
+## Diagnosticar un árbol
+
+```{.bash}
+uv tree                          # árbol completo
+uv tree --package mne            # subárbol de un paquete
+uv tree --invert --package numpy # ¿quién trae numpy?
+uv tree --universal              # todas las plataformas del lock
+uv tree --no-dev --depth 2
+uv lock -v                       # traza de resolución (verbose)
+```
+
+# Scripts autónomos (PEP 723)
+
+Para análisis sueltos, pipelines pequeños o material docente, un script puede declarar sus dependencias en su propio encabezado. No necesita proyecto ni `.venv` manual.
+
+```{.python filename="filtrar_ecg.py"}
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#   "numpy>=2",
+#   "scipy>=1.14",
+#   "wfdb>=4.1",
+#   "matplotlib",
+# ]
+# [tool.uv]
+# exclude-newer = "2026-09-01T00:00:00Z"
+# ///
+"""Filtro pasa-banda 0.5–40 Hz sobre un registro de MIT-BIH."""
+import numpy as np
+import wfdb
+from scipy.signal import butter, sosfiltfilt
+
+rec = wfdb.rdrecord("100", pn_dir="mitdb", sampto=3600)
+fs = rec.fs
+sos = butter(4, [0.5, 40], btype="band", fs=fs, output="sos")
+y = sosfiltfilt(sos, rec.p_signal[:, 0])
+print(f"fs={fs} Hz, n={y.size}, rms={np.sqrt(np.mean(y**2)):.4f} mV")
+```
+
+```{.bash}
+uv init --script filtrar_ecg.py --python 3.12   # crea el encabezado
+uv add --script filtrar_ecg.py wfdb scipy        # añade dependencias al encabezado
+uv lock --script filtrar_ecg.py                  # crea filtrar_ecg.py.lock (reproducible)
+uv run filtrar_ecg.py                            # entorno efímero cacheado
+chmod +x filtrar_ecg.py && ./filtrar_ecg.py      # gracias al shebang
+uv run --with pandas filtrar_ecg.py              # dependencia adicional puntual
+uv export --script filtrar_ecg.py                # a requirements.txt
+```
+
+::: {.callout-note}
+Si un script tiene metadatos PEP 723, `uv run` **ignora** el proyecto circundante. **[0.12]** para scripts *sin* metadatos, `uv run otro/script.py` descubre el proyecto desde el directorio del script, no desde el directorio actual. Forzar el proyecto actual: `uv run --project . otro/script.py`.
+:::
+
+# `uv run` a fondo
+
+```{.bash}
+uv run --with ipython ipython          # añade paquetes sin tocar el proyecto
+uv run --with-requirements req.txt x.py
+uv run --isolated --with numpy python  # entorno temporal ignorando .venv
+uv run --no-project python             # ignora el proyecto por completo
+uv run --no-sync pytest                # no sincroniza antes (rápido, arriesgado)
+uv run --env-file .env --env-file .env.local python -m app
+uv run --python 3.13 pytest            # otra versión de Python (entorno temporal)
+uv run --all-extras --group docs quarto render
+uv run --no-dev python -m biosenal     # como en producción
+uv run -m pytest -x                    # -m directamente
+```
+
+::: {.callout-tip}
+## Matriz de versiones de Python sin tox/nox
+
+```{.bash}
+for v in 3.11 3.12 3.13; do
+  uv run --python "$v" --isolated pytest -q || echo "FALLA en $v"
+done
+```
+:::
+
+`uv sync` también tiene modos útiles:
+
+```{.bash}
+uv sync --inexact               # no desinstala paquetes extra que haya en .venv
+uv sync --no-install-project    # solo dependencias (capas de Docker)
+uv sync --no-editable           # instala el proyecto como wheel normal
+uv sync --only-group docs       # solo un grupo, sin el proyecto
+uv sync --all-extras --all-groups
+uv sync --no-default-groups --group lint
+uv sync --reinstall-package biosenal
+```
+
+# Gestión de intérpretes Python
+
+uv descarga distribuciones *standalone* de CPython (y PyPy/GraalPy) sin permisos de administrador.
+
+```{.bash}
+uv python list                        # instaladas + disponibles
+uv python list 3.13 --all-versions
+uv python install 3.12 3.13           # varias
+uv python install 3.13t               # build free-threaded (sin GIL)
+uv python install 3.12 --upgrade      # [0.12] instala el último patch de 3.12
+uv python install 3.12 --reinstall    # [0.12] reinstala los patches YA instalados
+uv python install --default           # expone `python`/`python3` en ~/.local/bin
+uv python pin 3.12                    # escribe .python-version
+uv python pin --global 3.13           # preferencia global de usuario
+uv python find ">=3.12"               # ruta del intérprete que se usaría
+uv python dir                         # dónde viven
+uv python uninstall 3.11
+```
+
+Orden de preferencia: `--python` > `UV_PYTHON` > `.python-version` > `requires-python`. Controle si uv puede usar el Python del sistema con `python-preference = "only-managed" | "managed" | "system" | "only-system"` y si puede descargar con `python-downloads = "automatic" | "manual" | "never"`.
+
+::: {.callout-tip}
+En aulas o servidores compartidos, `UV_PYTHON_PREFERENCE=only-managed` elimina la clásica fuente de errores "funciona en mi máquina" causada por el Python del sistema operativo.
+:::
+
+# Herramientas globales (`uv tool` y `uvx`)
+
+`uvx` es un alias de `uv tool run`: ejecuta una herramienta en un entorno aislado y cacheado.
+
+```{.bash}
+uvx ruff check .                      # efímero
+uvx ruff@0.15.0 check .               # versión exacta
+uvx ruff@latest check .               # fuerza la última
+uvx --from jupyter-core jupyter --version   # paquete ≠ comando
+uvx --with pandas --from jupyterlab jupyter lab
+uvx --python 3.12 pre-commit run -a
+
+uv tool install ruff                  # instalación persistente en ~/.local/bin
+uv tool install --with ipykernel jupyterlab
+uv tool install -e ./mi-cli           # editable
+uv tool upgrade --all
+uv tool list --outdated
+uv tool uninstall ruff
+uv tool update-shell                  # añade el directorio de binarios al PATH
+```
+
+::: {.callout-warning}
+No use `uv tool install` para bibliotecas que va a **importar** (numpy, pandas). Las herramientas viven en entornos aislados; lo que importe su código va en el proyecto.
+:::
+
+# Construir y publicar
+
+```{.bash}
+uv version                          # muestra la versión del proyecto
+uv version --bump minor             # 0.3.0 -> 0.4.0 (y re-bloquea)
+uv version --bump patch --bump beta # 0.4.0 -> 0.4.1b1
+uv version 1.0.0 --dry-run
+
+uv build                            # sdist + wheel en dist/
+uv build --wheel --package bioforge-core   # un miembro del workspace
+uv build --no-sources               # verifica que construye sin fuentes locales
+
+uv publish                          # a PyPI
+uv publish --trusted-publishing always      # OIDC desde GitHub Actions
+uv publish --index lab-privado      # a un índice declarado con publish-url
+```
+
+```{.toml}
+[[tool.uv.index]]
+name = "lab-privado"
+url = "https://pypi.lab.universidad.edu.co/simple"
+publish-url = "https://pypi.lab.universidad.edu.co/upload"
+```
+
+El backend `uv_build` es de Python puro y muy rápido; se configura en `[tool.uv.build-backend]` (`module-name`, `module-root`, `source-include`, `source-exclude`, …). **[0.12]** `uv publish` omite distribuciones con nombres de archivo no normalizados y los sdist deben ser `.tar.gz` (PEP 625; se rechazan `.tar.bz2` y `.tar.xz`).
+
+# Interoperabilidad: exportar y la interfaz `uv pip`
+
+## Exportar el lockfile
+
+```{.bash}
+uv export --format requirements.txt --no-dev --no-hashes -o requirements.txt
+uv export --format requirements.txt --no-emit-project -o req-deps.txt
+uv export --format pylock.toml -o pylock.toml   # estándar PEP 751
+uv export --all-packages --all-extras
+uv export --package bioforge-vicon --frozen
+```
+
+## `uv pip`: reemplazo de pip/pip-tools
+
+Para entornos que no son proyectos uv (imágenes heredadas, Colab, HPC):
+
+```{.bash}
+uv venv --python 3.12 .venv-legacy
+uv pip compile requirements.in -o requirements.txt --universal   # multiplataforma
+uv pip compile pyproject.toml --extra viz -o req-viz.txt
+uv pip compile requirements.in --python-platform linux --python-version 3.12
+uv pip sync requirements.txt        # deja el entorno EXACTAMENTE igual al archivo
+uv pip install -r requirements.txt --system   # en contenedores sin venv
+uv pip install --check -r requirements.txt    # [0.12.x] informa cambios sin aplicarlos
+uv pip install --dry-run --output-format json -r requirements.txt
+uv pip list --outdated
+uv pip tree
+```
+
+**[0.12]** `--require-hashes` dentro de un `requirements.txt` ahora **sí** activa la verificación de hashes, y se rechazan hashes solo-MD5 en ese modo. **[0.12]** `uv venv --clear` exige `--force` si el directorio no es un entorno virtual.
+
+# Configuración
+
+## Dónde vive y precedencia
+
+1. Argumentos de línea de comandos
+2. Variables de entorno `UV_*`
+3. Proyecto: `[tool.uv]` en `pyproject.toml` **o** `uv.toml` (si existen ambos, gana `uv.toml`)
+4. Usuario: `~/.config/uv/uv.toml` (Windows: `%APPDATA%\uv\uv.toml`)
+5. Sistema: `/etc/uv/uv.toml`
+
+`--no-config` o `UV_NO_CONFIG=1` ignoran los archivos. En `uv.toml` las claves van **sin** el prefijo `[tool.uv]`.
+
+```{.toml filename="~/.config/uv/uv.toml"}
+python-preference = "only-managed"
+link-mode = "copy"
+compile-bytecode = true
+native-tls = true
+
+[[index]]
+name = "lab-privado"
+url = "https://pypi.lab.universidad.edu.co/simple"
+explicit = true
+```
+
+## Variables de entorno más útiles
+
+| Variable | Efecto |
+|---|---|
+| `UV_CACHE_DIR` | ubicación de la caché |
+| `UV_LINK_MODE=copy` | evita advertencias de hardlink entre sistemas de archivos distintos (Docker, discos de red) |
+| `UV_COMPILE_BYTECODE=1` | precompila `.pyc` (arranque más rápido en producción) |
+| `UV_PROJECT_ENVIRONMENT` | ruta del entorno del proyecto (p. ej. `/opt/venv` o el Python del sistema en contenedores) |
+| `UV_PYTHON` | intérprete a usar |
+| `UV_PYTHON_PREFERENCE` / `UV_PYTHON_DOWNLOADS` | política de intérpretes |
+| `UV_FROZEN=1` / `UV_LOCKED=1` | equivalen a `--frozen` / `--locked` en todos los comandos |
+| `UV_NO_SYNC=1` | `uv run` no sincroniza |
+| `UV_OFFLINE=1` | sin red; solo caché |
+| `UV_INDEX_<NOMBRE>_USERNAME/PASSWORD` | credenciales por índice |
+| `UV_EXCLUDE_NEWER` | congela fecha |
+| `UV_CONCURRENT_DOWNLOADS`, `UV_CONCURRENT_BUILDS` | paralelismo |
+| `UV_NO_PROGRESS=1` | salida limpia en logs de CI |
+| `UV_ENV_FILE` | archivos `.env` para `uv run` |
+
+# Caché y rendimiento
+
+```{.bash}
+uv cache dir            # dónde está
+uv cache size           # cuánto ocupa (versiones recientes)
+uv cache clean          # borra todo
+uv cache clean numpy    # borra un paquete
+uv cache prune          # elimina entradas no usadas
+uv cache prune --ci     # optimizada para guardar entre jobs de CI (quita wheels
+                        # descargados que son baratos de volver a bajar, conserva
+                        # los construidos desde fuente, que son caros)
+```
+
+- La caché y el `.venv` deben estar en el **mismo sistema de archivos** para que uv use *hardlinks/reflinks* (instalaciones casi instantáneas). Si no, uv copia y avisa; silencie con `UV_LINK_MODE=copy`.
+- `cache-keys` en `[tool.uv]` controla cuándo un proyecto local se reconstruye (útil con extensiones en C/Cython o versiones dinámicas desde git):
+
+```{.toml}
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.pyx" }, { git = { commit = true, tags = true } }]
+```
+
+# CI/CD con GitHub Actions
+
+```{.yaml filename=".github/workflows/ci.yml"}
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+      UV_NO_PROGRESS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6        # use la versión mayor vigente
+        with:
+          version: "0.12.x"               # fija uv: reproducibilidad del propio gestor
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv lock --check               # ¿alguien olvidó `uv lock`?
+      - run: uv sync --locked --all-extras --group dev
+      - run: uv run ruff check .
+      - run: uv run pytest --cov
+      - run: uv cache prune --ci
+
+  lowest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --resolution lowest-direct --isolated pytest
+
+  publish:
+    needs: [test, lowest]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write                      # trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv build --no-sources
+      - run: uv publish --trusted-publishing always
+```
+
+::: {.callout-tip}
+## pre-commit
+
+```{.yaml filename=".pre-commit-config.yaml"}
+repos:
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.12.17            # la versión de uv que use el equipo
+    hooks:
+      - id: uv-lock         # mantiene uv.lock al día
+      - id: uv-export       # regenera requirements.txt si lo necesita
+```
+:::
+
+# Docker: imágenes pequeñas y rápidas
+
+El patrón de dos fases separa la capa de dependencias (cambia poco) de la del código (cambia siempre):
+
+```{.dockerfile filename="Dockerfile"}
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /bin/
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
+
+WORKDIR /app
+
+# 1) Solo dependencias: esta capa se reutiliza mientras uv.lock no cambie
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
+
+# 2) Código del proyecto
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --no-editable
+
+# 3) Imagen final sin uv ni caché
+FROM python:3.12-slim
+COPY --from=builder /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+CMD ["biosenal", "--help"]
+```
+
+Claves: `--no-install-project` en la primera capa; `--no-editable` para que el `.venv` final no dependa de `/app/src`; misma imagen base (y misma ruta `/app/.venv`) en ambas fases; añada `.venv` a `.dockerignore`. En un workspace, use `--no-install-workspace` en la primera fase.
+
+# Recetas avanzadas
+
+## Proyecto de docencia con notebooks + Quarto
+
+```{.bash}
+uv init --no-package curso-psim && cd curso-psim
+uv add numpy scipy scikit-image matplotlib
+uv add --group docs jupyter ipykernel
+uv run --group docs python -m ipykernel install --user --name curso-psim
+QUARTO_PYTHON="$(uv python find)" quarto render   # o activar .venv antes de render
+```
+
+En `_quarto.yml` también puede fijar el intérprete del proyecto: después de `uv sync`, apuntar `QUARTO_PYTHON=.venv/bin/python` garantiza que Quarto use exactamente el entorno bloqueado.
+
+## Kernel efímero de Jupyter sin instalar nada
+
+```{.bash}
+uv run --with jupyter jupyter lab
+```
+
+## Migrar desde requirements.txt / Poetry / conda
+
+```{.bash}
+uv init --no-package .                         # en el repo existente
+uv add -r requirements.txt                     # importa dependencias
+uv add --dev -r requirements-dev.txt
+uvx migrate-to-uv                              # herramienta comunitaria para Poetry/Pipenv/pip-tools
+```
+
+Desde conda: exporte `conda env export --from-history`, traduzca los paquetes de PyPI con `uv add` y deje en conda solo lo que no tenga wheels (p. ej. ciertas librerías del sistema).
+
+## Reproducir exactamente un experimento antiguo
+
+```{.bash}
+git checkout v1.2-articulo
+uv python install "$(cat .python-version)"
+uv sync --locked                      # falla ruidosamente si algo no cuadra
+uv run python -m experimentos.fig3
+```
+
+## Entorno en otra ruta o sobre el Python del sistema
+
+```{.bash}
+UV_PROJECT_ENVIRONMENT=/opt/venvs/biosenal uv sync
+UV_PROJECT_ENVIRONMENT=/usr/local uv sync --locked   # contenedores: instala en el sistema
+```
+
+# Solución de problemas
+
+| Síntoma | Causa probable | Remedio |
+|---|---|---|
+| `No solution found when resolving dependencies` | requisitos incompatibles | lea el mensaje de abajo arriba; `uv tree --invert --package X`; acote `requires-python`; `environments` |
+| Falla en una plataforma que no usa (p. ej. Windows) | resolución universal | `environments = ["sys_platform == 'linux'", …]` |
+| Encuentra una versión vieja de un paquete de PyPI | `first-index` con índice privado | `explicit = true` + `sources`, o `unsafe-best-match` |
+| `The lockfile needs to be updated, but --locked was provided` | `pyproject.toml` cambió sin `uv lock` | `uv lock` y commit de `uv.lock` |
+| `Failed to hardlink files; falling back to full copy` | caché y `.venv` en distintos FS | `UV_LINK_MODE=copy` o mover la caché |
+| Un sdist no compila | faltan dependencias de construcción | `extra-build-dependencies` o `no-build-isolation-package` |
+| `uv run` usa otro proyecto | **[0.12]** descubrimiento relativo al script | `uv run --project . script.py` |
+| `uv venv --clear` se niega | **[0.12]** el directorio no es un venv | `--force` si realmente quiere borrarlo |
+| Error con `.venv` simbólico roto | **[0.12]** ya no se ignora | repare o borre el enlace `.venv` |
+| Errores TLS en red institucional | proxy con certificado propio | `--native-tls` o `SSL_CERT_FILE` válido |
+
+Diagnóstico general:
+
+```{.bash}
+uv -v sync              # verbose; -vv más detalle
+RUST_LOG=uv=debug uv lock
+uv python find          # ¿qué intérprete está usando?
+uv pip list             # ¿qué hay realmente instalado en .venv?
+```
+
+# Cheatsheet {#cheatsheet .cheatsheet}
+
+::: {.cheat-grid .column-page}
+
+::: {.cheat-card}
+### Proyecto {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv init x` | proyecto empaquetado (0.12) |
+| `uv init --no-package x` | sin build-system |
+| `uv init --lib x` | biblioteca |
+| `uv add pkg` | dependencia |
+| `uv add --dev pkg` | grupo dev |
+| `uv add --group g pkg` | grupo `g` |
+| `uv add --optional e pkg` | extra `e` |
+| `uv add -r req.txt` | importar |
+| `uv remove pkg` | quitar |
+| `uv version --bump minor` | subir versión |
+:::
+
+::: {.cheat-card}
+### Lock y sync {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv lock` | resolver → `uv.lock` |
+| `uv lock --check` | ¿al día? |
+| `uv lock -U` | actualizar todo |
+| `uv lock -P pkg` | actualizar uno |
+| `uv sync` | lock → `.venv` |
+| `uv sync --locked` | CI estricto |
+| `uv sync --frozen` | sin validar lock |
+| `uv sync --no-dev` | producción |
+| `uv sync --all-extras --all-groups` | todo |
+| `uv sync --no-install-project` | solo deps |
+| `uv sync --inexact` | no borra extras |
+:::
+
+::: {.cheat-card}
+### Ejecutar {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv run cmd` | en el entorno del proyecto |
+| `uv run --with p cmd` | + paquete temporal |
+| `uv run --isolated` | entorno limpio |
+| `uv run --no-project` | ignora proyecto |
+| `uv run --python 3.13` | otro intérprete |
+| `uv run --package m` | miembro workspace |
+| `uv run --env-file .env` | variables |
+| `uv run -m mod` | módulo |
+| `uv run --resolution lowest-direct` | mínimas |
+:::
+
+::: {.cheat-card}
+### Scripts PEP 723 {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv init --script s.py` | crear encabezado |
+| `uv add --script s.py p` | añadir dep |
+| `uv lock --script s.py` | `s.py.lock` |
+| `uv run s.py` | ejecutar |
+| `#!/usr/bin/env -S uv run --script` | shebang |
+| `uv export --script s.py` | a requirements |
+:::
+
+::: {.cheat-card}
+### Python {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv python list` | disponibles |
+| `uv python install 3.13` | instalar |
+| `uv python install 3.13t` | free-threaded |
+| `uv python install 3.12 --upgrade` | último patch |
+| `uv python pin 3.12` | `.python-version` |
+| `uv python find` | ruta activa |
+| `uv python uninstall 3.11` | quitar |
+:::
+
+::: {.cheat-card}
+### Herramientas {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uvx tool` | ejecutar efímero |
+| `uvx tool@1.2` | versión exacta |
+| `uvx tool@latest` | última |
+| `uvx --from pkg cmd` | paquete ≠ comando |
+| `uv tool install t` | persistente |
+| `uv tool upgrade --all` | actualizar |
+| `uv tool list --outdated` | desactualizadas |
+:::
+
+::: {.cheat-card}
+### Inspección {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv tree` | árbol |
+| `uv tree --outdated` | desactualizados |
+| `uv tree --invert --package p` | ¿quién trae p? |
+| `uv tree --universal` | todas plataformas |
+| `uv pip list` | instalado |
+| `uv workspace list` | miembros |
+| `uv -v <cmd>` | verbose |
+:::
+
+::: {.cheat-card}
+### Build / publicar / exportar {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv build` | sdist + wheel |
+| `uv build --no-sources` | como usuario final |
+| `uv publish` | a PyPI |
+| `uv publish --trusted-publishing always` | OIDC |
+| `uv export -o req.txt` | requirements |
+| `uv export --format pylock.toml` | PEP 751 |
+:::
+
+::: {.cheat-card}
+### Interfaz pip {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv venv` | crear `.venv` |
+| `uv venv --clear` | recrear (0.12: solo venvs) |
+| `uv pip compile in -o txt --universal` | compilar |
+| `uv pip sync txt` | entorno exacto |
+| `uv pip install --system` | sin venv |
+| `uv pip install --check` | simular |
+:::
+
+::: {.cheat-card}
+### Caché {.unnumbered}
+| Comando | Acción |
+|---|---|
+| `uv cache dir` | ubicación |
+| `uv cache clean [pkg]` | borrar |
+| `uv cache prune` | podar |
+| `uv cache prune --ci` | para CI |
+| `uv self update` | actualizar uv |
+:::
+
+:::
+
+### `[tool.uv]` esencial {.unnumbered}
+
+```{.toml}
+[tool.uv]
+required-version        = ">=0.12"
+package                 = true
+default-groups          = ["dev"]
+environments            = ["sys_platform == 'linux'", "sys_platform == 'darwin'"]
+required-environments   = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+constraint-dependencies = ["urllib3<3"]
+override-dependencies   = ["numpy>=2"]
+conflicts               = [[{ extra = "cpu" }, { extra = "cu124" }]]
+exclude-newer           = "2026-06-30T00:00:00Z"
+resolution              = "highest"          # lowest-direct | lowest
+prerelease              = "if-necessary"     # default en 0.12
+index-strategy          = "first-index"      # unsafe-best-match
+no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+pkg-git  = { git = "https://…", tag = "v1.0" }
+pkg-path = { path = "../pkg", editable = true }
+pkg-ws   = { workspace = true }
+torch    = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.workspace]
+members = ["packages/*"]
+```
+
+### Reglas de oro {.unnumbered}
+
+1. **Versione `uv.lock`** en git, siempre; ignore `.venv/`.
+2. **CI con `--locked`**, contenedores con `--frozen`.
+3. **Grupos para desarrollo, extras para usuarios.**
+4. **Índices privados con `explicit = true`** y asignación explícita en `sources`.
+5. **Fije el propio uv** (`required-version`, versión en `setup-uv`, imagen `ghcr.io/astral-sh/uv:0.12`).
+6. **`exclude-newer` + lockfile** para resultados científicos reproducibles.
+7. **Pruebe `lowest-direct`** si publica una biblioteca.
+8. **Nunca edite `uv.lock` a mano.**
+
+---
+
+**Fuentes:** [Documentación oficial de uv](https://docs.astral.sh/uv/) · [Notas de la versión 0.12.0](https://github.com/astral-sh/uv/releases/tag/0.12.0) · [CHANGELOG de uv](https://github.com/astral-sh/uv/blob/main/CHANGELOG.md) · [PEP 723](https://peps.python.org/pep-0723/) · [PEP 735](https://peps.python.org/pep-0735/) · [PEP 751](https://peps.python.org/pep-0751/)
