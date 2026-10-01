@@ -1,0 +1,648 @@
+---
+title: "Laboratorio: regresión múltiple y regresión logística"
+subtitle: "De la tabla de características de imágenes a modelos evaluables"
+description: "Guía del estudiante · Procesado de Señales e Imágenes Médicas <br>Ingeniería Biomédica"
+author: "Ph.D. Pablo Eduardo Caicedo R."
+lang: es
+date: "2026-10-01"
+format:
+  html:
+    theme: ../../recursos/estilos/bioforja-laboratorios.scss
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    embed-resources: true
+    code-copy: true
+    code-overflow: wrap
+    fig-cap-location: bottom
+execute:
+  enabled: false
+---
+
+# Propósito y producto final
+
+**Pregunta central:** ¿las características seleccionadas durante el análisis exploratorio permiten estimar una medida continua o la probabilidad de una clase en unidades independientes que el modelo no ha utilizado para ajustar sus parámetros?
+
+Este laboratorio continúa **`lab004_PSIM_EDA_Imagenes_Guia_Estudiante.qmd`**. Parte de `features.csv`, su diccionario y las particiones ya definidas. El EDA describe distribuciones y asociaciones; el modelado formula una relación conjunta, ajusta parámetros y comprueba su capacidad de generalización. Una correlación alta, un coeficiente significativo o un buen ajuste en entrenamiento no sustituyen esa comprobación.
+
+Cada equipo construirá **ambos modelos en una práctica didáctica común** y transferirá al proyecto **la ruta compatible con su objetivo y sus referencias disponibles**. No se inventa una segunda etiqueta para cumplir la actividad. Si el proyecto dispone legítimamente de ambas salidas, puede desarrollar ambas rutas, documentando dos preguntas diferentes.
+
+| Aspecto | Condición de trabajo |
+|---|---|
+| Programa y asignatura | Ingeniería Biomédica · PSIM |
+| Organización | Equipos de tres estudiantes; se conserva el proyecto semestral |
+| Insumos | Tabla de características, diccionario, manifiesto, particiones y decisiones del EDA |
+| Práctica común | Datos sintéticos de características; ambos tipos de regresión |
+| Aplicación al proyecto | Modelo pertinente: salida continua o clasificación binaria |
+| Duración | 6 horas; datos, entorno y referencias disponibles previamente |
+| Evaluación | Artefactos reproducibles y sustentación de 12 min, más hasta 5 min de verificación |
+| Entregable central | Predicciones trazables, métricas contra referencia sencilla y diagnóstico del modelo |
+
+## Resultados de aprendizaje
+
+1. Distinguir regresión múltiple, extensión polinómica multivariable y regresión logística.
+2. Convertir los hallazgos del EDA en una especificación limitada y justificable de predictores.
+3. Ajustar imputación, escalamiento y modelos sin utilizar validación o prueba para aprender transformaciones.
+4. Comparar los modelos con predictores de referencia y evaluar con métricas coherentes con la salida.
+5. Interpretar coeficientes, residuos, probabilidades y errores sin atribuir causalidad a asociaciones observacionales.
+6. Reconstruir y defender resultados, incluyendo un modelo que no mejore la referencia.
+
+# Condiciones heredadas y continuidad con el EDA
+
+Se mantienen Python 3.13, `uv`, dependencias declaradas en `pyproject.toml`, bloqueo con `uv.lock`, rutas relativas mediante `pathlib`, funciones documentadas, Ruff, pruebas y reproducción en otro computador. No se transfiere `.venv` ni se modifica el bloqueo manualmente.
+
+El **informe estudiantil se entrega en LaTeX** y la **presentación en LaTeX Beamer**, con fuentes y PDF; máximo cinco diapositivas incluida la portada. Esta guía se publica en Quarto+HTML y conserva la configuración del laboratorio adjunto.
+
+| Producto del EDA | Uso en este laboratorio |
+|---|---|
+| `features.csv` | Entrada del modelo, sin sustituir imágenes ni etiquetas de referencia |
+| `feature_dictionary.csv` | Verificar unidades, disponibilidad y significado de cada predictor |
+| `splits.csv` | Mantener grupos y asignaciones existentes |
+| `model_input.json` | Precisar objetivo, predictores, agrupación y evaluación |
+| Tabla de decisiones del EDA | Justificar especificación y límites de interpretación |
+| Banco común de imágenes | Conservar su cotejo como evidencia de extracción; no mezclarlo como cohorte |
+
+El banco común del laboratorio anterior auditaba lectura y descriptores. **No se convierte en una muestra de entrenamiento compartida.** Los sujetos expuestos en ese banco siguen fuera de la prueba reservada de su proyecto. La práctica común siguiente utiliza características sintéticas, claramente identificadas; no aporta resultados clínicos.
+
+::: {.callout-important title="Alcance estadístico"}
+Regresión lineal y logística son métodos de aprendizaje supervisado. La restricción del proyecto a estos modelos limita las familias autorizadas, pero no equivale a “no usar machine learning”. Regresión múltiple significa varios predictores para una salida; no significa varias salidas.
+:::
+
+# Fundamentos para tomar decisiones
+
+## Regresión lineal múltiple y extensión polinómica
+
+Para una salida continua:
+
+$$
+y_i=\beta_0+\sum_{j=1}^{p}\beta_jx_{ij}+\varepsilon_i,
+\qquad
+\widehat{\boldsymbol\beta}=\arg\min_{\boldsymbol\beta}\sum_i(y_i-\widehat y_i)^2.
+$$
+
+Ejemplo: estimar una medición de referencia independiente a partir de descriptores de intensidad, textura y bordes. Cada predictor debe estar disponible en un caso nuevo; usar como predictor el área de la misma máscara que define el objetivo produciría circularidad.
+
+Un coeficiente expresa el cambio esperado de $y$ ante una unidad de cambio del predictor **manteniendo los demás constantes**, dentro de la especificación y el soporte de los datos. No expresa por sí solo un efecto causal. En predictores correlacionados, la situación de mantener los demás constantes puede representar casos poco frecuentes o inexistentes.
+
+Una extensión de grado dos incorpora cuadrados e interacciones:
+
+$$
+\widehat y=\beta_0+\sum_j\beta_jx_j+
+\sum_j\gamma_jx_j^2+\sum_{j<k}\delta_{jk}x_jx_k.
+$$
+
+Es no lineal respecto de $x$ y **lineal respecto de sus coeficientes**. Con todos los términos hasta grado dos hay $q=p+p(p+1)/2$ predictores transformados, más el intercepto. Con tres variables, $q=9$; con diez, $q=65$. El número de filas no justifica esa complejidad si proceden de pocos pacientes. No hay un cociente universal entre muestra y parámetros que garantice validez.
+
+La ruta continua compara grados 1 y 2 en validación. Si se conserva la exigencia previa de regresión polinómica multivariable, declare que grado 1 es su referencia y grado 2 es la extensión candidata; no se obliga a elegir grado 2 cuando empeora la generalización.
+
+## Regresión logística binaria
+
+Para una etiqueta auténticamente binaria, con $y=1$ como clase positiva:
+
+$$
+z_i=\beta_0+\sum_j\beta_jx_{ij},\qquad
+p_i=P(y_i=1\mid\mathbf x_i)=\frac{1}{1+e^{-z_i}},
+$$
+$$
+\log\frac{p_i}{1-p_i}=z_i,\qquad
+\mathcal L=-\frac1n\sum_i\left[y_i\log p_i+(1-y_i)\log(1-p_i)\right].
+$$
+
+La frontera a un umbral $t$ se obtiene con $\widehat y_i=\mathbb 1[p_i\geq t]$. **Probabilidad y decisión son productos distintos.** El umbral 0.5 es una referencia; su pertinencia depende del costo de falsos positivos y falsos negativos.
+
+$e^{\beta_j}$ es una razón de odds condicional por unidad del predictor, no una razón de probabilidades ni un cambio porcentual directo del riesgo. Si el predictor está estandarizado, la unidad es una desviación estándar de entrenamiento. Si se incluyen interacciones, la razón depende de los otros valores.
+
+La implementación didáctica usa penalización L2: favorece coeficientes menos extremos. `C` controla su intensidad inversa; menor `C` implica más penalización. Los coeficientes penalizados no se acompañan de intervalos o valores $p$ clásicos calculados como si fueran estimadores no penalizados.
+
+::: {.callout-warning title="No crear una clasificación arbitraria"}
+Una salida continua no se convierte en “alto/bajo” cortándola en su mediana para inventar un problema clínico. Se requiere un criterio externo y una pregunta que justifique la clase. Una salida multicategoría requiere otra especificación; esta actividad desarrolla clasificación binaria.
+:::
+
+## Supuestos e interpretación
+
+| Aspecto | Regresión múltiple | Regresión logística |
+|---|---|---|
+| Salida | Continua, con unidades y referencia | Binaria; clase positiva y fuente declaradas |
+| Forma funcional | Media condicional lineal en términos seleccionados | Log-odds lineales en términos seleccionados |
+| Independencia | Debe responder al diseño; varias imágenes no son varios pacientes | La misma precaución; particionar por grupo no elimina la dependencia dentro del ajuste |
+| Distribuciones | Los predictores no requieren normalidad | Los predictores tampoco requieren normalidad |
+| Inferencia clásica | Normalidad de errores y homocedasticidad son relevantes para determinados intervalos y contrastes | Requiere modelo y muestra adecuados; separación puede impedir estimación no penalizada estable |
+| Problemas frecuentes | Colinealidad, heterocedasticidad, influencia, extrapolación | Colinealidad, separación, pocos eventos, desbalance, mala calibración |
+
+Para el ejemplo y el código base se recomienda **una fila por unidad independiente**. Si el proyecto necesita varias filas por sujeto, agregue con una regla justificada o amplíe el protocolo con validación por grupos y métricas acordes al objetivo. No presente errores estándar de filas dependientes como inferencia por paciente.
+
+# Fase 1. Del EDA al protocolo de modelado — 75 minutos
+
+## Auditar insumos — 25 minutos
+
+Reutilice la tabla sin rehacer su EDA. Verifique claves únicas, unión con particiones, ausencia de grupos compartidos, objetivos disponibles y predictores numéricos. No seleccione “todas las columnas numéricas”: IDs, etiquetas codificadas y mediciones posteriores al resultado son fuentes de fuga.
+
+Si una etiqueta falta, excluya esa fila **de la ruta supervisada correspondiente** y registre la razón. No impute objetivos. Si un predictor está ausente en todo entrenamiento, no puede recuperarse por imputación de mediana: revise su extracción o suprímalo con justificación. Un infinito es un fallo de cálculo que se investiga, no un faltante que se oculta.
+
+Mantenga la prueba cerrada. No vuelva a sortear particiones hasta obtener métricas favorables. Si las particiones originales son inviables, documente la revisión antes del ajuste y sin consultar resultados de prueba.
+
+## Precisar las dos tareas — 25 minutos
+
+| Campo | Ruta continua | Ruta binaria |
+|---|---|---|
+| Pregunta | ¿Qué magnitud se estimará? | ¿Qué evento o clase se reconocerá? |
+| Referencia | Medición, fuente y unidad | Fuente, código 0/1 y significado de 1 |
+| Predictores | Lista limitada, definición y disponibilidad | Los mismos requisitos |
+| Referencia sencilla | Media de entrenamiento para comparar RMSE | Probabilidad constante: prevalencia de entrenamiento |
+| Métrica primaria | RMSE o MAE, elegida antes de comparar | Average precision, ROC-AUC o métrica de decisión según objetivo |
+| Complejidad a comparar | Grado 1 frente a grado 2 | Dos intensidades de penalización L2 |
+| Decisión adicional | Selección por validación | Selección por validación y política de umbral |
+
+Todos completan las dos columnas para el ejemplo común. Para el proyecto, marquen la ruta pertinente y expliquen por qué la otra no aplica. Un proyecto de segmentación puede definir clasificación local binaria solo si conserva la unidad espacial, referencias y evaluación por sujeto; el código de una fila por sujeto no se traslada directamente a millones de píxeles.
+
+## Congelar decisiones — 25 minutos
+
+Seleccione de dos a cuatro características candidatas con fundamento en el EDA de entrenamiento. El ejercicio no busca maximizar columnas. Registre exclusiones por fuga, constantes y redundancia, sin eliminación automática por un umbral de correlación.
+
+Amplíe la configuración con: objetivo, grupo, predictores, unidades, métrica primaria, candidatos, semilla y umbral. Guarde el hash de la tabla. El EDA que utilizó etiquetas pertenece al desarrollo; su desempeño necesita una prueba independiente. En validación cruzada, cualquier selección supervisada de características debe repetirse dentro de cada pliegue.
+
+**Evidencia:** contrato de modelado y tabla `hallazgo_EDA → decisión → comprobación → límite` con al menos cuatro filas.
+
+# Fase 2. Ajustar, comparar y diagnosticar — 165 minutos
+
+## Preparar el entorno — 15 minutos
+
+Desde la raíz del proyecto existente:
+
+```bash
+uv add numpy pandas matplotlib scikit-learn
+```
+
+Revise dependencias ya declaradas antes de modificarlas. Los comandos de esta guía se ejecutan en el entorno del proyecto. Quarto es una herramienta externa a `uv.lock`.
+
+## Práctica común reproducible — 50 minutos
+
+Copie los bloques Python de esta sección, **en su orden**, a `scripts/modelado_didactico.py` y ejecute `uv run python scripts/modelado_didactico.py`. No copie los bloques de adaptación posteriores en ese archivo.
+
+La simulación representa tres descriptores numéricos de imágenes y dos salidas sintéticas. Cada fila representa un sujeto distinto. Los descriptores no se extraen de imágenes reales y las salidas no son diagnósticos. El objetivo continuo está en unidades arbitrarias; la clase se genera por un mecanismo probabilístico separado. La semilla fija sirve para cotejar implementaciones, no para demostrar desempeño clínico.
+
+### Datos con relaciones conocidas
+
+```python
+from pathlib import Path
+import json
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.dummy import DummyRegressor, DummyClassifier
+from sklearn.metrics import (
+    mean_absolute_error, mean_squared_error, r2_score,
+    roc_auc_score, average_precision_score, brier_score_loss,
+    log_loss, confusion_matrix, balanced_accuracy_score,
+    RocCurveDisplay, PrecisionRecallDisplay,
+)
+from sklearn.calibration import calibration_curve
+
+SEED = 2026
+rng = np.random.default_rng(SEED)
+OUT = Path("results/modelado_didactico")
+OUT.mkdir(parents=True, exist_ok=True)
+FEATURES = ["intensity_mean", "texture_contrast", "edge_density"]
+x = rng.normal(size=(240, 3))
+df = pd.DataFrame(x, columns=FEATURES)
+df["sample_id"] = [f"SIM_{i:03d}" for i in range(len(df))]
+df["subject_id"] = df["sample_id"]
+df["target_continuous"] = (
+    10 + 2*x[:, 0] - 1.5*x[:, 1] + 0.8*x[:, 2]
+    + 1.2*x[:, 0]**2 + rng.normal(0, 1.2, len(df))
+)
+probability = 1 / (1 + np.exp(-(-0.6 + 1.4*x[:, 0] - x[:, 1])))
+df["target_binary"] = rng.binomial(1, probability)
+# Las etiquetas se crean antes de introducir ausencias en predictores.
+df.loc[rng.random(len(df)) < 0.06, "texture_contrast"] = np.nan
+# Partición fija por sujeto; no se repite buscando un resultado favorable.
+order = rng.permutation(len(df))
+df["split"] = "test"
+df.loc[order[:144], "split"] = "train"
+df.loc[order[144:192], "split"] = "validation"
+df.to_csv(OUT / "features_sinteticas.csv", index=False)
+train = df.loc[df["split"] == "train"].copy()
+validation = df.loc[df["split"] == "validation"].copy()
+# La prueba no se usa en ajuste, diagnóstico ni elección.
+```
+
+### Flujo que evita aprender transformaciones sobre validación
+
+```python
+def continuous_pipeline(degree):
+    """Imputa y transforma dentro del ajuste del conjunto recibido."""
+    return Pipeline([
+        ("impute", SimpleImputer(strategy="median")),
+        ("scale", StandardScaler()),
+        ("poly", PolynomialFeatures(degree=degree, include_bias=False)),
+        ("model", LinearRegression()),
+    ])
+
+
+def binary_pipeline(c):
+    """Regresión logística L2 con predictores en escala comparable."""
+    return Pipeline([
+        ("impute", SimpleImputer(strategy="median")),
+        ("scale", StandardScaler()),
+        ("model", LogisticRegression(
+            C=c, solver="lbfgs", max_iter=2000,
+            random_state=SEED,
+        )),
+    ])
+
+
+def regression_metrics(y, prediction):
+    return {
+        "MAE": float(mean_absolute_error(y, prediction)),
+        "RMSE": float(np.sqrt(mean_squared_error(y, prediction))),
+        "R2": float(r2_score(y, prediction)),
+    }
+
+
+def binary_metrics(y, probability, threshold=0.5):
+    if set(np.unique(y)) != {0, 1}:
+        raise ValueError("La evaluación binaria requiere ambas clases.")
+    tn, fp, fn, tp = confusion_matrix(
+        y, probability >= threshold, labels=[0, 1]
+    ).ravel()
+    return {
+        "ROC_AUC": float(roc_auc_score(y, probability)),
+        "AP": float(average_precision_score(y, probability)),
+        "Brier": float(brier_score_loss(y, probability)),
+        "log_loss": float(log_loss(y, probability, labels=[0, 1])),
+        "balanced_accuracy": float(balanced_accuracy_score(
+            y, probability >= threshold
+        )),
+        "sensitivity": float(tp / (tp + fn)),
+        "specificity": float(tn / (tn + fp)),
+        "TN": int(tn), "FP": int(fp), "FN": int(fn), "TP": int(tp),
+        "threshold": float(threshold),
+    }
+
+
+Xtr, Xva = train[FEATURES], validation[FEATURES]
+ytr_r, yva_r = train["target_continuous"], validation["target_continuous"]
+ytr_b, yva_b = train["target_binary"], validation["target_binary"]
+for labels in (ytr_b, yva_b):
+    if set(labels.unique()) != {0, 1}:
+        raise ValueError("Faltan clases; revisar protocolo sin mirar prueba.")
+
+regression_models = {f"degree_{d}": continuous_pipeline(d) for d in (1, 2)}
+classification_models = {f"C_{c}": binary_pipeline(c) for c in (0.1, 1.0)}
+regression_models["baseline"] = DummyRegressor(strategy="mean")
+classification_models["baseline"] = DummyClassifier(strategy="prior")
+rows = []
+for name, model in regression_models.items():
+    model.fit(Xtr, ytr_r)
+    rows.append({"route": "continuous", "model": name,
+                 **regression_metrics(yva_r, model.predict(Xva))})
+for name, model in classification_models.items():
+    model.fit(Xtr, ytr_b)
+    rows.append({"route": "binary", "model": name,
+                 **binary_metrics(yva_b, model.predict_proba(Xva)[:, 1])})
+comparison = pd.DataFrame(rows)
+comparison.to_csv(OUT / "validation_metrics.csv", index=False)
+# Criterios predeclarados: RMSE continuo y AP binario.
+best_r_name = min(("degree_1", "degree_2"), key=lambda name:
+    regression_metrics(yva_r, regression_models[name].predict(Xva))["RMSE"])
+best_b_name = max(("C_0.1", "C_1.0"), key=lambda name:
+    binary_metrics(yva_b, classification_models[name].predict_proba(Xva)[:, 1])["AP"])
+best_r = regression_models[best_r_name]
+best_b = classification_models[best_b_name]
+```
+
+Aquí el escalamiento se realiza **antes** de la expansión polinómica; los términos se interpretan en esa parametrización. Los modelos de referencia no necesitan imputación porque sus predicciones ignoran las entradas. Si el modelo candidato pierde frente a la referencia, se reporta ese resultado; no se elimina la referencia para ocultarlo.
+
+### Diagnósticos de desarrollo y coeficientes
+
+```python
+prediction_va = best_r.predict(Xva)
+residual_va = yva_r.to_numpy() - prediction_va
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+axes[0].scatter(yva_r, prediction_va, alpha=0.7)
+limits = [min(yva_r.min(), prediction_va.min()),
+          max(yva_r.max(), prediction_va.max())]
+axes[0].plot(limits, limits, "k--")
+axes[0].set(xlabel="Referencia (u.a.)", ylabel="Predicción (u.a.)",
+            title=f"Validación, n={len(validation)}")
+axes[1].scatter(prediction_va, residual_va, alpha=0.7)
+axes[1].axhline(0, color="black", linestyle="--")
+axes[1].set(xlabel="Predicción (u.a.)", ylabel="Residuo (u.a.)")
+fig.tight_layout()
+fig.savefig(OUT / "regression_validation.png", dpi=160)
+plt.close(fig)
+
+prob_va = best_b.predict_proba(Xva)[:, 1]
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+RocCurveDisplay.from_predictions(yva_b, prob_va, ax=axes[0])
+PrecisionRecallDisplay.from_predictions(yva_b, prob_va, ax=axes[1])
+fraction, mean_probability = calibration_curve(yva_b, prob_va, n_bins=5)
+axes[2].plot(mean_probability, fraction, "o-")
+axes[2].plot([0, 1], [0, 1], "k--")
+axes[2].set(xlabel="Probabilidad media", ylabel="Fracción positiva",
+            title="Calibración exploratoria")
+fig.suptitle(f"Validación sintética, n={len(validation)}")
+fig.tight_layout()
+fig.savefig(OUT / "classification_validation.png", dpi=160)
+plt.close(fig)
+
+terms = best_r.named_steps["poly"].get_feature_names_out(FEATURES)
+pd.DataFrame({"term": terms,
+              "coefficient": best_r.named_steps["model"].coef_}).to_csv(
+    OUT / "regression_coefficients.csv", index=False
+)
+beta = best_b.named_steps["model"].coef_[0]
+pd.DataFrame({"feature": FEATURES, "beta_standardized": beta,
+              "odds_ratio_per_SD": np.exp(beta)}).to_csv(
+    OUT / "logistic_coefficients.csv", index=False
+)
+```
+
+Los CSV anteriores corresponden al ajuste en entrenamiento; el intercepto se guarda en el protocolo siguiente. Una curva de calibración con pocos casos es inestable: inspección exploratoria, no certificación de calibración. `AP` es *average precision*, calculada por su definición discreta; no se identifica automáticamente con el área trapezoidal de la curva precisión–recobrado.
+
+### Congelar y evaluar una sola vez
+
+```python
+THRESHOLD = 0.5  # Fijado como referencia didáctica antes de abrir prueba.
+protocol = {
+    "seed": SEED, "features": FEATURES,
+    "continuous_model": best_r_name, "binary_model": best_b_name,
+    "threshold": THRESHOLD,
+    "regression_intercept": float(best_r.named_steps["model"].intercept_),
+    "logistic_intercept": float(best_b.named_steps["model"].intercept_[0]),
+    "fit_population": "train", "selection_population": "validation",
+    "data_kind": "synthetic_not_clinical",
+}
+(OUT / "frozen_protocol.json").write_text(
+    json.dumps(protocol, indent=2, ensure_ascii=False), encoding="utf-8"
+)
+# No se reajusta: se evalúa el modelo exactamente seleccionado.
+test = df.loc[df["split"] == "test"].copy()
+Xte = test[FEATURES]
+prediction_te = best_r.predict(Xte)
+prob_te = best_b.predict_proba(Xte)[:, 1]
+test_rows = []
+for name in (best_r_name, "baseline"):
+    test_rows.append({"route": "continuous", "model": name,
+        **regression_metrics(test["target_continuous"],
+                             regression_models[name].predict(Xte))})
+for name in (best_b_name, "baseline"):
+    test_rows.append({"route": "binary", "model": name,
+        **binary_metrics(test["target_binary"],
+                         classification_models[name].predict_proba(Xte)[:, 1],
+                         THRESHOLD)})
+pd.DataFrame(test_rows).to_csv(OUT / "test_metrics.csv", index=False)
+result = test[["sample_id", "subject_id", "split", "target_continuous",
+               "target_binary"]].copy()
+result["prediction_continuous"] = prediction_te
+result["residual"] = test["target_continuous"] - prediction_te
+result["probability_positive"] = prob_te
+result["decision"] = (prob_te >= THRESHOLD).astype(int)
+result.to_csv(OUT / "test_predictions.csv", index=False)
+print(comparison.to_string(index=False))
+print("Modelos congelados:", best_r_name, best_b_name)
+```
+
+**Comprobación común:** todos obtienen las mismas asignaciones y resultados dentro de tolerancia con el mismo entorno bloqueado. Intercambien `validation_metrics.csv`, `test_metrics.csv` y el protocolo; contrasten por ruta/modelo, con `rtol=1e-6`, `atol=1e-8`. Resuelvan discrepancias por versiones, semilla o implementación, no por mayoría.
+
+**Preguntas:** ¿qué modelo continuo reconoce el término cuadrático? ¿Por qué el RMSE no es cero? ¿Por qué una probabilidad correcta no obliga a clasificar todos los casos correctamente? ¿La clasificación usa el mismo mecanismo que la salida continua? ¿Qué prueba se pierde si se cambia `C` después de consultar `test_metrics.csv`?
+
+## Transferir al proyecto — 55 minutos
+
+### Carga y contrato de entrada
+
+La siguiente base es independiente del ejemplo común. Adapte nombres según el diccionario; se supone que `splits.csv` contiene `sample_id` y `split`. Si las particiones están por sujeto, haga una unión por `subject_id` con cardinalidad `many_to_one`. No replique asignaciones mediante posición de fila.
+
+```python
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+features = pd.read_csv(Path("data/processed/features.csv"))
+splits = pd.read_csv(Path("data/metadata/splits.csv"))
+PREDICTORS = ["intensity_mean", "texture_contrast", "edge_density"]
+TARGET = "target"                 # Cambiar por el objetivo auténtico.
+GROUP = "subject_id"
+if features["sample_id"].isna().any() or features["sample_id"].duplicated().any():
+    raise ValueError("sample_id debe ser único y completo.")
+if splits["sample_id"].isna().any() or splits["sample_id"].duplicated().any():
+    raise ValueError("Particiones sin clave única completa.")
+# Si split ya existe, contrastarlo con splits.csv antes de retirar la columna.
+if "split" in features:
+    check = features[["sample_id", "split"]].merge(
+        splits[["sample_id", "split"]], on="sample_id", validate="one_to_one",
+        how="left", suffixes=("_table", "_contract"),
+    )
+    if not (check["split_table"] == check["split_contract"]).all():
+        raise ValueError("La tabla y el contrato de partición no coinciden.")
+    features = features.drop(columns="split")
+table = features.merge(splits[["sample_id", "split"]], on="sample_id",
+                       how="left", validate="one_to_one")
+if not table["split"].isin(["train", "validation", "test"]).all():
+    raise ValueError("Hay filas sin asignación válida.")
+if table[GROUP].isna().any():
+    raise ValueError("Falta identidad para verificar independencia.")
+if (table.groupby(GROUP)["split"].nunique() > 1).any():
+    raise ValueError("Un grupo cruza particiones.")
+if any(c in {TARGET, GROUP, "sample_id", "split"} for c in PREDICTORS):
+    raise ValueError("Objetivo o identificadores entre predictores.")
+# Base para una fila por unidad independiente; no eliminar duplicados a ciegas.
+if table[GROUP].duplicated().any():
+    raise ValueError("Agregar por unidad o implementar protocolo por grupos.")
+X = table[PREDICTORS].apply(pd.to_numeric, errors="raise")
+if np.isinf(X.to_numpy(dtype=float)).any():
+    raise ValueError("Investigar predictores infinitos.")
+if X.loc[table["split"] == "train"].isna().all().any():
+    raise ValueError("Predictor sin datos en entrenamiento.")
+# Guardar exclusiones por objetivo faltante, sin imputarlo.
+missing_target = table[TARGET].isna()
+table.loc[missing_target, ["sample_id", "split"]].to_csv(
+    Path("results/excluded_missing_target.csv"), index=False
+)
+table = table.loc[~missing_target].copy()
+```
+
+Cree `results/` antes de este bloque. Confirme tipos y rangos del objetivo. En clasificación, declare una correspondencia explícita entre etiqueta original y 0/1; no dependa del orden alfabético de categorías. Audite disponibilidad y clases **en desarrollo**; al abrir la prueba, si una clase está ausente, informe AUC y sensibilidad/especificidad no definidas donde corresponda sin volver a particionar.
+
+Reutilice las funciones de la práctica común con los datos del proyecto. Ejecute **solo la ruta pertinente**. Registre candidatos y seleccione con la métrica primaria de validación. No adapte nombres en veinte lugares: páselos desde la configuración del proyecto.
+
+### Si no hay suficientes sujetos para tres particiones
+
+Mantenga una prueba independiente cuando sea viable y utilice validación cruzada **dentro de desarrollo**. Para datos agrupados: `GroupKFold` en regresión y `StratifiedGroupKFold` en clasificación, con número de pliegues factible según grupos y clases. Cada pipeline se ajusta en entrenamiento de cada pliegue; el grupo nunca cruza sus lados.
+
+Si no hay prueba independiente, reporte la estimación como validación cruzada de desarrollo y explique su posible optimismo cuando se utiliza para seleccionar modelos. Para estimar el procedimiento completo de selección se necesita validación anidada o datos externos; no presente el mejor valor usado para seleccionar como desempeño final imparcial. No fuerce una AUC en pliegues con una sola clase.
+
+### Umbral y desbalance
+
+El código usa 0.5 para mantener una referencia común. En el proyecto, declare antes de abrir prueba si conservará ese umbral o lo seleccionará en validación con una regla y un costo justificables. Por ejemplo, buscar sensibilidad mínima y, entre umbrales que la alcanzan, mayor especificidad. Si ninguno satisface la restricción, informe inviabilidad. Guarde el umbral y no vuelva a optimizarlo en prueba.
+
+No aplique ponderación automáticamente. Si compara `class_weight="balanced"`, añádala como candidato de desarrollo; la ponderación cambia el objetivo ajustado y puede modificar calibración. No interprete sus probabilidades como riesgo clínico calibrado sin evaluación. No remuestree validación ni prueba ni altere su prevalencia para mejorar métricas.
+
+## Evaluar y diagnosticar — 45 minutos
+
+| Producto | Qué calcular | Qué interpretar |
+|---|---|---|
+| Continua | MAE, RMSE y $R^2$; errores contra media de entrenamiento | Error en unidades de la salida; $R^2$ negativo es posible |
+| Continua: gráficos | Referencia–predicción; residuos–predicción; residuos frente a predictores en desarrollo | Curvatura, sesgo, dispersión cambiante y soporte insuficiente |
+| Binaria: discriminación | ROC-AUC y AP; prevalencia y tamaño por clase | Ordenamiento de probabilidades; AP depende de prevalencia |
+| Binaria: decisión | Matriz TN/FP/FN/TP, sensibilidad, especificidad y exactitud balanceada | Costo de errores a un umbral declarado |
+| Binaria: probabilidad | Brier, log-loss y curva de calibración exploratoria | Discriminación alta no garantiza probabilidades calibradas |
+| Ambas | Referencia sencilla, coeficientes, tamaño independiente y errores por subgrupos suficientes | Mejora real, estabilidad y límites de generalización |
+
+$\mathrm{MAE}=n^{-1}\sum|y_i-\widehat y_i|$, $\mathrm{RMSE}=\sqrt{n^{-1}\sum(y_i-\widehat y_i)^2}$ y $R^2=1-\sum(y_i-\widehat y_i)^2/\sum(y_i-\bar y)^2$. Si la referencia de evaluación es constante, $R^2$ no tiene su interpretación usual: informe la degeneración en lugar de ocultarla con un valor forzado. Para MAE, la mediana de entrenamiento es una referencia adicional más alineada que la media.
+
+Para colinealidad, examine correlaciones de entrenamiento y el rango de la matriz de diseño con intercepto. Si no tiene rango completo, los coeficientes OLS no son identificables de forma única aunque una implementación entregue predicciones. La expansión polinómica agrava este riesgo; no use signos o magnitudes de coeficientes inestables como ranking biomédico. La importancia tampoco se deduce comparando coeficientes de términos con escalas o unidades diferentes.
+
+Investigue observaciones extremas con la fuente original; no las elimine porque empeoren el ajuste. El patrón de residuos en validación puede orientar una revisión de desarrollo **antes de congelar el protocolo**. Una revisión posterior a mirar prueba requiere una nueva prueba para sostener una evaluación independiente.
+
+La estimación puntual no muestra toda la incertidumbre. Como extensión, calcule intervalos por bootstrap de unidades independientes en prueba, con modelo y umbral fijos; con varias filas por sujeto remuestree sujetos completos. Declare número de réplicas, semilla y réplicas binarias inválidas. Ese intervalo es condicional al modelo ajustado y no resume toda la variabilidad del entrenamiento. No es obligatorio añadirlo a las seis horas si compromete las comprobaciones centrales.
+
+**Evidencia:** comparación de candidatos, protocolo congelado, predicciones y métricas de prueba o declaración explícita de evaluación de desarrollo; diagnósticos y al menos un límite demostrado.
+
+# Fase 3. Reproducir y preparar la defensa — 120 minutos
+
+## Integrar y verificar — 55 minutos
+
+Amplíe la estructura existente; conserve el nombre real del paquete.
+
+| Ubicación | Responsabilidad |
+|---|---|
+| `data/processed/features.csv` | Tabla del EDA sin transformaciones globalmente aprendidas |
+| `data/metadata/` | Diccionario, particiones y exclusiones |
+| `config/model_input.json` | Objetivo, predictores, candidatos, métrica y política de umbral |
+| `src/python_scientific/modeling.py` | Funciones de carga, ajuste, diagnóstico y evaluación |
+| `scripts/modelado_didactico.py` | Práctica común con ambas rutas |
+| `scripts/reproduce.py` | Orquestación del proyecto, incluyendo ruta supervisada pertinente |
+| `results/`, `figures/` | Métricas, predicciones, coeficientes, protocolo y diagnósticos |
+| `reports/`, `slides/`, `build/` | Fuentes LaTeX/Beamer y PDF |
+
+### Pruebas mínimas relevantes
+
+| Riesgo | Comprobación |
+|---|---|
+| Fuga entre sujetos | Grupo compartido entre particiones produce error |
+| Entrada indebida | Objetivo o ID en predictores produce error; diccionario confirma disponibilidad |
+| Imputación global | Tras ajustar, medianas del imputador coinciden con entrenamiento, no con tabla completa |
+| Probabilidades invertidas | Clase positiva documentada; columna de probabilidad corresponde a `classes_ == 1` |
+| Umbral aplicado mal | Valores conocidos a ambos lados y exactamente en $t$ producen decisiones esperadas |
+| Métrica mal calculada | $y=[0,1,1,0]$, $p=[0.1,0.8,0.6,0.7]$, $t=0.5$: TN=1, FP=1, FN=0, TP=2, sensibilidad=1, especificidad=0.5 |
+| Error continuo incorrecto | $y=[1,2,3]$, predicción $[1,2,2]$: MAE=1/3 y RMSE=$\sqrt{1/3}$ |
+| Reproducción | Dos ejecuciones preservan IDs, particiones y valores dentro de tolerancia |
+
+Estas comprobaciones se implementan en `tests/`; la tabla no equivale a pruebas ya implementadas para el proyecto. Los bloques comunes proporcionan una base funcional, no un repositorio completo adaptado a sus datos.
+
+### Secuencia pública de reconstrucción
+
+```bash
+uv sync --locked
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv run python scripts/modelado_didactico.py
+uv run python scripts/reproduce.py
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/reports reports/informe.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build/slides slides/presentacion.tex
+```
+
+Registre configuración, semilla, versiones, hash de `features.csv` y particiones. El flujo crea directorios faltantes, escribe sin duplicar filas y produce tablas `.tex` consumidas por el informe. Mantenga recursos locales y compilación sin `-shell-escape`. Un modelo serializado es opcional; reconstruir el ajuste desde datos y configuración es obligatorio. Si se almacena, solo cargue archivos confiables y conserve sus versiones de dependencias.
+
+## Redactar resultados — 35 minutos
+
+El informe contendrá:
+
+1. Pregunta, unidad independiente, salida, referencia y conexión con el EDA.
+2. Datos, conteos por partición, predictores y límites de adquisición.
+3. Ecuaciones, transformaciones, candidatos, referencia sencilla y elección por validación.
+4. Resultados comunes y resultados de la ruta propia, claramente separados.
+5. Errores, coeficientes y diagnósticos; discusión de límites sin afirmaciones causales injustificadas.
+6. Reproducción, comprobaciones y contribuciones.
+
+Toda figura incluye población evaluada, tamaño, unidades y procedencia. Muestre coeficientes con su parametrización e intercepto. Escriba una conclusión del tipo: “En la prueba de N sujetos, el modelo alcanzó RMSE … frente a … de la referencia; la dispersión de errores aumenta en …; no se ha verificado transporte a otro centro”. Sustituya los puntos por valores calculados; no copie esta frase si la evidencia no la sostiene.
+
+## Preparar la defensa — 30 minutos
+
+| Diapositiva | Evidencia principal | Tiempo |
+|---|---|---|
+| 1. Problema y salida | Pregunta, referencia y unidad independiente | 1 min |
+| 2. EDA y protocolo | Predictores, grupos y prevención de fuga | 2 min |
+| 3. Modelos y selección | Ambos modelos comunes y ruta propia, referencia y validación | 3 min |
+| 4. Resultados y diagnóstico | Errores, probabilidades, coeficientes y límites | 4 min |
+| 5. Reproducción | Comando, comprobaciones y siguiente decisión | 2 min |
+
+Se mantiene el expositor seleccionable al inicio y el dominio del proyecto completo por los tres integrantes. Los demás no completan respuestas ni operan el computador durante la evaluación del expositor.
+
+# Entrega y criterios de aceptación
+
+Entregue `equipo_XX_psim_modelado_regresion.zip` o el repositorio acordado, sin `.venv`, cachés ni datos restringidos.
+
+| Evidencia | Contenido mínimo verificable |
+|---|---|
+| Entrada y contrato | Tabla, diccionario, particiones y objetivos auténticos |
+| Práctica común | Código, ambas rutas, cotejo entre equipos y datos identificados como sintéticos |
+| Ruta del proyecto | Modelo compatible con la pregunta; razón documentada si la otra ruta no aplica |
+| Selección | Métricas de validación, candidatos y criterio previo |
+| Evaluación | Predicciones por ID, referencia sencilla y métricas con población declarada |
+| Diagnóstico | Figuras pertinentes, coeficientes y límites sustentados |
+| Reproducción | Configuración, código, pruebas, bloqueo y registro externo |
+| Comunicación | Informe/presentación en LaTeX/Beamer, fuentes y PDF |
+
+La prueba solo se abre después de congelar la especificación. Si faltan etiquetas auténticas, presente la práctica común completa y documente la anotación pendiente; la aplicación propia no se declara entrenada ni validada. Un modelo que no supera la referencia puede constituir una entrega válida cuando el protocolo, cálculos e interpretación son correctos.
+
+# Sustentación y preguntas orientadoras
+
+1. ¿Qué aporta la regresión al EDA y qué no puede concluirse de sus coeficientes?
+2. ¿Por qué varios predictores no significan varias salidas?
+3. ¿En qué sentido una regresión polinómica es lineal?
+4. ¿Cuántos términos produce grado dos con sus predictores y cuántos sujetos independientes tienen?
+5. ¿Qué diferencia hay entre correlación marginal y coeficiente condicional?
+6. ¿Cómo demuestra que imputación y escalamiento solo aprendieron de entrenamiento?
+7. ¿Qué característica introduce fuga aunque parezca un descriptor válido de imagen?
+8. ¿Qué significan MAE, RMSE y un $R^2$ negativo?
+9. ¿Qué unidades tienen los coeficientes después de escalar o expandir términos?
+10. ¿Por qué odds ratio no es razón de riesgos?
+11. ¿Qué cambia al variar el umbral sin reajustar el modelo?
+12. ¿Qué muestra AP que no resume la exactitud global en datos desbalanceados?
+13. ¿Por qué discriminación y calibración son propiedades distintas?
+14. ¿Qué hace cuando una partición binaria contiene una sola clase?
+15. ¿Qué modifica una revisión posterior a ver prueba en la validez de la evaluación?
+16. ¿Qué evidencia justifica un resultado inferior a la referencia y qué acción propone?
+
+Durante la verificación, el docente puede solicitar rastrear una predicción hasta su imagen, localizar la mediana aprendida, reconstruir una matriz de confusión, explicar un coeficiente o demostrar el rechazo de un grupo compartido.
+
+# Rúbrica de evaluación — seis criterios
+
+Máximo 100 puntos. Niveles: **4 → 100 %; 3 → 80 %; 2 → 60 %; 1 → 30 %; 0 → 0 %** del peso. Se mantiene 75 % observado en sustentación/demostración y 25 % en artefactos. Se pueden asignar niveles separados a ambas evidencias y sumar sus contribuciones.
+
+| Criterio | Peso (observado / artefacto) | 4 · Sólido | 3 · Adecuado | 2 · Básico | 1 · Insuficiente / 0 · Ausente |
+|---|---|---|---|---|---|
+| Alineación EDA–pregunta–modelo | 15 (15/0) | Justifica salidas, predictores y ambas rutas comunes; aplicación propia coherente | Conexión válida con omisión menor | Conexión parcial o débil justificación | Modelo incompatible o etiqueta arbitraria / no demuestra |
+| Datos y prevención de fuga | 20 (15/5) | Contrato trazable, grupos separados, transformaciones dentro del ajuste | Separación correcta con detalle menor | Auditoría parcial sin demostrar fuga | Mezcla grupos, objetivo o prueba en ajuste / ausente |
+| Ajuste e interpretación | 20 (15/5) | Ecuaciones, complejidad, penalización y coeficientes correctamente explicados | Ajuste correcto con límite menor | Ejecuta sin explicar parametrización | Confunde salidas, odds o causalidad / no ajusta |
+| Evaluación y diagnóstico | 25 (20/5) | Referencia, selección, errores/probabilidades y diagnósticos sustentados | Evaluación válida con omisión menor | Métricas incompletas o interpretación superficial | Solo entrenamiento o selección en prueba / sin evaluación |
+| Reproducibilidad y pruebas | 10 (5/5) | Reconstruye ambas prácticas y ruta propia; detecta fallos relevantes | Reconstruye con corrección menor registrada | Automatización parcial | Rutas personales, entorno transferido o resultados manuales / no ejecuta |
+| Defensa y comunicación científica | 10 (5/5) | Explica evidencia, incertidumbre y límites; documentos compilan y cumplen tiempo | Comunicación clara con detalle menor | Defensa descriptiva o trazabilidad débil | Afirmaciones incompatibles con evidencia / no entrega |
+| **Total** | **100 (75/25)** | | | | |
+
+No se califica por maximizar AUC o $R^2$. Una conclusión negativa bien sustentada obtiene reconocimiento por calidad metodológica. La fuga de prueba, etiquetas inventadas o ausencia de referencias impiden declarar el modelo evaluado independientemente. Se conserva la condición de reconstrucción del laboratorio adjunto: si no se sincroniza con `--locked` o se requiere transferir `.venv`, la evidencia de reconstrucción recibe cero y la nota se limita a 70/100 hasta corregir dentro del plazo docente.
+
+# Publicación de esta guía y correspondencia con PSIM
+
+Guarde este archivo junto al laboratorio anterior. Su YAML conserva el tema **`../../recursos/estilos/bioforja-laboratorios.scss`**, índice, numeración, recursos embebidos, copia de código y ejecución desactivada. Esta guía muestra código para ejecutar en el proyecto del estudiante; publicar la guía no ajusta modelos automáticamente.
+
+```bash
+quarto render lab005_PSIM_Regresion_Multiple_Logistica_Guia_Estudiante.qmd --to html
+```
+
+El tema debe existir en esa ruta, igual que en el adjunto. Si cambia la ubicación, ajuste únicamente esa referencia al tema auténtico. No se incluye una recreación del SCSS porque su contenido no está dentro del archivo adjunto.
+
+- **Implementación estadística:** [documentación oficial de LogisticRegression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html); configuración y penalización de la regresión logística.
+- **Laboratorio precedente:** `lab004_PSIM_EDA_Imagenes_Guia_Estudiante.qmd`; aporta tabla, particiones, reproducibilidad y formato de evaluación.
+- **Fuentes de PSIM:** `lect004_Intro_ImgProc.qmd`, `Lect005_Imag_Proc_001.qmd`, `Lect006_Imag_Proc_002.qmd`, `Lect007_Imag_Proc_003.qmd` y `Lect008_Wavelet.qmd` fundamentan representación, procesamiento y descriptores que alimentan los modelos. No se atribuye a esos materiales la validación estadística completa desarrollada aquí.
+
+El cronograma supone entorno y tabla auditada disponibles. Descargas, nuevas anotaciones o reparar extracción de características requieren preparación previa. El ejemplo sintético sirve para aprender y verificar procedimientos; el alcance biomédico depende de la ruta aplicada a referencias reales del proyecto.
