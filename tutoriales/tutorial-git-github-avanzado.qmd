@@ -1,0 +1,1186 @@
+---
+title: "Git + GitHub avanzado"
+subtitle: "Tutorial práctico con énfasis en administración de ramas, más hoja de trucos"
+author: "BioForge Experiment OS"
+date: 2026-09-30
+lang: es
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Contenido"
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    highlight-style: github
+    theme:
+      light: cosmo
+      dark: darkly
+    embed-resources: true
+    smooth-scroll: true
+    anchor-sections: true
+---
+
+# Introducción {#sec-intro}
+
+Este tutorial asume que ya sabes hacer `git add`, `git commit` y `git push`. El
+objetivo es pasar de "uso Git" a "controlo Git": entender qué es realmente una
+rama, cómo moverlas, integrarlas, reescribirlas y recuperarlas, y cómo encaja
+todo eso con GitHub (pull requests, protección de ramas, revisiones y
+automatización).
+
+::: {.callout-note}
+## Cómo leer este documento
+- Las secciones 2 a 4 construyen el modelo mental y cubren la **administración de ramas** a fondo.
+- Las secciones 5 a 7 cubren remotos, GitHub y herramientas avanzadas.
+- La sección 8 es un laboratorio de práctica que puedes ejecutar en una carpeta temporal.
+- La sección 10 es la **hoja de trucos**, pensada para imprimir o tener abierta.
+:::
+
+## Versión de Git y configuración recomendada
+
+Varios comandos de este tutorial (`git switch`, `git restore`, `--update-refs`,
+`git maintenance`) requieren Git 2.38 o superior.
+
+```bash
+git --version
+
+# Identidad
+git config --global user.name  "Tu Nombre"
+git config --global user.email "tu@correo.com"
+
+# Rama por defecto para repositorios nuevos
+git config --global init.defaultBranch main
+
+# Pull sin sorpresas: solo fast-forward; si diverge, decides tú
+git config --global pull.ff only
+# (alternativa: pull.rebase true si tu equipo prefiere historial lineal)
+
+# Push: al hacer push por primera vez, crear el upstream automáticamente
+git config --global push.autoSetupRemote true
+
+# Limpia ramas remotas borradas en cada fetch
+git config --global fetch.prune true
+
+# Recordar resoluciones de conflictos (ver sección 4.6)
+git config --global rerere.enabled true
+
+# Conflictos con el ancestro común visible (muy útil)
+git config --global merge.conflictStyle zdiff3
+
+# Rebase: mover automáticamente ramas apiladas y "fixup!" commits
+git config --global rebase.updateRefs true
+git config --global rebase.autoSquash true
+git config --global rebase.autoStash true
+
+# Listar ramas ordenadas por actividad reciente
+git config --global branch.sort -committerdate
+
+# Diff más legible
+git config --global diff.algorithm histogram
+git config --global diff.colorMoved zebra
+```
+
+## Alias útiles
+
+```bash
+git config --global alias.s   "status -sb"
+git config --global alias.lg  "log --graph --oneline --decorate --all"
+git config --global alias.last "log -1 HEAD --stat"
+git config --global alias.br  "branch -vv"
+git config --global alias.undo "reset --soft HEAD~1"
+git config --global alias.amend "commit --amend --no-edit"
+git config --global alias.pushf "push --force-with-lease --force-if-includes"
+git config --global alias.gone "!git branch -vv | awk '/: gone]/{print \$1}'"
+```
+
+# El modelo mental: qué es realmente una rama {#sec-modelo}
+
+## Objetos, referencias y HEAD
+
+Git guarda cuatro tipos de objetos: **blob** (contenido de un archivo),
+**tree** (un directorio), **commit** (un snapshot + metadatos + puntero a sus
+padres) y **tag anotado**. Los commits forman un **grafo dirigido acíclico
+(DAG)**.
+
+Una **rama** no es una copia de archivos ni una "línea" de commits: es
+simplemente un archivo de texto con el hash de un commit.
+
+```bash
+cat .git/refs/heads/main        # ej. 3f9a1c2...
+cat .git/HEAD                   # ref: refs/heads/main
+git rev-parse main              # el hash al que apunta main
+git rev-parse --abbrev-ref HEAD # nombre de la rama actual
+```
+
+- **`HEAD`** apunta a la rama en la que estás (o directamente a un commit si
+  estás en *detached HEAD*).
+- Al hacer `commit`, Git crea un commit nuevo cuyo padre es el actual y **mueve
+  la rama** a la que apunta `HEAD`.
+- Crear una rama es instantáneo y gratis: solo se escribe un archivo de 41
+  bytes.
+
+```{mermaid}
+gitGraph
+  commit id: "A"
+  commit id: "B"
+  branch feature
+  checkout feature
+  commit id: "C"
+  commit id: "D"
+  checkout main
+  commit id: "E"
+```
+
+En este grafo, `main` apunta a `E` y `feature` apunta a `D`. El **ancestro
+común** (merge base) de ambas es `B`:
+
+```bash
+git merge-base main feature   # → B
+```
+
+## Las tres áreas y los tres "reset"
+
+| Área | Qué es | Comando para verla |
+|---|---|---|
+| Directorio de trabajo | Tus archivos en disco | `git status`, `git diff` |
+| Índice (staging) | Lo que irá en el próximo commit | `git diff --staged` |
+| Repositorio (HEAD) | El último commit de la rama | `git show HEAD` |
+
+`git reset <commit>` mueve la rama actual a `<commit>` y, según el modo:
+
+| Modo | Mueve la rama | Índice | Directorio de trabajo |
+|---|:-:|:-:|:-:|
+| `--soft` | ✔ | se conserva | se conserva |
+| `--mixed` (defecto) | ✔ | se reinicia | se conserva |
+| `--hard` | ✔ | se reinicia | **se sobrescribe** |
+
+::: {.callout-warning}
+`git reset --hard` descarta cambios no confirmados de forma irrecuperable. Los
+commits, en cambio, siguen recuperables vía `git reflog` (sección 7.3).
+:::
+
+## Referencias relativas y rangos
+
+```bash
+HEAD~1     # el padre de HEAD
+HEAD~3     # tres generaciones atrás (siguiendo el primer padre)
+HEAD^2     # el SEGUNDO padre de un commit de merge
+main@{1}   # donde estaba main antes de su último movimiento (reflog)
+main@{yesterday}
+@{u}       # el upstream de la rama actual (ej. origin/main)
+
+git log main..feature    # commits en feature que NO están en main
+git log feature..main    # commits en main que NO están en feature
+git log main...feature   # diferencia simétrica (de ambos lados)
+git log --left-right --oneline main...feature   # marca < y > cada lado
+git diff main...feature  # cambios de feature desde que se separó de main
+```
+
+::: {.callout-tip}
+`A..B` responde "¿qué traería B si lo integro en A?". Es la pregunta que te
+harás antes de cada merge o PR.
+:::
+
+# Administración de ramas {#sec-ramas}
+
+Esta es la sección central del tutorial.
+
+## Crear y cambiar de rama
+
+```bash
+git switch -c feature/login          # crea y cambia (desde HEAD)
+git switch -c hotfix/1.2.1 v1.2.0    # crea desde un tag
+git switch -c fix/api origin/develop # crea desde una rama remota
+git branch experimento               # crea sin cambiar
+git switch main                      # cambia de rama
+git switch -                         # vuelve a la rama anterior
+git switch --detach v1.2.0           # "visita" un commit sin rama
+```
+
+`git checkout` sigue funcionando, pero `switch` (ramas) y `restore` (archivos)
+separan dos responsabilidades que `checkout` mezclaba, y son más difíciles de
+usar mal.
+
+::: {.callout-note}
+## ¿Qué pasa con mis cambios sin confirmar al cambiar de rama?
+Git los "lleva" contigo si no entran en conflicto con la rama destino. Si
+entran en conflicto, se niega a cambiar. Opciones: `git stash`, hacer un commit
+temporal, o usar `git worktree` (sección 7.2) para tener ambas ramas abiertas a
+la vez.
+:::
+
+## Listar e inspeccionar ramas
+
+```bash
+git branch                 # locales
+git branch -r              # remotas (origin/*)
+git branch -a              # todas
+git branch -vv             # con último commit y upstream (ahead/behind)
+git branch --merged main   # ya integradas en main (seguras de borrar)
+git branch --no-merged main
+git branch --contains <hash>        # ¿qué ramas contienen este commit?
+git branch --list 'feature/*'
+git branch --sort=-committerdate --format='%(committerdate:relative)%09%(refname:short)'
+
+# ¿Cuánto va delante/detrás feature respecto a main?
+git rev-list --left-right --count main...feature
+```
+
+Ejemplo de salida de `git branch -vv`:
+
+```
+* feature/login  a1b2c3d [origin/feature/login: ahead 2, behind 1] Añade validación
+  main           e4f5a6b [origin/main] Merge pull request #42
+  viejo-spike    0c9d8e7 [origin/viejo-spike: gone] Prueba de concepto
+```
+
+`gone` significa que la rama remota fue borrada (típicamente tras mergear el PR).
+
+## Renombrar y borrar ramas
+
+```bash
+git branch -m nuevo-nombre            # renombra la rama actual
+git branch -m viejo nuevo             # renombra otra rama
+git branch -d feature/login           # borra si está integrada
+git branch -D feature/login           # fuerza el borrado
+git push origin --delete feature/login  # borra la rama en GitHub
+```
+
+Renombrar la rama por defecto (por ejemplo `master` → `main`) de forma completa:
+
+```bash
+git branch -m master main
+git push -u origin main
+# En GitHub: Settings → Branches → cambiar la rama por defecto a main
+git push origin --delete master
+# Cada colaborador:
+git fetch origin && git branch -u origin/main main && git remote set-head origin -a
+```
+
+Limpieza masiva de ramas locales cuyo remoto ya no existe:
+
+```bash
+git fetch --prune
+git branch -vv | awk '/: gone]/{print $1}' | xargs -r git branch -D
+```
+
+Borrar todas las ramas locales ya integradas en `main` (excepto las protegidas):
+
+```bash
+git branch --merged main | grep -vE '^\*|\b(main|develop)\b' | xargs -r git branch -d
+```
+
+## Ramas de seguimiento (upstream / tracking)
+
+Una rama local puede "seguir" a una remota. Esto habilita `git pull`/`git push`
+sin argumentos y el conteo *ahead/behind*.
+
+```bash
+git push -u origin feature/login          # push y establece upstream
+git branch -u origin/feature/login        # establece upstream a posteriori
+git branch --unset-upstream
+git switch feature/x   # si existe origin/feature/x y no hay local, la crea y la sigue
+git status -sb         # ## feature/login...origin/feature/login [ahead 2]
+```
+
+Hay tres cosas distintas que conviene no confundir:
+
+| Nombre | Ejemplo | Qué es |
+|---|---|---|
+| Rama local | `feature/login` | La tuya; se mueve con tus commits |
+| Rama de seguimiento remoto | `origin/feature/login` | Copia local de lo que había en GitHub en el último `fetch`. **No se mueve sola** |
+| Rama remota | `feature/login` en GitHub | La real, en el servidor |
+
+`git fetch` actualiza las del segundo tipo. `git pull` = `fetch` + integrar
+(`merge` o `rebase`) en tu rama local.
+
+## HEAD desacoplado (detached HEAD)
+
+Ocurre al hacer `git switch --detach <commit>` o `git checkout <tag>`. Puedes
+mirar, compilar e incluso hacer commits, pero esos commits no pertenecen a
+ninguna rama.
+
+```bash
+git switch --detach v2.0.0
+# ... experimentas y haces commits ...
+git switch -c rescate-experimento   # conviértelos en rama antes de irte
+```
+
+Si ya te fuiste sin crear la rama, los commits siguen en el `reflog`:
+
+```bash
+git reflog              # busca el hash del último commit huérfano
+git branch rescate <hash>
+```
+
+## Estrategias de ramificación (branching models)
+
+No hay un modelo único correcto. Elige según la frecuencia de despliegue y el
+tamaño del equipo.
+
+### GitHub Flow
+
+Una rama de larga vida (`main`, siempre desplegable) y ramas cortas por cambio,
+integradas mediante pull request.
+
+```{mermaid}
+gitGraph
+  commit id: "v1"
+  branch feature/a
+  commit id: "a1"
+  commit id: "a2"
+  checkout main
+  merge feature/a id: "PR #1"
+  branch fix/b
+  commit id: "b1"
+  checkout main
+  merge fix/b id: "PR #2"
+```
+
+**Ideal para:** despliegue continuo, equipos pequeños o medianos, aplicaciones
+web y la mayoría de proyectos de datos o investigación.
+
+### Git Flow
+
+Dos ramas permanentes (`main` para producción, `develop` para integración) y
+ramas de soporte: `feature/*`, `release/*`, `hotfix/*`.
+
+```{mermaid}
+gitGraph
+  commit id: "1.0" tag: "v1.0"
+  branch develop
+  checkout develop
+  commit id: "d1"
+  branch feature/x
+  commit id: "x1"
+  commit id: "x2"
+  checkout develop
+  merge feature/x
+  branch release/1.1
+  commit id: "rc fix"
+  checkout main
+  merge release/1.1 tag: "v1.1"
+  checkout develop
+  merge release/1.1
+  checkout main
+  branch hotfix/1.1.1
+  commit id: "hf"
+  checkout main
+  merge hotfix/1.1.1 tag: "v1.1.1"
+  checkout develop
+  merge hotfix/1.1.1
+```
+
+**Ideal para:** software con versiones publicadas y mantenidas en paralelo
+(bibliotecas, instaladores, firmware). Tiene más ceremonia.
+
+### Trunk-based development
+
+Todos integran en `main` al menos una vez al día. Las ramas viven horas, no
+semanas. Lo incompleto se oculta con *feature flags*.
+
+**Ideal para:** equipos con buena cobertura de tests y CI rápido.
+
+### Comparativa
+
+| Criterio | GitHub Flow | Git Flow | Trunk-based |
+|---|---|---|---|
+| Ramas permanentes | `main` | `main`, `develop` | `main` |
+| Vida de una rama de trabajo | días | días a semanas | horas |
+| Versiones paralelas | difícil | nativo (`release/*`) | con ramas `release/*` puntuales |
+| Complejidad | baja | alta | baja (exige disciplina en CI) |
+| Riesgo de conflictos grandes | medio | alto | bajo |
+
+## Convenciones de nombres
+
+```
+feature/<ticket>-<descripcion-corta>   feature/BIO-123-exportar-csv
+fix/<ticket>-<descripcion>             fix/BIO-140-timeout-sensor
+hotfix/<version>                        hotfix/2.3.1
+release/<version>                       release/2.4.0
+chore/, docs/, refactor/, test/, exp/  (experimentos desechables)
+<usuario>/<tema>                        pablo/prueba-parquet
+```
+
+Reglas prácticas: minúsculas, guiones en lugar de espacios, sin caracteres
+especiales, prefijos que permitan filtrar (`git branch --list 'fix/*'`) y que
+las reglas de protección de GitHub puedan usar como patrón.
+
+## Ramas de larga vida: mantenerlas sanas
+
+Una rama que vive mucho tiempo acumula divergencia. Para mantenerla integrable:
+
+1. **Sincronízala con frecuencia** con la rama base (a diario si hay actividad).
+2. **Rebase** si la rama es solo tuya; **merge** de la base hacia ella si es
+   compartida.
+3. **Divide** el trabajo en PRs pequeños apilados (sección 4.4).
+4. **Usa feature flags** para integrar código incompleto sin activarlo.
+
+```bash
+# Rama privada: reaplica tus commits sobre la base actualizada
+git fetch origin
+git rebase origin/main
+
+# Rama compartida: trae la base con un merge (no reescribe historia)
+git fetch origin
+git merge origin/main
+```
+
+# Integrar ramas: merge, rebase y cherry-pick {#sec-integrar}
+
+## Merge fast-forward vs. merge commit
+
+Si `main` no avanzó desde que creaste `feature`, Git puede simplemente mover
+`main` hacia adelante (**fast-forward**). Si ambas avanzaron, crea un **commit
+de merge** con dos padres.
+
+```bash
+git switch main
+git merge feature            # FF si es posible; si no, commit de merge
+git merge --ff-only feature  # falla si no es posible FF (seguro)
+git merge --no-ff feature    # fuerza commit de merge (preserva la "burbuja")
+git merge --squash feature   # aplana todo en cambios staged; luego haces commit
+git merge --abort            # cancela un merge con conflictos
+```
+
+| Estrategia | Historial resultante | Cuándo usarla |
+|---|---|---|
+| Fast-forward | Lineal, sin rastro de la rama | Cambios triviales, ramas de un commit |
+| `--no-ff` | Conserva la rama como grupo | Quieres ver qué commits llegaron juntos |
+| `--squash` | Un solo commit en la base | PRs con muchos commits "wip" |
+| Rebase + FF | Lineal y con commits individuales | Historial limpio y commits bien hechos |
+
+## Rebase
+
+`git rebase main` toma los commits de tu rama que no están en `main` y los
+**reaplica uno a uno** encima de la punta de `main`. Los commits resultantes son
+**nuevos** (hashes distintos).
+
+```{mermaid}
+gitGraph
+  commit id: "A"
+  commit id: "B"
+  commit id: "E"
+  branch feature
+  checkout feature
+  commit id: "C'"
+  commit id: "D'"
+```
+
+```bash
+git switch feature
+git rebase main                  # C y D pasan a ser C' y D' sobre E
+git rebase --continue            # tras resolver un conflicto
+git rebase --skip                # descarta el commit en conflicto
+git rebase --abort               # vuelve al estado original
+git rebase --onto main dev feature  # mueve solo los commits de feature que no están en dev
+```
+
+::: {.callout-important}
+## La regla de oro del rebase
+**No hagas rebase de commits que otras personas ya tienen** (una rama compartida
+ya publicada), salvo acuerdo explícito. Reescribir historia publicada obliga a
+todos a reconciliar sus copias. En tu propia rama de PR sí es normal, y luego
+publicas con `git push --force-with-lease`.
+:::
+
+### `--onto`: trasplantar ramas
+
+Caso típico: creaste `feature-b` a partir de `feature-a` por error, y quieres
+que salga de `main`.
+
+```bash
+# git rebase --onto <nueva-base> <vieja-base> <rama>
+git rebase --onto main feature-a feature-b
+```
+
+## Rebase interactivo: reescribir tu historia antes del PR
+
+```bash
+git rebase -i main          # todos los commits desde que te separaste de main
+git rebase -i HEAD~5        # los últimos 5
+```
+
+Se abre un editor con una lista como esta:
+
+```
+pick 1a2b3c4 Añade modelo de experimento
+pick 5d6e7f8 wip
+pick 9a0b1c2 Corrige typo
+pick 3d4e5f6 Añade tests del modelo
+```
+
+| Comando | Efecto |
+|---|---|
+| `pick` | Deja el commit tal cual |
+| `reword` | Cambia solo el mensaje |
+| `edit` | Se detiene para modificar el commit (`git commit --amend`, luego `--continue`) |
+| `squash` | Funde con el anterior y combina mensajes |
+| `fixup` | Funde con el anterior y descarta este mensaje |
+| `drop` | Elimina el commit |
+| `exec <cmd>` | Ejecuta un comando (ej. tests) tras el commit anterior |
+| *reordenar líneas* | Reordena los commits |
+
+### Flujo de fixups automáticos
+
+```bash
+git commit --fixup=1a2b3c4          # crea "fixup! Añade modelo de experimento"
+git rebase -i --autosquash main     # lo coloca y marca automáticamente
+```
+
+### Verificar que cada commit compila
+
+```bash
+git rebase -i main --exec "make test"
+```
+
+## Ramas apiladas (stacked branches)
+
+Cuando un cambio grande se divide en PRs dependientes:
+
+```
+main ← parte-1 ← parte-2 ← parte-3
+```
+
+Con `rebase.updateRefs=true`, rebasar la rama superior mueve también las
+intermedias:
+
+```bash
+git switch parte-3
+git rebase -i main --update-refs    # actualiza parte-1 y parte-2 automáticamente
+git push --force-with-lease origin parte-1 parte-2 parte-3
+```
+
+En GitHub, abre el PR de `parte-2` con base `parte-1`, y el de `parte-3` con
+base `parte-2`. Cuando `parte-1` se mergea, GitHub reapunta automáticamente la
+base del siguiente PR a `main` si la rama `parte-1` se borra.
+
+## Cherry-pick
+
+Copia uno o varios commits concretos a la rama actual (con hashes nuevos).
+
+```bash
+git cherry-pick a1b2c3d
+git cherry-pick a1b2c3d..f6e5d4c   # rango (excluye el primero)
+git cherry-pick -x a1b2c3d         # añade "(cherry picked from commit ...)"
+git cherry-pick -n a1b2c3d         # aplica sin hacer commit
+git cherry-pick --continue | --abort
+```
+
+Uso típico: llevar un fix de `main` a una rama `release/2.3` mantenida.
+
+## Conflictos: resolverlos bien
+
+```bash
+git status                           # lista archivos en conflicto
+git diff                             # muestra marcas de conflicto
+git checkout --ours   ruta/archivo   # quédate con tu versión
+git checkout --theirs ruta/archivo   # quédate con la otra
+git mergetool                        # herramienta visual configurada
+git add ruta/archivo                 # marca como resuelto
+git merge --continue                 # o git rebase --continue
+```
+
+Con `merge.conflictStyle=zdiff3` verás tres bloques:
+
+```
+<<<<<<< HEAD
+umbral = 0.8
+||||||| ancestro común
+umbral = 0.5
+=======
+umbral = 0.75
+>>>>>>> feature/ajuste
+```
+
+Ver el ancestro te dice **qué cambió cada lado**, no solo el resultado, y
+permite resoluciones correctas.
+
+::: {.callout-warning}
+## `ours` y `theirs` se invierten en un rebase
+Durante un **merge**, `ours` es tu rama actual. Durante un **rebase**, `ours` es
+la rama base (sobre la que reaplicas) y `theirs` es tu commit que se está
+reaplicando.
+:::
+
+### rerere: reutilizar resoluciones
+
+Con `rerere.enabled=true`, Git recuerda cómo resolviste un conflicto y lo
+reaplica automáticamente si vuelve a aparecer (muy útil al rebasar ramas largas
+repetidamente).
+
+```bash
+git rerere status
+git rerere diff
+git rerere forget ruta/archivo   # olvida una resolución incorrecta
+```
+
+## ¿Merge o rebase? Guía rápida
+
+| Situación | Recomendación |
+|---|---|
+| Actualizar tu rama privada con `main` | `git rebase origin/main` |
+| Actualizar una rama compartida con `main` | `git merge origin/main` |
+| Integrar un PR en `main` | La estrategia que fije el repositorio (squash, merge o rebase) |
+| Llevar un fix puntual a otra versión | `git cherry-pick -x` |
+| Limpiar commits antes de pedir revisión | `git rebase -i` |
+
+# Trabajo con remotos {#sec-remotos}
+
+## Fetch, pull y push con precisión
+
+```bash
+git remote -v
+git fetch                        # todos los remotos configurados
+git fetch origin main            # solo una rama
+git pull --ff-only               # integra solo si es fast-forward
+git pull --rebase                # reaplica tus commits sobre lo remoto
+git push                          # a su upstream
+git push origin HEAD              # empuja la rama actual con el mismo nombre
+git push origin local:remota      # nombres distintos
+git push --tags                   # todos los tags (mejor: git push origin v1.2.0)
+```
+
+## Force push seguro
+
+```bash
+git push --force-with-lease --force-if-includes
+```
+
+- `--force` sobrescribe la rama remota **sin mirar**: puede borrar commits de
+  otra persona.
+- `--force-with-lease` solo sobrescribe si la rama remota está donde tú creías
+  (según tu último `fetch`).
+- `--force-if-includes` además comprueba que realmente integraste lo que
+  descargaste, evitando que un `fetch` en segundo plano (IDE) anule la
+  protección.
+
+## Varios remotos y forks
+
+Flujo estándar para contribuir a un repositorio del que no eres dueño:
+
+```bash
+gh repo fork org/proyecto --clone   # crea el fork y configura remotos
+# Equivalente manual:
+git clone git@github.com:tu-usuario/proyecto.git
+git remote add upstream git@github.com:org/proyecto.git
+
+# Mantener tu fork al día
+git fetch upstream
+git switch main
+git merge --ff-only upstream/main
+git push origin main
+```
+
+```
+upstream (org/proyecto)  →  fetch
+origin   (tu fork)       ↔  push / fetch
+```
+
+## Inspeccionar el remoto
+
+```bash
+git remote show origin           # ramas, upstreams y ramas obsoletas
+git ls-remote --heads origin     # ramas reales en el servidor, sin fetch
+git remote prune origin          # elimina origin/* que ya no existen
+git remote set-head origin -a    # actualiza origin/HEAD (rama por defecto)
+```
+
+# GitHub: ramas en equipo {#sec-github}
+
+## GitHub CLI (`gh`)
+
+```bash
+gh auth login
+gh repo clone org/proyecto
+gh repo view --web
+
+# Pull requests
+gh pr create --base main --title "Exportar a CSV" --body "..." --draft
+gh pr create --fill                 # usa los mensajes de commit
+gh pr list --author @me
+gh pr status
+gh pr checkout 123                  # trae la rama del PR (incluso de forks)
+gh pr diff 123
+gh pr review 123 --approve | --request-changes -b "comentario"
+gh pr ready 123                     # saca de borrador
+gh pr merge 123 --squash --delete-branch
+gh pr merge 123 --auto --squash     # merge automático cuando pase CI
+
+# Issues, CI y releases
+gh issue create --title "..." --label bug
+gh run list --branch feature/login
+gh run watch
+gh release create v1.2.0 --generate-notes
+```
+
+## El ciclo de un pull request
+
+```{mermaid}
+flowchart LR
+  A[Crear rama] --> B[Commits]
+  B --> C[Push + PR borrador]
+  C --> D{CI verde?}
+  D -- no --> B
+  D -- sí --> E[Listo para revisión]
+  E --> F{Aprobado?}
+  F -- cambios --> B
+  F -- sí --> G[Merge]
+  G --> H[Borrar rama]
+```
+
+Buenas prácticas:
+
+- **PR pequeños** (idealmente < 400 líneas cambiadas): se revisan mejor y antes.
+- **Abre en borrador** pronto para que el CI corra y otros vean la dirección.
+- **Enlaza issues** con palabras clave en la descripción: `Closes #42` cierra el
+  issue al mergear.
+- **Plantilla de PR** en `.github/pull_request_template.md`.
+- Tras aplicar cambios de una revisión, usa `fixup` y rebasa al final, o deja
+  commits separados si el equipo hace *squash merge*.
+
+## Estrategias de merge en GitHub
+
+En *Settings → General → Pull Requests* puedes habilitar una o varias:
+
+| Botón | Qué hace en `main` | Ventajas | Inconvenientes |
+|---|---|---|---|
+| **Create a merge commit** | Commit de merge con dos padres | Conserva todo el historial | Historial ramificado y ruidoso |
+| **Squash and merge** | Un solo commit por PR | `main` limpio, 1 PR = 1 commit, fácil de revertir | Se pierde el detalle de commits |
+| **Rebase and merge** | Reaplica cada commit, sin merge | Historial lineal y granular | Exige commits limpios; hashes cambian |
+
+::: {.callout-tip}
+Para la mayoría de equipos: habilita solo **Squash and merge**, activa
+*"Automatically delete head branches"* y usa el título del PR como mensaje del
+commit.
+:::
+
+## Protección de ramas y rulesets
+
+En *Settings → Rules → Rulesets* (o el sistema clásico *Branch protection
+rules*) puedes proteger `main`, `release/*`, etc.:
+
+- **Require a pull request before merging** (con N aprobaciones).
+- **Dismiss stale approvals** cuando se empujan commits nuevos.
+- **Require review from Code Owners**.
+- **Require status checks to pass** (CI) y que la rama esté al día.
+- **Require linear history** (prohíbe commits de merge).
+- **Require signed commits**.
+- **Block force pushes** y **Restrict deletions**.
+- **Require merge queue**.
+
+Los *rulesets* permiten patrones (`release/**`), varias reglas superpuestas,
+modo "evaluate" para probar sin bloquear, y listas de bypass.
+
+```bash
+# Ver la protección de una rama vía API
+gh api repos/{owner}/{repo}/branches/main/protection
+gh api repos/{owner}/{repo}/rulesets
+```
+
+## CODEOWNERS
+
+Archivo `.github/CODEOWNERS`; asigna revisores automáticamente por ruta.
+
+```
+# La última coincidencia gana
+*                    @org/mantenedores
+/docs/               @org/documentacion
+/src/analisis/       @pablo @org/ciencia-datos
+*.sql                @org/datos
+```
+
+## Merge queue
+
+Con muchos PRs concurrentes, "CI verde en mi rama" no garantiza "CI verde tras
+mergear". La *merge queue* agrupa PRs, los prueba combinados con la última
+`main` y solo entonces los integra. Se activa en el ruleset de la rama y requiere
+que los workflows escuchen el evento `merge_group`:
+
+```yaml
+on:
+  pull_request:
+  merge_group:
+```
+
+## GitHub Actions por rama
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+    branches: [main]
+  merge_group:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # historial completo (necesario para git describe, etc.)
+      - run: make test
+```
+
+```yaml
+# Despliegue solo desde main, con aprobación manual vía environment
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    environment: produccion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./deploy.sh
+```
+
+# Herramientas avanzadas {#sec-avanzado}
+
+## Stash
+
+```bash
+git stash push -m "a medias: parser"       # guarda cambios rastreados
+git stash push -u -m "incluye no rastreados"
+git stash push -- ruta/archivo.py           # solo ciertos archivos
+git stash list
+git stash show -p stash@{1}
+git stash apply stash@{1}                    # aplica y conserva
+git stash pop                                # aplica y elimina
+git stash branch nueva-rama stash@{0}        # crea rama desde el stash
+git stash drop stash@{0}
+```
+
+## Worktrees: varias ramas abiertas a la vez
+
+En lugar de hacer stash para revisar un PR o atender un hotfix, abre otra rama
+en otra carpeta que comparte el mismo repositorio:
+
+```bash
+git worktree add ../proyecto-hotfix hotfix/2.3.1
+git worktree add -b revisar-pr-99 ../pr-99 origin/feature/x
+git worktree list
+git worktree remove ../proyecto-hotfix
+git worktree prune
+```
+
+::: {.callout-note}
+Una misma rama no puede estar abierta en dos worktrees a la vez. Es una
+protección, no un error.
+:::
+
+## Reflog: la red de seguridad
+
+El reflog registra cada movimiento de `HEAD` y de cada rama durante ~90 días
+(localmente). Casi nada confirmado se pierde de verdad.
+
+```bash
+git reflog                       # movimientos de HEAD
+git reflog show feature/login    # movimientos de una rama
+
+# Deshacer un rebase o reset desastroso
+git reset --hard ORIG_HEAD       # justo después de la operación
+git reset --hard HEAD@{5}        # a un punto concreto del reflog
+
+# Recuperar una rama borrada
+git branch feature/login a1b2c3d   # hash tomado del reflog
+
+# Buscar commits huérfanos (sin reflog, ej. stash borrado)
+git fsck --lost-found
+```
+
+## Deshacer cosas: reset, revert, restore
+
+| Quiero... | Comando |
+|---|---|
+| Descartar cambios de un archivo en el directorio de trabajo | `git restore archivo` |
+| Sacar un archivo del staging | `git restore --staged archivo` |
+| Recuperar un archivo tal como estaba en otro commit | `git restore --source=HEAD~2 archivo` |
+| Corregir el último commit (no publicado) | `git commit --amend` |
+| Deshacer el último commit conservando cambios | `git reset --soft HEAD~1` |
+| Deshacer un commit **ya publicado** | `git revert <hash>` |
+| Revertir un commit de merge | `git revert -m 1 <hash-merge>` |
+| Volver la rama a un punto anterior (privada) | `git reset --hard <hash>` |
+
+::: {.callout-important}
+En ramas compartidas, **revert** (crea un commit que invierte cambios) en lugar
+de **reset** (reescribe historia).
+:::
+
+## Bisect: encontrar el commit que rompió algo
+
+```bash
+git bisect start
+git bisect bad                 # el commit actual falla
+git bisect good v1.4.0         # esta versión funcionaba
+# Git te lleva a un commit intermedio; lo pruebas y marcas:
+git bisect good | bad
+# ... repite hasta que Git señala al culpable
+git bisect reset
+
+# Automático con un script que devuelve 0 (bien) o 1 (mal)
+git bisect start HEAD v1.4.0
+git bisect run pytest tests/test_modelo.py
+```
+
+## Tags y versiones
+
+```bash
+git tag -a v1.2.0 -m "Versión 1.2.0"     # tag anotado (recomendado)
+git tag -a v1.2.0 <hash> -m "..."
+git tag -l 'v1.*'
+git push origin v1.2.0
+git push origin --delete v1.2.0
+git describe --tags                        # ej. v1.2.0-5-ga1b2c3d
+```
+
+Usa [versionado semántico](https://semver.org/lang/es/): `MAYOR.MENOR.PARCHE`.
+
+## Explorar el historial
+
+```bash
+git log --oneline --graph --all
+git log -p -- ruta/archivo.py            # historia con diffs de un archivo
+git log --follow -- ruta/renombrado.py   # sigue renombres
+git log -S "umbral_minimo"               # commits que añaden/quitan ese texto
+git log -G "def calcular_.*"             # por regex en el diff
+git log --author="Pablo" --since="2 weeks ago"
+git log --first-parent main              # solo los merges/commits de main
+git shortlog -sn                         # commits por autor
+git blame -w -C -L 10,40 archivo.py      # quién cambió cada línea
+git show main:config/params.yaml         # un archivo en otra rama, sin cambiar
+git diff main..feature --stat
+git range-diff main feature-v1 feature-v2  # compara dos versiones de una rama rebasada
+```
+
+## Hooks
+
+Scripts en `.git/hooks/` que se ejecutan en eventos (`pre-commit`, `commit-msg`,
+`pre-push`...). Para compartirlos con el equipo usa la herramienta
+[pre-commit](https://pre-commit.com/) o un directorio versionado:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+```bash
+# .githooks/pre-push: impide empujar directamente a main
+#!/bin/sh
+rama=$(git rev-parse --abbrev-ref HEAD)
+if [ "$rama" = "main" ]; then
+  echo "No empujes a main directamente; abre un PR." >&2
+  exit 1
+fi
+```
+
+## Repositorios grandes
+
+```bash
+git clone --filter=blob:none <url>     # clon parcial: baja blobs bajo demanda
+git clone --depth 1 <url>              # clon superficial (solo último commit)
+git sparse-checkout set src/ docs/     # solo ciertas carpetas en disco
+git lfs track "*.h5"                   # archivos binarios grandes con Git LFS
+git maintenance start                  # mantenimiento automático en segundo plano
+```
+
+# Laboratorio práctico {#sec-lab}
+
+Ejecuta esto en una carpeta temporal para practicar ramas, conflictos, rebase y
+recuperación. No toca ningún repositorio real.
+
+```bash
+# 1. Preparación
+mkdir /tmp/lab-git && cd /tmp/lab-git
+git init -b main
+echo "umbral = 0.5" > config.txt
+git add . && git commit -m "Config inicial"
+
+# 2. Dos ramas que tocan la misma línea
+git switch -c feature/umbral-alto
+sed -i 's/0.5/0.8/' config.txt && git commit -am "Sube umbral a 0.8"
+echo "modo = rapido" >> config.txt && git commit -am "Añade modo rápido"
+
+git switch main
+sed -i 's/0.5/0.75/' config.txt && git commit -am "Ajusta umbral a 0.75"
+
+git log --oneline --graph --all
+
+# 3. Rebase con conflicto
+git switch feature/umbral-alto
+git rebase main           # conflicto en config.txt
+cat config.txt            # observa las marcas (con zdiff3 verás el ancestro)
+# Resuelve: deja "umbral = 0.8"
+printf "umbral = 0.8\n" > config.txt
+git add config.txt && git rebase --continue
+
+# 4. Limpieza con rebase interactivo
+echo "# notas" >> config.txt && git commit -am "wip"
+git rebase -i main        # marca "wip" como fixup
+
+# 5. Merge fast-forward en main
+git switch main
+git merge --ff-only feature/umbral-alto
+git branch -d feature/umbral-alto
+
+# 6. Desastre y recuperación
+git reset --hard HEAD~2   # "perdimos" dos commits
+git reflog                # encuentra el hash anterior
+git reset --hard HEAD@{1} # recuperado
+
+# 7. Worktree para un hotfix sin tocar tu trabajo
+git worktree add ../lab-hotfix -b hotfix/1
+cd ../lab-hotfix && echo "fix" > fix.txt && git add . && git commit -m "Hotfix"
+cd ../lab-git && git merge hotfix/1 && git worktree remove ../lab-hotfix
+```
+
+::: {.callout-tip}
+## Retos adicionales
+1. Crea `parte-1` y `parte-2` apiladas, añade un commit a `main` y rebasa ambas
+   con un solo comando (`--update-refs`).
+2. Crea un commit en *detached HEAD*, vuelve a `main` y recupéralo.
+3. Introduce un error en un commit intermedio y encuéntralo con `git bisect run`.
+:::
+
+# Solución de problemas frecuentes {#sec-problemas}
+
+| Síntoma | Causa | Solución |
+|---|---|---|
+| `fatal: Not possible to fast-forward, aborting.` | Tu rama y la remota divergieron (con `pull.ff only`) | `git pull --rebase` (rama privada) o `git pull --no-rebase` |
+| `Updates were rejected because the tip of your current branch is behind` | Hay commits remotos que no tienes | `git pull --rebase`, luego `git push` |
+| `stale info` al hacer `--force-with-lease` | Alguien empujó a tu rama | `git fetch`, revisa `git log @{u}`, integra y vuelve a empujar |
+| Hice commits en `main` en vez de en una rama | Olvidé crear la rama | `git switch -c feature/x` y luego `git switch main && git reset --hard origin/main` |
+| Hice commit en la rama equivocada | | `git switch correcta && git cherry-pick <hash>`; luego quítalo de la otra con `reset` o `revert` |
+| Un rebase salió mal | | `git rebase --abort` (durante) o `git reset --hard ORIG_HEAD` (después) |
+| Borré una rama sin mergear | | `git reflog`, `git branch nombre <hash>` |
+| Subí un secreto (contraseña, token) | | **Revoca el secreto primero**. Luego limpia con `git filter-repo` y avisa al equipo |
+| El PR muestra commits que no son míos | La base del PR es incorrecta o mi rama salió de otra rama | Cambia la base del PR o `git rebase --onto main <rama-vieja>` |
+| `refusing to merge unrelated histories` | Dos repos sin ancestro común | `git merge --allow-unrelated-histories` (solo si es intencional) |
+
+# Hoja de trucos {#sec-cheatsheet}
+
+## Ramas: crear, moverse, listar
+
+| Comando | Qué hace |
+|---|---|
+| `git switch -c <rama>` | Crea y cambia a una rama |
+| `git switch -c <rama> <base>` | Crea desde una base (rama, tag, hash) |
+| `git switch <rama>` / `git switch -` | Cambia de rama / vuelve a la anterior |
+| `git switch --detach <ref>` | Visita un commit sin rama |
+| `git branch -vv` | Lista ramas con upstream y ahead/behind |
+| `git branch -a` | Locales y remotas |
+| `git branch --merged main` | Ramas ya integradas en main |
+| `git branch --no-merged main` | Ramas pendientes de integrar |
+| `git branch --contains <hash>` | Ramas que contienen un commit |
+| `git rev-list --left-right --count A...B` | Cuántos commits van detrás/delante |
+| `git merge-base A B` | Ancestro común de dos ramas |
+
+## Ramas: renombrar, borrar, seguimiento
+
+| Comando | Qué hace |
+|---|---|
+| `git branch -m <nuevo>` | Renombra la rama actual |
+| `git branch -d <rama>` / `-D` | Borra (segura / forzada) |
+| `git push origin --delete <rama>` | Borra la rama en GitHub |
+| `git push -u origin <rama>` | Publica y establece upstream |
+| `git branch -u origin/<rama>` | Establece upstream |
+| `git fetch --prune` | Elimina referencias a ramas remotas borradas |
+| `git gone` (alias de la sección 1.2) | Lista ramas locales cuyo remoto desapareció; bórralas con la receta de la sección 3.3 |
+
+## Integrar
+
+| Comando | Qué hace |
+|---|---|
+| `git merge <rama>` | Merge (FF si es posible) |
+| `git merge --ff-only <rama>` | Solo si es fast-forward |
+| `git merge --no-ff <rama>` | Siempre con commit de merge |
+| `git merge --squash <rama>` | Aplana en un commit |
+| `git rebase <base>` | Reaplica tu rama sobre base |
+| `git rebase -i <base>` | Rebase interactivo (squash, reword, drop...) |
+| `git rebase --onto <nueva> <vieja> <rama>` | Trasplanta una rama |
+| `git rebase -i <base> --update-refs` | Rebasa ramas apiladas juntas |
+| `git commit --fixup=<hash>` + `git rebase -i --autosquash` | Correcciones automáticas |
+| `git cherry-pick -x <hash>` | Copia un commit a la rama actual |
+| `git merge --continue` / `git merge --abort` | Continuar o cancelar (igual con `rebase` y `cherry-pick`) |
+
+## Conflictos
+
+| Comando | Qué hace |
+|---|---|
+| `git status` | Lista archivos en conflicto |
+| `git checkout --ours <archivo>` / `--theirs` | Elige una versión (¡se invierten en rebase!) |
+| `git mergetool` | Herramienta visual |
+| `git add <archivo>` | Marca como resuelto |
+| `git config rerere.enabled true` | Recordar resoluciones |
+
+## Remotos y GitHub
+
+| Comando | Qué hace |
+|---|---|
+| `git fetch origin` | Descarga sin integrar |
+| `git pull --ff-only` / `--rebase` | Integra lo remoto |
+| `git push --force-with-lease --force-if-includes` | Force push seguro |
+| `git remote add upstream <url>` | Añade el repo original de un fork |
+| `git ls-remote --heads origin` | Ramas en el servidor sin fetch |
+| `gh pr create --fill --draft` | Abre PR en borrador |
+| `gh pr checkout <n>` | Trae la rama de un PR |
+| `gh pr merge <n> --squash --delete-branch` | Mergea y borra la rama |
+| `gh pr merge <n> --auto --squash` | Mergea cuando pase CI |
+| `gh run watch` | Sigue el CI en vivo |
+
+## Guardar, deshacer y recuperar
+
+| Comando | Qué hace |
+|---|---|
+| `git stash push -u -m "msg"` | Guarda cambios (incluye no rastreados) |
+| `git stash pop` / `apply` | Recupera (y elimina / conserva) |
+| `git worktree add ../dir <rama>` | Abre otra rama en otra carpeta |
+| `git restore <archivo>` | Descarta cambios locales |
+| `git restore --staged <archivo>` | Saca del staging |
+| `git commit --amend` | Corrige el último commit |
+| `git reset --soft HEAD~1` | Deshace commit, conserva cambios |
+| `git reset --hard <ref>` | Mueve la rama y descarta cambios |
+| `git revert <hash>` / `-m 1 <merge>` | Invierte un commit publicado |
+| `git reflog` | Historial de movimientos (recuperación) |
+| `git reset --hard ORIG_HEAD` | Deshace el último merge/rebase/reset |
+
+## Investigar
+
+| Comando | Qué hace |
+|---|---|
+| `git log --oneline --graph --all` | Grafo de todas las ramas |
+| `git log A..B` | Commits en B que no están en A |
+| `git log -S "texto"` | Commits que añaden o quitan un texto |
+| `git log --follow -- <archivo>` | Historia siguiendo renombres |
+| `git blame -w -C <archivo>` | Autor de cada línea |
+| `git show <rama>:<ruta>` | Ver archivo de otra rama |
+| `git diff A...B` | Cambios de B desde que se separó de A |
+| `git range-diff base v1 v2` | Compara dos versiones de una rama |
+| `git bisect start/good/bad/run` | Búsqueda binaria del commit culpable |
+
+## Referencias rápidas
+
+| Sintaxis | Significado |
+|---|---|
+| `HEAD~n` | n generaciones atrás (primer padre) |
+| `HEAD^2` | Segundo padre de un merge |
+| `@{u}` | Upstream de la rama actual |
+| `rama@{n}` | Posición n en el reflog de la rama |
+| `A..B` | Alcanzable desde B pero no desde A |
+| `A...B` | Diferencia simétrica |
+| `ORIG_HEAD` | Posición antes de la última operación peligrosa |
+
+## Decisiones rápidas
+
+- **¿Rama privada desactualizada?** `git fetch && git rebase origin/main`
+- **¿Rama compartida desactualizada?** `git fetch && git merge origin/main`
+- **¿Commit publicado incorrecto?** `git revert`
+- **¿Commit local incorrecto?** `git commit --amend` o `git rebase -i`
+- **¿Perdí algo?** `git reflog`
+- **¿Necesito otra rama sin perder lo actual?** `git worktree add`
+- **¿Tengo que forzar el push?** `git push --force-with-lease --force-if-includes`, nunca `--force` a secas.
