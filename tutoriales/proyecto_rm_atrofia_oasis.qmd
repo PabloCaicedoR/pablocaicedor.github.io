@@ -1,0 +1,476 @@
+---
+title: "Proyecto introductorio: Morfometría cerebral por resonancia magnética para la detección de demencia muy leve"
+subtitle: "Enunciado, fundamento fisiológico, fases de trabajo y criterios de evaluación"
+author: "PhD. Pablo Eduardo Caicedo-Rodríguez"
+lang: es
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+    theme: cosmo
+    embed-resources: true
+execute:
+  eval: false
+---
+
+::: {.callout-note}
+## Nota para el profesor
+El código de este documento **no se ejecuta** (`eval: false`). Es un andamiaje con secciones `# TODO` que el estudiante debe completar. No se reportan resultados, métricas ni figuras porque no se han generado; cualquier valor numérico debe salir del trabajo del estudiante.
+:::
+
+# Planteamiento del problema
+
+La enfermedad de Alzheimer (EA) produce una pérdida progresiva de neuronas y sinapsis que se manifiesta en la resonancia magnética (RM) estructural como **atrofia**: disminución del volumen de sustancia gris, adelgazamiento cortical y aumento compensatorio del líquido cefalorraquídeo (LCR). Esta atrofia comienza años antes del diagnóstico clínico y sigue un patrón espacial relativamente estereotipado, con afectación temprana del lóbulo temporal medial (corteza entorrinal, hipocampo, amígdala).
+
+El problema es que el **envejecimiento normal también produce atrofia**. Un modelo que "detecta demencia" puede estar detectando, en realidad, que el sujeto es mayor. Separar el efecto de la enfermedad del efecto de la edad es el núcleo técnico de este proyecto.
+
+## Objetivo general
+
+Determinar si un conjunto reducido de características morfométricas extraídas de RM ponderada en T1 permite discriminar adultos de 60 años o más con **demencia muy leve o leve** (Clinical Dementia Rating, CDR ≥ 0.5) de **adultos cognitivamente normales** (CDR = 0), y cuantificar cuánto mejora esa discriminación respecto a un modelo de referencia que solo usa edad y sexo.
+
+## Objetivos específicos
+
+1. Caracterizar las imágenes y las variables clínicas del conjunto de datos mediante análisis exploratorio, incluyendo control de calidad de las imágenes.
+2. Extraer características morfométricas globales y regionales a partir de mapas de sustancia gris, justificando fisiológicamente cada una.
+3. Entrenar y comparar un modelo de referencia (edad + sexo) con modelos que incorporan características de imagen, usando validación cruzada sin fuga de información.
+4. Evaluar el desempeño con métricas apropiadas para un problema de tamizaje y estimar su incertidumbre.
+5. Comunicar los resultados en un tablero interactivo que conecte la imagen, las características y la decisión del modelo.
+
+## Hipótesis de trabajo
+
+Los volúmenes de sustancia gris del lóbulo temporal medial, normalizados por el volumen intracraneal y ajustados por edad, aportan información discriminativa adicional a la que contienen la edad y el sexo.
+
+::: {.callout-important}
+La hipótesis puede no confirmarse. Un resultado negativo bien justificado (por ejemplo, que la ganancia sobre el modelo base no sea distinguible del azar) es un resultado válido del proyecto y se califica igual que uno positivo.
+:::
+
+# Fundamento fisiológico
+
+## Neurodegeneración en la enfermedad de Alzheimer
+
+- **Lesiones moleculares.** El depósito extracelular de β-amiloide (placas) y la acumulación intracelular de proteína tau hiperfosforilada (ovillos neurofibrilares) preceden a la muerte neuronal.
+- **Pérdida sináptica y neuronal.** La disfunción sináptica y la muerte neuronal reducen el volumen del neuropilo y de los cuerpos neuronales, que son los principales componentes de la sustancia gris.
+- **Progresión espacial.** Los ovillos de tau siguen una secuencia descrita por los estadios de Braak: corteza transentorrinal y entorrinal, luego hipocampo y estructuras límbicas, y finalmente neocorteza asociativa (temporal, parietal, frontal). La atrofia macroscópica observable en RM sigue aproximadamente esa secuencia.
+- **Cascada de biomarcadores.** En el modelo de Jack et al., las alteraciones de amiloide aparecen primero, seguidas de marcadores de lesión neuronal (incluida la atrofia en RM) y, después, del deterioro cognitivo. La RM estructural es, por tanto, un marcador de **neurodegeneración**, no de la patología amiloide en sí.
+
+## Consecuencias observables en RM T1
+
+| Fenómeno fisiológico | Manifestación en la imagen | Característica candidata |
+|---|---|---|
+| Pérdida neuronal en lóbulo temporal medial | Menor volumen de hipocampo, amígdala y giro parahipocampal | Volumen regional de sustancia gris |
+| Atrofia cortical difusa | Menor volumen total de sustancia gris | Volumen global de sustancia gris normalizado |
+| Pérdida de tejido con espacio craneal constante | Aumento de LCR y de ventrículos (*hydrocephalus ex vacuo*) | Volumen cerebral normalizado (nWBV) |
+| Envejecimiento normal | Atrofia global más difusa y lenta | Edad como covariable o confusor |
+
+## Por qué la RM T1 distingue los tejidos
+
+En una secuencia ponderada en T1 (en OASIS-1, MP-RAGE a 1.5 T), el contraste depende del tiempo de relajación longitudinal de cada tejido:
+
+- **Sustancia blanca**: T1 más corto por su alto contenido de mielina (lípidos), por lo que se ve **más brillante**.
+- **Sustancia gris**: T1 intermedio, **gris intermedio**.
+- **LCR**: T1 largo, **oscuro**.
+
+Este contraste permite segmentar automáticamente cada voxel en probabilidades de pertenencia a sustancia gris, sustancia blanca o LCR. Las intensidades de RM **no tienen unidades físicas absolutas** (a diferencia de las unidades Hounsfield en tomografía): dependen del equipo, la bobina y los parámetros de adquisición, y presentan inhomogeneidad de campo (*bias field*). Por esto se trabaja con mapas de tejido derivados y no con intensidades crudas.
+
+## Sobre la etiqueta clínica (CDR)
+
+La CDR es una escala clínica que gradúa la severidad de la demencia en seis dominios (memoria, orientación, juicio, actividades comunitarias, hogar y cuidado personal): 0 = normal, 0.5 = muy leve, 1 = leve, 2 = moderada. En OASIS-1, los sujetos con CDR > 0 tienen diagnóstico clínico de demencia tipo Alzheimer muy leve a moderada. Es una etiqueta **clínica**, no neuropatológica: puede haber sujetos con CDR 0 y patología incipiente, y viceversa. Esto limita el desempeño máximo alcanzable.
+
+# Conjunto de datos
+
+## Selección: OASIS-1 (Open Access Series of Imaging Studies, cross-sectional)
+
+- **Contenido**: 416 sujetos de 18 a 96 años, con 3 a 4 adquisiciones T1 MP-RAGE por sujeto en un equipo de 1.5 T. Incluye sujetos cognitivamente normales y sujetos mayores de 60 años con diagnóstico clínico de demencia muy leve a moderada.
+- **Variables clínicas y derivadas**: sexo, lateralidad, edad, escolaridad, nivel socioeconómico, MMSE, CDR, volumen intracraneal estimado (eTIV), volumen cerebral normalizado (nWBV) y factor de escala al atlas (ASF).
+- **Acceso**: descarga directa, sin solicitud formal, sujeta a la aceptación del acuerdo de uso de datos (DUA) de OASIS (<https://sites.wustl.edu/oasisbrains/>). El acuerdo exige citar el artículo de referencia del conjunto de datos.
+- **Versión recomendada**: los mapas de sustancia gris y blanca **ya preprocesados** que distribuye `nilearn` mediante `nilearn.datasets.fetch_oasis_vbm()`. El preprocesamiento (SPM8) incluyó extracción de cerebro, segmentación, normalización espacial con DARTEL y **modulación**. La versión DARTEL contiene 403 sujetos, porque el descargador excluye 13 valores atípicos groseros.
+
+::: {.callout-tip}
+## Por qué este conjunto para un proyecto introductorio
+El preprocesamiento de RM (corrección de *bias field*, extracción de cerebro, segmentación, registro a un atlas) es un tema completo por sí mismo. Partir de mapas ya segmentados y normalizados permite concentrar el proyecto en análisis exploratorio, ingeniería de características, modelado y evaluación, que es lo que se busca evaluar.
+:::
+
+**Modulación.** En los archivos (prefijo `mwrc1` para sustancia gris y `mwrc2` para sustancia blanca, convención de SPM: *m* = modulado, *w* = deformado al espacio de plantilla), cada voxel se multiplicó por el determinante del jacobiano de la deformación. Esto preserva la cantidad de tejido original: la suma de los valores de una región, multiplicada por el volumen del voxel, aproxima el volumen de esa región en el espacio nativo del sujeto.
+
+## Subconjunto de análisis
+
+- Incluir solo sujetos con **edad ≥ 60 años** y CDR disponible. Los sujetos jóvenes de OASIS-1 no tienen CDR y no aportan casos de demencia; incluirlos crearía un confusor de edad trivial.
+- Etiqueta binaria: `y = 1` si CDR ≥ 0.5; `y = 0` si CDR = 0.
+- El estudiante debe **reportar** el número de sujetos por clase y la distribución de edad y sexo por clase. No se dan aquí porque deben calcularse.
+
+## Alternativas abiertas
+
+| Conjunto | Acceso | Uso posible | Comentario |
+|---|---|---|---|
+| IXI | Descarga directa, licencia CC BY-SA 3.0 | Estimación de "edad cerebral" (regresión) en sujetos sanos | Sin casos patológicos; requiere preprocesar desde T1 crudas |
+| OASIS-1 crudo | Descarga directa por discos, mismo DUA | Variante avanzada con preprocesamiento propio | Incluye T1 corregidas por ganancia, registradas al atlas y segmentadas con FSL |
+| ADNI, OASIS-3, BraTS | **Requieren solicitud o registro** | Proyectos de mayor alcance | No cumplen el criterio de "libre" de este proyecto |
+
+# Fases del proyecto
+
+## Fase 0. Preparación del entorno
+
+```bash
+uv init proyecto-rm && cd proyecto-rm
+uv add nilearn nibabel numpy pandas scikit-learn matplotlib plotly streamlit statsmodels
+```
+
+```python
+# fase0_descarga.py
+from nilearn import datasets
+
+oasis = datasets.fetch_oasis_vbm(dartel_version=True)  # descarga única, cachea en ~/nilearn_data
+gm_paths = oasis.gray_matter_maps
+wm_paths = oasis.white_matter_maps
+clin = oasis.ext_vars  # columnas: id, mf, hand, age, educ, ses, mmse, cdr, etiv, nwbv, asf, delay
+
+# TODO: leer el archivo oasis.data_usage_agreement y dejar constancia de su aceptación en el informe
+```
+
+## Fase 1. Análisis exploratorio de imágenes y variables
+
+**Propósito**: entender qué contienen los datos antes de modelar y detectar problemas de calidad.
+
+### 1a. Inspección técnica de los archivos NIfTI
+
+Para un subconjunto de sujetos, reportar: forma del arreglo, tamaño de voxel (mm), matriz afín, orientación de ejes, rango de valores y fracción de voxeles no nulos. Verificar que todas las imágenes comparten forma y afín. Si no fuera así, explicar qué implicaría para un análisis voxel a voxel.
+
+```python
+import nibabel as nib
+import numpy as np
+
+img = nib.load(gm_paths[0])
+print(img.shape, img.header.get_zooms(), nib.aff2axcodes(img.affine))
+data = img.get_fdata()
+# TODO: rango, percentiles, fracción de voxeles > 0; repetir para N sujetos y tabular
+```
+
+### 1b. Visualización
+
+- Cortes axial, coronal y sagital de mapas de sustancia gris de un control y de un caso (`nilearn.plotting.plot_img`, `plot_anat`).
+- **Mapa promedio por grupo** y **mapa de diferencia** (controles menos casos). Describir dónde se concentra la diferencia y si coincide con lo esperado fisiológicamente.
+- Histograma de intensidades de los voxeles cerebrales. Explicar qué representan los valores de un mapa modulado y por qué pueden ser mayores que 1.
+
+### 1c. Variables clínicas
+
+- Distribución de edad, sexo, escolaridad y eTIV por grupo.
+- Gráfico de dispersión de **nWBV contra edad**, coloreado por CDR. Este gráfico es central: muestra al mismo tiempo el efecto del envejecimiento y el de la enfermedad.
+- Verificar si los grupos difieren en edad o en sexo (prueba apropiada y tamaño del efecto). Si difieren, esa diferencia es un **confusor** que debe tratarse en las fases 3 y 4.
+
+### 1d. Control de calidad
+
+- Calcular el volumen total de sustancia gris de cada sujeto y graficarlo contra la edad. Identificar valores atípicos (por ejemplo, residuos de una regresión robusta con |z| > 3) e inspeccionarlos visualmente.
+- Decidir y **justificar** si un sujeto atípico se excluye. Ningún sujeto se excluye usando la etiqueta CDR como criterio.
+
+**Producto**: notebook o reporte con figuras comentadas y una tabla descriptiva por grupo.
+
+## Fase 2. Ingeniería de características
+
+**Propósito**: transformar cada imagen (alrededor de 10⁵ a 10⁶ voxeles) en un vector pequeño de características con significado fisiológico.
+
+### 2a. Características globales
+
+| Característica | Definición | Justificación |
+|---|---|---|
+| `gm_total` | $\sum_v GM(v)\cdot \Delta V$ | Atrofia cortical difusa |
+| `wm_total` | $\sum_v WM(v)\cdot \Delta V$ | Control, porque la sustancia blanca se afecta menos en estadios tempranos |
+| `gm_frac` | `gm_total / eTIV` | Corrige por el tamaño de la cabeza |
+| `nwbv` | Variable de OASIS | Referencia externa para comparar con la medida propia |
+
+### 2b. Características regionales
+
+Usar el atlas Harvard-Oxford (`nilearn.datasets.fetch_atlas_harvard_oxford`) y `NiftiLabelsMasker` con `strategy="sum"` para obtener el volumen de sustancia gris por región:
+
+- Subcortical (`sub-maxprob-thr25-2mm`): hipocampo y amígdala izquierdos y derechos.
+- Cortical (`cort-maxprob-thr25-2mm`, con `symmetric_split=True`): giro parahipocampal anterior, polo temporal, giro temporal inferior y precúneo como regiones de interés; uno o dos controles motores o visuales (por ejemplo, giro precentral, corteza calcarina) como regiones donde **no** se espera efecto temprano.
+
+```python
+from nilearn import datasets
+from nilearn.maskers import NiftiLabelsMasker
+
+atlas = datasets.fetch_atlas_harvard_oxford("sub-maxprob-thr25-2mm")
+masker = NiftiLabelsMasker(labels_img=atlas.maps, labels=atlas.labels, strategy="sum")
+roi_sum = masker.fit_transform(gm_paths)   # (n_sujetos, n_regiones)
+
+# TODO: verificar el alineamiento atlas-datos superponiendo las ROI sobre el mapa GM promedio
+#       (nilearn.plotting.plot_roi). El masker remuestrea el atlas a la malla de los datos.
+# TODO: convertir sumas a mm^3 multiplicando por el volumen del voxel de los datos
+# TODO: seleccionar las columnas de interés por nombre de etiqueta, no por índice
+```
+
+### 2c. Características derivadas
+
+- **Normalización por eTIV**: dividir cada volumen regional por eTIV.
+- **Índice de asimetría**: $AI = \dfrac{V_{izq}-V_{der}}{(V_{izq}+V_{der})/2}$ para hipocampo y amígdala.
+- **Ajuste por edad (z-score normativo)**: ajustar, **solo con los controles del conjunto de entrenamiento**, una regresión lineal `volumen ~ edad + sexo + eTIV`; la característica es el residuo estandarizado. Representa cuánto se aleja un sujeto de lo esperado para su edad.
+
+::: {.callout-warning}
+## Fuga de información
+El ajuste normativo de 2c, cualquier estandarización y cualquier selección de características **deben ajustarse dentro de cada partición de entrenamiento** de la validación cruzada. Hacerlo con todos los datos antes de dividir infla las métricas. Se recomienda implementar 2c como un transformador de `scikit-learn` dentro de un `Pipeline`.
+:::
+
+### 2d. Variables que **no** son características
+
+- **MMSE**: es una medida cognitiva estrechamente relacionada con el diagnóstico clínico. Usarla convierte el problema en circular y anula la pregunta sobre la imagen.
+- **CDR**: es la etiqueta.
+- **ID y `delay`**: no tienen relación fisiológica con el problema.
+
+### 2e. Análisis univariado de características
+
+Para cada característica: distribución por grupo, tamaño del efecto (d de Cohen o AUC univariada) y correlación con la edad. Discutir qué características separan los grupos **después** de ajustar por edad y cuáles solo reflejan envejecimiento.
+
+**Producto**: tabla de características `features.csv` (un sujeto por fila) y su diccionario de variables con la justificación fisiológica de cada una.
+
+## Fase 3. Modelado
+
+| Modelo | Entradas | Papel |
+|---|---|---|
+| M0 | Edad + sexo | Referencia: cuánto se explica sin imagen |
+| M1 | M0 + características globales | ¿Aporta la atrofia difusa? |
+| M2 | M0 + características regionales del lóbulo temporal medial | Hipótesis principal |
+| M3 | M2 con un clasificador no lineal (bosque aleatorio o SVM con kernel RBF) | ¿Hay ganancia por no linealidad? |
+
+- Modelo principal: **regresión logística regularizada** (L2), por interpretabilidad y porque el número de sujetos es pequeño.
+- Todos los modelos deben implementarse como `Pipeline` (transformaciones + clasificador).
+- Hiperparámetros: búsqueda en validación cruzada **anidada** (interna para ajustar, externa para evaluar).
+- Desbalance de clases: reportar la proporción y usar `class_weight="balanced"` o justificar por qué no.
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import RepeatedStratifiedKFold, cross_validate
+
+cv_outer = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=0)
+
+m2 = Pipeline([
+    # TODO: transformador normativo por edad (fase 2c), ajustado solo con controles de entrenamiento
+    ("scaler", StandardScaler()),
+    ("clf", LogisticRegressionCV(Cs=10, cv=5, scoring="roc_auc", class_weight="balanced", max_iter=1000)),
+])
+
+# TODO: X_m0, X_m2 = ...; y = (clin_sel["cdr"] >= 0.5).astype(int)
+# res_m2 = cross_validate(m2, X_m2, y, cv=cv_outer,
+#                         scoring=["roc_auc", "balanced_accuracy", "recall", "precision"],
+#                         return_estimator=True)
+```
+
+**Variante opcional (avanzada)**: clasificación voxel a voxel con PCA + regresión logística sobre los mapas completos (`NiftiMasker`). Discutir el régimen $n \ll p$ y comparar con M2.
+
+## Fase 4. Evaluación
+
+### Métricas
+
+- **AUC-ROC** como métrica principal (independiente del umbral).
+- **Exactitud balanceada, sensibilidad y especificidad** con un umbral declarado. Justificar el umbral desde el uso clínico: en tamizaje se privilegia la sensibilidad.
+- Matriz de confusión agregada sobre las predicciones fuera de partición (`cross_val_predict`).
+- **Curva de calibración**: ¿la probabilidad predicha significa lo que dice?
+
+### Incertidumbre y comparación
+
+- Reportar media y dispersión de cada métrica sobre las particiones externas, o un intervalo bootstrap.
+- **Prueba de permutación** (`sklearn.model_selection.permutation_test_score`) para M2: ¿el desempeño supera al azar?
+- Comparación **M2 vs. M0** con diferencias pareadas por partición. Discutir por qué las particiones de una validación cruzada repetida no son independientes y qué implica para cualquier prueba estadística.
+
+### Análisis de errores e interpretación
+
+- Inspeccionar falsos positivos y falsos negativos: edad, CDR (0.5 frente a ≥ 1) y volumen hipocampal. ¿Los errores se concentran en CDR 0.5?
+- Coeficientes estandarizados de la regresión logística: signo y magnitud. ¿Son coherentes con la fisiología (menor volumen implica mayor probabilidad de demencia)?
+- Sesgo por edad: desempeño estratificado en dos rangos de edad.
+
+::: {.callout-caution}
+## Límite de las conclusiones
+Este análisis es retrospectivo, con un solo equipo, una sola población y un tamaño de muestra pequeño. No permite afirmar utilidad diagnóstica clínica. Las conclusiones deben formularse como evidencia de asociación y de capacidad discriminativa en este conjunto de datos.
+:::
+
+**Producto**: tabla comparativa M0 a M3 con incertidumbre, curvas ROC superpuestas, curva de calibración y discusión.
+
+## Fase 5. Visualización de resultados (informe)
+
+**Propósito**: producir las figuras estáticas que sostienen las conclusiones del informe técnico. Cada figura debe responder una pregunta concreta y tener un pie de figura que la interprete.
+
+| Figura | Pregunta que responde |
+|---|---|
+| Mapa de diferencia de sustancia gris entre grupos (cortes ortogonales o `plot_glass_brain`) | ¿Dónde se concentra la atrofia asociada a la demencia? |
+| Volumen hipocampal normalizado contra edad, por grupo, con la recta normativa de controles | ¿El efecto de la enfermedad se distingue del efecto de la edad? |
+| Tamaños del efecto por característica, ordenados, con regiones control resaltadas | ¿Qué regiones discriminan y cuáles no, según lo esperado por Braak? |
+| Curvas ROC superpuestas de M0 a M3 con banda de variabilidad entre particiones | ¿Cuánto aporta la imagen sobre edad y sexo? |
+| Curva de calibración de M2 | ¿Las probabilidades predichas son interpretables? |
+| Coeficientes estandarizados de M2 con su variabilidad entre particiones | ¿El modelo usa las características de forma fisiológicamente coherente? |
+
+Requisitos: paleta apta para daltonismo, ejes con unidades (mm³, fracción de eTIV, años), misma codificación de color para cada grupo en todas las figuras y figuras generadas por script (no editadas a mano), para que sean reproducibles.
+
+**Producto**: carpeta `figuras/` generada por un script y referenciada desde el informe Quarto.
+
+## Fase 6. Tablero interactivo (dashboard)
+
+**Propósito**: integrar imagen, características, modelo y desempeño en una herramienta que un usuario no programador pueda explorar. Esta fase evalúa el resultado de aprendizaje de visualización interactiva del curso.
+
+### 6a. Usuarios y preguntas de diseño
+
+Antes de programar, el estudiante define en media página:
+
+- **Usuario clínico** (neurólogo o neuropsicólogo): ¿qué tan atípico es el volumen hipocampal de este paciente para su edad? ¿Qué probabilidad asigna el modelo y con qué confiabilidad?
+- **Usuario técnico** (ingeniero o investigador): ¿cuánto aporta la imagen sobre el modelo base? ¿Qué pasa con sensibilidad y especificidad si cambio el umbral? ¿En qué sujetos se equivoca el modelo?
+
+Cada vista del tablero debe responder al menos una de estas preguntas. Una vista que no responde ninguna se elimina.
+
+### 6b. Arquitectura y contrato de datos
+
+El tablero **no entrena modelos ni procesa imágenes completas en vivo**. Lee artefactos precalculados en las fases anteriores:
+
+| Archivo | Contenido | Generado en |
+|---|---|---|
+| `features.csv` | Una fila por sujeto: id, edad, sexo, CDR, eTIV y características | Fase 2 |
+| `oof_predictions.csv` | id, modelo (M0 a M3), probabilidad fuera de partición, repetición | Fase 4 |
+| `metricas_cv.csv` | Métricas por partición externa y modelo | Fase 4 |
+| `coeficientes.csv` | Coeficientes de M2 por partición | Fase 4 |
+| `normativo.csv` | Parámetros de la regresión normativa en controles | Fase 2 |
+| `cortes/<id>.npz` | Tres cortes ortogonales del mapa de sustancia gris y de las ROI por sujeto | Script de preparación |
+| `diferencia_grupos.nii.gz` | Mapa de diferencia entre grupos | Fase 5 |
+
+Precalcular los cortes evita cargar volúmenes NIfTI completos en cada interacción. La carga de archivos se envuelve en `@st.cache_data`.
+
+### 6c. Vistas mínimas
+
+1. **Explorador de sujetos**
+   - Selector de sujeto y filtros por grupo, sexo y rango de edad.
+   - Cortes axial, coronal y sagital del mapa de sustancia gris con hipocampo y amígdala superpuestos, y control deslizante para elegir el corte.
+   - Ficha del sujeto: edad, sexo, CDR, eTIV y probabilidad fuera de partición de M0 y de M2, una al lado de la otra.
+2. **Posición normativa**
+   - Dispersión de la característica elegida contra la edad, coloreada por grupo, con la recta normativa de controles y su banda de ±2 desviaciones estándar.
+   - El sujeto seleccionado resaltado, con su z-score normativo en texto.
+3. **Características por grupo**
+   - Diagrama de violín o de caja por grupo para la característica elegida, con su tamaño del efecto.
+   - Matriz de correlación entre características, incluida la edad.
+4. **Desempeño del modelo**
+   - Curvas ROC de M0 a M3, activables por casilla.
+   - Control deslizante de umbral que recalcula en vivo la matriz de confusión, la sensibilidad, la especificidad y el valor predictivo, siempre sobre predicciones fuera de partición.
+   - Distribución de las métricas entre particiones (diagrama de caja), no solo la media.
+5. **Errores e interpretación**
+   - Tabla filtrable de falsos positivos y falsos negativos con el umbral vigente; al hacer clic, el sujeto se abre en la vista 1.
+   - Coeficientes de M2 con su variabilidad y el mapa de diferencia entre grupos.
+
+Toda vista lleva una nota visible: *herramienta educativa, no validada para uso diagnóstico*.
+
+### 6d. Esqueleto
+
+```python
+# app.py
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+from sklearn.metrics import confusion_matrix, roc_curve
+
+st.set_page_config(page_title="RM y demencia muy leve", layout="wide")
+
+@st.cache_data
+def cargar():
+    feats = pd.read_csv("artefactos/features.csv")
+    oof = pd.read_csv("artefactos/oof_predictions.csv")
+    norm = pd.read_csv("artefactos/normativo.csv")
+    return feats, oof, norm
+
+@st.cache_data
+def cortes(sujeto_id: str):
+    return np.load(f"artefactos/cortes/{sujeto_id}.npz")
+
+feats, oof, norm = cargar()
+st.caption("Herramienta educativa. No validada para uso diagnóstico.")
+
+with st.sidebar:
+    grupo = st.multiselect("Grupo", ["CDR 0", "CDR ≥ 0.5"], default=["CDR 0", "CDR ≥ 0.5"])
+    # TODO: filtros de sexo y edad; aplicar a feats
+    sujeto = st.selectbox("Sujeto", feats["id"])
+    umbral = st.slider("Umbral de decisión", 0.0, 1.0, 0.5, 0.01)
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    ["Sujeto", "Posición normativa", "Características", "Desempeño", "Errores"]
+)
+
+with tab1:
+    c = cortes(sujeto)
+    # TODO: tres px.imshow (axial, coronal, sagital) con las ROI superpuestas
+    # TODO: ficha del sujeto con probabilidades OOF de M0 y M2
+
+with tab4:
+    # TODO: ROC por modelo con roc_curve sobre oof; casillas para activar modelos
+    # TODO: confusion_matrix(y, p >= umbral) y métricas derivadas recalculadas en vivo
+    pass
+```
+
+### 6e. Verificación del tablero
+
+- Para un umbral fijo, la sensibilidad y la especificidad que muestra el tablero coinciden con las calculadas en la Fase 4.
+- El tablero arranca desde un entorno limpio con `uv sync && uv run streamlit run app.py`, sin rutas absolutas.
+- El tiempo de respuesta al cambiar de sujeto o de umbral es aceptable en un portátil. Si no lo es, se identifica el cuello de botella antes de optimizar.
+- Prueba de usabilidad: un compañero que no participó en el proyecto responde las preguntas de 6a usando solo el tablero. Se reportan las dificultades que encontró y los cambios que se hicieron.
+
+**Producto**: aplicación funcional en el repositorio, carpeta `artefactos/`, documento de media página con usuarios y preguntas de diseño, y un video corto de demostración.
+
+::: {.callout-note}
+El tablero solo debe mostrar predicciones **fuera de partición**. Mostrar la predicción de un modelo entrenado con todos los sujetos sobre esos mismos sujetos es un error de presentación que sobreestima el desempeño.
+:::
+
+# Entregables y cronograma sugerido
+
+| Entrega | Fases | Contenido |
+|---|---|---|
+| E1. Propuesta | 0 y 1 | Objetivo, hipótesis, justificación fisiológica (1 página), análisis exploratorio y control de calidad |
+| E2. Avance | 2 y 3 | `features.csv` con su diccionario, modelos M0 a M2 implementados en `Pipeline`, documento de usuarios y preguntas de diseño del tablero (6a) |
+| E3. Final | 4, 5 y 6 | Informe técnico en Quarto con figuras reproducibles, tablero funcional con video de demostración, repositorio reproducible (`uv.lock`, semilla fija), exposición de 10 minutos ante audiencia mixta con demostración en vivo del tablero |
+
+# Rúbrica de evaluación (entrega final)
+
+| Criterio | Peso | Excelente (4.5 a 5.0) | Aceptable (3.0 a 4.4) | Insuficiente (< 3.0) |
+|---|---|---|---|---|
+| Fundamento fisiológico | 15 % | Relaciona cada característica con un mecanismo de neurodegeneración y con el contraste T1 | Describe la EA y la atrofia sin conectar con cada característica | Descripción genérica o incorrecta |
+| Análisis exploratorio y control de calidad | 15 % | Inspección técnica, mapas por grupo, detección y decisión justificada de atípicos, confusores identificados | Figuras correctas con poca interpretación | Sin control de calidad o figuras sin comentario |
+| Ingeniería de características | 15 % | Características globales, regionales y normativas correctas, sin fuga, con regiones control | Características correctas pero sin ajuste por edad o sin regiones control | Uso de MMSE o fuga de información |
+| Modelado | 15 % | M0 a M3 en `Pipeline`, validación cruzada anidada, desbalance tratado | Modelos correctos sin anidación o sin modelo base | Evaluación sobre datos de entrenamiento |
+| Evaluación crítica | 15 % | Métricas con incertidumbre, permutación, calibración, análisis de errores, límites declarados | Métricas correctas sin incertidumbre o sin comparación con M0 | Solo exactitud, conclusiones clínicas no justificadas |
+| Visualización de resultados y comunicación | 10 % | Figuras reproducibles que responden preguntas concretas, pies interpretativos, exposición clara para audiencia mixta | Figuras correctas con interpretación parcial | Figuras sin unidades, sin interpretación o editadas a mano |
+| Tablero interactivo | 15 % | Cinco vistas ligadas a preguntas de usuario, predicciones fuera de partición, métricas coherentes con la Fase 4, arranque reproducible y prueba de usabilidad reportada | Tablero funcional con vistas incompletas o sin prueba de usabilidad | Sin tablero, entrena en vivo o muestra predicciones sobreajustadas |
+
+# Errores frecuentes
+
+1. **Confundir edad con enfermedad.** Si M2 apenas supera a M0, la "detección" se explica por la edad.
+2. **Estandarizar o seleccionar características con todos los datos** antes de la validación cruzada.
+3. **Incluir MMSE** como predictor.
+4. **Incluir sujetos menores de 60 años** como controles, lo que hace el problema artificialmente fácil.
+5. **Interpretar intensidades de RM como magnitudes físicas absolutas.**
+6. **No verificar el alineamiento atlas-imagen** y extraer volúmenes de regiones desplazadas.
+7. **Reportar solo exactitud** con clases desbalanceadas.
+8. **Sobreinterpretar clínicamente** un AUC obtenido en un único conjunto retrospectivo.
+9. **Tablero como galería de gráficos**: vistas que no responden ninguna pregunta de usuario.
+10. **Recalcular en el tablero** lo que ya se calculó en la Fase 4 con otro código, lo que produce métricas que no coinciden con el informe.
+
+# Preguntas de verificación
+
+1. ¿Por qué la sustancia blanca aparece más brillante que la gris en T1 y qué implicaría usar una secuencia T2?
+2. ¿Qué representa el valor de un voxel en un mapa de sustancia gris **modulado** y por qué su suma aproxima un volumen?
+3. Si dos grupos difieren en edad media, ¿qué dos estrategias permiten estimar el efecto de la demencia independiente de la edad? ¿Qué supuestos hace cada una?
+4. ¿Por qué el ajuste normativo se estima solo con controles y solo con datos de entrenamiento?
+5. Según los estadios de Braak, ¿qué región esperaría que discriminara mejor en CDR 0.5 y cuál esperaría que no discriminara? ¿Lo confirman sus datos?
+6. ¿Qué limita el desempeño máximo alcanzable cuando la etiqueta es la CDR y no la neuropatología?
+
+# Referencias
+
+- Marcus, D. S., Wang, T. H., Parker, J., Csernansky, J. G., Morris, J. C., & Buckner, R. L. (2007). Open Access Series of Imaging Studies (OASIS): Cross-sectional MRI data in young, middle aged, nondemented, and demented older adults. *Journal of Cognitive Neuroscience, 19*(9), 1498–1507. <https://doi.org/10.1162/jocn.2007.19.9.1498> (cita obligatoria según el DUA de OASIS)
+- Morris, J. C. (1993). The Clinical Dementia Rating (CDR): Current version and scoring rules. *Neurology, 43*(11), 2412–2414. <https://doi.org/10.1212/WNL.43.11.2412-a>
+- Braak, H., & Braak, E. (1991). Neuropathological stageing of Alzheimer-related changes. *Acta Neuropathologica, 82*(4), 239–259. <https://doi.org/10.1007/BF00308809>
+- Jack, C. R., Jr., Knopman, D. S., Jagust, W. J., et al. (2010). Hypothetical model of dynamic biomarkers of the Alzheimer's pathological cascade. *The Lancet Neurology, 9*(1), 119–128. <https://doi.org/10.1016/S1474-4422(09)70299-6>
+- Ashburner, J., & Friston, K. J. (2000). Voxel-based morphometry: The methods. *NeuroImage, 11*(6), 805–821. <https://doi.org/10.1006/nimg.2000.0582>
+- Abraham, A., Pedregosa, F., Eickenberg, M., et al. (2014). Machine learning for neuroimaging with scikit-learn. *Frontiers in Neuroinformatics, 8*, 14. <https://doi.org/10.3389/fninf.2014.00014>
+- Varoquaux, G., Raamana, P. R., Engemann, D. A., et al. (2017). Assessing and tuning brain decoders: Cross-validation, caveats, and guidelines. *NeuroImage, 145*, 166–179. <https://doi.org/10.1016/j.neuroimage.2016.10.038>
+- Wen, J., Thibeau-Sutre, E., Diaz-Melo, M., et al. (2020). Convolutional neural networks for classification of Alzheimer's disease: Overview and reproducible evaluation. *Medical Image Analysis, 63*, 101694. <https://doi.org/10.1016/j.media.2020.101694>
+- Cole, J. H., & Franke, K. (2017). Predicting age using neuroimaging: Innovative brain ageing biomarkers. *Trends in Neurosciences, 40*(12), 681–690. <https://doi.org/10.1016/j.tins.2017.10.001>
+
+::: {.callout-note}
+## Estado de verificación de las referencias
+El DOI de Cole y Franke (2017) se confirmó en línea. Para Marcus et al. (2007) y Morris (1993) se confirmaron título y revista, pero no el DOI. Los demás datos bibliográficos se citan de memoria. Todos los DOI deben verificarse en <https://doi.org> antes de distribuir el documento.
+:::

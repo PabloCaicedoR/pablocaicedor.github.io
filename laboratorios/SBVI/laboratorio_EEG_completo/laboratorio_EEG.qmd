@@ -1,0 +1,444 @@
+---
+title: "EEG y revisión de crisis epilépticas"
+subtitle: "Práctica de laboratorio · Señales Bioeléctricas y Visualización Interactiva"
+author: "Ph. D. Pablo Eduardo Caicedo-Rodríguez"
+lang: es
+format:
+  html:
+    theme: ../../../recursos/estilos/bioforja-laboratorios.scss
+    toc: false
+    toc-location: body
+    toc-depth: 3
+    number-sections: true
+    code-fold: show
+    code-summary: "Mostrar/ocultar código"
+    code-copy: true
+    code-overflow: wrap
+    embed-resources: true
+    fig-responsive: true
+    df-print: paged
+execute:
+  enabled: true
+  echo: true
+  warning: false
+  error: true
+  freeze: auto
+---
+
+# Solicitud del médico
+
+> **Caso docente simulado.** «Soy neurólogo de una unidad de monitorización de epilepsia. Necesito revisar registros EEG prolongados de pacientes con epilepsia farmacorresistente. Solicito una herramienta que permita navegar el trazado, examinar su calidad y observar cómo cambian la amplitud, la actividad rítmica y la distribución espectral alrededor de las crisis anotadas. Debe mostrar las anotaciones originales y permitir comparar segmentos sin crisis anotada con segmentos ictales. Cada indicador debe tener fundamento fisiológico, unidades, parámetros de cálculo y limitaciones explícitas».
+
+La respuesta de ingeniería será un prototipo de revisión retrospectiva. No se pide diagnosticar epilepsia, localizar un foco causal ni predecir crisis. Un registro sin crisis anotada no representa un control sano. No se dispone de información clínica suficiente para evaluar respuesta terapéutica.
+
+**Pregunta central:** ¿qué cambios cuantificables acompañan a las crisis anotadas y cuáles pueden confundirse con artefactos o variaciones fisiológicas?
+
+# Propósito, organización y evidencias
+
+La práctica desarrolla RA1, RA3, RA4 y RA5 del programa adjunto: relación fisiología-señal, exploración temporal y espectral, dashboard e integración del pipeline. RA2 se aborda mediante auditoría de la adquisición registrada; no sustituye una práctica de adquisición física.
+
+Trabajo en equipos de 3 estudiantes. Duración propuesta: cuatro sesiones de 90 minutos y seis horas independientes. Requisitos: Python, NumPy, filtros digitales, FFT y estadística descriptiva.
+
+| Sesión | Trabajo presencial | Evidencia verificable |
+|:--|:--|:--|
+| 1 | Solicitud clínica, adquisición y auditoría EDF | Contrato de datos y trazados crudos |
+| 2 | Filtrado, segmentación y PSD | Comparación crudo/filtrado y métricas |
+| 3 | Dashboard y controles de calidad | Prototipo navegable y exportación |
+| 4 | Validación y exposición | Reporte LaTeX y presentación Beamer |
+
+Cada equipo debe justificar sus decisiones y completar las actividades. El código de esta guía es un andamiaje: no constituye un informe resuelto ni resultados experimentales.
+
+# Datos abiertos y trazabilidad
+
+Se empleará **CHB-MIT Scalp EEG Database, versión 1.0.0**, alojada en PhysioNet: <https://physionet.org/content/chbmit/1.0.0/>. Acceso abierto bajo Open Data Commons Attribution License v1.0. Citar el dataset y respetar su atribución. Los registros son EDF, con muestreo nominal de 256 Hz y resolución de 16 bits; se debe verificar la cabecera de cada archivo.
+
+El núcleo mínimo usa `chb01_03.edf` y `chb01-summary.txt`. El resumen oficial anota una crisis de 2996 a 3036 s desde el inicio del EDF. Examinar 2876--3156 s, conservando el origen temporal. Ampliación: incorporar `chb01_04.edf` y un archivo sin crisis anotada, `chb01_01.edf`. No concatenar EDF como si no existieran discontinuidades.
+
+Descargar exclusivamente los archivos necesarios desde:
+
+```text
+https://physionet.org/files/chbmit/1.0.0/chb01/chb01_03.edf
+https://physionet.org/files/chbmit/1.0.0/chb01/chb01-summary.txt
+```
+
+Guardar nombre, versión, URL, fecha de descarga, SHA-256, frecuencia, duración, unidades y canales. Las fechas del EDF fueron sustituidas para proteger privacidad; los tiempos relativos dentro del archivo son la referencia de esta práctica. El resumen debe leerse, no reemplazarse por etiquetas inferidas del algoritmo.
+
+**Actividad 1.** Verificar que la anotación se encuentra dentro de la duración del registro; listar señales ficticias, canales no EEG y duplicados. Dibujar la cadena electrodos-amplificación-ADC-EDF y señalar qué información de adquisición está disponible y cuál no está documentada.
+
+# De la fisiología a los indicadores
+
+## Qué mide el EEG
+
+El EEG de superficie refleja principalmente la suma espacial y temporal de corrientes postsinápticas de poblaciones corticales con geometría favorable. No registra directamente la descarga de una neurona. La conducción de volumen, el montaje y las fuentes extracerebrales modifican lo observado.
+
+Durante una crisis pueden aparecer patrones rítmicos evolutivos y cambios de amplitud o distribución espectral; no todas las crisis producen el mismo patrón ni aumentan todas las métricas. La actividad muscular puede incrementar amplitud, longitud de línea y potencia rápida. Parpadeos y movimiento pueden aumentar potencia lenta. Por ello, ninguna banda aislada prueba una crisis.
+
+Los canales como `FP1-F7` son diferencias bipolares, no potenciales de un electrodo con referencia común. No aplicar una referencia promedio ni construir una topografía de electrodos directamente sobre estas diferencias. La similitud entre canales con electrodos compartidos no demuestra conectividad neuronal.
+
+## Matriz de traducción clínica
+
+| Necesidad | Fenómeno de interés | Indicador | Límite interpretativo |
+|:--|:--|:--|:--|
+| Revisar intensidad | Cambio de amplitud del trazado | RMS centrado, en microvoltios | Depende del montaje y artefactos |
+| Revisar variación rápida | Oscilaciones y transitorios | Longitud de línea media, microvoltios | Depende de muestreo y filtro |
+| Describir actividad rítmica | Redistribución espectral | Potencia absoluta y relativa por banda | Bandas no son diagnósticos |
+| Revisar concentración espectral | Predominio de frecuencias | Entropía espectral normalizada | Puede subir o bajar durante crisis |
+| Cuantificar tiempo anotado | Duración de eventos del experto | Tiempo ictal y fracción anotada | No es duración detectada automáticamente |
+| Identificar señal revisable | Amplitud extrema o señal plana | Banderas de calidad | No equivalen a artefacto confirmado |
+
+## Definiciones matemáticas
+
+Sea $x[n]$ la señal de una época de $N$ muestras en microvoltios y $y[n]=x[n]-\bar{x}$.
+
+$$\mathrm{RMS}_c=\sqrt{\frac{1}{N}\sum_{n=0}^{N-1}y[n]^2},\qquad
+\mathrm{LL}=\frac{1}{N-1}\sum_{n=1}^{N-1}|x[n]-x[n-1]|.$$
+
+El RMS centrado mide amplitud respecto a la media. LL es una variación media por paso de muestra, no una velocidad; al comparar LL debe mantenerse la frecuencia de muestreo.
+
+Con una PSD unilateral de Welch $S_{xx}(f)$ en $\mu\mathrm{V}^2/\mathrm{Hz}$:
+
+$$P_{[a,b]}=\int_a^b S_{xx}(f)\,df,\qquad
+R_{[a,b]}=\frac{P_{[a,b]}}{P_{[0.5,40]}}.$$
+
+Usar delta 0.5--4 Hz, theta 4--8 Hz, alfa 8--13 Hz y beta 13--30 Hz. La potencia de 30--40 Hz completa el denominador; no debe presentarse como toda la banda gamma. Son convenciones operativas que dependen del contexto y edad.
+
+Para $K$ bins entre 0.5 y 40 Hz, $p_k=S_k/\sum_jS_j$:
+
+$$H=-\frac{\sum_{k=1}^{K}p_k\ln p_k}{\ln K}.$$
+
+Con bins equiespaciados, $H$ varía entre 0 y 1 para espectros no nulos. Deben mantenerse resolución y límites espectrales. Una señal plana hace indefinidas las potencias relativas y la entropía: devolver valores ausentes, no cero.
+
+La fracción ictal anotada es la longitud de la unión de intervalos ictales dentro del período observado dividida por su duración. No sumar épocas solapadas para estimarla. En el núcleo mínimo se puede informar la duración de la única crisis según el resumen, diferenciándola de cualquier estimación del dashboard.
+
+# Diseño del procesamiento
+
+1. Inspeccionar cabecera, montaje, unidades, anotaciones y trazado crudo.
+2. Seleccionar derivaciones EEG reales, evitando canales ficticios y duplicados.
+3. Conservar crudo y aplicar un pasabanda propuesto de 0.5--40 Hz.
+4. Segmentar épocas de 4 s con avance de 2 s.
+5. Estimar PSD y métricas; marcar calidad sin borrar datos silenciosamente.
+6. Vincular cada época con anotaciones por intersección temporal.
+7. Visualizar y exportar parámetros junto con los indicadores.
+
+**Filtro.** Un Butterworth de orden 4 en secciones de segundo orden es un punto de partida. `sosfiltfilt` aplica filtrado bidireccional: no es causal y su respuesta de magnitud es el cuadrado de la respuesta de una pasada. Deben documentarse ambas características. No utilizarlo para afirmar latencias de detección en tiempo real. Filtrar un contexto amplio antes de recortar y revisar efectos de borde. El pasabanda atenúa la interferencia de 50/60 Hz; un notch adicional requiere evidencia de contaminación y evaluación de su efecto, no aplicación automática.
+
+**Ventanas.** A 256 Hz, 4 s equivalen a 1024 muestras; el avance de 2 s produce 50 % de solapamiento. Welch usará segmentos Hann de 2 s, 50 % de solapamiento y resolución de bins de 0.5 Hz. La resolución efectiva también depende de la ventana. Las épocas de 4 s comprometen localización temporal y estabilidad espectral; delta queda representada con pocos ciclos en los segmentos Welch y exige cautela.
+
+**Actividad 2.** Comparar épocas de 2, 4 y 8 s y avances de la mitad de cada longitud. Mantener el segmento Welch de 2 s para aislar parcialmente el efecto de duración de época. Explicar qué cambia en estabilidad y asignación de transiciones. Las épocas solapadas no son observaciones independientes.
+
+# Entorno reproducible
+
+Crear un proyecto con carpetas `data/raw`, `data/derived`, `src`, `figures` y `entregables`. No subir EDF al repositorio. Registrar versiones con `uv.lock`; la instalación de Quarto y LaTeX es independiente de Python.
+
+```bash
+uv init
+uv add numpy scipy pandas mne matplotlib plotly streamlit
+uv run python -c "import mne, scipy; print(mne.__version__, scipy.__version__)"
+```
+
+## Lectura y preservación del tiempo
+
+Guardar el siguiente bloque en `src/procesamiento.py` y continuar con las funciones siguientes. MNE devuelve datos EEG en voltios; la conversión a microvoltios se hace una sola vez.
+
+```python
+from pathlib import Path
+import hashlib
+import re
+import numpy as np
+import pandas as pd
+import mne
+from scipy.signal import butter, sosfiltfilt, welch
+
+EDF = Path("data/raw/chb01_03.edf")
+SUMMARY = Path("data/raw/chb01-summary.txt")
+raw = mne.io.read_raw_edf(EDF, preload=False, verbose=False)
+fs = float(raw.info["sfreq"])
+channel = "FP1-F7"
+if channel not in raw.ch_names:
+    raise ValueError("Revisar nombres reales y montaje")
+text = SUMMARY.read_text()
+blocks = re.split(r"File Name:\s*", text)[1:]
+block = next(b for b in blocks if b.splitlines()[0].strip() == EDF.name)
+starts = [int(v) for v in re.findall(
+    r"Seizure(?:\s+\d+)? Start Time:\s*(\d+) seconds", block)]
+ends = [int(v) for v in re.findall(
+    r"Seizure(?:\s+\d+)? End Time:\s*(\d+) seconds", block)]
+expected = int(re.search(r"Number of Seizures in File:\s*(\d+)", block)[1])
+assert len(starts) == len(ends) == expected
+intervals = list(zip(starts, ends))
+assert all(0 <= a < b <= raw.n_times/fs for a, b in intervals)
+# Contexto amplio; las métricas se limitarán a 2876--3156 s.
+t0, t1 = 2800., 3232.
+i0, i1 = round(t0*fs), round(t1*fs)
+x_uv = raw.get_data(picks=[channel], start=i0, stop=i1)[0] * 1e6
+sos = butter(4, [0.5, 40], btype="bandpass", fs=fs, output="sos")
+xf = sosfiltfilt(sos, x_uv)
+print(raw.ch_names, fs, intervals)
+print(hashlib.sha256(EDF.read_bytes()).hexdigest())
+```
+
+Mantener los nombres originales y verificar si MNE añade sufijos a canales duplicados. El canal inicial es una elección técnica para iniciar la práctica, no una localización clínica establecida.
+
+## Funciones de indicadores
+
+La integración interpola los extremos de la banda e incluye ambos límites. Un punto compartido no añade área por sí solo al integrar bandas contiguas.
+
+```python
+def bandpower(f, p, a, b):
+    inside = (f > a) & (f < b)
+    grid = np.r_[a, f[inside], b]
+    values = np.interp(grid, f, p)
+    return np.trapezoid(values, grid)
+
+
+def features(epoch, fs):
+    y = epoch - epoch.mean()
+    f, p = welch(y, fs=fs, window="hann",
+                 nperseg=round(2*fs), noverlap=round(fs),
+                 detrend="constant", scaling="density")
+    total = bandpower(f, p, 0.5, 40)
+    sel = (f >= 0.5) & (f <= 40)
+    mass = p[sel].sum()
+    h = np.nan
+    if mass > 0:
+        q = p[sel] / mass
+        positive = q > 0
+        h = -np.sum(q[positive]*np.log(q[positive])) / np.log(len(q))
+    out = {"rms_uv": np.sqrt(np.mean(y*y)),
+           "ll_uv": np.mean(np.abs(np.diff(epoch))),
+           "entropy": h, "power_uv2": total}
+    bands = {"delta": (0.5, 4), "theta": (4, 8),
+             "alpha": (8, 13), "beta": (13, 30)}
+    for name, (a, b) in bands.items():
+        val = bandpower(f, p, a, b)
+        out[name+"_uv2"] = val
+        out[name+"_rel"] = val/total if total > 0 else np.nan
+    return out
+
+
+def ictal_overlap(a, b, intervals):
+    # Intervalos oficiales no solapados, verificados al importar.
+    return sum(max(0., min(b, v)-max(a, u)) for u, v in intervals)
+
+rows = []
+n, step = round(4*fs), round(2*fs)
+for j in range(0, len(xf)-n+1, step):
+    a, b = t0+j/fs, t0+(j+n)/fs
+    if a < 2876 or b > 3156:
+        continue
+    e, original = xf[j:j+n], x_uv[j:j+n]
+    overlap = ictal_overlap(a, b, intervals)
+    state = "ictal" if overlap == 4 else (
+        "sin_crisis_anotada" if overlap == 0 else "transicion")
+    row = features(e, fs)
+    row.update(start_s=a, end_s=b, channel=channel, state=state,
+               overlap_s=overlap,
+               peak_to_peak_raw_uv=np.ptp(original),
+               flat_raw=bool(np.std(original) < 0.1))
+    rows.append(row)
+df = pd.DataFrame(rows)
+Path("data/derived").mkdir(parents=True, exist_ok=True)
+df.to_csv("data/derived/metricas.csv", index=False)
+```
+
+El criterio de señal plana de 0.1 microvoltios es didáctico y configurable; no es una norma clínica. Añadir banderas de amplitud extrema, saturación y datos no finitos con umbrales defendidos y revisión visual. Saturación debe investigarse con límites de adquisición o códigos digitales; amplitud grande por sí sola no confirma saturación.
+
+**Actividad 3.** Extender el procesamiento a por lo menos cuatro derivaciones sin duplicarlas. Exportar configuración a JSON, incluyendo filtro, ventanas, PSD y calidad. Añadir la fracción ictal de cada época y excluir las épocas de transición de una comparación binaria. Validar intervalos no solapados antes de sumar intersecciones.
+
+# Análisis exploratorio y validación
+
+## Exploración requerida
+
+Mostrar trazados crudos y filtrados con las mismas unidades y escala, histograma de amplitud, distribución de métricas por estado, PSD y espectrograma. Elegir segmentos comparables en canal y duración. Los períodos anterior y posterior a la crisis se describen por su posición temporal; no atribuirles un estado preictal predictivo ni recuperación clínica sin evidencia.
+
+Por canal y estado presentar mediana, rango intercuartílico, número de épocas y porcentaje marcado por calidad. Identificar qué resultados dependen de excluir épocas marcadas. No presentar valores p calculados tratando ventanas solapadas como sujetos independientes. Con un paciente y una crisis, la comparación es descriptiva; no permite inferencia poblacional.
+
+## Pruebas que debe implementar el equipo
+
+1. Seno sintético de 10 Hz: máximo de PSD próximo a 10 Hz y predominio alfa, considerando fuga espectral. Indicar tolerancias.
+2. Multiplicar por dos la amplitud: RMS y LL se duplican; potencia absoluta se cuadruplica; potencia relativa y entropía permanecen aproximadamente iguales.
+3. Señal constante: RMS centrado nulo y métricas normalizadas ausentes.
+4. Anotación que corta una época: intersección correcta y etiqueta de transición.
+5. Cambiar de voltios a microvoltios: verificar factores de $10^6$ en amplitud y $10^{12}$ en potencia.
+6. Comprobar que seleccionar un canal o tiempo en el dashboard actualiza todas las vistas coherentemente.
+
+Estas pruebas verifican implementación, no validación clínica. Registrar resultados reales en una tabla con prueba, criterio, resultado y decisión.
+
+**Actividad 4.** Explicar una discrepancia entre indicador y trazado; contrastar dos canales y dos configuraciones de ventana. No elegir parámetros mirando qué opción maximiza la separación y después presentar esa separación como evaluación independiente.
+
+## Extensión opcional: alertas experimentales
+
+Solo después de completar la revisión descriptiva, proponer una regla de alerta. Elegir umbral en registros de desarrollo y evaluar en otro registro; no ajustar con las mismas crisis utilizadas para reportar desempeño. Si se generaliza a pacientes, separar por persona: `chb01` y `chb21` pertenecen al mismo sujeto.
+
+Evaluar sensibilidad por evento, falsas alertas por hora sin crisis anotada y retraso desde inicio anotado. Definir unión de alertas, período refractario y criterio de correspondencia antes de calcular métricas. Una ventana parcialmente ictal no equivale a un evento detectado. El filtro bidireccional impide atribuir una latencia operacional en tiempo real.
+
+# Dashboard: contrato funcional
+
+El dashboard se implementa en Python con Streamlit y Plotly. LaTeX se usa para documentos y diapositivas, no para la interfaz interactiva. La guía HTML explica el sistema; el reporte LaTeX conserva capturas estáticas y los resultados reales.
+
+| Panel | Contenido y comportamiento |
+|:--|:--|
+| Contexto | Archivo, canal bipolar, versión, unidades y período |
+| Trazado | Crudo y filtrado; navegación y escala en microvoltios |
+| Eventos | Inicio y fin oficiales, fuente y selección de evento |
+| Espectro | PSD y espectrograma del intervalo elegido |
+| Tendencias | RMS, LL, bandas y entropía con unidades |
+| Calidad | Banderas visibles y opción de incluir/excluir |
+| Exportación | CSV y configuración; rango temporal y canal |
+
+Todas las vistas usan segundos desde el inicio del EDF. Marcar crisis con intervalos sombreados y etiquetas, evitando depender solo del color. Mostrar «sin crisis anotada», no «normal». Separar anotaciones del experto y alertas experimentales.
+
+## Andamiaje de interfaz
+
+Guardar como `app.py` en la raíz del proyecto. El código visualiza el CSV obtenido; el equipo debe completar trazado, espectrograma, calidad y exportación de configuración.
+
+```python
+from pathlib import Path
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+st.set_page_config(page_title="Revisión EEG", layout="wide")
+st.title("Revisión retrospectiva de EEG")
+st.caption("Prototipo docente | anotaciones y métricas descriptivas")
+p = Path("data/derived/metricas.csv")
+if not p.exists():
+    st.info("Ejecutar primero src/procesamiento.py")
+    st.stop()
+data = pd.read_csv(p)
+channel = st.selectbox("Derivación bipolar", sorted(data.channel.unique()),
+                       key="channel")
+d = data[data.channel == channel].copy()
+lo, hi = float(d.start_s.min()), float(d.end_s.max())
+a, b = st.slider("Tiempo desde inicio EDF (s)", lo, hi,
+                 (lo, hi), key="interval")
+d = d[(d.start_s >= a) & (d.end_s <= b)]
+metric = st.selectbox("Indicador", ["rms_uv", "ll_uv", "entropy",
+                                      "alpha_rel"], key="metric")
+if d.empty:
+    st.warning("No hay épocas completas dentro de este intervalo")
+else:
+    fig = px.line(d, x="start_s", y=metric,
+                  hover_data=["state", "overlap_s"])
+    st.plotly_chart(fig, use_container_width=True)
+    st.dataframe(d)
+    st.download_button("Exportar épocas seleccionadas",
+                       d.to_csv(index=False), "metricas_seleccion.csv",
+                       "text/csv", key="export")
+```
+
+Ejecutar `uv run python src/procesamiento.py` y después `uv run streamlit run app.py`. Verificar que las tendencias no unen segmentos separados tras exclusión de calidad; insertar huecos o distinguir segmentos. Evitar cargar todo el conjunto CHB-MIT al iniciar la aplicación.
+
+**Actividad 5.** Probar con un usuario que actúe como médico: localizar la crisis, revisar un segmento sospechoso y exportar evidencia. Registrar tiempo de tarea, errores y una mejora de interfaz. No convertir estas observaciones en evidencia de utilidad clínica.
+
+# Entregables en LaTeX
+
+El equipo entrega repositorio reproducible, dashboard ejecutable, CSV con trazabilidad, reporte `reporte.tex` y presentación `presentacion.tex`. Las figuras provienen del análisis real en Python y se exportan como PDF vectorial o PNG de alta resolución. No generar curvas ilustrativas y presentarlas como datos del paciente.
+
+## Reporte científico
+
+Extensión sugerida: 6--8 páginas sin anexos. Estructura: solicitud clínica, fundamento fisiológico, datos y adquisición, métodos, resultados reales, validación, discusión y límites. Incluir al menos cuatro figuras: trazado comparativo, PSD por estado, tendencias alrededor de la crisis y captura del dashboard. Cada figura debe indicar canal, unidades, tiempo, filtro y ventana.
+
+```latex
+\documentclass[11pt,a4paper]{article}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,graphicx,booktabs,hyperref}
+\title{Revisión EEG: fundamento, indicadores y dashboard}
+\author{Integrantes y grupo}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Solicitud clínica y alcance}
+% Precisar la pregunta y los límites del prototipo.
+\section{Fundamento fisiológico}
+% Justificar cada indicador y sus factores de confusión.
+\section{Datos y métodos}
+% Dataset, montaje, unidades, parámetros y trazabilidad.
+\section{Resultados y validación}
+% Insertar únicamente resultados calculados y pruebas reales.
+\section{Discusión y limitaciones}
+% Contrastar indicadores con el trazado y las anotaciones.
+\section{Referencias}
+% Incluir DOI del dataset y documentación consultada.
+\end{document}
+```
+
+## Presentación Beamer
+
+Duración: 10 minutos y 5 minutos de preguntas. Preparar 8--10 diapositivas; ampliar la plantilla con adquisición, métodos, resultados reales, validación y conclusiones limitadas por evidencia.
+
+```latex
+\documentclass[aspectratio=169]{beamer}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,graphicx,booktabs}
+\usetheme{Madrid}
+\title{EEG y revisión de crisis epilépticas}
+\author{Equipo}
+\begin{document}
+\frame{\titlepage}
+\begin{frame}{Solicitud clínica}
+¿Qué necesita revisar el médico y qué entrega el dashboard?
+\end{frame}
+\begin{frame}{De la fisiología a la ingeniería}
+Explicar un indicador, su ecuación, unidades y limitaciones.
+\end{frame}
+\begin{frame}{Evidencia y límites}
+Insertar resultados calculados; diferenciar asociación y diagnóstico.
+\end{frame}
+\end{document}
+```
+
+Compilar dos veces con `pdflatex reporte.tex` y `pdflatex presentacion.tex`, o usar `latexmk -pdf`. Revisar desbordamientos, legibilidad de ejes y referencias. La exposición debe incluir una demostración breve del dashboard; una captura no reemplaza su funcionamiento.
+
+# Preguntas orientadoras para la exposición
+
+1. ¿Qué corrientes fisiológicas originan el EEG y qué modifica un montaje bipolar?
+2. ¿Por qué un aumento de LL o potencia beta puede ser extracerebral?
+3. ¿Qué ocurre con cada indicador si se duplica la amplitud?
+4. ¿Cómo afectan la época de 4 s y los segmentos Welch de 2 s a la interpretación?
+5. ¿Por qué la potencia relativa puede aumentar aunque la absoluta disminuya?
+6. ¿Cómo se conserva el inicio temporal al recortar el EDF?
+7. ¿Qué diferencia hay entre evento anotado, época parcialmente ictal y alerta?
+8. ¿Qué evidencia permite comparar estados y qué impide generalizar a otros pacientes?
+9. ¿Por qué no se puede inferir un foco causal de estos mapas o tendencias?
+10. ¿Qué decisión de interfaz reduce una interpretación clínica errónea?
+
+# Rúbrica de evaluación
+
+La calificación es $\sum_i w_i L_i/4$, con pesos porcentuales y niveles $L_i$ de 0 a 4. Nivel 0: evidencia ausente. Nivel 1: errores sustanciales. Nivel 2: desarrollo parcial correcto. Nivel 3: cumple el criterio. Nivel 4: cumple y aporta validación o análisis crítico adicional pertinente.
+
+| Criterio | Peso | Evidencia exigida para nivel 3 |
+|:--|--:|:--|
+| Fisiología e interpretación | 20 | Traducción de necesidad a indicadores y confusores |
+| Datos y adquisición | 15 | Montaje, unidades, anotaciones y trazabilidad verificadas |
+| Procesamiento y matemáticas | 20 | Filtros, ventanas, PSD y ecuaciones consistentes |
+| Validación y análisis crítico | 20 | Pruebas ejecutadas, comparación y límites correctos |
+| Dashboard | 15 | Paneles coherentes, calidad visible y exportación |
+| Comunicación y reproducibilidad | 10 | LaTeX legible, exposición y ejecución documentada |
+
+Un indicador con unidades incorrectas o una anotación desplazada debe corregirse antes de interpretar sus resultados. Las conclusiones que atribuyan diagnóstico, causalidad o predicción sin validación se consideran errores sustanciales del criterio correspondiente.
+
+# Referencias y consulta técnica
+
+- Guttag, J. (2010). *CHB-MIT Scalp EEG Database*, versión 1.0.0. PhysioNet. DOI: [10.13026/C2K01R](https://doi.org/10.13026/C2K01R). Fuente del dataset, licencia, adquisición y anotaciones.
+- Shoeb, A. (2009). *Application of Machine Learning to Epileptic Seizure Onset Detection and Treatment*. Tesis doctoral, MIT. Referencia original enlazada por PhysioNet: <https://hdl.handle.net/1721.1/54669>.
+- Resumen oficial del caso: <https://physionet.org/files/chbmit/1.0.0/chb01/chb01-summary.txt>.
+- Documentación de MNE, lectura EDF y unidades: <https://mne.tools/stable/generated/mne.io.read_raw_edf.html>.
+- SciPy, Welch y filtrado SOS: <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html> y <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfiltfilt.html>.
+
+# Compilación de esta guía
+
+El archivo `laboratorio_EEG.qmd` y `bioforja-eeg.css` deben permanecer juntos. Con Quarto instalado:
+
+```bash
+quarto render laboratorio_EEG.qmd --to html
+```
+
+Los bloques Python se muestran sin ejecutarse (`eval: false`): compilar la guía no descarga datos ni genera resultados. Los estudiantes ejecutan el procesamiento en su proyecto y elaboran sus reportes con evidencia real.
+
+La guía se genera en HTML. La distribución LaTeX se necesita para compilar los reportes y las presentaciones Beamer de los estudiantes.
