@@ -1,0 +1,1697 @@
+---
+title: "Archivos TOML en Python con tomllib"
+subtitle: "Leer, validar, escribir y editar la configuración de BioForge Experiment OS"
+author: "BioForge Experiment OS"
+date: 2026-10-03
+lang: es
+image: "../recursos/imagenes/tutoriales/TOML/portada-tutorial-toml.png"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Contenido"
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    highlight-style: github
+    theme:
+      light: cosmo
+      dark: darkly
+    embed-resources: true
+    smooth-scroll: true
+    anchor-sections: true
+    fig-cap-location: bottom
+    mermaid:
+      theme: neutral
+---
+
+# Introducción {#sec-intro}
+
+**TOML** (*Tom's Obvious, Minimal Language*) es un formato de configuración
+pensado para que lo lean y lo editen personas. Tiene tipos de datos claros
+(cadenas, números, booleanos, fechas, listas y tablas), admite comentarios y se
+traduce sin ambigüedad a un diccionario. Es el formato de `pyproject.toml`, de
+`Cargo.toml` en Rust y de muchas herramientas como Ruff, mypy, pytest o uv.
+
+Desde **Python 3.11** la biblioteca estándar incluye `tomllib`, un lector de
+TOML sin dependencias. Este tutorial cubre:
+
+1. El **formato TOML** con el detalle suficiente para escribirlo sin dudas.
+2. La **API de `tomllib`** completa (son dos funciones y una excepción) y sus trampas.
+3. Cómo **validar** lo que se lee, desde una `dataclass` hasta un esquema
+   `pydantic` con mensajes que apuntan a la clave exacta.
+4. Cómo **escribir** TOML con `tomli-w` y cómo **editarlo sin perder
+   comentarios** con `tomlkit`, porque `tomllib` solo lee.
+5. Una **configuración por capas** con `pydantic-settings`, compatible con el
+   `config.py` actual de BioForge.
+6. Un **laboratorio** completo, `bioforge-config`, con CLI y pruebas.
+
+::: {.callout-note}
+## Cómo leer este documento
+- La @sec-formato es una referencia del formato. Si ya escribes `pyproject.toml` con soltura, puedes hojearla.
+- La @sec-tomllib es el núcleo: la API de lectura.
+- Las secciones @sec-validar a @sec-capas tratan de validar, escribir, editar y combinar configuraciones.
+- La @sec-laboratorio es el paquete de ejemplo completo, listo para copiar.
+- Al final hay errores comunes y una **hoja de trucos**.
+:::
+
+::: {.callout-tip}
+## Código verificado
+Todos los programas de este documento se ejecutaron con **Python 3.11**, y el
+paquete del laboratorio también con **Python 3.13**. Las salidas que se
+muestran son las reales. Versiones usadas: `tomli-w` 1.2, `tomlkit` 0.15,
+`pydantic` 2.13 y `pydantic-settings` 2.14. El laboratorio pasa sus 19 pruebas
+con `pytest`, `ruff check` y `mypy --strict`. Los archivos están junto a este
+tutorial en `ejemplo/fragmentos/` (ejemplos cortos numerados) y
+`ejemplo/bioforge-config/` (paquete completo).
+:::
+
+## ¿Por qué TOML en BioForge?
+
+BioForge Experiment OS ya usa TOML aunque no lo parezca: `pyproject.toml`
+declara el paquete, sus dependencias, el *entry point* `bioforge` y la
+configuración de Ruff, mypy y pytest. Las configuraciones de estudio
+(`config/experiment.yaml`, `data_contract.yaml`, `model_plan.yaml`) están hoy en
+YAML. Este tutorial no propone migrarlas; sirve para trabajar bien con los TOML
+que ya existen y para decidir con criterio dónde conviene uno nuevo.
+
+| Criterio | TOML | YAML | JSON |
+|---|---|---|---|
+| Lectura en la biblioteca estándar | Sí (`tomllib`, 3.11+) | No (PyYAML) | Sí (`json`) |
+| Escritura en la biblioteca estándar | No | No | Sí |
+| Comentarios | Sí | Sí | No |
+| Fechas y horas como tipo nativo | Sí | Parcial (depende del cargador) | No |
+| Ambigüedades de tipo (`no`, `1.10`, `08`) | Ninguna | Varias | Ninguna |
+| Anidamiento profundo | Incómodo | Cómodo | Cómodo |
+| Valor nulo | No existe | `null` | `null` |
+
+: TOML frente a YAML y JSON para archivos de configuración. {#tbl-formatos}
+
+En resumen: TOML brilla en configuraciones **planas o de dos o tres niveles**
+editadas a mano (ajustes de la aplicación, parámetros de un pipeline, metadatos
+de un estudio). Para estructuras muy anidadas o generadas por programas, JSON o
+YAML pueden ser más cómodos.
+
+## Instalación
+
+`tomllib` no se instala: viene con Python 3.11 o posterior. Las bibliotecas
+complementarias se añaden con `uv` (el gestor que usa BioForge) o `pip`:
+
+```bash
+python --version                 # 3.11 o superior
+uv add tomli-w tomlkit           # escribir y editar TOML
+uv add pydantic pydantic-settings  # validar y combinar configuraciones
+# con pip:
+pip install tomli-w tomlkit pydantic pydantic-settings
+```
+
+# El formato TOML en 15 minutos {#sec-formato}
+
+Un documento TOML es una **tabla** (un diccionario) formada por pares
+`clave = valor`, agrupados opcionalmente en sub-tablas con encabezados
+`[nombre]`. Este es el archivo de estudio que se usa a lo largo del tutorial:
+
+```{.toml filename="estudio.toml"}
+# Configuración del estudio GAIT-S01 (BioForge Experiment OS)
+schema_version = "0.2.0"
+
+[project]
+project_id = "5f0c9a3e-1b7d-4c2a-9e51-0a8d6f3b2c41"
+name = "Marcha y riesgo de caída"
+owner = "Laboratorio de Biomecánica"
+created = 2026-09-28T09:15:00-05:00
+tags = ["marcha", "vicon", "caídas"]
+
+[acquisition]
+modality = "vicon"
+sampling_rate_hz = 100.0
+markers = 39
+start_time = 08:30:00
+
+[quality]
+min_samples = 3
+max_missing_ratio = 0.05
+filename_regex = '^(?P<participant>P[0-9]{3})_(?P<session>S[0-9]{2})\.c3d$'
+
+[[participants]]
+id = "P001"
+age = 67
+sex = "F"
+
+[[participants]]
+id = "P002"
+age = 72
+sex = "M"
+notes = """
+Usa bastón en la sesión 2.
+Revisar la sincronización de la plataforma de fuerza."""
+```
+
+## Reglas básicas
+
+- El archivo debe estar en **UTF-8**. Los comentarios empiezan con `#`.
+- Las claves distinguen mayúsculas: `sampling_rate_hz` y `sampling_rate_Hz` son distintas.
+- Claves sin comillas: letras ASCII, dígitos, `_` y `-`. Con comillas, cualquier texto: `"tasa (Hz)" = 100`.
+- Una clave **no puede definirse dos veces**, y una tabla tampoco.
+- No existe `null`. Si un valor es opcional, se omite la clave.
+- Los espacios alrededor de `=` y la indentación son libres; sirven solo para leer mejor.
+
+## Tipos de datos
+
+TOML tiene once tipos, y cada uno se traduce a un tipo concreto de Python:
+
+```{.python filename="02_tipos.py"}
+"""Cómo se traduce cada tipo TOML a Python."""
+import tomllib
+
+documento = """
+cadena    = "texto con \\t escape"
+literal   = 'C:\\datos\\sin\\escapes'
+entero    = 1_000_000
+hexa      = 0xFF
+flotante  = 6.626e-34
+infinito  = inf
+booleano  = true
+fecha_hora_tz   = 2026-09-28T09:15:00-05:00
+fecha_hora_local = 2026-09-28T09:15:00
+fecha     = 2026-09-28
+hora      = 08:30:00.250
+lista     = [1, 2, 3]
+mixta     = [1, "dos", 3.0]
+en_linea  = { x = 1, y = 2 }
+"""
+
+for clave, valor in tomllib.loads(documento).items():
+    print(f"{clave:<16} {type(valor).__name__:<9} {valor!r}")
+```
+
+```{.text filename="Salida"}
+cadena           str       'texto con \t escape'
+literal          str       'C:\\datos\\sin\\escapes'
+entero           int       1000000
+hexa             int       255
+flotante         float     6.626e-34
+infinito         float     inf
+booleano         bool      True
+fecha_hora_tz    datetime  datetime.datetime(2026, 9, 28, 9, 15, tzinfo=datetime.timezone(datetime.timedelta(days=-1, seconds=68400)))
+fecha_hora_local datetime  datetime.datetime(2026, 9, 28, 9, 15)
+fecha            date      datetime.date(2026, 9, 28)
+hora             time      datetime.time(8, 30, 0, 250000)
+lista            list      [1, 2, 3]
+mixta            list      [1, 'dos', 3.0]
+en_linea         dict      {'x': 1, 'y': 2}
+```
+
+| TOML | Python | Notas |
+|---|---|---|
+| `"básica"` | `str` | Admite escapes: `\n`, `\t`, `\"`, `\u00e9` |
+| `'literal'` | `str` | Sin escapes; ideal para rutas de Windows y expresiones regulares |
+| `"""multilínea"""` | `str` | El salto de línea justo tras `"""` se descarta |
+| `'''multilínea literal'''` | `str` | Sin escapes |
+| `42`, `1_000`, `0xFF`, `0o17`, `0b101` | `int` | Precisión arbitraria en Python |
+| `3.14`, `6.6e-34`, `inf`, `nan` | `float` | Con `parse_float` puede ser `Decimal` |
+| `true`, `false` | `bool` | Siempre en minúscula |
+| `2026-09-28T09:15:00-05:00` | `datetime` con `tzinfo` | Fecha y hora con desfase |
+| `2026-09-28T09:15:00` | `datetime` sin `tzinfo` | Fecha y hora local |
+| `2026-09-28` | `date` | |
+| `08:30:00` | `time` | |
+| `[1, 2, 3]` | `list` | Se pueden mezclar tipos desde TOML 1.0 |
+| `{ x = 1 }` y `[tabla]` | `dict` | |
+
+: Correspondencia entre tipos TOML y Python en `tomllib`. {#tbl-tipos}
+
+::: {.callout-tip}
+## Expresiones regulares y rutas: usa comillas simples
+En una cadena básica `"^P[0-9]{3}\.csv$"`, `\.` es un escape inválido y el
+archivo no se carga. En una cadena literal `'^P[0-9]{3}\.csv$'` la barra se
+conserva tal cual. Por eso `filename_regex` va entre comillas simples en
+`estudio.toml`.
+:::
+
+## Tablas, claves con puntos y tablas en línea
+
+Hay tres formas de escribir la misma estructura anidada, y las tres producen el
+mismo diccionario:
+
+```{.python filename="03_tablas.py"}
+"""Tablas, claves con puntos y arreglos de tablas producen el mismo dict."""
+import tomllib
+
+a = tomllib.loads("""
+[pipeline.ingestion]
+enabled = true
+""")
+b = tomllib.loads("""
+pipeline.ingestion.enabled = true
+""")
+c = tomllib.loads("""
+pipeline = { ingestion = { enabled = true } }
+""")
+print(a == b == c, a)
+
+pasos = tomllib.loads("""
+[[steps]]
+uses = "ingestion.csv"
+
+[[steps]]
+uses = "quality.basic"
+with = { min_samples = 3 }
+""")
+print(pasos)
+```
+
+```{.text filename="Salida"}
+True {'pipeline': {'ingestion': {'enabled': True}}}
+{'steps': [{'uses': 'ingestion.csv'}, {'uses': 'quality.basic', 'with': {'min_samples': 3}}]}
+```
+
+- **`[tabla]`**: la forma habitual para secciones con varias claves.
+- **Claves con puntos** (`a.b.c = 1`): útiles para una o dos claves sueltas.
+- **Tablas en línea** (`{ x = 1, y = 2 }`): compactas, pero en TOML 1.0 deben
+  caber en **una sola línea**, no admiten coma final y quedan cerradas: después
+  no se les puede añadir claves.
+
+## Arreglos de tablas
+
+`[[nombre]]` añade un elemento a una **lista de diccionarios**. Cada vez que
+aparece el encabezado empieza un elemento nuevo. Es la forma natural de
+escribir participantes, sesiones o pasos de un pipeline, como `[[participants]]`
+en `estudio.toml` o `[[steps]]` en el ejemplo anterior.
+
+```{mermaid}
+%%| label: fig-estructura
+%%| fig-cap: "Cómo se convierte estudio.toml en un diccionario de Python."
+flowchart LR
+  T["estudio.toml"] --> R["dict (raíz)"]
+  R --> S["schema_version: str"]
+  R --> P["project: dict"]
+  R --> A["acquisition: dict"]
+  R --> Q["quality: dict"]
+  R --> L["participants: list[dict]"]
+  P --> C["created: datetime con tzinfo"]
+  A --> H["start_time: time"]
+  L --> P1["{id: 'P001', age: 67, ...}"]
+  L --> P2["{id: 'P002', age: 72, notes: ...}"]
+```
+
+## Lo que TOML no permite
+
+Estos documentos son inválidos; el lector los rechaza con `TOMLDecodeError`:
+
+```{.python filename="04_errores.py"}
+"""TOMLDecodeError: qué pasa con un documento inválido."""
+import tomllib
+
+malos = {
+    "clave duplicada": 'a = 1\na = 2',
+    "tabla redefinida": '[x]\nv = 1\n[x]\nw = 2',
+    "cadena sin cerrar": 'nombre = "GAIT',
+    "valor sin comillas": 'modo = vicon',
+    "None no existe": 'valor = null',
+}
+for titulo, texto in malos.items():
+    try:
+        tomllib.loads(texto)
+    except tomllib.TOMLDecodeError as e:
+        print(f"{titulo:<18} -> {e}")
+```
+
+```{.text filename="Salida"}
+clave duplicada    -> Cannot overwrite a value (at end of document)
+tabla redefinida   -> Cannot declare ('x',) twice (at line 3, column 3)
+cadena sin cerrar  -> Unterminated string (at end of document)
+valor sin comillas -> Invalid value (at line 1, column 8)
+None no existe     -> Invalid value (at line 1, column 9)
+```
+
+::: {.callout-note}
+## TOML 1.0 y TOML 1.1
+La versión 1.1 de la especificación permite tablas en línea de varias líneas
+con coma final, el escape `\e` y horas sin segundos (`10:30`). La biblioteca
+`tomli` 2.4 ya la acepta, pero `tomllib` de Python 3.11 a 3.14 implementa
+TOML 1.0 y **rechaza** esa sintaxis (comprobado al preparar este tutorial).
+Mientras no controles qué Python leerá tus archivos, escribe TOML 1.0.
+:::
+
+# La API de tomllib {#sec-tomllib}
+
+`tomllib` expone exactamente tres nombres:
+
+| Nombre | Qué hace |
+|---|---|
+| `tomllib.load(fp, /, *, parse_float=float)` | Lee un archivo **abierto en binario** y devuelve un `dict` |
+| `tomllib.loads(s, /, *, parse_float=float)` | Lee un `str` y devuelve un `dict` |
+| `tomllib.TOMLDecodeError` | Excepción (subclase de `ValueError`) para documentos inválidos |
+
+: La API pública de `tomllib`. {#tbl-api}
+
+No hay `dump` ni `dumps`: el módulo **solo lee**. La escritura se trata en la
+@sec-escribir.
+
+## Leer un archivo
+
+```{.python filename="01_leer.py"}
+"""Leer un archivo TOML con tomllib (Python 3.11+)."""
+import tomllib
+from pathlib import Path
+
+ruta = Path(__file__).with_name("estudio.toml")
+
+# tomllib.load exige un archivo abierto en modo binario ("rb").
+with ruta.open("rb") as f:
+    config = tomllib.load(f)
+
+print(type(config).__name__)
+print(config["project"]["name"])
+print(config["acquisition"]["sampling_rate_hz"])
+for p in config["participants"]:
+    print(p["id"], p["age"], p.get("notes", "-").strip().splitlines()[0])
+```
+
+```{.text filename="Salida"}
+dict
+Marcha y riesgo de caída
+100.0
+P001 67 -
+P002 72 Usa bastón en la sesión 2.
+```
+
+El resultado es un `dict` normal: se recorre, se copia y se compara como
+cualquier otro. Las claves opcionales se leen con `.get()`, como `notes` en el
+primer participante.
+
+## Siempre en modo binario
+
+`tomllib.load` exige `"rb"`. Así el propio lector decodifica UTF-8 y normaliza
+los saltos de línea, sin depender de la codificación por defecto del sistema
+(en Windows no siempre es UTF-8).
+
+```{.python filename="05_binario.py"}
+"""El error más común: abrir el archivo en modo texto."""
+import tomllib
+from pathlib import Path
+
+ruta = Path(__file__).with_name("estudio.toml")
+
+try:
+    with ruta.open("r", encoding="utf-8") as f:  # modo texto: incorrecto
+        tomllib.load(f)
+except TypeError as e:
+    print("TypeError:", e)
+
+# Alternativas correctas
+with ruta.open("rb") as f:
+    print(tomllib.load(f)["schema_version"])
+print(tomllib.loads(ruta.read_text(encoding="utf-8"))["schema_version"])
+```
+
+```{.text filename="Salida"}
+TypeError: File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`
+0.2.0
+0.2.0
+```
+
+## Errores de sintaxis: TOMLDecodeError
+
+El mensaje incluye la línea y la columna del problema, como se vio en
+`04_errores.py`. Para mostrarlo al usuario conviene añadir **la ruta del
+archivo**, que la excepción no conoce:
+
+```python
+try:
+    with ruta.open("rb") as f:
+        config = tomllib.load(f)
+except tomllib.TOMLDecodeError as exc:
+    raise SystemExit(f"{ruta}: {exc}") from exc
+```
+
+Desde **Python 3.14** la excepción también ofrece los atributos `msg`,
+`lineno`, `colno` y `pos`. En 3.11 a 3.13 no existen: si los necesitas allí,
+extrae la posición del texto del mensaje o usa `getattr(exc, "lineno", None)`.
+
+## Flotantes exactos con parse_float
+
+Algunos parámetros, como dosis o constantes de calibración, no toleran el
+redondeo binario de `float`. `parse_float` recibe el texto del número y puede
+devolver otro tipo; lo habitual es `decimal.Decimal`:
+
+```{.python filename="06_parse_float.py"}
+"""parse_float: leer flotantes como Decimal para no perder precisión."""
+import tomllib
+from decimal import Decimal
+
+texto = "dosis_mg = 0.1\ncalibracion = [0.1, 0.2]"
+
+normal = tomllib.loads(texto)
+exacto = tomllib.loads(texto, parse_float=Decimal)
+
+print(normal["dosis_mg"] * 3, sum(normal["calibracion"]))
+print(exacto["dosis_mg"] * 3, sum(exacto["calibracion"]))
+```
+
+```{.text filename="Salida"}
+0.30000000000000004 0.30000000000000004
+0.3 0.3
+```
+
+`parse_float` solo afecta a los flotantes (`inf` y `nan` incluidos); los
+enteros siguen siendo `int`. La función no debe devolver `dict` ni `list`.
+
+## Python 3.10 o anterior
+
+`tomllib` nació a partir de la biblioteca `tomli`, que tiene la misma API y
+funciona en versiones antiguas. El patrón estándar para soportar ambas:
+
+```{.python filename="07_compat.py"}
+"""Compatibilidad con Python 3.10 o anterior mediante tomli."""
+import sys
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover
+    import tomli as tomllib  # pip install tomli
+
+print(tomllib.__name__, tomllib.loads('ok = true'))
+```
+
+```toml
+# pyproject.toml: instalar tomli solo donde haga falta
+dependencies = ['tomli>=2; python_version < "3.11"']
+```
+
+BioForge exige Python 3.11 o superior, así que en su código basta con
+`import tomllib`.
+
+## Leer pyproject.toml
+
+Un caso frecuente es leer `pyproject.toml`: la versión del paquete, sus extras o
+la sección `[tool.<herramienta>]` donde cada herramienta guarda su
+configuración. Con este `pyproject.toml` de ejemplo:
+
+```{.toml filename="pyproject.toml"}
+[project]
+name = "bioforge"
+version = "0.4.0"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+]
+
+[project.optional-dependencies]
+gui = ["PySide6>=6.8"]
+
+[project.scripts]
+bioforge = "bioforge.cli:app"
+
+[tool.bioforge]
+workspace = "workspace"
+default_pipeline = "configs/pipelines/measurement-csv.yaml"
+
+[tool.ruff]
+line-length = 100
+```
+
+```{.python filename="08_pyproject.py"}
+"""Leer pyproject.toml: metadatos y la sección [tool.bioforge]."""
+import tomllib
+from pathlib import Path
+
+with Path(__file__).with_name("pyproject.toml").open("rb") as f:
+    pyproject = tomllib.load(f)
+
+proyecto = pyproject["project"]
+print(proyecto["name"], proyecto["version"])
+print("Python", proyecto["requires-python"])
+print("Extras:", list(proyecto.get("optional-dependencies", {})))
+
+# Las herramientas guardan su configuración bajo [tool.<nombre>].
+bioforge = pyproject.get("tool", {}).get("bioforge", {})
+print("workspace =", bioforge.get("workspace", "workspace"))
+```
+
+```{.text filename="Salida"}
+bioforge 0.4.0
+Python >=3.11
+Extras: ['gui']
+workspace = workspace
+```
+
+::: {.callout-warning}
+## La versión del paquete instalado no se lee de pyproject.toml
+Cuando el paquete ya está instalado (en un *wheel* o en producción),
+`pyproject.toml` no viaja con él. Para la versión en tiempo de ejecución usa
+`importlib.metadata.version("bioforge")`. Leer `pyproject.toml` tiene sentido en
+herramientas de desarrollo, scripts del repositorio y pruebas.
+:::
+
+# Validar lo que se lee {#sec-validar}
+
+`tomllib` garantiza que el archivo es TOML válido, no que tenga sentido para tu
+programa. Un `sampling_rate_Hz` mal escrito, una edad de 172 años o una fecha
+sin zona horaria pasan sin error y explotan más tarde, lejos del archivo. La
+regla es: **validar justo después de leer** y trabajar desde ahí con objetos
+tipados, nunca con el `dict` crudo.
+
+```{mermaid}
+%%| label: fig-flujo
+%%| fig-cap: "De bytes a objetos tipados: cada etapa tiene su propio error."
+flowchart LR
+  F["estudio.toml<br/>(bytes UTF-8)"] -->|"tomllib.load"| D["dict"]
+  D -->|"deep_merge con valores<br/>por defecto (opcional)"| M["dict completo"]
+  M -->|"StudyConfig.model_validate"| O["StudyConfig<br/>(inmutable, tipado)"]
+  F -. "TOMLDecodeError<br/>línea y columna" .-> E["ConfigError<br/>ruta + problemas"]
+  M -. "ValidationError<br/>ruta de la clave" .-> E
+```
+
+## Opción sin dependencias: dataclasses
+
+Para configuraciones pequeñas basta una `dataclass` con un constructor que
+rechace claves desconocidas y compruebe rangos:
+
+```{.python filename="13_dataclass.py"}
+"""Validación mínima sin dependencias: dict de tomllib -> dataclass."""
+import tomllib
+from dataclasses import dataclass, fields
+from pathlib import Path
+from typing import Any
+
+
+@dataclass(frozen=True)
+class Acquisition:
+    modality: str
+    sampling_rate_hz: float
+    markers: int = 0
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Acquisition":
+        conocidos = {f.name for f in fields(cls)}
+        sobrantes = set(data) - conocidos
+        if sobrantes:
+            raise ValueError(f"claves desconocidas en [acquisition]: {sorted(sobrantes)}")
+        obj = cls(**{k: v for k, v in data.items() if k in conocidos})
+        if not isinstance(obj.sampling_rate_hz, (int, float)) or obj.sampling_rate_hz <= 0:
+            raise ValueError("sampling_rate_hz debe ser un número positivo")
+        return obj
+
+
+with Path(__file__).with_name("estudio.toml").open("rb") as f:
+    config = tomllib.load(f)
+
+acq_toml = dict(config["acquisition"])
+acq_toml.pop("start_time")
+print(Acquisition.from_dict(acq_toml))
+
+for malo in ({"modality": "imu", "sampling_rate_Hz": 50}, {"modality": "imu", "sampling_rate_hz": 0}):
+    try:
+        Acquisition.from_dict(malo)
+    except (TypeError, ValueError) as e:
+        print(type(e).__name__, "->", e)
+```
+
+```{.text filename="Salida"}
+Acquisition(modality='vicon', sampling_rate_hz=100.0, markers=39)
+ValueError -> claves desconocidas en [acquisition]: ['sampling_rate_Hz']
+ValueError -> sampling_rate_hz debe ser un número positivo
+```
+
+Funciona, pero cada regla se escribe a mano y los mensajes de error se vuelven
+inconsistentes al crecer el esquema. BioForge ya depende de Pydantic, así que
+lo natural es usarlo.
+
+## Pydantic: el esquema como código
+
+Con Pydantic el esquema se declara una vez y produce validación, conversión de
+tipos y mensajes con la ruta exacta de la clave. Este es el esquema del
+laboratorio:
+
+```{.python filename="src/bioforge_config/schema.py"}
+"""Esquema del archivo de estudio: TOML entra como dict, sale como objetos tipados."""
+
+import datetime as dt
+import re
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+SUPPORTED_SCHEMAS = {"0.1.0", "0.2.0"}
+
+
+class Strict(BaseModel):
+    # extra="forbid": una clave mal escrita (sampling_rate_Hz) es un error, no se ignora.
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class Project(Strict):
+    project_id: UUID
+    name: str = Field(min_length=1)
+    owner: str
+    created: dt.datetime
+    tags: tuple[str, ...] = ()
+
+    @field_validator("created")
+    @classmethod
+    def con_zona_horaria(cls, value: dt.datetime) -> dt.datetime:
+        if value.tzinfo is None:
+            raise ValueError("debe incluir zona horaria, por ejemplo 2026-09-28T09:15:00-05:00")
+        return value
+
+
+class Acquisition(Strict):
+    modality: Literal["vicon", "imu", "measurement_csv"]
+    sampling_rate_hz: float = Field(gt=0)
+    markers: int | None = Field(default=None, ge=1)
+    start_time: dt.time | None = None
+
+
+class Quality(Strict):
+    min_samples: int = Field(default=3, ge=1)
+    max_missing_ratio: float = Field(default=0.05, ge=0, le=1)
+    filename_regex: str = r".*"
+
+    @field_validator("filename_regex")
+    @classmethod
+    def regex_valida(cls, value: str) -> str:
+        try:
+            re.compile(value)
+        except re.error as exc:  # re.error no es ValueError: pydantic no la convertiría
+            raise ValueError(f"expresión regular inválida: {exc}") from exc
+        return value
+
+
+class Participant(Strict):
+    id: str = Field(pattern=r"^P[0-9]{3}$")
+    age: int = Field(ge=0, le=120)
+    sex: Literal["F", "M", "X"] | None = None
+    notes: str = ""
+
+
+class StudyConfig(Strict):
+    schema_version: str
+    project: Project
+    acquisition: Acquisition
+    quality: Quality = Quality()
+    participants: tuple[Participant, ...] = ()
+
+    @field_validator("schema_version")
+    @classmethod
+    def version_soportada(cls, value: str) -> str:
+        if value not in SUPPORTED_SCHEMAS:
+            opciones = ", ".join(sorted(SUPPORTED_SCHEMAS))
+            raise ValueError(f"versión {value!r} no soportada; use una de: {opciones}")
+        return value
+
+    @model_validator(mode="after")
+    def participantes_unicos(self) -> "StudyConfig":
+        ids = [p.id for p in self.participants]
+        repetidos = sorted({i for i in ids if ids.count(i) > 1})
+        if repetidos:
+            raise ValueError(f"participantes repetidos: {', '.join(repetidos)}")
+        return self
+```
+
+Decisiones clave:
+
+- **`extra="forbid"`**: una clave desconocida es un error. Es la mejor defensa
+  contra erratas, el fallo más común en configuraciones editadas a mano.
+- **`frozen=True`** y tuplas en lugar de listas: la configuración cargada no se
+  modifica por accidente durante la ejecución.
+- **`schema_version`**: permite evolucionar el formato y dar un mensaje claro a
+  quien usa un archivo antiguo.
+- **Validadores con dominio**: `created` debe llevar zona horaria (las fechas
+  locales son ambiguas entre laboratorios), los identificadores siguen el patrón
+  `P000` y la expresión regular debe compilar.
+- `tomllib` ya entrega `datetime`, `time` y `int`; Pydantic los acepta sin
+  conversión. `project_id` llega como `str` y Pydantic lo convierte en `UUID`.
+
+## Cargar con errores útiles
+
+El cargador une las piezas: lee, combina con valores por defecto y valida,
+convirtiendo cualquier fallo en un único `ConfigError` con la ruta del archivo:
+
+```{.python filename="src/bioforge_config/loader.py"}
+"""Leer el TOML, mezclar valores por defecto y validar contra el esquema."""
+
+import tomllib
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
+
+from pydantic import ValidationError
+
+from bioforge_config.errors import ConfigError
+from bioforge_config.schema import StudyConfig
+
+
+def deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
+    """Mezcla recursiva: las tablas se combinan, cualquier otro valor se reemplaza."""
+    result = dict(base)
+    for key, value in override.items():
+        if isinstance(value, Mapping) and isinstance(result.get(key), Mapping):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def read_toml(path: Path) -> dict[str, Any]:
+    try:
+        with path.open("rb") as f:
+            return tomllib.load(f)
+    except FileNotFoundError:
+        raise ConfigError(path, ["el archivo no existe"]) from None
+    except tomllib.TOMLDecodeError as exc:
+        raise ConfigError(path, [f"TOML mal formado: {exc}"]) from exc
+
+
+def _format_errors(exc: ValidationError) -> list[str]:
+    problems = []
+    for err in exc.errors():
+        loc = ".".join(str(part) for part in err["loc"]) or "(raíz)"
+        problems.append(f"{loc}: {err['msg']}")
+    return problems
+
+
+def validate_data(data: Mapping[str, Any], path: Path) -> StudyConfig:
+    try:
+        return StudyConfig.model_validate(data)
+    except ValidationError as exc:
+        raise ConfigError(path, _format_errors(exc)) from exc
+
+
+def validate_text(text: str, path: Path) -> StudyConfig:
+    """Valida un texto TOML que todavía no está en disco (útil antes de guardar)."""
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as exc:
+        raise ConfigError(path, [f"TOML mal formado: {exc}"]) from exc
+    return validate_data(data, path)
+
+
+def load_study(path: Path, defaults: Path | None = None) -> StudyConfig:
+    """Carga un estudio; si hay `defaults`, el archivo del estudio lo sobrescribe."""
+    data = read_toml(path)
+    if defaults is not None:
+        data = deep_merge(read_toml(defaults), data)
+    return validate_data(data, path)
+```
+
+Con un archivo que tiene `sampling_rate_Hz` en lugar de `sampling_rate_hz` y una
+edad de 172, el usuario ve todos los problemas a la vez:
+
+```text
+estudio.toml: configuración inválida
+  - acquisition.sampling_rate_hz: Field required
+  - acquisition.sampling_rate_Hz: Extra inputs are not permitted
+  - participants.1.age: Input should be less than or equal to 120
+```
+
+`participants.1` es el segundo participante (los índices empiezan en 0).
+
+::: {.callout-tip}
+## Por qué `deep_merge` y no `dict.update`
+`{**defaults, **estudio}` reemplaza la tabla `[quality]` entera: si el estudio
+solo define `min_samples`, se pierde `max_missing_ratio` de los valores por
+defecto. `deep_merge` combina tabla por tabla y reemplaza todo lo demás, listas
+incluidas. Nunca modifica sus entradas, así que el `dict` original sigue
+intacto.
+:::
+
+## Rutas dentro de la configuración
+
+Si un TOML contiene rutas (`contract = "config/data_contract.yaml"`),
+resuélvelas **relativas al archivo que las contiene**, no al directorio de
+trabajo actual. Así la configuración funciona igual se ejecute desde donde se
+ejecute:
+
+```python
+base = ruta_config.parent
+contrato = (base / config["contract"]).resolve()
+```
+
+# Escribir TOML con tomli-w {#sec-escribir}
+
+`tomli-w` es el complemento de escritura de `tomli`, del mismo autor, y
+sigue el estilo de `json`: `dumps` devuelve un `str` y `dump` escribe en un
+archivo **binario**.
+
+```{.python filename="09_escribir_tomli_w.py"}
+"""Escribir TOML con tomli-w (pip install tomli-w)."""
+import datetime as dt
+from pathlib import Path
+
+import tomli_w
+
+config = {
+    "schema_version": "0.2.0",
+    "project": {
+        "name": "Marcha y riesgo de caída",
+        "created": dt.datetime(2026, 9, 28, 9, 15, tzinfo=dt.timezone(dt.timedelta(hours=-5))),
+        "tags": ["marcha", "vicon"],
+    },
+    "acquisition": {"modality": "vicon", "sampling_rate_hz": 100.0},
+    "participants": [
+        {"id": "P001", "age": 67},
+        {"id": "P002", "age": 72, "notes": "Usa bastón.\nRevisar sincronización."},
+    ],
+}
+
+texto = tomli_w.dumps(config, multiline_strings=True)
+print(texto)
+
+destino = Path(__file__).with_name("salida.toml")
+with destino.open("wb") as f:  # también en modo binario
+    tomli_w.dump(config, f)
+
+try:
+    tomli_w.dumps({"notes": None})
+except TypeError as e:
+    print("TypeError:", e)
+```
+
+```{.text filename="Salida"}
+schema_version = "0.2.0"
+
+[project]
+name = "Marcha y riesgo de caída"
+created = 2026-09-28 09:15:00-05:00
+tags = [
+    "marcha",
+    "vicon",
+]
+
+[acquisition]
+modality = "vicon"
+sampling_rate_hz = 100.0
+
+[[participants]]
+id = "P001"
+age = 67
+
+[[participants]]
+id = "P002"
+age = 72
+notes = """
+Usa bastón.
+Revisar sincronización."""
+
+TypeError: Object of type 'NoneType' is not TOML serializable
+```
+
+Detalles a tener en cuenta:
+
+- Los diccionarios anidados se escriben como `[tabla]` y las listas de
+  diccionarios como `[[arreglo]]`, sin que tengas que indicarlo.
+- `multiline_strings=True` escribe los textos con saltos de línea como
+  `"""…"""`; sin esa opción usa `\n` en una sola línea.
+- Las fechas con hora se escriben con un espacio en lugar de `T`
+  (`2026-09-28 09:15:00-05:00`). Es TOML válido y se lee igual.
+- **`None` no es serializable**, porque TOML no tiene nulo. Elimina esas claves
+  antes de escribir: `{k: v for k, v in d.items() if v is not None}`.
+- Las listas se escriben en varias líneas con sangría (configurable con
+  `indent=`).
+
+## Leer y reescribir pierde los comentarios
+
+`tomllib` descarta comentarios, espacios y el orden visual al leer, así que
+reescribir con `tomli-w` produce un archivo «limpio» pero sin la información que
+la persona había dejado en él:
+
+```{.python filename="10_roundtrip.py"}
+"""tomllib + tomli-w pierde comentarios y formato."""
+import tomllib
+
+import tomli_w
+
+original = """\
+# Umbral acordado con el comité (acta 2026-09-12)
+[quality]
+min_samples      = 3      # mínimo por ensayo
+max_missing_ratio = 0.05
+"""
+datos = tomllib.loads(original)
+datos["quality"]["min_samples"] = 5
+print(tomli_w.dumps(datos))
+```
+
+```{.text filename="Salida"}
+[quality]
+min_samples = 5
+max_missing_ratio = 0.05
+```
+
+El comentario con la referencia al acta desapareció. Para archivos que **genera
+un programa** (plantillas, exportaciones, `run-<uuid>.toml`) eso no importa y
+`tomli-w` es la herramienta correcta. Para archivos que **edita una persona**,
+hace falta `tomlkit`.
+
+# Editar sin perder comentarios con tomlkit {#sec-tomlkit}
+
+`tomlkit` es un analizador **con preservación de estilo**: conserva
+comentarios, espacios, orden y formato. Es lo que usan Poetry y otras
+herramientas que modifican el `pyproject.toml` del usuario.
+
+## Modificar un documento existente
+
+```{.python filename="11_tomlkit.py"}
+"""Editar TOML conservando comentarios y formato con tomlkit."""
+import tomlkit
+
+original = """\
+# Umbral acordado con el comité (acta 2026-09-12)
+[quality]
+min_samples      = 3      # mínimo por ensayo
+max_missing_ratio = 0.05
+"""
+doc = tomlkit.parse(original)
+doc["quality"]["min_samples"] = 5
+doc["quality"]["max_missing_ratio"].comment("revisado 2026-10-03")
+print(tomlkit.dumps(doc))
+
+# Sin cambios, el documento sale idéntico byte a byte.
+print(tomlkit.dumps(tomlkit.parse(original)) == original)
+```
+
+```{.text filename="Salida"}
+# Umbral acordado con el comité (acta 2026-09-12)
+[quality]
+min_samples      = 5      # mínimo por ensayo
+max_missing_ratio = 0.05 # revisado 2026-10-03
+
+True
+```
+
+El comentario de cabecera, la alineación de `min_samples      =` y el
+comentario de la línea se conservaron; solo cambió el valor. Además, un
+documento analizado y vuelto a escribir sin cambios es **idéntico byte a byte**,
+lo que hace que los *diffs* en Git sean mínimos.
+
+## Construir un documento desde cero
+
+```{.python filename="12_tomlkit_construir.py"}
+"""Construir un documento nuevo con tomlkit: comentarios, tablas y arreglos de tablas."""
+import tomlkit
+
+doc = tomlkit.document()
+doc.add(tomlkit.comment("Pipeline generado por bioforge init-pipeline"))
+doc.add("schema_version", "0.2.0")
+doc.add(tomlkit.nl())
+
+pipeline = tomlkit.table()
+pipeline.add("name", "measurement-csv")
+pipeline["name"].comment("debe coincidir con el nombre registrado")
+doc.add("pipeline", pipeline)
+
+pasos = tomlkit.aot()
+for uso, params in [("ingestion.csv", {}), ("quality.basic", {"min_samples": 3})]:
+    paso = tomlkit.table()
+    paso.add("uses", uso)
+    if params:
+        en_linea = tomlkit.inline_table()
+        en_linea.update(params)
+        paso.add("with", en_linea)
+    pasos.append(paso)
+doc.add("steps", pasos)
+
+texto = tomlkit.dumps(doc)
+print(texto)
+
+# Los valores de tomlkit son subclases de los tipos de Python;
+# unwrap() devuelve tipos puros si los necesitas (por ejemplo, para pydantic o json).
+puro = tomlkit.parse(texto).unwrap()
+print(type(puro["steps"][1]["with"]).__name__, puro["steps"][1]["with"])
+```
+
+```{.text filename="Salida"}
+# Pipeline generado por bioforge init-pipeline
+schema_version = "0.2.0"
+
+[pipeline]
+name = "measurement-csv" # debe coincidir con el nombre registrado
+
+[[steps]]
+uses = "ingestion.csv"
+
+[[steps]]
+uses = "quality.basic"
+with = {min_samples = 3}
+
+dict {'min_samples': 3}
+```
+
+## Tipos de tomlkit y `unwrap()`
+
+`tomlkit.parse` devuelve un `TOMLDocument`, y sus valores son objetos propios
+(`Table`, `Array`, `Integer`, `String`…) que heredan de los tipos de Python y
+guardan además su formato. Casi siempre se comportan como `dict`, `list` o
+`int`, pero:
+
+- Para pasarlos a Pydantic, `json.dumps` u otra biblioteca estricta, convierte
+  primero con **`.unwrap()`**, que devuelve tipos puros.
+- Para **validar**, lo más simple es volver a leer el texto final con `tomllib`:
+  es el mismo lector que usará el resto del programa.
+- `tomlkit` es más lento que `tomllib` (es Python puro y conserva mucha más
+  información). Úsalo para editar, no para leer en caliente.
+
+## Editar con seguridad: validar antes de escribir
+
+Al modificar un archivo que otros usan, conviene cumplir dos reglas:
+
+1. **Validar el resultado antes de guardarlo**: si el nuevo valor es inválido,
+   el archivo original queda intacto.
+2. **Escribir de forma atómica**: escribir en un temporal del mismo directorio y
+   renombrarlo con `os.replace`. Si el proceso muere a la mitad, nunca queda un
+   archivo truncado.
+
+```{.python filename="src/bioforge_config/editor.py"}
+"""Editar un TOML existente sin perder comentarios ni formato."""
+
+import os
+import tempfile
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
+
+import tomlkit
+from tomlkit.items import Table
+from tomlkit.toml_document import TOMLDocument
+
+
+def _parent(doc: TOMLDocument, dotted: str) -> tuple[Table | TOMLDocument, str]:
+    *tablas, hoja = dotted.split(".")
+    nodo: Any = doc
+    for nombre in tablas:
+        if nombre not in nodo:
+            nodo[nombre] = tomlkit.table()
+        nodo = nodo[nombre]
+    return nodo, hoja
+
+
+def get_value(path: Path, dotted: str) -> Any:
+    doc = tomlkit.parse(path.read_text(encoding="utf-8"))
+    nodo: Any = doc
+    for parte in dotted.split("."):
+        nodo = nodo[parte]
+    return nodo.unwrap() if hasattr(nodo, "unwrap") else nodo
+
+
+def set_value(
+    path: Path,
+    dotted: str,
+    value: Any,
+    validate: Callable[[str], object] | None = None,
+) -> None:
+    """Asigna `value` en la clave con puntos `dotted` y guarda de forma atómica.
+
+    Si se pasa `validate`, recibe el texto nuevo y debe lanzar una excepción si no es válido;
+    en ese caso el archivo original no se toca.
+    """
+    doc = tomlkit.parse(path.read_text(encoding="utf-8"))
+    nodo, hoja = _parent(doc, dotted)
+    nodo[hoja] = value
+    text = tomlkit.dumps(doc)
+    if validate is not None:
+        validate(text)
+    atomic_write(path, text)
+
+
+def atomic_write(path: Path, text: str) -> None:
+    """Escribe en un temporal del mismo directorio y lo renombra: nunca deja un archivo a medias."""
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+```
+
+## ¿Qué biblioteca uso?
+
+| Necesidad | Biblioteca | Comentarios |
+|---|---|---|
+| Leer configuración | `tomllib` (estándar) | Rápido, sin dependencias, Python 3.11+ |
+| Leer en Python ≤ 3.10 o TOML 1.1 | `tomli` | Misma API que `tomllib` |
+| Generar archivos nuevos | `tomli-w` | Salida limpia y predecible; pierde comentarios |
+| Editar archivos de personas | `tomlkit` | Conserva comentarios y formato; más lento |
+| Ajustes por capas (archivo + entorno) | `pydantic-settings` | Usa `tomllib` por debajo |
+| — | `toml` (paquete antiguo) | Sin mantenimiento y con errores conocidos; evítalo |
+
+: Bibliotecas TOML en Python. {#tbl-bibliotecas}
+
+# Configuración por capas con pydantic-settings {#sec-capas}
+
+El `config.py` de BioForge define `Settings` con `pydantic-settings`: lee un
+`.env` opcional y variables con prefijo `BIOFORGE_` (`environment`,
+`workspace`, `database_url`, `log_level`). `pydantic-settings` incluye fuentes
+TOML, así que añadir un archivo de ajustes es cuestión de declarar el orden de
+prioridad:
+
+```{mermaid}
+%%| label: fig-capas
+%%| fig-cap: "Prioridad de las fuentes: la de más arriba gana."
+flowchart TB
+  A["Argumentos explícitos<br/>Settings(workspace=...)"]
+  B["Variables de entorno<br/>BIOFORGE_WORKSPACE=..."]
+  C["bioforge.toml<br/>(ajustes locales)"]
+  D["pyproject.toml<br/>[tool.bioforge]"]
+  E["Valores por defecto<br/>en la clase"]
+  A --> B --> C --> D --> E
+```
+
+```{.python filename="src/bioforge_config/settings.py"}
+"""Ajustes globales por capas.
+
+Prioridad: argumentos > variables BIOFORGE_* > bioforge.toml > [tool.bioforge] > defaults.
+"""
+
+from pathlib import Path
+
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    PyprojectTomlConfigSettingsSource,
+    SettingsConfigDict,
+    TomlConfigSettingsSource,
+)
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="BIOFORGE_",
+        toml_file="bioforge.toml",
+        pyproject_toml_table_header=("tool", "bioforge"),
+        extra="ignore",
+    )
+
+    environment: str = "development"
+    workspace: Path = Path("workspace")
+    database_url: str = "sqlite:///./workspace/bioforge.db"
+    log_level: str = "INFO"
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # El orden es la prioridad: la primera fuente que define un campo gana.
+        return (
+            init_settings,
+            env_settings,
+            TomlConfigSettingsSource(settings_cls),
+            PyprojectTomlConfigSettingsSource(settings_cls),
+        )
+```
+
+- **`toml_file`** indica el archivo de ajustes; si no existe, la fuente
+  simplemente no aporta nada.
+- **`pyproject_toml_table_header`** lee la sección `[tool.bioforge]` de
+  `pyproject.toml`, el lugar convencional para valores por defecto del
+  proyecto.
+- **`settings_customise_sources`** fija el orden. La primera fuente que define
+  un campo gana; el resto solo rellena huecos.
+
+Las pruebas del laboratorio comprueban cada capa:
+
+```{.python filename="tests/test_settings.py"}
+from pathlib import Path
+
+import pytest
+
+from bioforge_config.settings import Settings
+
+
+@pytest.fixture
+def en_proyecto(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.bioforge]\nworkspace = "desde-pyproject"\nlog_level = "WARNING"\n', encoding="utf-8"
+    )
+    monkeypatch.chdir(tmp_path)
+    for var in ("BIOFORGE_WORKSPACE", "BIOFORGE_LOG_LEVEL", "BIOFORGE_ENVIRONMENT"):
+        monkeypatch.delenv(var, raising=False)
+    return tmp_path
+
+
+def escribir_bioforge_toml(carpeta: Path) -> None:
+    (carpeta / "bioforge.toml").write_text('workspace = "desde-bioforge-toml"\n', encoding="utf-8")
+
+
+def test_pyproject_como_base(en_proyecto: Path) -> None:
+    s = Settings()
+    assert s.workspace == Path("desde-pyproject")
+    assert s.log_level == "WARNING"
+    assert s.environment == "development"
+
+
+def test_bioforge_toml_gana_a_pyproject(en_proyecto: Path) -> None:
+    escribir_bioforge_toml(en_proyecto)
+    assert Settings().workspace == Path("desde-bioforge-toml")
+    assert Settings().log_level == "WARNING"
+
+
+def test_variable_de_entorno_gana_a_todo(
+    en_proyecto: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    escribir_bioforge_toml(en_proyecto)
+    monkeypatch.setenv("BIOFORGE_WORKSPACE", "desde-env")
+    assert Settings().workspace == Path("desde-env")
+    assert Settings(workspace=Path("explicito")).workspace == Path("explicito")
+```
+
+::: {.callout-warning}
+## Secretos fuera del TOML versionado
+`database_url` puede contener credenciales. Ponlas en variables de entorno o en
+un `bioforge.toml` local incluido en `.gitignore`, nunca en `pyproject.toml`.
+:::
+
+# Laboratorio: bioforge-config {#sec-laboratorio}
+
+El paquete `bioforge-config` reúne todo lo anterior: carga y valida estudios,
+combina valores por defecto, edita valores sin perder comentarios y ofrece una
+CLI pequeña.
+
+```text
+bioforge-config/
+├── pyproject.toml
+├── README.md
+├── estudio.toml
+├── src/bioforge_config/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── cli.py         # validate / get / set
+│   ├── editor.py      # tomlkit + escritura atómica
+│   ├── errors.py      # ConfigError
+│   ├── loader.py      # tomllib + deep_merge + validación
+│   ├── py.typed
+│   ├── schema.py      # modelos Pydantic
+│   └── settings.py    # pydantic-settings por capas
+└── tests/
+    ├── conftest.py
+    ├── test_editor.py
+    ├── test_loader.py
+    └── test_settings.py
+```
+
+## Puesta en marcha
+
+```bash
+cd ejemplo/bioforge-config
+uv sync --extra dev
+uv run pytest
+uv run ruff check . && uv run mypy src tests
+```
+
+## El proyecto: pyproject.toml
+
+El propio `pyproject.toml` del laboratorio es un buen ejemplo de TOML real:
+metadatos, dependencias, *entry point* de la CLI, `[tool.bioforge]` y la
+configuración de las herramientas de calidad.
+
+```{.toml filename="pyproject.toml"}
+[project]
+name = "bioforge-config"
+version = "0.1.0"
+description = "Carga, valida y edita la configuración TOML de estudios BioForge"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "tomlkit>=0.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
+
+[project.scripts]
+bioforge-config = "bioforge_config.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.bioforge]
+workspace = "workspace"
+log_level = "INFO"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+```
+
+## Error de configuración
+
+```{.python filename="src/bioforge_config/errors.py"}
+from pathlib import Path
+
+
+class ConfigError(Exception):
+    """Error de configuración con la ruta del archivo y la ubicación del problema."""
+
+    def __init__(self, path: Path, problems: list[str]) -> None:
+        self.path = path
+        self.problems = problems
+        detalle = "\n".join(f"  - {p}" for p in problems)
+        super().__init__(f"{path}: configuración inválida\n{detalle}")
+```
+
+## La CLI
+
+La CLI interpreta el valor de `set` **como TOML**: `5` es un entero, `0.1` un
+flotante, `true` un booleano, `"P003"` una cadena y `[1, 2]` una lista. Si el
+texto no es un valor TOML válido (por ejemplo `vicon`), se toma como cadena.
+
+```{.python filename="src/bioforge_config/cli.py"}
+"""CLI mínima: validate, get y set sobre un archivo de estudio."""
+
+import argparse
+import sys
+import tomllib
+from pathlib import Path
+from typing import Any
+
+from bioforge_config.editor import get_value, set_value
+from bioforge_config.errors import ConfigError
+from bioforge_config.loader import load_study, validate_text
+
+
+def parse_literal(text: str) -> Any:
+    """Interpreta el texto como un valor TOML (5, 0.1, true, "x", [1, 2]); si falla, es cadena."""
+    try:
+        return tomllib.loads(f"v = {text}")["v"]
+    except tomllib.TOMLDecodeError:
+        return text
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="bioforge-config")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    p_val = sub.add_parser("validate")
+    p_val.add_argument("path", type=Path)
+    p_get = sub.add_parser("get")
+    p_get.add_argument("path", type=Path)
+    p_get.add_argument("key")
+    p_set = sub.add_parser("set")
+    p_set.add_argument("path", type=Path)
+    p_set.add_argument("key")
+    p_set.add_argument("value")
+    args = parser.parse_args(argv)
+
+    try:
+        if args.cmd == "validate":
+            study = load_study(args.path)
+            print(f"OK: {study.project.name} ({len(study.participants)} participantes)")
+        elif args.cmd == "get":
+            print(repr(get_value(args.path, args.key)))
+        elif args.cmd == "set":
+            path = args.path
+            # Se valida el resultado antes de escribir: un valor inválido no llega al disco.
+            set_value(path, args.key, parse_literal(args.value), lambda t: validate_text(t, path))
+            print(f"{args.key} = {args.value}")
+    except ConfigError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    except KeyError as exc:
+        print(f"clave inexistente: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+Una sesión típica:
+
+```text
+$ bioforge-config validate estudio.toml
+OK: Marcha y riesgo de caída (2 participantes)
+
+$ bioforge-config get estudio.toml quality.min_samples
+3
+
+$ bioforge-config set estudio.toml quality.min_samples 5
+quality.min_samples = 5
+
+$ bioforge-config set estudio.toml quality.max_missing_ratio 1.5
+estudio.toml: configuración inválida
+  - quality.max_missing_ratio: Input should be less than or equal to 1
+```
+
+Tras la última orden el archivo no cambió, y `git diff` del estudio muestra una
+sola línea modificada (`min_samples = 5`), con todos los comentarios intactos.
+
+## Pruebas
+
+Las pruebas trabajan siempre sobre una **copia** del estudio en `tmp_path`, de
+modo que cada una puede modificarla sin afectar a las demás:
+
+```{.python filename="tests/conftest.py"}
+import shutil
+from pathlib import Path
+
+import pytest
+
+EJEMPLO = Path(__file__).parents[1] / "estudio.toml"
+
+
+@pytest.fixture
+def estudio(tmp_path: Path) -> Path:
+    """Copia del estudio de ejemplo en un directorio temporal: cada prueba puede modificarla."""
+    destino = tmp_path / "estudio.toml"
+    shutil.copy(EJEMPLO, destino)
+    return destino
+```
+
+```{.python filename="tests/test_loader.py"}
+import datetime as dt
+from pathlib import Path
+
+import pytest
+
+from bioforge_config import ConfigError, load_study
+from bioforge_config.loader import deep_merge
+
+
+def test_carga_el_estudio_de_ejemplo(estudio: Path) -> None:
+    study = load_study(estudio)
+    assert study.project.name == "Marcha y riesgo de caída"
+    assert study.acquisition.start_time == dt.time(8, 30)
+    assert [p.id for p in study.participants] == ["P001", "P002"]
+
+
+def test_toml_mal_formado_indica_linea(tmp_path: Path) -> None:
+    roto = tmp_path / "roto.toml"
+    roto.write_text('schema_version = "0.2.0"\n[project\n', encoding="utf-8")
+    with pytest.raises(ConfigError, match=r"line 2"):
+        load_study(roto)
+
+
+def test_errores_de_esquema_con_ruta_de_la_clave(estudio: Path) -> None:
+    texto = estudio.read_text(encoding="utf-8")
+    texto = texto.replace("sampling_rate_hz = 100.0", "sampling_rate_Hz = 100.0")
+    texto = texto.replace("age = 72", "age = 172")
+    estudio.write_text(texto, encoding="utf-8")
+    with pytest.raises(ConfigError) as info:
+        load_study(estudio)
+    problemas = "\n".join(info.value.problems)
+    assert "acquisition.sampling_rate_hz: Field required" in problemas
+    assert "acquisition.sampling_rate_Hz: Extra inputs are not permitted" in problemas
+    assert "participants.1.age" in problemas
+
+
+def test_fecha_sin_zona_horaria_es_error(estudio: Path) -> None:
+    texto = estudio.read_text(encoding="utf-8").replace("09:15:00-05:00", "09:15:00")
+    estudio.write_text(texto, encoding="utf-8")
+    with pytest.raises(ConfigError, match="zona horaria"):
+        load_study(estudio)
+
+
+def test_defaults_se_mezclan_por_tabla(tmp_path: Path, estudio: Path) -> None:
+    defaults = tmp_path / "defaults.toml"
+    defaults.write_text("[quality]\nmin_samples = 10\nmax_missing_ratio = 0.01\n", encoding="utf-8")
+    study = load_study(estudio, defaults=defaults)
+    assert study.quality.min_samples == 3  # el estudio gana
+    assert study.quality.max_missing_ratio == 0.05
+
+
+def test_deep_merge_no_modifica_entradas() -> None:
+    base = {"a": {"x": 1, "y": 2}, "b": [1]}
+    nuevo = deep_merge(base, {"a": {"y": 3}, "b": [2]})
+    assert nuevo == {"a": {"x": 1, "y": 3}, "b": [2]}
+    assert base == {"a": {"x": 1, "y": 2}, "b": [1]}
+```
+
+```{.python filename="tests/test_editor.py"}
+from pathlib import Path
+
+import pytest
+
+from bioforge_config.cli import main, parse_literal
+from bioforge_config.editor import get_value, set_value
+
+
+def test_set_conserva_comentarios(estudio: Path) -> None:
+    set_value(estudio, "quality.min_samples", 5)
+    texto = estudio.read_text(encoding="utf-8")
+    assert texto.startswith("# Configuración del estudio GAIT-S01")
+    assert "min_samples = 5" in texto
+    assert get_value(estudio, "quality.min_samples") == 5
+
+
+def test_set_crea_tablas_intermedias(estudio: Path) -> None:
+    set_value(estudio, "export.report.format", "html")
+    assert get_value(estudio, "export.report.format") == "html"
+
+
+@pytest.mark.parametrize(
+    ("texto", "esperado"),
+    [
+        ("5", 5),
+        ("0.1", 0.1),
+        ("true", True),
+        ('"P003"', "P003"),
+        ("[1, 2]", [1, 2]),
+        ("vicon", "vicon"),
+    ],
+)
+def test_parse_literal(texto: str, esperado: object) -> None:
+    assert parse_literal(texto) == esperado
+
+
+def test_cli_rechaza_valor_invalido_sin_tocar_el_archivo(
+    estudio: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    antes = estudio.read_bytes()
+    codigo = main(["set", str(estudio), "quality.max_missing_ratio", "1.5"])
+    assert codigo == 1
+    assert "less than or equal to 1" in capsys.readouterr().err
+    assert estudio.read_bytes() == antes
+
+
+def test_cli_validate(estudio: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["validate", str(estudio)]) == 0
+    assert "2 participantes" in capsys.readouterr().out
+```
+
+```text
+$ uv run pytest -q
+...................                                                      [100%]
+19 passed
+```
+
+# Errores comunes {#sec-errores}
+
+| Síntoma | Causa | Solución |
+|---|---|---|
+| `TypeError: File must be opened in binary mode` | `open(ruta)` o `open(ruta, "r")` | `open(ruta, "rb")` o `tomllib.loads(ruta.read_text("utf-8"))` |
+| `Invalid value` en una línea con texto | Cadena sin comillas: `modo = vicon` | `modo = "vicon"` |
+| `Unescaped '\'` o escape inválido | Regex o ruta de Windows en cadena básica | Usa comillas simples: `'C:\datos'` |
+| `Cannot declare ('x',) twice` | La misma `[tabla]` aparece dos veces | Une las claves en un solo bloque |
+| `Cannot overwrite a value` | Clave repetida, o `a = 1` y luego `[a]` | Elimina la duplicada |
+| `Invalid value` en `null` o `None` | TOML no tiene nulo | Omite la clave |
+| `TypeError: ... not TOML serializable` al escribir | `None`, `set`, `Path`, objetos propios | Conviértelos (`str(path)`, `sorted(s)`) o elimínalos |
+| Comentarios desaparecen al guardar | Lectura con `tomllib` y escritura con `tomli-w` | Edita con `tomlkit` |
+| Una errata en una clave no da error | Se lee el `dict` sin validar | Esquema con `extra="forbid"` |
+| `[tabla]` de un estudio borra los valores por defecto | `{**defaults, **estudio}` | `deep_merge` |
+| Fechas que no coinciden entre equipos | `datetime` local sin zona | Exige desfase: `2026-09-28T09:15:00-05:00` |
+| Tabla en línea multilínea rechazada | Sintaxis TOML 1.1 con `tomllib` | Usa `[tabla]` o una sola línea |
+| Versión incorrecta en producción | Se lee `pyproject.toml` en tiempo de ejecución | `importlib.metadata.version(...)` |
+
+: Errores frecuentes al trabajar con TOML en Python. {#tbl-errores}
+
+# Hoja de trucos {#sec-trucos}
+
+## Formato
+
+```toml
+# Comentario
+clave = "valor"                     # cadena básica (con escapes)
+regex = '^P[0-9]{3}\.csv$'          # cadena literal (sin escapes)
+texto = """
+Varias
+líneas"""
+n = 1_000                           # int
+x = 6.02e23                         # float (también inf, nan)
+ok = true                           # bool
+cuando = 2026-09-28T09:15:00-05:00  # datetime con zona
+dia = 2026-09-28                    # date
+hora = 08:30:00                     # time
+lista = [1, 2, 3]
+punto = { x = 1, y = 2 }            # tabla en línea (una sola línea)
+a.b.c = 1                           # claves con puntos
+
+[tabla]
+k = 1
+
+[tabla.sub]                         # anidada: {"tabla": {"sub": {...}}}
+k = 2
+
+[[pasos]]                           # lista de tablas
+uses = "ingestion.csv"
+[[pasos]]
+uses = "quality.basic"
+```
+
+## Python
+
+```python
+import tomllib                                   # leer (3.11+)
+with open("config.toml", "rb") as f:
+    cfg = tomllib.load(f)
+cfg = tomllib.loads(texto)
+cfg = tomllib.loads(texto, parse_float=Decimal)  # flotantes exactos
+except tomllib.TOMLDecodeError as e: ...         # subclase de ValueError
+
+import tomli_w                                   # escribir (pip install tomli-w)
+texto = tomli_w.dumps(cfg, multiline_strings=True)
+with open("salida.toml", "wb") as f:
+    tomli_w.dump(cfg, f)
+
+import tomlkit                                   # editar conservando formato
+doc = tomlkit.parse(texto)
+doc["quality"]["min_samples"] = 5
+doc["quality"]["min_samples"].comment("revisado")
+texto = tomlkit.dumps(doc)
+datos = doc.unwrap()                             # tipos puros de Python
+
+StudyConfig.model_validate(cfg)                  # validar con Pydantic
+```
+
+## Reglas para recordar
+
+1. `tomllib` solo lee, y siempre en binario (`"rb"`).
+2. Valida justo después de leer, con `extra="forbid"`, y trabaja con objetos tipados.
+3. Archivos que genera un programa: `tomli-w`. Archivos que edita una persona: `tomlkit`.
+4. Valida antes de escribir y escribe de forma atómica.
+5. Regex y rutas de Windows, con comillas simples.
+6. Fechas con zona horaria; nada de `null`; nada de secretos en archivos versionados.
+7. Escribe TOML 1.0 mientras haya versiones de Python que no lean 1.1.
+
+# Referencias {#sec-referencias}
+
+- Especificación de TOML: <https://toml.io/es/>
+- Documentación de `tomllib`: <https://docs.python.org/3/library/tomllib.html>
+- PEP 680, que añade `tomllib` a la biblioteca estándar: <https://peps.python.org/pep-0680/>
+- `tomli` y `tomli-w`: <https://github.com/hukkin/tomli> y <https://github.com/hukkin/tomli-w>
+- `tomlkit`: <https://tomlkit.readthedocs.io/>
+- Fuentes TOML de `pydantic-settings`: <https://docs.pydantic.dev/latest/concepts/pydantic_settings/>
+- Especificación de `pyproject.toml`: <https://packaging.python.org/en/latest/specifications/pyproject-toml/>
+- Documentos del proyecto: *Arquitectura actual del scaffold BioForge Experiment OS 0.1.0*, *Crear un experimento* y los tutoriales *Git + GitHub avanzado* y *PySide6*.
