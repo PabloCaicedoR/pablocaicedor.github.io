@@ -1,0 +1,402 @@
+---
+title: "Rúbrica de evaluación"
+subtitle: "Proyecto final de procesamiento de imágenes biomédicas"
+author: "P. E. Caicedo-Rodríguez"
+date: 2026-10-26
+date-format: long
+lang: es
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    toc-title: "Contenido"
+    toc-depth: 3
+    number-sections: false
+    embed-resources: true
+    html-math-method: mathjax
+    # MathJax se carga desde CDN al abrir el HTML; con true queda embebido (archivo más pesado).
+    self-contained-math: false
+    smooth-scroll: true
+    include-in-header:
+      - text: |
+          <style>
+            .calc-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem; margin: 1rem 0; }
+            .calc-meta label { font-size: .85rem; font-weight: 600; margin-bottom: .2rem; display: block; }
+            .calc-wrap { overflow-x: auto; }
+            .calc table { margin-bottom: .5rem; }
+            .calc td, .calc th { vertical-align: middle; }
+            .calc .num { width: 5.5rem; text-align: right; }
+            .calc .out { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+            .calc tr.total td { font-weight: 600; border-top: 2px solid var(--bs-body-color, #343a40); }
+            .calc tr.final td { font-size: 1.1rem; }
+            .calc .note { font-size: .85rem; color: #6c757d; }
+            .calc-actions { display: flex; gap: .5rem; margin: .75rem 0 1.5rem; }
+            @media print {
+              #quarto-sidebar, #TOC, nav, .calc-actions { display: none !important; }
+              table, .callout { break-inside: avoid; }
+              h2, h3 { break-after: avoid; }
+              .calc input, .calc select { border: none; box-shadow: none; }
+            }
+          </style>
+---
+
+## Condiciones del proyecto
+
+El proyecto se califica de 0,0 a 5,0 con siete criterios ponderados y se aprueba con 3,0. Antes de aplicar la rúbrica se verifican cuatro requisitos mínimos: si falta alguno, la nota del equipo no supera 2,9.
+
+::: {.callout-important}
+## Requisitos mínimos
+
+1. **Escenario real documentado.** Un problema biomédico respaldado por al menos tres referencias verificables (artículos indexados o guías clínicas) y un conjunto de imágenes con procedencia trazable: repositorio, licencia, modalidad y protocolo de adquisición.
+2. **Modelo de regresión.** Regresión lineal (simple o múltiple) o regresión logística como único modelo. No se aceptan redes neuronales, SVM, árboles ni otros modelos de aprendizaje automático.
+3. **Código reproducible.** Repositorio con el pipeline completo, ejecutable de principio a fin desde las imágenes originales, con entorno declarado y semilla fija para toda partición aleatoria.
+4. **Entregables previos.** Matriz de trazabilidad ([anexo](#anexo-matriz-de-trazabilidad)) y declaración de contribuciones por integrante, entregadas antes de la presentación.
+:::
+
+### Formato de la presentación
+
+La exposición dura como máximo 20:00 minutos y todos los integrantes intervienen. Después hay 10 minutos de preguntas, dirigidas por el docente a integrantes elegidos al azar sobre cualquier etapa del proyecto.
+
+::: {.callout-warning}
+## Control de tiempo
+
+| Tiempo de exposición | Consecuencia                                              |
+|:---------------------|:----------------------------------------------------------|
+| Hasta 20:00          | Sin penalización                                          |
+| 20:01 a 21:00        | −0,2 sobre la nota del equipo                             |
+| 21:01 a 22:00        | −0,5 sobre la nota del equipo                             |
+| A las 22:00          | Se detiene la exposición; lo no presentado no se evalúa   |
+:::
+
+Distribución sugerida de los 20 minutos:
+
+| Bloque                                                       | Minutos |
+|:-------------------------------------------------------------|--------:|
+| Problema, contexto clínico y objetivos                       |       3 |
+| Datos: origen, modalidad y características de la imagen      |       2 |
+| Procesamiento etapa por etapa                                |       6 |
+| Extracción de características y modelo de regresión          |       4 |
+| Resultados y validación                                      |       3 |
+| Conclusiones y limitaciones                                  |       2 |
+
+### Escala de niveles
+
+Cada criterio recibe la nota de su nivel; se admiten valores intermedios (por ejemplo, 4,5) cuando el desempeño queda entre dos niveles.
+
+| Nivel         | Nota | Significado                                                                         |
+|:---------------|:------:|:-----------------------------------------------------------|
+| Excelente     | 5,0  | Cumple todos los descriptores y justifica cada decisión con criterio propio         |
+| Bueno         | 4,0  | Cumple los descriptores con omisiones menores que no afectan la validez             |
+| Aceptable     | 3,0  | Cumple lo esencial, pero con vacíos de justificación o errores que limitan la validez |
+| Insuficiente  | 1,0  | No cumple lo esencial o comete errores que invalidan el resultado                   |
+| No presentado | 0,0  | El criterio no aparece en la entrega ni en la exposición                            |
+
+$$
+\text{Nota del equipo} = \sum_{k=1}^{7} \text{nota}_k \times \text{peso}_k
+$$
+
+## Criterios y pesos
+
+El núcleo técnico (criterios 2, 3 y 4) suma 51 % de la nota; la coherencia del proyecto y el trabajo en equipo, 27 %.
+
+| #  | Criterio                                                                    | Peso      | Dónde se evalúa                                                       |
+|:---:|:--------------------------------------------|---------:|:---------------------------------------|
+| 1  | Escenario real y objetivos                                                  | 12 %      | Entrega escrita y exposición                                          |
+| 2  | Manejo de la imagen en cada etapa                                           | 15 %      | Repositorio, exposición y preguntas                                   |
+| 3  | Técnicas de procesamiento (filtrado, histograma, morfología, segmentación)  | 18 %      | Repositorio, exposición y preguntas                                   |
+| 4  | Modelado con regresión lineal o logística                                   | 18 %      | Repositorio, exposición y preguntas                                   |
+| 5  | Coherencia objetivos–metodología–resultados–conclusiones                    | 15 %      | Matriz de trazabilidad y exposición                                   |
+| 6  | Presentación oral                                                           | 10 %      | Exposición                                                            |
+| 7  | Trabajo en equipo                                                           | 12 %      | Declaración de contribuciones, historial del repositorio y preguntas  |
+|    | **Total**                                                                   | **100 %** |                                                                       |
+
+## Rúbrica detallada
+
+Cada criterio indica qué se revisa y el descriptor de cada nivel. Las preguntas de la ronda final sirven para confirmar o ajustar el nivel asignado en los criterios 2, 3 y 4.
+
+### 1. Escenario real y objetivos (12 %)
+
+**Se revisa:** problema clínico concreto y sus fuentes, documentación del conjunto de imágenes, objetivos medibles, variable de salida y alcance de las conclusiones.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Problema clínico concreto, con su relevancia cuantificada y al menos tres referencias pertinentes. Conjunto de imágenes descrito por completo: origen, licencia, modalidad, resolución y tamaño de píxel, número de pacientes e imágenes, criterio de etiquetado. Objetivo general y específicos medibles, con la variable de salida (continua o binaria) definida y su forma de medición. El alcance declara qué no se puede concluir. |
+| Bueno (4,0)        | Problema y datos bien documentados; un objetivo específico no es medible o falta un dato del conjunto (licencia, resolución o criterio de etiquetado).                                                                                                                                                                                                                  |
+| Aceptable (3,0)    | Problema real pero genérico o con referencias escasas; objetivos redactados como actividades («aplicar filtros») y no como resultados medibles; variable de salida ambigua.                                                                                                                                                                                             |
+| Insuficiente (1,0) | Escenario hipotético o sin fuentes; imágenes sin procedencia; objetivos ausentes o sin relación con el problema.                                                                                                                                                                                                                                                        |
+
+### 2. Manejo de la imagen en cada etapa (15 %)
+
+**Se revisa:** en cada etapa del pipeline (lectura, preprocesamiento, realce o filtrado, segmentación, morfología, extracción de características), qué es la imagen y qué cambió: dimensiones, tipo de dato, rango de intensidades, histograma y unidades físicas.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Diagrama del pipeline con la imagen intermedia y su histograma en cada etapa. Reporta forma, tipo de dato y rango de cada salida, y justifica conversiones y normalizaciones (sin desbordes ni recortes silenciosos). Usa los metadatos (DICOM, NIfTI) para expresar medidas en mm o mm². El original nunca se sobrescribe. Cualquier integrante explica qué contiene la imagen en la etapa que elija el docente. |
+| Bueno (4,0)        | Muestra todas las etapas con imágenes intermedias; falta el tipo de dato, el rango o el histograma en alguna etapa, o las medidas quedan en píxeles sin justificar.                                                                                                                                                                                                     |
+| Aceptable (3,0)    | Muestra entrada y salida con pocas etapas intermedias; hay conversiones no explicadas (por ejemplo, de 16 a 8 bits) o el equipo no sabe qué rango de valores tiene una imagen intermedia.                                                                                                                                                                              |
+| Insuficiente (1,0) | El pipeline es una caja negra, o hay errores de manejo (desbordamiento, pérdida de información, orientación equivocada) que el equipo no detecta.                                                                                                                                                                                                                      |
+
+### 3. Técnicas de procesamiento (18 %)
+
+**Se revisa:** uso pertinente y justificado de modificación de histograma (estiramiento, ecualización, CLAHE), filtrado espacial o frecuencial (media, mediana, gaussiano, Butterworth, notch), detección de bordes, segmentación (Otsu, umbral adaptativo, crecimiento de regiones) y morfología matemática (erosión, dilatación, apertura, cierre). Fourier o wavelets cuando el problema lo pida.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Cada técnica responde a un problema identificado en la imagen: tipo de ruido o artefacto, bajo contraste, estructura por aislar. Se elige entre al menos dos alternativas comparadas con un criterio objetivo (SNR, perfil de intensidad, Dice o IoU frente a una máscara de referencia). Los parámetros (kernel, frecuencia de corte, umbral, elemento estructurante) se justifican y se muestra su efecto. El equipo explica la base matemática de cada técnica. |
+| Bueno (4,0)        | Técnicas pertinentes y bien aplicadas; la comparación entre alternativas o la justificación de algún parámetro es parcial.                                                                                                                                                                                                                                              |
+| Aceptable (3,0)    | Técnicas correctas, pero elegidas por ensayo y error o con parámetros por defecto, sin comparar alternativas; el equipo las nombra pero no explica cómo operan.                                                                                                                                                                                                         |
+| Insuficiente (1,0) | Técnicas mal aplicadas o sin relación con el problema (por ejemplo, un filtro que borra la estructura de interés), o el equipo no puede explicar qué hace una técnica que usó.                                                                                                                                                                                          |
+
+### 4. Modelado con regresión lineal o logística (18 %)
+
+**Se revisa:** coherencia entre el modelo y la variable de salida (continua → lineal; binaria → logística), características derivadas del procesamiento, tamaño de muestra, validación sin fuga de información, supuestos, métricas e interpretación de coeficientes.
+
+- **Tamaño de muestra, regla orientativa:** al menos 10 eventos de la clase minoritaria por predictor en logística, y 10 a 15 observaciones por predictor en lineal.
+- **Partición:** por paciente; estandarización, umbrales y selección de características ajustados solo con el conjunto de entrenamiento.
+- **Métricas:** en lineal, R² ajustado, RMSE y MAE en unidades de la variable, gráfico de residuos. En logística, matriz de confusión, sensibilidad, especificidad, AUC-ROC y umbral justificado.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Modelo coherente con la variable de salida. Características definidas con unidades y vinculadas a una etapa del procesamiento. Verifica tamaño de muestra, colinealidad (correlaciones o VIF) y supuestos del modelo. Partición por paciente sin fuga. Reporta métricas en el conjunto de prueba (o por validación cruzada) frente a una línea base (media o clase mayoritaria). Interpreta pendientes u odds ratios con IC 95 % en términos del problema. |
+| Bueno (4,0)        | Modelo y validación correctos; falta verificar algún supuesto, la colinealidad o la comparación con la línea base.                                                                                                                                                                                                                                                      |
+| Aceptable (3,0)    | Modelo pertinente pero evaluado solo en entrenamiento o con métricas incompletas (por ejemplo, solo exactitud con clases desbalanceadas); coeficientes reportados sin interpretar.                                                                                                                                                                                      |
+| Insuficiente (1,0) | Modelo incoherente con la variable de salida (regresión lineal para una clase binaria), fuga de información evidente o resultados que el equipo no sabe interpretar.                                                                                                                                                                                                   |
+
+### 5. Coherencia objetivos–metodología–resultados–conclusiones (15 %)
+
+**Se revisa:** la matriz de trazabilidad del anexo y su correspondencia con la exposición; el alcance de las conclusiones y las limitaciones.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Cada objetivo específico se traza a un método, un resultado con su métrica y una conclusión que lo responde. Las conclusiones no exceden la evidencia: no afirman diagnóstico ni generalizan más allá de la población y los equipos de adquisición del conjunto. Las limitaciones (tamaño de muestra, sesgo de selección, variabilidad entre equipos) se enuncian con su efecto probable sobre los resultados. |
+| Bueno (4,0)        | Trazabilidad completa; alguna conclusión va un poco más allá de lo medido, o las limitaciones se enuncian sin analizar su efecto.                                                                                                                                                                                                                                       |
+| Aceptable (3,0)    | Uno o dos objetivos quedan sin resultado o sin conclusión; aparecen resultados que no responden a ningún objetivo; conclusiones genéricas («el método funciona bien»).                                                                                                                                                                                                  |
+| Insuficiente (1,0) | Objetivos, métodos y conclusiones desconectados, o conclusiones que contradicen los resultados.                                                                                                                                                                                                                                                                         |
+
+### 6. Presentación oral (10 %)
+
+**Se revisa:** estructura, calidad de las figuras, precisión del lenguaje técnico y manejo de preguntas. La penalización por exceder 20 minutos se aplica aparte, sobre la nota del equipo.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Hilo claro del problema a la conclusión, con el tiempo repartido según el peso de cada bloque. Figuras legibles con ejes, unidades y barra de escala o de color. Lenguaje técnico preciso; responde las preguntas con seguridad y sin evadir.                                                                                                                           |
+| Bueno (4,0)        | Estructura clara; alguna figura sin unidades o escala, o un bloque comprimido por mala gestión del tiempo.                                                                                                                                                                                                                                                              |
+| Aceptable (3,0)    | Exceso de texto en diapositivas, figuras difíciles de leer o tiempo desbalanceado (por ejemplo, 10 minutos de contexto y 2 de resultados).                                                                                                                                                                                                                              |
+| Insuficiente (1,0) | Exposición desorganizada, figuras ilegibles o sin rótulos, lectura textual de las diapositivas.                                                                                                                                                                                                                                                                         |
+
+### 7. Trabajo en equipo (12 %)
+
+**Se revisa:** roles y contribuciones declarados, historial del repositorio, participación en la exposición y dominio del proyecto completo por parte de cada integrante.
+
+| Nivel              | Descriptor                                                                                                                                                                                                                                                                                                                                                              |
+|:-----------------|:---------------------------------------------------------------------------------|
+| Excelente (5,0)    | Declaración de contribuciones con roles y tareas por integrante, coherente con el historial del repositorio (aportes de todos a lo largo del periodo, no solo al final). Intervenciones equilibradas y transiciones que muestran un trabajo integrado. Cualquier integrante responde sobre etapas que no expuso.                                                        |
+| Bueno (4,0)        | Contribuciones declaradas y verificables; participación algo desigual, o algún integrante solo domina su parte.                                                                                                                                                                                                                                                         |
+| Aceptable (3,0)    | Reparto declarado pero difícil de verificar (historial concentrado en una persona o en la última semana); la exposición se percibe como partes yuxtapuestas.                                                                                                                                                                                                            |
+| Insuficiente (1,0) | Un integrante no participa o no puede responder sobre el proyecto, o no hay declaración de contribuciones.                                                                                                                                                                                                                                                              |
+
+## Ajuste individual
+
+La nota de cada integrante es la nota del equipo multiplicada por un factor individual entre 0,8 y 1,1, con tope en 5,0. Si la coevaluación es pareja, el factor es 1 y todos reciben la nota del equipo.
+
+$$
+F_i = \min\left(1{,}1;\ \max\left(0{,}8;\ \frac{C_i}{\bar{C}}\right)\right)
+\qquad
+\text{Nota}_i = \min\left(5{,}0;\ \text{Nota}_{\text{equipo}} \times F_i\right)
+$$
+
+$C_i$ es el promedio de las calificaciones que el integrante $i$ recibe de sus compañeros en la coevaluación anónima; $\bar{C}$ es el promedio de todo el equipo. Nadie se califica a sí mismo.
+
+| Aspecto de la coevaluación | Qué se valora (1 = nunca, 5 = siempre)              |
+|:---------------------------|:----------------------------------------------------|
+| Cumplimiento               | Entrega a tiempo las tareas acordadas               |
+| Calidad técnica            | Su aporte es correcto y está justificado            |
+| Comunicación               | Informa avances y problemas al equipo               |
+| Colaboración               | Apoya a otros e integra su parte con el resto       |
+
+Si un integrante no puede responder la pregunta dirigida sobre una etapa central del proyecto, su factor no supera 0,9.
+
+## Anexo: matriz de trazabilidad {#anexo-matriz-de-trazabilidad}
+
+El equipo entrega esta tabla antes de la presentación, con una fila por objetivo específico y sin celdas vacías. Es la evidencia principal del criterio 5. La primera fila es un ejemplo ilustrativo.
+
+| Objetivo específico                                                                                                         | Método (etapa y técnica)                              | Resultado (figura, tabla o métrica)                                              | Conclusión                                                                                                       |
+|:---------------------------|:---------------------|:------------------------|:------------------------|
+| *Ejemplo:* segmentar los campos pulmonares en radiografías de tórax con Dice ≥ 0,85 frente a las máscaras de referencia      | CLAHE, umbral de Otsu y apertura con disco de 5 px    | Dice medio en el conjunto de prueba, con su desviación estándar (tabla 2)        | Se cumple o no el umbral fijado, y si la segmentación basta para extraer las características del modelo          |
+| OE1                                                                                                                         |                                                       |                                                                                  |                                                                                                                  |
+| OE2                                                                                                                         |                                                       |                                                                                  |                                                                                                                  |
+| OE3                                                                                                                         |                                                       |                                                                                  |                                                                                                                  |
+
+## Hoja de calificación
+
+Escriba las notas con coma o punto decimal; los ponderados, la penalización por tiempo y las notas individuales se calculan solos. El botón *Imprimir* genera la hoja con los valores diligenciados.
+
+```{=html}
+<div class="calc" id="calc">
+  <div class="calc-meta">
+    <div><label for="c-equipo">Equipo</label><input id="c-equipo" type="text" class="form-control form-control-sm"></div>
+    <div><label for="c-titulo">Título del proyecto</label><input id="c-titulo" type="text" class="form-control form-control-sm"></div>
+    <div><label for="c-tiempo">Tiempo de exposición (mm:ss)</label><input id="c-tiempo" type="text" inputmode="numeric" placeholder="19:45" class="form-control form-control-sm"></div>
+    <div><label for="c-req">Requisitos mínimos completos</label>
+      <select id="c-req" class="form-select form-select-sm"><option value="si">Sí</option><option value="no">No</option></select></div>
+  </div>
+
+  <div class="calc-wrap">
+  <table class="table table-sm">
+    <thead><tr><th>Criterio</th><th class="out">Peso</th><th class="out">Nota (0,0–5,0)</th><th class="out">Ponderado</th><th>Observaciones</th></tr></thead>
+    <tbody id="c-criterios"></tbody>
+    <tbody>
+      <tr class="total"><td>Suma ponderada</td><td class="out">1,00</td><td></td><td class="out"><output id="c-suma">—</output></td><td class="note" id="c-faltan"></td></tr>
+      <tr><td>Penalización por tiempo</td><td></td><td></td><td class="out"><output id="c-pen">—</output></td><td class="note" id="c-pen-nota"></td></tr>
+      <tr class="final"><td><strong>Nota del equipo</strong></td><td></td><td></td><td class="out"><strong><output id="c-nota">—</output></strong></td><td class="note" id="c-nota-nota"></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="calc-wrap">
+  <table class="table table-sm">
+    <thead><tr><th>Integrante</th><th class="out">C<sub>i</sub> (1–5)</th><th>Respondió la pregunta dirigida</th><th class="out">F<sub>i</sub></th><th class="out">Nota individual</th></tr></thead>
+    <tbody id="c-integrantes"></tbody>
+    <tbody>
+      <tr class="total"><td>Promedio del equipo (C̄)</td><td class="out"><output id="c-cbar">—</output></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Las notas se muestran con dos decimales; aplique el redondeo que fije el reglamento institucional.</p>
+
+  <div class="calc-actions">
+    <button type="button" class="btn btn-outline-primary btn-sm" id="c-imprimir">Imprimir</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="c-limpiar">Limpiar</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Parámetros de la rúbrica: edítelos aquí si cambian pesos, umbrales o factores.
+  const CRITERIOS = [
+    ["1. Escenario real y objetivos", 0.12],
+    ["2. Manejo de la imagen en cada etapa", 0.15],
+    ["3. Técnicas de procesamiento", 0.18],
+    ["4. Modelado con regresión", 0.18],
+    ["5. Coherencia del proyecto", 0.15],
+    ["6. Presentación oral", 0.10],
+    ["7. Trabajo en equipo", 0.12],
+  ];
+  const PENALIZACION = [  // [segundos máximos, descuento]
+    [20 * 60, 0.0],
+    [21 * 60, 0.2],
+    [Infinity, 0.5],
+  ];
+  const TOPE_SIN_REQUISITOS = 2.9;
+  const F_MIN = 0.8, F_MAX = 1.1, F_MAX_SIN_RESPUESTA = 0.9;
+  const N_INTEGRANTES = 5;
+
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x, d = 2) => x.toLocaleString("es-CO", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  // Devuelve null si el campo está vacío, NaN si es inválido, o el número.
+  const leer = (el, lo, hi) => {
+    const t = el.value.trim().replace(",", ".");
+    if (t === "") { el.classList.remove("is-invalid"); return null; }
+    const v = Number(t);
+    const ok = Number.isFinite(v) && v >= lo && v <= hi;
+    el.classList.toggle("is-invalid", !ok);
+    return ok ? v : NaN;
+  };
+
+  const segundos = (el) => {
+    const t = el.value.trim();
+    if (t === "") { el.classList.remove("is-invalid"); return null; }
+    const m = t.match(/^(\d{1,2}):([0-5]\d)$/);
+    el.classList.toggle("is-invalid", !m);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+  };
+
+  const tbC = $("c-criterios");
+  CRITERIOS.forEach(([nombre, peso], k) => {
+    tbC.insertAdjacentHTML("beforeend",
+      `<tr><td>${nombre}</td><td class="out">${fmt(peso)}</td>` +
+      `<td class="out"><input id="c-n${k}" type="text" inputmode="decimal" class="form-control form-control-sm num ms-auto" aria-label="Nota ${nombre}"></td>` +
+      `<td class="out"><output id="c-p${k}">—</output></td>` +
+      `<td><input type="text" class="form-control form-control-sm" aria-label="Observaciones ${nombre}"></td></tr>`);
+  });
+
+  const tbI = $("c-integrantes");
+  for (let i = 0; i < N_INTEGRANTES; i++) {
+    tbI.insertAdjacentHTML("beforeend",
+      `<tr><td><input type="text" class="form-control form-control-sm" aria-label="Integrante ${i + 1}"></td>` +
+      `<td class="out"><input id="c-c${i}" type="text" inputmode="decimal" class="form-control form-control-sm num ms-auto" aria-label="C ${i + 1}"></td>` +
+      `<td><select id="c-q${i}" class="form-select form-select-sm" aria-label="Pregunta ${i + 1}"><option value="si">Sí</option><option value="no">No</option></select></td>` +
+      `<td class="out"><output id="c-f${i}">—</output></td>` +
+      `<td class="out"><output id="c-ni${i}">—</output></td></tr>`);
+  }
+
+  const calcular = () => {
+    // Nota del equipo
+    let suma = 0, faltan = 0, invalidas = 0;
+    CRITERIOS.forEach(([, peso], k) => {
+      const v = leer($(`c-n${k}`), 0, 5);
+      if (v === null) { faltan++; $(`c-p${k}`).textContent = "—"; }
+      else if (Number.isNaN(v)) { invalidas++; $(`c-p${k}`).textContent = "—"; }
+      else { suma += v * peso; $(`c-p${k}`).textContent = fmt(v * peso); }
+    });
+
+    const s = segundos($("c-tiempo"));
+    let pen = 0;
+    if (s === null) { $("c-pen").textContent = "—"; $("c-pen-nota").textContent = "Registre el tiempo"; }
+    else if (Number.isNaN(s)) { $("c-pen").textContent = "—"; $("c-pen-nota").textContent = "Formato mm:ss"; }
+    else {
+      pen = PENALIZACION.find(([max]) => s <= max)[1];
+      $("c-pen").textContent = pen ? "−" + fmt(pen) : fmt(0);
+      $("c-pen-nota").textContent = s >= 22 * 60 ? "Exposición detenida a las 22:00" : "";
+    }
+
+    let nota = null;
+    const completa = faltan === 0 && invalidas === 0;
+    $("c-suma").textContent = completa ? fmt(suma) : "—";
+    $("c-faltan").textContent = invalidas ? "Hay notas fuera de 0,0–5,0"
+      : faltan ? `Faltan ${faltan} criterio${faltan > 1 ? "s" : ""}` : "";
+
+    if (completa) {
+      nota = Math.max(0, suma - pen);
+      const conReq = $("c-req").value === "si";
+      if (!conReq) nota = Math.min(nota, TOPE_SIN_REQUISITOS);
+      $("c-nota").textContent = fmt(nota);
+      $("c-nota-nota").textContent = conReq ? "" : "Tope de 2,9 por requisitos incompletos";
+    } else {
+      $("c-nota").textContent = "—";
+      $("c-nota-nota").textContent = "";
+    }
+
+    // Ajuste individual
+    const cs = [];
+    for (let i = 0; i < N_INTEGRANTES; i++) cs.push(leer($(`c-c${i}`), 1, 5));
+    const validos = cs.filter((c) => c !== null && !Number.isNaN(c));
+    const cbar = validos.length ? validos.reduce((a, b) => a + b, 0) / validos.length : null;
+    $("c-cbar").textContent = cbar === null ? "—" : fmt(cbar);
+
+    cs.forEach((c, i) => {
+      if (c === null || Number.isNaN(c) || cbar === null) {
+        $(`c-f${i}`).textContent = "—"; $(`c-ni${i}`).textContent = "—"; return;
+      }
+      let f = Math.min(F_MAX, Math.max(F_MIN, c / cbar));
+      if ($(`c-q${i}`).value === "no") f = Math.min(f, F_MAX_SIN_RESPUESTA);
+      $(`c-f${i}`).textContent = fmt(f);
+      $(`c-ni${i}`).textContent = nota === null ? "—" : fmt(Math.min(5, nota * f));
+    });
+  };
+
+  const calc = $("calc");
+  calc.addEventListener("input", calcular);
+  calc.addEventListener("change", calcular);
+  $("c-imprimir").addEventListener("click", () => window.print());
+  $("c-limpiar").addEventListener("click", () => {
+    calc.querySelectorAll("input").forEach((el) => { el.value = ""; el.classList.remove("is-invalid"); });
+    calc.querySelectorAll("select").forEach((el) => { el.selectedIndex = 0; });
+    calcular();
+  });
+  calcular();
+})();
+</script>
+```
