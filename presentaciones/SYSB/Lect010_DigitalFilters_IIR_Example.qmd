@@ -263,25 +263,7 @@ En SciPy podemos pasar `fs=2000`, así no hace falta normalizar manualmente.
 
 ---
 
-## Código: librerías
 
-```{python}
-#| echo: true
-#| eval: false
-#| output: false
-#| label: Loading Libraries for signal processing I
-import numpy as np
-import matplotlib.pyplot as plt
-
-from scipy.signal import (
-    butter,
-    buttord,
-    sosfreqz,
-    sosfilt,
-    sosfiltfilt,
-    welch
-)
-```
 
 ## Predeformación bilineal
 
@@ -665,6 +647,257 @@ $$
 
 
 ---
+
+## 2 · De Hz a radianes por segundo
+
+Con $C=2f_s=4000\,\mathrm{s}^{-1}$, la transformación bilineal relaciona la frecuencia digital $\omega$ con la analógica $\Omega$.
+
+$$
+\omega_i=2\pi\frac{f_i}{f_s},\qquad
+\Omega_i=C\tan\!\left(\frac{\omega_i}{2}\right)
+$$
+
+| Corte | $\omega_i$ [rad/muestra] | $\Omega_i$ [rad/s] |
+|:--|--:|--:|
+| $20\,\mathrm{Hz}$ | $0.062832$ | 125.705 |
+| $450\,\mathrm{Hz}$ | $1.413717$ | 3416.323 |
+
+El **prewarping** hace que los cortes analógicos se ubiquen en las frecuencias digitales solicitadas después de la transformación.
+
+## 3 · Prototipo Butterworth pasabajas
+
+La ley Butterworth de orden 2 es $|H(j\nu)|^2=(1+\nu^4)^{-1}$. Como $u=j\nu$ implica $u^4=\nu^4$, se factoriza $1+u^4$ y se conservan las raíces del semiplano izquierdo.
+
+$$
+\begin{aligned}
+H_{\mathrm{LP}}(u)
+&=\frac{1}{(u-p_1)(u-p_2)}
+=\frac{1}{u^2+\sqrt{2}\,u+1},\\[4pt]
+|H_{\mathrm{LP}}(j\nu)|^2&=\frac{1}{1+\nu^4}.
+\end{aligned}
+$$
+
+Los polos son $p_1=e^{j3\pi/4}$ y $p_2=e^{j5\pi/4}$. En $\nu=\pm1$, la potencia relativa es $1/2$.
+
+## 4 · Transformar el prototipo a pasabanda
+
+$$
+B=\Omega_2-\Omega_1=\text{3290.618}\,\mathrm{rad/s},\qquad
+\Omega_0=\sqrt{\Omega_1\Omega_2}=\text{655.324}\,\mathrm{rad/s}
+$$
+
+Se sustituye la variable normalizada $u$ por $(s^2+\Omega_0^2)/(Bs)$. Para $s=j\Omega$, la frecuencia normalizada es
+
+$$
+\nu=\frac{\Omega^2-\Omega_0^2}{B\Omega}
+\quad\Longrightarrow\quad
+\nu(\Omega_1)=-1,\quad \nu(\Omega_0)=0,\quad \nu(\Omega_2)=1.
+$$
+
+$$
+H_{\mathrm{BP}}(s)=
+\frac{B^2s^2}{(s^2+\Omega_0^2)^2+\sqrt{2}\,Bs(s^2+\Omega_0^2)+B^2s^2}.
+$$
+
+## 5 · Calcular los cuatro polos analógicos
+
+Cada polo $p_k$ del prototipo genera dos polos analógicos $s_{k,\pm}$.
+
+$$
+s^2-Bp_k s+\Omega_0^2=0
+\quad\Longrightarrow\quad
+s_{k,\pm}=\frac{Bp_k\pm\sqrt{(Bp_k)^2-4\Omega_0^2}}{2}.
+$$
+
+```{python}
+#| label: polos-analogicos
+import numpy as np
+
+fs, f1, f2 = 2000.0, 20.0, 450.0
+C = 2 * fs
+omega1, omega2 = C * np.tan(np.pi * np.array([f1, f2]) / fs)
+B = omega2 - omega1
+omega0 = np.sqrt(omega1 * omega2)
+
+p = np.exp(1j * np.pi * np.array([3, 5]) / 4)
+raiz = np.sqrt((B * p)**2 - 4 * omega0**2)
+polos_s = np.r_[(B * p + raiz) / 2, (B * p - raiz) / 2]
+```
+
+## 6 · Pasar del plano $s$ al plano $z$
+
+$$
+s=C\frac{1-z^{-1}}{1+z^{-1}}
+\quad\Longleftrightarrow\quad
+z=\frac{C+s}{C-s}.
+$$
+
+- Polos digitales: $0.955703\pm j\,0.045744$ y $0.114344\pm j\,0.432709$.
+- Los dos ceros en $s=0$ pasan a $z=1$ (continua).
+- Los dos ceros en $s=\infty$ pasan a $z=-1$ (Nyquist).
+
+La frecuencia digital de máxima ganancia se obtiene con la inversa del prewarping.
+
+$$
+f_0=\frac{f_s}{\pi}\arctan\!\left(\frac{\Omega_0}{C}\right)
+=\text{103.380}\,\mathrm{Hz}.
+$$
+
+## 7 · Construir dos secciones de segundo orden
+
+Se agrupan los polos en pares conjugados y se asigna un cero en $z=1$ y otro en $z=-1$ a cada sección.
+
+$$
+H_i(z)=\frac{g(1-z^{-2})}{1-2\operatorname{Re}(r_i)z^{-1}+|r_i|^2 z^{-2}},
+\qquad H(z)=H_1(z)H_2(z).
+$$
+
+```{python}
+#| label: secciones-sin-ganancia
+polos_z = (C + polos_s) / (C - polos_s)
+r = polos_z[polos_z.imag > 0]  # Un polo de cada par
+r = r[np.argsort(np.angle(r))]
+sos = np.column_stack((np.tile([1., 0., -1., 1.], (2, 1)),
+                       -2 * r.real, np.abs(r)**2))
+f0 = fs / np.pi * np.arctan(omega0 / C)
+```
+
+::: {.nota}
+Cada fila de la matriz SOS sigue el orden $[b_0,b_1,b_2,a_0,a_1,a_2]$. Por ahora, $g=1$ en ambas filas.
+:::
+
+## 8 · Fijar la ganancia del pasabanda
+
+Sea $\widetilde H$ la respuesta de la cascada con $g=1$. Al aplicar el mismo $g$ a cada numerador, la magnitud total se multiplica por $g^2$.
+
+$$
+g=|\widetilde H(e^{j2\pi f_0/f_s})|^{-1/2}
+\quad\Rightarrow\quad |H(e^{j2\pi f_0/f_s})|=1.
+$$
+
+```{python}
+#| label: normalizacion
+def respuesta_sos(f, secciones):
+    q = np.exp(-2j * np.pi * np.asarray(f) / fs)  # z^(-1)
+    H = np.ones_like(q, dtype=complex)
+    for b0, b1, b2, a0, a1, a2 in secciones:
+        H *= (b0 + b1*q + b2*q**2) / (a0 + a1*q + a2*q**2)
+    return H
+
+g = float(np.abs(respuesta_sos(f0, sos))**(-0.5))
+sos[:, :3] *= g
+```
+
+## 9 · Coeficientes y ecuación en diferencias
+
+| SOS | $b_0$ | $b_1$ | $b_2$ | $a_0$ | $a_1$ | $a_2$ |
+|:--|--:|--:|--:|--:|--:|--:|
+| 1 | 0.480944882 | 0.000000000 | -0.480944882 | 1.000000000 | -1.911406179 | 0.915460901 |
+| 2 | 0.480944882 | 0.000000000 | -0.480944882 | 1.000000000 | -0.228688419 | 0.200311977 |
+
+Para cada sección se aplica la recurrencia, con estados inicialmente en cero.
+
+$$
+y_i[n]=b_{0,i}\,x_i[n]+b_{2,i}\,x_i[n-2]
+       -a_{1,i}\,y_i[n-1]-a_{2,i}\,y_i[n-2].
+$$
+
+La primera sección recibe la señal original y la segunda recibe $x_2[n]=y_1[n]$. Los términos con salidas pasadas realimentan el filtro.
+
+::: {.nota}
+La tabla redondea a nueve decimales. El código conserva la precisión de punto flotante.
+:::
+
+## 10 · Respuesta en frecuencia
+
+```{python}
+#| label: magnitud-pasabanda
+#| echo: false
+#| fig-width: 11
+#| fig-height: 4.5
+#| out-width: "88%"
+import matplotlib.pyplot as plt
+
+f = np.linspace(0, fs / 2, 8193)
+db = 20 * np.log10(np.maximum(np.abs(respuesta_sos(f, sos)), 1e-12))
+cortes_db = 20 * np.log10(np.abs(respuesta_sos([f1, f2], sos)))
+fig, ax = plt.subplots(layout="constrained")
+fig.patch.set_facecolor("#101a28")
+ax.set_facecolor("#101a28")
+ax.axvspan(f1, f2, color="#79ead9", alpha=0.085)
+ax.plot(f, db, color="#79ead9", linewidth=2.4)
+ax.axhline(-10 * np.log10(2), color="#edc380", linestyle="--", linewidth=1)
+ax.scatter([f1, f2], cortes_db, color="#edc380", zorder=4)
+for corte, nivel in zip([f1, f2], cortes_db):
+    ax.annotate(f"{corte:.0f} Hz\n−{abs(nivel):.2f} dB", (corte, nivel),
+                xytext=(10, -32), textcoords="offset points",
+                color="#edc380", fontsize=11)
+ax.set(xlim=(0, fs / 2), ylim=(-65, 3), xlabel="Frecuencia [Hz]",
+       ylabel="Magnitud relativa [dB]")
+ax.set_xticks([0, 100, 200, 300, 450, 600, 800, 1000])
+ax.tick_params(colors="#dbe8f8", labelsize=11)
+for axis in (ax.xaxis, ax.yaxis):
+    axis.label.set_color("#dbe8f8")
+    axis.label.set_fontsize(12)
+for spine in ax.spines.values():
+    spine.set_color("#677992")
+ax.grid(axis="y", color="#677992", alpha=0.32)
+plt.show()
+```
+
+::: {.nota}
+La respuesta se evalúa directamente a partir de las dos secciones. En continua y Nyquist hay ceros teóricos. La escala vertical se recorta a $-65\,\mathrm{dB}$.
+:::
+
+## 11 · Verificar cortes, estabilidad y equivalencia
+
+```{python}
+#| label: verificacion-independiente
+from scipy.signal import butter, sosfreqz
+
+assert np.allclose(cortes_db, -10 * np.log10(2), rtol=0, atol=1e-10)
+assert np.isclose(np.abs(respuesta_sos(f0, sos)), 1.0)
+radio_maximo = np.max(np.abs(polos_z))
+assert radio_maximo < 1
+
+ref = butter(2, [f1, f2], btype="bandpass", fs=fs, output="sos")
+_, H_ref = sosfreqz(ref, worN=f, fs=fs)
+error = np.max(np.abs(respuesta_sos(f, sos) - H_ref))
+assert error < 1e-10
+print("Cortes [dB]:", cortes_db.round(6))
+print(f"Radio máximo: {radio_maximo:.6f} | Error máximo: {error:.2e}")
+```
+
+::: {.nota}
+SciPy se usa aquí como referencia. Se compara la respuesta compleja total porque dos realizaciones equivalentes pueden agrupar ceros y distribuir ganancia de forma distinta.
+:::
+
+## 12 · Qué observar al filtrar sEMG
+
+- Este pasabanda atenúa componentes muy lentas y de alta frecuencia. La contribución de cada componente depende del registro y del sistema de adquisición.
+- **La interferencia de red a 60 Hz queda dentro de la banda.** Calcula su ganancia con `respuesta_sos(60, sos)` antes de interpretar el espectro.
+- El filtrado causal altera la fase y puede afectar la localización temporal del inicio de activación muscular.
+- El filtrado hacia adelante y hacia atrás eleva la magnitud al cuadrado. Con estos mismos coeficientes, los cortes pasan de **−3.01 a −6.02 dB**.
+
+## Código: librerías
+
+```{python}
+#| echo: true
+#| eval: false
+#| output: false
+#| label: Loading Libraries for signal processing I
+import numpy as np
+import matplotlib.pyplot as plt
+
+from scipy.signal import (
+    butter,
+    buttord,
+    sosfreqz,
+    sosfilt,
+    sosfiltfilt,
+    welch
+)
+```
 
 ## Código: parámetros de diseño
 
